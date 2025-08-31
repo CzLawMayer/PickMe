@@ -1,0 +1,181 @@
+/* ---------- Reset & theme ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root{
+  --book-w: 400px;
+  --book-h: 570px;
+
+  /* how far side books sit from the center book */
+  --side-gap: 370px;      /* you were using --gap; this one replaces it */
+
+  /* how far the metadata panel sits from the left edge of the center book */
+  --meta-gap: 0px;
+
+  /* how far the arrows sit from the right edge of the center book */
+  --arrow-gap: 40px;
+
+  --meta-w: 220px;
+  --bg: #111;
+  --fg: #fff;
+}
+
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden; /* crops half of the side books */
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ---------- Header (top bar) ---------- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px;
+}
+
+.logo { font-size: 28px; font-weight: 800; letter-spacing: .5px; }
+.logo span { color: #bfbfbf; }
+
+.header-icons { display: flex; gap: 16px; }
+.icon { font-size: 22px; }
+
+/* ---------- Carousel stage ---------- */
+.carousel{
+  position: relative;
+  flex: 1;
+  min-height: calc(var(--book-h) + 120px);
+}
+
+/* All books share the exact same size */
+.book{
+  position: absolute;
+  top: 45%;
+  width: var(--book-w);
+  height: var(--book-h);
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.45);
+  overflow: hidden;
+}
+
+.book-placeholder{
+  width: 100%;
+  height: 100%;
+  background: #2d2d2d; /* neutral block; replace with a cover later */
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+/* Center book: perfectly centered on the page */
+.main-book{
+  left: 50%;
+  transform: translate(-50%, -50%); /* center horizontally + vertically */
+  z-index: 2;
+  overflow: visible;
+}
+
+/*
+  Side books:
+  - Positioned relative to the center book.
+  - Same width/height as the center one.
+  - Only half visible because the viewport/body is overflow:hidden.
+  Math:
+    Left  = center - 1.5*book width - gap
+    Right = center + 0.5*book width + gap
+*/
+.left-book{
+  left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap));
+  z-index: 1;
+}
+.right-book{
+  left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap));
+  z-index: 1;
+}
+
+
+/* ---------- Arrows (to the right of the center book) ---------- */
+.vertical-arrows {
+  position: absolute;
+  top: 50%;
+  /* center of screen + half book width + arrow gap */
+  left: calc(50% + (var(--book-w) / 2) + var(--arrow-gap));
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  z-index: 3;
+}
+
+
+
+.arrow{
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1f1f1f;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  user-select: none;
+  color: #fff;
+}
+
+/* ---------- Metadata panel (to the left of center) ---------- */
+.metadata {
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  width: var(--meta-w);
+  left: calc(50% - var(--book-w) - var(--meta-gap));
+  z-index: 3;
+  display: block;
+}
+
+
+
+.user-icon{ font-size: 28px; margin-bottom: 8px; }
+.username{ font-weight: bold; margin: 4px 0 12px; }
+.icons div{ margin: 6px 0; }
+
+.chapters{
+  border-top: 1px solid #fff;
+  margin-top: 10px;
+  padding-top: 10px;
+  max-width: 180px;
+}
+
+.tags span{ display: block; margin: 6px 0; }
+
+/* ---------- Responsive tweaks (optional) ---------- */
+@media (max-width: 1250px){
+  :root{
+    --book-w: 380px;
+    --book-h: 540px;
+    --gap: 52px;
+    --meta-w: 200px;
+  }
+}
+
+@media (max-width: 1000px){
+  :root{
+    --book-w: 320px;
+    --book-h: 460px;
+    --gap: 40px;
+  }
+  .metadata{ display: none; } /* hide panel on smaller screens */
+}
