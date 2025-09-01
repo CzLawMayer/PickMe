@@ -17,12 +17,12 @@ export default function Home() {
 
       {/* Main stage */}
       <main className="carousel">
-        {/* Left book (same size as center, half visible) */}
+        {/* Left book */}
         <div className="book left-book">
           <div className="book-placeholder" id="left-book">BOOK</div>
         </div>
 
-        {/* Metadata panel (left of center) */}
+        {/* Metadata */}
         <div className="metadata">
           <div className="user-icon" aria-hidden>👤</div>
           <p className="username">Names Brooklyn</p>
@@ -43,14 +43,28 @@ export default function Home() {
         <div className="book main-book">
           <div className="book-placeholder" id="center-book">MAIN BOOK</div>
 
-          {/* Arrows to the right of the center book (visual only) */}
-          <div className="vertical-arrows" aria-hidden>
-            <div className="arrow" id="prev">‹</div>
-            <div className="arrow" id="next">›</div>
+          {/* Arrows as real buttons (visual only for now) */}
+          <div className="vertical-arrows">
+            <button
+              type="button"
+              className="arrow"
+              aria-label="Previous book"
+              title="Previous"
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              className="arrow"
+              aria-label="Next book"
+              title="Next"
+            >
+              ‹
+            </button>
           </div>
         </div>
 
-        {/* Right book (same size as center, half visible) */}
+        {/* Right book */}
         <div className="book right-book">
           <div className="book-placeholder" id="right-book">BOOK</div>
         </div>
