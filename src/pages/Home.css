@@ -87,9 +87,8 @@ body {
 /* Center book: perfectly centered on the page */
 .main-book{
   left: 50%;
-  transform: translate(-50%, -50%);  /* center horizontally + vertically */
+  transform: translate(-50%, -50%);
   z-index: 2;
-  overflow: visible;                  /* so arrows can hang outside */
 }
 
 /*
@@ -114,13 +113,13 @@ body {
 /* Controls spacing between the two arrow buttons */
 .vertical-arrows{
   position: absolute;
-  top: 50%;
+  top: 45%;
   left: calc(50% + (var(--book-w) / 2) + var(--arrow-gap));
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  gap: 35px; /* adjust spacing between buttons here */
-  z-index: 3;
+  gap: 35px;
+  z-index: 4; /* above books */
 }
 
 /* Reset + base look for the arrow buttons */
@@ -203,4 +202,45 @@ body {
     --gap: 40px;
   }
   .metadata{ display: none; } /* hide panel on smaller screens */
+}
+
+
+
+
+.book[aria-hidden] {
+  pointer-events: none;
+}
+
+/* Existing side books (half visible) remain unchanged */
+.left-book{
+  left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap));
+  z-index: 1;
+}
+.right-book{
+  left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap));
+  z-index: 1;
+}
+
+/* NEW: fully off-screen positions (left side) */
+/* One more step to the left than .left-book */
+.left-off-1{
+  left: calc(50% - (var(--book-w) * 2.5) - (var(--side-gap) * 2));
+  z-index: 0;
+}
+/* Two more steps to the left than .left-book */
+.left-off-2{
+  left: calc(50% - (var(--book-w) * 3.5) - (var(--side-gap) * 3));
+  z-index: 0;
+}
+
+/* NEW: fully off-screen positions (right side) */
+/* One more step to the right than .right-book */
+.right-off-1{
+  left: calc(50% + (var(--book-w) * 1.5) + (var(--side-gap) * 2));
+  z-index: 0;
+}
+/* Two more steps to the right than .right-book */
+.right-off-2{
+  left: calc(50% + (var(--book-w) * 2.5) + (var(--side-gap) * 3));
+  z-index: 0;
 }
