@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import "./Home.css"
 import { sampleBooks } from "../booksData"
 
@@ -21,52 +21,73 @@ export default function Home() {
   const [current, setCurrent] = useState(0)
 
   const count = books.length
+  const center = count ? books[current] : null
+  const mod = (x: number) => (count ? (x % count + count) % count : 0)
+
+  // arrows (top = next, bottom = prev)
   const next = () => setCurrent((c) => (c + 1) % count)
   const prev = () => setCurrent((c) => (c - 1 + count) % count)
 
+  // keyboard support
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-  // Make keys work even when buttons/links inside the region are focused
-  switch (e.key) {
-    case "ArrowRight":
-    case "d":
-    case "D":
-      e.preventDefault()
-      next()
-      break
-    case "ArrowLeft":
-    case "a":
-    case "A":
-      e.preventDefault()
-      prev()
-      break
-    case "PageDown":
-      e.preventDefault()
-      next()
-      break
-    case "PageUp":
-      e.preventDefault()
-      prev()
-      break
-    case "End":
-      e.preventDefault()
-      if (count) setCurrent(count - 1)
-      break
-    case "Home":
-      e.preventDefault()
-      if (count) setCurrent(0)
-      break
-    case " ":
-      // Space = next, Shift+Space = previous (mirrors browser scrolling behavior)
-      e.preventDefault()
-      e.shiftKey ? prev() : next()
-      break
+    switch (e.key) {
+      case "ArrowRight":
+      case "d":
+      case "D":
+      case "PageDown":
+        e.preventDefault()
+        next()
+        break
+      case "ArrowLeft":
+      case "a":
+      case "A":
+      case "PageUp":
+        e.preventDefault()
+        prev()
+        break
+      case "Home":
+        e.preventDefault()
+        if (count) setCurrent(0)
+        break
+      case "End":
+        e.preventDefault()
+        if (count) setCurrent(count - 1)
+        break
+      case " ":
+        e.preventDefault()
+        e.shiftKey ? prev() : next()
+        break
+    }
   }
-}
 
-  const center = books[current] ?? null
+  // drag/swipe support
+  const [dragX, setDragX] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragActiveRef = useRef(false)
+  const dragStartXRef = useRef(0)
 
-  // helper to wrap indexes
-  const mod = (x: number) => (count ? (x % count + count) % count : 0)
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
+    dragActiveRef.current = true
+    setIsDragging(true)
+    dragStartXRef.current = e.clientX
+  }
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!dragActiveRef.current) return
+    const dx = e.clientX - dragStartXRef.current
+    setDragX(dx)
+  }
+  function endDrag() {
+    if (!dragActiveRef.current) return
+    dragActiveRef.current = false
+    const dx = dragX
+    setIsDragging(false)
+    setDragX(0)
+    const THRESH = 60
+    if (Math.abs(dx) > THRESH) {
+      dx < 0 ? next() : prev()
+    }
+  }
 
   return (
     <div className="app">
@@ -83,7 +104,14 @@ export default function Home() {
       </header>
 
       {/* Stage */}
-      <main className="carousel" role="region" aria-label="Book carousel" tabIndex={0} onKeyDown={handleKeyDown} aria-roledescription="carousel">
+      <main
+        className="carousel"
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="Book carousel"
+        tabIndex={0}
+        onKeyDownCapture={handleKeyDown}
+      >
         {/* Metadata (fixed, left of center) */}
         <div className="metadata">
           <div className="user-icon" aria-hidden>👤</div>
@@ -101,41 +129,51 @@ export default function Home() {
           </div>
         </div>
 
-        {/* --- CARDS (CENTER + SIDE PEEKS) --- */}
-        {count > 0 && (() => {
-          const order = [
-            { cls: "book left-off-1",  idx: mod(current - 2) },
-            { cls: "book left-book",   idx: mod(current - 1) },
-            { cls: "book main-book",   idx: mod(current + 0) },
-            { cls: "book right-book",  idx: mod(current + 1) },
-            { cls: "book right-off-1", idx: mod(current + 2) },
-          ]
-
-          return order.map(({ cls, idx }) => {
-            const b = books[idx]
-            const bg = b.coverUrl ? `url("${b.coverUrl}") center/cover no-repeat` : undefined
-            return (
-              <div key={b.id} className={cls} aria-hidden={cls !== "book main-book"}>
-                <div
-                  className="book-placeholder"
-                  style={{ background: bg }}
-                  role="img"
-                  aria-label={`${b.title} by ${b.author ?? "Unknown"}`}
-                >
-                  {!b.coverUrl ? b.title : null}
+        {/* Drag layer + cards */}
+        <div
+          className={`drag-layer${isDragging ? " dragging" : ""}`}
+          style={{ transform: `translateX(${dragX}px)` }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onPointerLeave={endDrag}
+        >
+          {count > 0 && (() => {
+            const order = [
+              { cls: "book left-off-1",  idx: mod(current - 2) },
+              { cls: "book left-book",   idx: mod(current - 1) },
+              { cls: "book main-book",   idx: mod(current + 0) },
+              { cls: "book right-book",  idx: mod(current + 1) },
+              { cls: "book right-off-1", idx: mod(current + 2) },
+            ]
+            return order.map(({ cls, idx }) => {
+              const b = books[idx]
+              const bg = b.coverUrl ? `url("${b.coverUrl}") center/cover no-repeat` : undefined
+              return (
+                <div key={b.id} className={cls} aria-hidden={cls !== "book main-book"}>
+                  <div
+                    className="book-placeholder"
+                    style={{ background: bg }}
+                    role="img"
+                    aria-label={`${b.title} by ${b.author ?? "Unknown"}`}
+                  >
+                    {!b.coverUrl ? b.title : null}
+                  </div>
                 </div>
-              </div>
-            )
-          })
-        })()}
+              )
+            })
+          })()}
+        </div>
 
-        {/* Arrows (fixed; do not move with slides) */}
+        {/* Arrows (top = next, bottom = prev) */}
         <div className="vertical-arrows">
           <button
             type="button"
             className="arrow"
             aria-label="Next book"
-            title="Previous"
+            aria-keyshortcuts="ArrowRight Space"
+            title="Next"
             onClick={next}
           >
             ›
@@ -144,7 +182,8 @@ export default function Home() {
             type="button"
             className="arrow"
             aria-label="Previous book"
-            title="Next"
+            aria-keyshortcuts="ArrowLeft Shift+Space"
+            title="Previous"
             onClick={prev}
           >
             ‹

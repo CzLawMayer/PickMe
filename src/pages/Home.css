@@ -276,3 +276,37 @@ body {
   outline-offset: 6px;
   border-radius: 10px;
 }
+
+
+.drag-layer {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y;      /* allow vertical page scroll; we handle horizontal */
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+  z-index: 2;
+}
+
+/* While dragging: remove card transitions for a direct follow feel */
+.dragging { cursor: grabbing; }
+.dragging .book {
+  transition: none !important;
+}
+
+
+
+.drag-layer {
+  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
+}
+
+/* While dragging: no transition, direct follow */
+.drag-layer.dragging {
+  transition: none !important;
+}
+
+/* Optional: a tad faster snap-back (only when animating back to 0) */
+.drag-layer.animating {
+  /* same timing is fine; tweak if you want snappier or slower feel */
+  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
+}
