@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
 /* ---------- Reset & theme ---------- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -5,9 +8,6 @@
   /* Book height scales with viewport; width follows the aspect (~0.7) */
   --book-h: clamp(520px, 70vmin, 660px);
   --book-w: calc(var(--book-h) * 0.7);
-
-  /* Push side books outward relative to book size */
-  --side-gap: calc(var(--book-w) * 1.1);
 
   /* Spacing for meta/arrow relative to book size */
   --meta-gap: clamp(60px, 2.0vmin, 40px);
@@ -23,14 +23,13 @@
   --book-offset: 45%; /* smaller than 50% = higher on the page */
 }
 
-
 html, body { height: 100%; }
 
 body {
   background: var(--bg);
   color: var(--fg);
   font-family: Arial, Helvetica, sans-serif;
-  overflow: hidden; /* <- REMOVE this line */
+  /* don't hide overflow here; Embla viewport handles it */
 }
 
 .app {
@@ -60,69 +59,18 @@ body {
   min-height: calc(var(--book-h) + 120px);
 }
 
-
-/* All books share the exact same size */
-.book{
-  position: absolute;
-  top: var(--book-offset);           /* 45% by default */
-  transform: translateY(-50%);
-  width: var(--book-w);
-  height: var(--book-h);
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 6px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.45);
-  overflow: hidden;
-}
-
-.book-placeholder{
-  width: 100%;
-  height: 100%;
-  background: #2d2d2d; /* neutral block; replace with a cover later */
-  display: grid;
-  place-items: center;
-  font-size: 14px;
-  letter-spacing: 2px;
-}
-
-/* Center book: perfectly centered on the page */
-.main-book{
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-}
-
-/*
-  Side books:
-  - Positioned relative to the center book.
-  - Same width/height as the center one.
-  - Only half visible because the viewport/body is overflow:hidden.
-  Math:
-    Left  = center - 1.5*book width - gap
-    Right = center + 0.5*book width + gap
-*/
-.left-book{
-  left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap));
-  z-index: 1;
-}
-.right-book{
-  left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap));
-  z-index: 1;
-}
-
-
-/* Controls spacing between the two arrow buttons */
+/* ---------- Arrows (fixed to the right of center) ---------- */
 .vertical-arrows{
   position: absolute;
   top: 45%;
-  left: calc(50% + (var(--book-w) / 2) + var(--arrow-gap));
+  left: calc(50% + (var(--book-w) / 1.75) + var(--arrow-gap));
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   gap: 35px;
-  z-index: 4; /* above books */
+  z-index: 4;
 }
 
-/* Reset + base look for the arrow buttons */
 .arrow{
   appearance: none;
   -webkit-appearance: none;
@@ -141,24 +89,9 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,.35);
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
-
-.arrow:hover{
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0,0,0,.4);
-}
-
-.arrow:active{
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0,0,0,.35);
-}
-
-.arrow:focus-visible{
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-  /* Optional: add a subtle focus ring background */
-  background: #262626;
-}
-
+.arrow:hover{ transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.4); }
+.arrow:active{ transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.arrow:focus-visible{ outline: 2px solid #fff; outline-offset: 2px; background: #262626; }
 
 /* ---------- Metadata panel (to the left of center) ---------- */
 .metadata{
@@ -170,7 +103,6 @@ body {
   z-index: 3;
   display: block;
 }
-
 
 .user-icon{ font-size: 28px; margin-bottom: 8px; }
 .username{ font-weight: bold; margin: 4px 0 12px; }
@@ -185,12 +117,50 @@ body {
 
 .tags span{ display: block; margin: 6px 0; }
 
-/* ---------- Responsive tweaks (optional) ---------- */
+/* ---------- Embla helpers ---------- */
+.embla-container {
+  position: relative;
+  overflow: hidden; /* viewport clipping */
+}
+
+/* Each slide: fixed width equals the book width so the center stays centered */
+:root {
+  /* nothing else needed here for Embla track; spacing is done via Tailwind -ml/pl */
+}
+
+/* The book card inside a slide */
+.main-book-like {
+  width: var(--book-w);     /* book is narrower than the slide */
+  height: var(--book-h);
+  position: relative;
+  top: var(--book-offset);
+  transform: translateY(-50%);
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.45);
+  overflow: hidden;
+  z-index: 2;
+}
+
+
+
+.embla-container { position: relative; overflow: hidden; }
+
+
+.book-placeholder{
+  width: 100%;
+  height: 100%;
+  background: #2d2d2d;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+/* ---------- Responsive tweaks ---------- */
 @media (max-width: 1250px){
   :root{
     --book-w: 380px;
     --book-h: 540px;
-    --gap: 52px;
     --meta-w: 200px;
   }
 }
@@ -199,48 +169,110 @@ body {
   :root{
     --book-w: 320px;
     --book-h: 460px;
-    --gap: 40px;
   }
-  .metadata{ display: none; } /* hide panel on smaller screens */
+  .metadata{ display: none; }
+}
+
+:root{
+  /* min 16px, scales with viewport, max 64px */
+  --gutter: clamp(100px, 12vmin, 140px);
+
+  /* (optional) keep arrows/meta spacing feeling right as gutter changes */
+  --arrow-gap: calc(var(--gutter) + 12px);
+  --meta-gap:  calc(var(--gutter) + 12px);
+}
+
+@media (max-width: 1000px){
+  /* slightly tighter on small screens */
+  :root{
+    --gutter: clamp(12px, 5vmin, 28px);
+  }
 }
 
 
 
 
-.book[aria-hidden] {
-  pointer-events: none;
+
+
+
+
+
+
+
+:root{
+  /* sizes already OK in your snippet */
+  --book-h: clamp(520px, 70vmin, 660px);
+  --book-w: calc(var(--book-h) * 0.7);
+
+  /* Put side books at the edges (≈half visible).
+     clamp() keeps it non-negative on tiny screens. */
+  --side-gap: clamp(0px, calc(50vw - var(--book-w)), 100vw);
+
+  --meta-gap: clamp(60px, 2.0vmin, 40px);
+  --arrow-gap: clamp(30px, 50vmin, 32px);
+  --meta-w: clamp(200px, 70vmin, 260px);
+
+  --bg: #111;
+  --fg: #fff;
+  --book-offset: 45%;
 }
 
-/* Existing side books (half visible) remain unchanged */
-.left-book{
-  left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap));
+.carousel{
+  position: relative;
+  flex: 1;
+  min-height: calc(var(--book-h) + 120px);
+  overflow: hidden; /* hide halves off-screen */
+}
+
+/* Cards */
+.book{
+  position: absolute;
+  top: var(--book-offset);
+  transform: translateY(-50%);
+  width: var(--book-w);
+  height: var(--book-h);
+  display: grid; place-items: center;
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.45);
+  overflow: hidden;
   z-index: 1;
-}
-.right-book{
-  left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap));
-  z-index: 1;
+  transition:
+    left 700ms cubic-bezier(.2,.7,.1,1),
+    transform 700ms cubic-bezier(.2,.7,.1,1),
+    box-shadow 200ms ease;
 }
 
-/* NEW: fully off-screen positions (left side) */
-/* One more step to the left than .left-book */
-.left-off-1{
+.main-book{ left: 50%; transform: translate(-50%, -50%); z-index: 2; }
+.left-book { left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap)); }
+.right-book{ left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap)); }
+
+.left-off-1 {
   left: calc(50% - (var(--book-w) * 2.5) - (var(--side-gap) * 2));
-  z-index: 0;
+  opacity: .001; pointer-events: none;
 }
-/* Two more steps to the left than .left-book */
-.left-off-2{
-  left: calc(50% - (var(--book-w) * 3.5) - (var(--side-gap) * 3));
-  z-index: 0;
-}
-
-/* NEW: fully off-screen positions (right side) */
-/* One more step to the right than .right-book */
 .right-off-1{
   left: calc(50% + (var(--book-w) * 1.5) + (var(--side-gap) * 2));
-  z-index: 0;
+  opacity: .001; pointer-events: none;
 }
-/* Two more steps to the right than .right-book */
-.right-off-2{
-  left: calc(50% + (var(--book-w) * 2.5) + (var(--side-gap) * 3));
-  z-index: 0;
+
+/* Optional: a neutral face for missing covers */
+.book-placeholder{
+  width: 100%; height: 100%;
+  background: #2d2d2d;
+  display: grid; place-items: center;
+  font-size: 14px; letter-spacing: 2px;
+}
+
+
+.main-book {
+  transform: translate(-50%, -50%) scale(1.05);
+  z-index: 2;
+}
+
+
+
+.carousel:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 6px;
+  border-radius: 10px;
 }

@@ -1,21 +1,72 @@
-// src/pages/Home.tsx (or .jsx)
-import { useEffect, useRef } from 'react';
-import './Home.css';
-import { initCarousel } from '../carousel';
-import { sampleBooks } from '../booksData';
+import { useState } from "react"
+import "./Home.css"
+import { sampleBooks } from "../booksData"
+
+type Book = {
+  id: string
+  title: string
+  author?: string
+  user?: string
+  coverUrl?: string
+  tags?: string[]
+  rating?: string
+  likes?: number
+  bookmarks?: number
+  currentChapter?: number
+  totalChapters?: number
+}
 
 export default function Home() {
-  const carouselRef = useRef<{ next: () => void; prev: () => void } | null>(null);
+  const [books] = useState<Book[]>(sampleBooks)
+  const [current, setCurrent] = useState(0)
 
-  useEffect(() => {
-    // In the future, replace `sampleBooks` with the array you fetch from your backend.
-    const api = initCarousel(sampleBooks);
-    carouselRef.current = api;
-    return () => {
-      // no cleanup needed; controller is headless
-      carouselRef.current = null;
-    };
-  }, []);
+  const count = books.length
+  const next = () => setCurrent((c) => (c + 1) % count)
+  const prev = () => setCurrent((c) => (c - 1 + count) % count)
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+  // Make keys work even when buttons/links inside the region are focused
+  switch (e.key) {
+    case "ArrowRight":
+    case "d":
+    case "D":
+      e.preventDefault()
+      next()
+      break
+    case "ArrowLeft":
+    case "a":
+    case "A":
+      e.preventDefault()
+      prev()
+      break
+    case "PageDown":
+      e.preventDefault()
+      next()
+      break
+    case "PageUp":
+      e.preventDefault()
+      prev()
+      break
+    case "End":
+      e.preventDefault()
+      if (count) setCurrent(count - 1)
+      break
+    case "Home":
+      e.preventDefault()
+      if (count) setCurrent(0)
+      break
+    case " ":
+      // Space = next, Shift+Space = previous (mirrors browser scrolling behavior)
+      e.preventDefault()
+      e.shiftKey ? prev() : next()
+      break
+  }
+}
+
+  const center = books[current] ?? null
+
+  // helper to wrap indexes
+  const mod = (x: number) => (count ? (x % count + count) % count : 0)
 
   return (
     <div className="app">
@@ -31,78 +82,75 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main stage */}
-      <main className="carousel">
-        {/* EXTRA: far-left books (completely off-screen) */}
-        <div className="book left-off-2" aria-hidden>
-          <div className="book-placeholder" id="left-off-2">BOOK</div>
-        </div>
-        <div className="book left-off-1" aria-hidden>
-          <div className="book-placeholder" id="left-off-1">BOOK</div>
-        </div>
-
-        {/* Left book */}
-        <div className="book left-book">
-          <div className="book-placeholder" id="left-book">BOOK</div>
-        </div>
-
-        {/* Metadata */}
+      {/* Stage */}
+      <main className="carousel" role="region" aria-label="Book carousel" tabIndex={0} onKeyDown={handleKeyDown} aria-roledescription="carousel">
+        {/* Metadata (fixed, left of center) */}
         <div className="metadata">
           <div className="user-icon" aria-hidden>👤</div>
-          <p className="username" id="meta-username">Names Brooklyn</p>
+          <p className="username">{center?.user ?? "Unknown User"}</p>
           <div className="icons">
-            <div id="meta-likes">♡ 423</div>
-            <div id="meta-rating">★ 4.5/5</div>
-            <div id="meta-bookmarks">🔖 76</div>
+            <div>♡ {center?.likes ?? 0}</div>
+            <div>★ {center?.rating ?? "—"}</div>
+            <div>🔖 {center?.bookmarks ?? 0}</div>
           </div>
-          <p className="chapters" id="meta-chapters">0/17 Chapters</p>
-          <div className="tags" id="meta-tags">
-            <span>Sci-Fi</span>
-            <span>Young Adult</span>
-            <span>Drama</span>
+          <p className="chapters">
+            {(center?.currentChapter ?? 0)}/{center?.totalChapters ?? 0} Chapters
+          </p>
+          <div className="tags">
+            {(center?.tags ?? []).map((t) => <span key={t}>{t}</span>)}
           </div>
         </div>
 
-        {/* Center book */}
-        <div className="book main-book">
-          <div className="book-placeholder" id="center-book">MAIN BOOK</div>
-        </div>
+        {/* --- CARDS (CENTER + SIDE PEEKS) --- */}
+        {count > 0 && (() => {
+          const order = [
+            { cls: "book left-off-1",  idx: mod(current - 2) },
+            { cls: "book left-book",   idx: mod(current - 1) },
+            { cls: "book main-book",   idx: mod(current + 0) },
+            { cls: "book right-book",  idx: mod(current + 1) },
+            { cls: "book right-off-1", idx: mod(current + 2) },
+          ]
 
-        {/* Right book */}
-        <div className="book right-book">
-          <div className="book-placeholder" id="right-book">BOOK</div>
-        </div>
+          return order.map(({ cls, idx }) => {
+            const b = books[idx]
+            const bg = b.coverUrl ? `url("${b.coverUrl}") center/cover no-repeat` : undefined
+            return (
+              <div key={b.id} className={cls} aria-hidden={cls !== "book main-book"}>
+                <div
+                  className="book-placeholder"
+                  style={{ background: bg }}
+                  role="img"
+                  aria-label={`${b.title} by ${b.author ?? "Unknown"}`}
+                >
+                  {!b.coverUrl ? b.title : null}
+                </div>
+              </div>
+            )
+          })
+        })()}
 
-        {/* EXTRA: far-right books (completely off-screen) */}
-        <div className="book right-off-1" aria-hidden>
-          <div className="book-placeholder" id="right-off-1">BOOK</div>
-        </div>
-        <div className="book right-off-2" aria-hidden>
-          <div className="book-placeholder" id="right-off-2">BOOK</div>
-        </div>
-
-        {/* Arrows independent of books */}
+        {/* Arrows (fixed; do not move with slides) */}
         <div className="vertical-arrows">
           <button
             type="button"
             className="arrow"
-            aria-label="Previous book"
+            aria-label="Next book"
             title="Previous"
-            onClick={() => carouselRef.current?.prev()}
+            onClick={next}
           >
             ›
           </button>
           <button
             type="button"
             className="arrow"
-            aria-label="Next book"
+            aria-label="Previous book"
             title="Next"
-            onClick={() => carouselRef.current?.next()}
+            onClick={prev}
           >
             ‹
           </button>
         </div>
       </main>
     </div>
-  );
+  )
 }
