@@ -1,35 +1,40 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* ---------- Reset & theme ---------- */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root{
-  /* Book height scales with viewport; width follows the aspect (~0.7) */
+/* ───────────────────────────
+   Theme & CSS variables
+   ─────────────────────────── */
+:root {
+  /* Book sizing (responsive) */
   --book-h: clamp(520px, 70vmin, 660px);
   --book-w: calc(var(--book-h) * 0.7);
 
-  /* Spacing for meta/arrow relative to book size */
-  --meta-gap: clamp(60px, 2.0vmin, 40px);
-  --arrow-gap: clamp(30px, 50vmin, 32px);
+  /* Keep side books ~half visible at screen edges */
+  --side-gap: clamp(0px, calc(50vw - var(--book-w)), 100vw);
 
-  /* Metadata width also scales a bit with screen */
+  /* Spacing for metadata and arrows */
+  --meta-gap: clamp(60px, 2vmin, 40px);
+  --arrow-gap: clamp(30px, 5vmin, 32px);
+
+  /* Metadata panel width */
   --meta-w: clamp(200px, 70vmin, 260px);
 
+  /* Colors */
   --bg: #111;
   --fg: #fff;
 
-  /* Optional: vertical offset so books sit a bit closer to header */
-  --book-offset: 45%; /* smaller than 50% = higher on the page */
+  /* Vertical placement of books (closer to header) */
+  --book-offset: 45%;
 }
 
 html, body { height: 100%; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: var(--bg);
   color: var(--fg);
   font-family: Arial, Helvetica, sans-serif;
-  /* don't hide overflow here; Embla viewport handles it */
 }
 
 .app {
@@ -38,7 +43,9 @@ body {
   height: 100vh;
 }
 
-/* ---------- Header (top bar) ---------- */
+/* ───────────────────────────
+   Header
+   ─────────────────────────── */
 .header {
   display: flex;
   justify-content: space-between;
@@ -52,18 +59,57 @@ body {
 .header-icons { display: flex; gap: 16px; }
 .icon { font-size: 22px; }
 
-/* ---------- Carousel stage ---------- */
-.carousel{
+/* ───────────────────────────
+   Carousel stage
+   ─────────────────────────── */
+.carousel {
   position: relative;
   flex: 1;
   min-height: calc(var(--book-h) + 120px);
+  overflow: hidden; /* clip half-visible neighbors */
 }
 
-/* ---------- Arrows (fixed to the right of center) ---------- */
-.vertical-arrows{
+/* Focus ring (keyboard): inset so it isn't clipped by overflow */
+.carousel:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.9);
+  border-radius: 10px;
+}
+
+/* ───────────────────────────
+   Drag layer (handles swipe/drag)
+   ─────────────────────────── */
+.drag-layer {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y; /* allow vertical page scroll; we handle horizontal */
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+  z-index: 2; /* below arrows (z=4), above metadata (z=3) */
+
+  /* Smooth easing when snapping back or sliding off-screen */
+  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
+}
+
+/* While dragging: follow pointer directly (no easing) */
+.drag-layer.dragging {
+  transition: none !important;
+  cursor: grabbing;
+}
+
+/* Explicit class used during animated phases (same timing as base) */
+.drag-layer.animating {
+  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
+}
+
+/* ───────────────────────────
+   Arrow controls (fixed, right of center)
+   ─────────────────────────── */
+.vertical-arrows {
   position: absolute;
   top: 45%;
-  left: calc(50% + (var(--book-w) / 1.75) + var(--arrow-gap));
+  left: calc(50% + (var(--book-w) / 2) + var(--arrow-gap));
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
@@ -71,9 +117,8 @@ body {
   z-index: 4;
 }
 
-.arrow{
+.arrow {
   appearance: none;
-  -webkit-appearance: none;
   border: none;
   background: #1f1f1f;
   color: #fff;
@@ -89,12 +134,14 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,.35);
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
-.arrow:hover{ transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.4); }
-.arrow:active{ transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
-.arrow:focus-visible{ outline: 2px solid #fff; outline-offset: 2px; background: #262626; }
+.arrow:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.4); }
+.arrow:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.arrow:focus-visible { outline: 2px solid #fff; outline-offset: 2px; background: #262626; }
 
-/* ---------- Metadata panel (to the left of center) ---------- */
-.metadata{
+/* ───────────────────────────
+   Metadata panel (fixed, left of center)
+   ─────────────────────────── */
+.metadata {
   position: absolute;
   top: 45%;
   transform: translateY(-50%);
@@ -104,49 +151,44 @@ body {
   display: block;
 }
 
-.user-icon{ font-size: 28px; margin-bottom: 8px; }
-.username{ font-weight: bold; margin: 4px 0 12px; }
-.icons div{ margin: 6px 0; }
+.user-icon { font-size: 28px; margin-bottom: 8px; }
+.username { font-weight: bold; margin: 4px 0 12px; }
+.icons div { margin: 6px 0; }
 
-.chapters{
+.chapters {
   border-top: 1px solid #fff;
   margin-top: 10px;
   padding-top: 10px;
   max-width: 180px;
 }
 
-.tags span{ display: block; margin: 6px 0; }
+.tags span { display: block; margin: 6px 0; }
 
-/* ---------- Embla helpers ---------- */
-.embla-container {
-  position: relative;
-  overflow: hidden; /* viewport clipping */
-}
-
-/* Each slide: fixed width equals the book width so the center stays centered */
-:root {
-  /* nothing else needed here for Embla track; spacing is done via Tailwind -ml/pl */
-}
-
-/* The book card inside a slide */
-.main-book-like {
-  width: var(--book-w);     /* book is narrower than the slide */
-  height: var(--book-h);
-  position: relative;
+/* ───────────────────────────
+   Book cards (center + side peeks)
+   ─────────────────────────── */
+.book {
+  position: absolute;
   top: var(--book-offset);
   transform: translateY(-50%);
+  width: var(--book-w);
+  height: var(--book-h);
+  display: grid;
+  place-items: center;
   border-radius: 6px;
   box-shadow: 0 10px 24px rgba(0,0,0,.45);
   overflow: hidden;
-  z-index: 2;
+  z-index: 1;
+
+  /* Smooth card motion when index changes */
+  transition:
+    left 500ms cubic-bezier(.25, .8, .25, 1),
+    transform 500ms cubic-bezier(.25, .8, .25, 1),
+    box-shadow 300ms ease;
 }
 
-
-
-.embla-container { position: relative; overflow: hidden; }
-
-
-.book-placeholder{
+/* Neutral face for missing covers / background images */
+.book-placeholder {
   width: 100%;
   height: 100%;
   background: #2d2d2d;
@@ -156,157 +198,35 @@ body {
   letter-spacing: 2px;
 }
 
-/* ---------- Responsive tweaks ---------- */
-@media (max-width: 1250px){
-  :root{
+/* Positions */
+.main-book  { left: 50%; transform: translate(-50%, -50%) scale(1.03); z-index: 2; }
+.left-book  { left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap)); }
+.right-book { left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap)); }
+
+/* Off-screen buffers (keep DOM tiny, smooth in/out) */
+.left-off-1  { left: calc(50% - (var(--book-w) * 2.5) - (var(--side-gap) * 2)); opacity: .001; pointer-events: none; }
+.right-off-1 { left: calc(50% + (var(--book-w) * 1.5) + (var(--side-gap) * 2)); opacity: .001; pointer-events: none; }
+
+/* While dragging, reduce center pop so it feels anchored to the finger */
+.drag-layer.dragging .book.main-book {
+  transform: translate(-50%, -50%) scale(1.00);
+}
+
+/* ───────────────────────────
+   Responsive tweaks
+   ─────────────────────────── */
+@media (max-width: 1250px) {
+  :root {
     --book-w: 380px;
     --book-h: 540px;
     --meta-w: 200px;
   }
 }
 
-@media (max-width: 1000px){
-  :root{
+@media (max-width: 1000px) {
+  :root {
     --book-w: 320px;
     --book-h: 460px;
   }
-  .metadata{ display: none; }
-}
-
-:root{
-  /* min 16px, scales with viewport, max 64px */
-  --gutter: clamp(100px, 12vmin, 140px);
-
-  /* (optional) keep arrows/meta spacing feeling right as gutter changes */
-  --arrow-gap: calc(var(--gutter) + 12px);
-  --meta-gap:  calc(var(--gutter) + 12px);
-}
-
-@media (max-width: 1000px){
-  /* slightly tighter on small screens */
-  :root{
-    --gutter: clamp(12px, 5vmin, 28px);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-:root{
-  /* sizes already OK in your snippet */
-  --book-h: clamp(520px, 70vmin, 660px);
-  --book-w: calc(var(--book-h) * 0.7);
-
-  /* Put side books at the edges (≈half visible).
-     clamp() keeps it non-negative on tiny screens. */
-  --side-gap: clamp(0px, calc(50vw - var(--book-w)), 100vw);
-
-  --meta-gap: clamp(60px, 2.0vmin, 40px);
-  --arrow-gap: clamp(30px, 50vmin, 32px);
-  --meta-w: clamp(200px, 70vmin, 260px);
-
-  --bg: #111;
-  --fg: #fff;
-  --book-offset: 45%;
-}
-
-.carousel{
-  position: relative;
-  flex: 1;
-  min-height: calc(var(--book-h) + 120px);
-  overflow: hidden; /* hide halves off-screen */
-}
-
-/* Cards */
-.book{
-  position: absolute;
-  top: var(--book-offset);
-  transform: translateY(-50%);
-  width: var(--book-w);
-  height: var(--book-h);
-  display: grid; place-items: center;
-  border-radius: 6px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.45);
-  overflow: hidden;
-  z-index: 1;
-  transition:
-    left 700ms cubic-bezier(.2,.7,.1,1),
-    transform 700ms cubic-bezier(.2,.7,.1,1),
-    box-shadow 200ms ease;
-}
-
-.main-book{ left: 50%; transform: translate(-50%, -50%); z-index: 2; }
-.left-book { left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap)); }
-.right-book{ left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap)); }
-
-.left-off-1 {
-  left: calc(50% - (var(--book-w) * 2.5) - (var(--side-gap) * 2));
-  opacity: .001; pointer-events: none;
-}
-.right-off-1{
-  left: calc(50% + (var(--book-w) * 1.5) + (var(--side-gap) * 2));
-  opacity: .001; pointer-events: none;
-}
-
-/* Optional: a neutral face for missing covers */
-.book-placeholder{
-  width: 100%; height: 100%;
-  background: #2d2d2d;
-  display: grid; place-items: center;
-  font-size: 14px; letter-spacing: 2px;
-}
-
-
-.main-book {
-  transform: translate(-50%, -50%) scale(1.05);
-  z-index: 2;
-}
-
-
-
-.carousel:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 6px;
-  border-radius: 10px;
-}
-
-
-.drag-layer {
-  position: absolute;
-  inset: 0;
-  touch-action: pan-y;      /* allow vertical page scroll; we handle horizontal */
-  cursor: grab;
-  user-select: none;
-  will-change: transform;
-  z-index: 2;
-}
-
-/* While dragging: remove card transitions for a direct follow feel */
-.dragging { cursor: grabbing; }
-.dragging .book {
-  transition: none !important;
-}
-
-
-
-.drag-layer {
-  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
-}
-
-/* While dragging: no transition, direct follow */
-.drag-layer.dragging {
-  transition: none !important;
-}
-
-/* Optional: a tad faster snap-back (only when animating back to 0) */
-.drag-layer.animating {
-  /* same timing is fine; tweak if you want snappier or slower feel */
-  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
+  .metadata { display: none; } /* hide metadata on smaller screens */
 }
