@@ -492,3 +492,231 @@ body {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
+
+
+
+/* ───────── Slide-out side menu ───────── */
+.menu-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+  z-index: 90; /* below panel */
+}
+.menu-overlay.is-open{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.side-menu{
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(360px, 86vw);
+  background: #151515;
+  color: #fff;
+  box-shadow: -10px 0 30px rgba(0,0,0,.55);
+  transform: translateX(100%);
+  transition: transform 240ms cubic-bezier(.22,.61,.36,1);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255,255,255,.08);
+}
+.side-menu.is-open{ transform: translateX(0); }
+
+/* Header row */
+.menu-header{
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.menu-title{ font-size: 26px; font-weight: 800; letter-spacing: .3px; }
+.menu-emoji{ font-size: 26px; display: grid; place-items: center; }
+.menu-close{
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  justify-self: end;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Items list */
+.menu-list{
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+.menu-item{
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: #1b1b1b;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-item:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+  background: #1f1f1f;
+}
+.menu-item:active{ transform: translateY(0); }
+
+.menu-text{ font-size: 22px; font-weight: 800; }
+.menu-item .menu-emoji{ font-size: 28px; }
+
+/* Colored accents (like your mock) */
+.item-profile  { border-left: 10px solid #ff8a00; }
+.item-library  { border-left: 10px solid #8b4bff; }
+.item-submit   { border-left: 10px solid #ff36a3; }
+.item-logout   { border-left: 10px solid #29a3ff; }
+
+/* Make the header menu icon clickable style-consistent */
+.icon-menu{
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-menu:focus-visible{
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+
+
+/* Keep header above overlay so the same button can close the menu */
+.header {
+  position: relative;
+  z-index: 200;
+}
+
+/* ───────── Slide-out menu base ───────── */
+.menu-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+  z-index: 190; /* below header, below panel */
+}
+.menu-overlay.is-open{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.side-menu{
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(360px, 86vw);
+  background: #151515;
+  color: #fff;
+  box-shadow: -10px 0 30px rgba(0,0,0,.55);
+  transform: translateX(100%);
+  transition: transform 240ms cubic-bezier(.22,.61,.36,1);
+  z-index: 195; /* overlay < panel < header (button stays clickable) */
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255,255,255,.08);
+}
+.side-menu.is-open{ transform: translateX(0); }
+
+/* Header row inside panel */
+.menu-header{
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  background: #111; /* dark bar like your screenshot */
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.menu-title{ font-size: 26px; font-weight: 800; letter-spacing: .3px; }
+
+/* three colored lines icon */
+.menu-burger {
+  display: grid;
+  gap: 4px;
+}
+.menu-burger i {
+  display: block;
+  width: 24px; height: 4px; border-radius: 3px;
+  background: #ff6b6b;
+}
+.menu-burger i:nth-child(2){ background:#7b61ff; }
+.menu-burger i:nth-child(3){ background:#28a9ff; }
+
+/* Items list */
+.menu-list{
+  display: grid;
+  gap: 0;          /* no gap so the colors touch like a stack */
+}
+
+/* Full-bleed color rows */
+.menu-item.fill{
+  border: none;
+  border-radius: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 16px;
+  font: inherit;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 100ms ease, filter 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-item.fill:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.menu-item.fill:active{ transform: translateY(0); }
+
+.menu-text{ font-size: 26px; font-weight: 900; letter-spacing: .2px; }
+.menu-item .menu-emoji{ font-size: 34px; display: grid; place-items: center; }
+
+/* Row colors (tune to your brand) */
+.menu-item.fill.profile { background:#f36b21; }  /* orange */
+.menu-item.fill.library { background:#e83e8c; }  /* magenta */
+.menu-item.fill.submit  { background:#7b1fa2; }  /* purple */
+.menu-item.fill.logout  { background:#1e88e5; }  /* blue */
+
+/* Header menu icon is a real button */
+.icon-menu{
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-menu:focus-visible{
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-radius: 6px;
+}

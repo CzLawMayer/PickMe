@@ -6,6 +6,8 @@ import LikeButton from "@/components/LikeButton"
 import StarButton from "@/components/StarButton"
 import SaveButton from "@/components/SaveButton"
 
+import SideMenu from "@/components/SideMenu"
+
 type Book = {
   id: string
   title: string
@@ -36,6 +38,8 @@ export default function Home() {
   const [savedById, setSavedById] = useState<Record<string, boolean>>({})
   const [starredById, setStarredById] = useState<Record<string, boolean>>({})
   const [userRatingById, setUserRatingById] = useState<Record<string, number>>({})
+  const [menuOpen, setMenuOpen] = useState(false)
+
 
   const centerId = center?.id ?? ""
 
@@ -170,7 +174,17 @@ export default function Home() {
         <div className="header-icons">
           <div className="icon" aria-label="write">✏️</div>
           <div className="icon" aria-label="search">🔍</div>
-          <div className="icon" aria-label="menu">☰</div>
+          <button
+            type="button"
+            className="icon icon-menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-haspopup="dialog"
+            aria-controls="side-menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(o => !o)}   // ← same spot toggles open/close
+          >
+            {menuOpen ? "☰" : "☰"}
+          </button>
         </div>
       </header>
 
@@ -297,6 +311,8 @@ export default function Home() {
           </button>
         </div>
       </main>
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   )
 }
+
