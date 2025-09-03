@@ -2,6 +2,11 @@ import { useRef, useState } from "react"
 import "./Home.css"
 import { sampleBooks } from "../booksData"
 
+// Reusable icon buttons (you said these files already exist)
+import LikeButton from "@/components/LikeButton"
+import StarButton from "@/components/StarButton"
+import SaveButton from "@/components/SaveButton"
+
 type Book = {
   id: string
   title: string
@@ -9,7 +14,7 @@ type Book = {
   user?: string
   coverUrl?: string
   tags?: string[]
-  rating?: string
+  rating?: string | number
   likes?: number
   bookmarks?: number
   currentChapter?: number
@@ -89,6 +94,12 @@ export default function Home() {
     }
   }
 
+  // helpers for metadata display
+  const ratingText =
+    center?.rating != null && center?.rating !== ""
+      ? `${center?.rating}/5`
+      : "—"
+
   return (
     <div className="app">
       {/* Top bar */}
@@ -114,19 +125,53 @@ export default function Home() {
       >
         {/* Metadata (fixed, left of center) */}
         <div className="metadata">
-          <div className="user-icon" aria-hidden>👤</div>
-          <p className="username">{center?.user ?? "Unknown User"}</p>
-          <div className="icons">
-            <div>♡ {center?.likes ?? 0}</div>
-            <div>★ {center?.rating ?? "—"}</div>
-            <div>🔖 {center?.bookmarks ?? 0}</div>
+          {/* Avatar + username */}
+          <div className="meta-header">
+            <div className="meta-avatar" aria-hidden>
+              {/* Inline outlined person-in-circle to match mock */}
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <p className="meta-username">{center?.user ?? "Unknown User"}</p>
           </div>
-          <p className="chapters">
+
+          <hr className="meta-hr" />
+
+          {/* Actions: Like / Star / Save (big outlined icons with counts) */}
+          <div className="meta-actions">
+            <LikeButton
+              count={center?.likes ?? 0}
+              active={false}
+              onToggle={() => {/* hook up later */}}
+            />
+            <StarButton
+              ratingText={ratingText}
+              active={false}
+              onToggle={() => {/* hook up later */}}
+            />
+            <SaveButton
+              count={center?.bookmarks ?? 0}
+              active={false}
+              onToggle={() => {/* hook up later */}}
+            />
+          </div>
+
+          <hr className="meta-hr" />
+
+          {/* Chapters */}
+          <p className="meta-chapters">
             {(center?.currentChapter ?? 0)}/{center?.totalChapters ?? 0} Chapters
           </p>
-          <div className="tags">
-            {(center?.tags ?? []).map((t) => <span key={t}>{t}</span>)}
-          </div>
+
+          <hr className="meta-hr" />
+
+          {/* Tags stacked */}
+          <ul className="meta-tags">
+            {(center?.tags ?? []).map((t) => <li key={t}>{t}</li>)}
+          </ul>
         </div>
 
         {/* Drag layer + cards */}

@@ -230,3 +230,663 @@ body {
   }
   .metadata { display: none; } /* hide metadata on smaller screens */
 }
+
+
+
+
+
+
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' var(--ms-fill, 0),
+    'wght' var(--ms-wght, 400),
+    'GRAD' 0,
+    'opsz' var(--ms-opsz, 48);
+}
+
+
+
+
+
+/* ───── Metadata layout ───── */
+.metadata {
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  width: var(--meta-w);
+  left: calc(50% - var(--book-w) - var(--meta-gap));
+  z-index: 3;
+  display: block;
+  color: var(--fg);
+}
+
+/* Header: avatar + name */
+.meta-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.meta-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 4px solid var(--fg);
+  display: grid;
+  place-items: center;
+}
+.meta-avatar .material-symbols-outlined {
+  /* Avatar glyph smaller inside the ring */
+  --ms-opsz: 32;
+  font-size: 34px;
+  line-height: 1;
+}
+.meta-username {
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: .2px;
+}
+
+/* Thin white dividers */
+.meta-hr {
+  border: none;
+  border-top: 2px solid rgba(255,255,255,.95);
+  margin: 14px 0 18px;
+}
+
+/* Actions row: 3 big outlined icons with counts under */
+.meta-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  align-items: start;
+  justify-items: center;
+  margin-bottom: 8px;
+}
+
+/* Icon button base */
+.meta-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Big outlined glyphs — match the mock (heart, star, bookmark) */
+.meta-icon-glyph {
+  --ms-opsz: 48;
+  --ms-wght: 200;   /* lighter stroke to resemble outline */
+  --ms-fill: 0;     /* outline by default */
+  font-size: 64px;  /* visual size in the mock */
+  line-height: 1;
+  display: inline-block;
+}
+
+/* Active (filled) state */
+.meta-icon-btn.is-active .meta-icon-glyph {
+  --ms-fill: 1;     /* fill when active */
+  --ms-wght: 400;
+}
+
+/* Hover/press affordance */
+.meta-icon-btn:hover .meta-icon-glyph {
+  filter: drop-shadow(0 0 0.5px rgba(255,255,255,.35));
+}
+.meta-icon-btn:active .meta-icon-glyph {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Counts under icons */
+.meta-icon-count {
+  font-size: 16px;
+  line-height: 1;
+  opacity: .95;
+}
+
+/* Chapters row */
+.meta-chapters {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  padding: 6px 0 10px;
+}
+
+/* Tags list (big, stacked) */
+.meta-tags {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.meta-tags li {
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+
+
+
+/* Material Symbols base (needed so the glyphs render instead of text) */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1em;          /* we size via CSS elsewhere; 1em keeps it scalable */
+  line-height: 1;
+  display: inline-block;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+
+  /* Variation axes (you can override via CSS variables) */
+  font-variation-settings:
+    'FILL' var(--ms-fill, 0),
+    'wght' var(--ms-wght, 400),
+    'GRAD' 0,
+    'opsz' var(--ms-opsz, 48);
+}
+
+
+
+
+/* ───────── Panel sizing & placement (fixed size, no jitter) ───────── */
+:root{
+  /* Overall fixed height for the metadata panel */
+  --meta-h: clamp(320px, 46vmin, 440px);
+
+  /* Fine-tune icon and text sizes to match the mock */
+  --meta-avatar-ring: 48px;   /* outer ring diameter */
+  --meta-avatar-glyph: 28px;  /* person glyph inside ring */
+  --meta-name-size: 14px;
+
+  --meta-glyph-size: 48px;    /* heart/star/bookmark size */
+  --meta-count-size: 14px;
+
+  --meta-divider: 1.5px;      /* thin lines like the screenshot */
+}
+
+.metadata{
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  left: calc(50% - var(--book-w) - var(--meta-gap));
+  width: var(--meta-w);
+
+  /* lock panel size so genres don’t push anything around */
+  height: var(--meta-h);
+  display: flex;
+  flex-direction: column;
+
+  color: var(--fg);
+  z-index: 3;
+}
+
+/* ───────── Header: avatar + name ───────── */
+.meta-header{
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 12px;
+  margin-bottom: 6px;
+}
+
+.meta-avatar{
+  width: var(--meta-avatar-ring);
+  height: var(--meta-avatar-ring);
+  border-radius: 999px;
+  border: 3px solid var(--fg);
+  display: grid;
+  place-items: center;
+}
+.meta-avatar svg{
+  width: var(--meta-avatar-glyph);
+  height: var(--meta-avatar-glyph);
+  display: block;
+}
+.meta-username{
+  font-weight: 800;
+  font-size: var(--meta-name-size);
+  line-height: 1.15;
+}
+
+/* thin, tight divider rhythm */
+.meta-hr{
+  border: none;
+  border-top: var(--meta-divider) solid rgba(255,255,255,.95);
+  margin: 10px 0 12px;
+}
+
+/* ───────── Actions row: 3 large outlined icons ───────── */
+.meta-actions{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-items: center;
+  align-items: start;
+  gap: 18px;
+  margin-bottom: 2px;
+}
+
+.meta-icon-btn{
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.meta-icon-glyph{
+  --ms-opsz: 48;
+  --ms-wght: 250;
+  --ms-fill: 0;
+  font-size: var(--meta-glyph-size);
+  line-height: 1;
+}
+.meta-icon-btn.is-active .meta-icon-glyph{
+  --ms-fill: 1;
+  --ms-wght: 400;
+}
+.meta-icon-btn:hover .meta-icon-glyph{ filter: drop-shadow(0 0 .4px rgba(255,255,255,.35)); }
+.meta-icon-btn:active .meta-icon-glyph{ transform: translateY(1px) scale(.98); }
+
+.meta-icon-count{
+  font-size: var(--meta-count-size);
+  line-height: 1;
+  opacity: .95;
+}
+
+/* ───────── Chapters row ───────── */
+.meta-chapters{
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  padding: 2px 0 6px;
+}
+
+/* ───────── Tags: scroll within fixed panel ─────────
+   We let only the tags area grow/scroll so the whole panel stays fixed. */
+.meta-tags{
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+
+  /* occupy the remaining space and scroll if needed */
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 4px; /* small gutter for scrollbars */
+}
+.meta-tags li{
+  font-size: 22px;
+  line-height: 1.25;
+  white-space: nowrap;        /* match mock’s single-line look */
+  text-overflow: ellipsis;    /* prevent super long tags from breaking layout */
+  overflow: hidden;
+}
+
+/* ───────── Keep panel tidy on small screens ───────── */
+@media (max-width: 1250px){
+  :root{
+    --meta-h: clamp(300px, 48vmin, 420px);
+    --meta-name-size: 18px;
+    --meta-glyph-size: 44px;
+    --meta-count-size: 13px;
+  }
+}
+@media (max-width: 1000px){
+  .metadata{ display: none; } /* your current behavior */
+}
+
+
+
+
+.meta-tags {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+
+  /* stays the only scrollable part of the panel */
+  flex: 1 1 auto;
+  overflow-y: auto;
+
+  /* keep stable width when the scrollbar appears */
+  scrollbar-gutter: stable both-edges;
+  padding-right: 4px;
+}
+
+.meta-tags li {
+  font-size: 22px;
+  line-height: 1.25;
+
+  /* allow natural wrapping for multi-word genres */
+  white-space: normal;
+  overflow: visible;
+  word-break: break-word;          /* handles super long single tokens */
+}
+
+
+
+/* Panel keeps a fixed height so layout never jumps */
+:root{
+  --meta-h: clamp(320px, 46vmin, 440px);
+}
+
+/* The panel is still fixed height */
+.metadata{
+  height: var(--meta-h);
+}
+
+
+
+/* TAGS — simple vertical stack, no scroll, aligned with chapters */
+.meta-tags{
+  list-style: none;
+  margin: 8px 0 0;   /* aligns visually with chapters row */
+  padding: 0;        /* removes the default left indent that caused the shift */
+  display: block;    /* no grid: natural block flow */
+  flex: 0 0 auto;    /* stop it from stretching the panel */
+  overflow: visible; /* no sidebar */
+}
+
+.meta-tags li{
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 6px 0;     /* pleasant vertical rhythm */
+  white-space: normal;
+  word-break: break-word; /* just in case of very long single words */
+}
+
+
+
+.meta-hr { margin: 10px 0 12px; }        /* already tight */
+.meta-chapters { padding: 2px 0 6px; }   /* already tight */
+.meta-tags { margin-top: 6px; }          /* small nudge if needed */
+
+
+
+:root {
+  /* Smaller overall panel height */
+  --meta-h: clamp(260px, 38vmin, 360px);
+
+  /* Shrink avatar + name */
+  --meta-avatar-ring: 40px;
+  --meta-avatar-glyph: 22px;
+  --meta-name-size: 16px;
+
+  /* Shrink icons + counts */
+  --meta-glyph-size: 36px;
+  --meta-count-size: 12px;
+
+  /* Divider thinner */
+  --meta-divider: 1px;
+
+  /* Move metadata slightly further from the center book */
+  --meta-gap: clamp(80px, 6vmin, 120px);
+}
+
+
+
+.meta-username {
+  font-weight: 700;
+  font-size: var(--meta-name-size);
+}
+
+.meta-chapters {
+  font-size: 18px;
+}
+
+.meta-tags li {
+  font-size: 18px;
+}
+
+
+
+/* ───────── Actions row: tighter group ───────── */
+.meta-actions {
+  display: flex;
+  justify-content: center;  /* keep the trio grouped in the middle */
+  align-items: flex-start;
+  gap: 16px;                /* reduce gap (default was ~22px) */
+  margin-bottom: 2px;
+}
+
+.meta-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;   /* icon above, count below */
+  align-items: center;
+  gap: 4px;                 /* reduce icon/count spacing */
+  cursor: pointer;
+  padding: 0 2px;           /* make each button narrower */
+}
+
+.meta-icon-glyph {
+  --ms-opsz: 48;
+  --ms-wght: 250;
+  --ms-fill: 0;
+  font-size: var(--meta-glyph-size);
+  line-height: 1;
+}
+.meta-icon-btn.is-active .meta-icon-glyph {
+  --ms-fill: 1;
+  --ms-wght: 400;
+}
+
+.meta-icon-count {
+  font-size: var(--meta-count-size);
+  line-height: 1;
+  opacity: .95;
+}
+
+
+
+/* ── Compact panel width & spacing ─────────────────────────── */
+:root{
+  /* make the whole panel slimmer */
+  --meta-w: clamp(190px, 20vmin, 230px);
+  --meta-gap: clamp(90px, 7vmin, 130px); /* keep it clear of the center book */
+
+  /* tighter (but fixed) height; keeps layout stable */
+  --meta-h: clamp(250px, 36vmin, 330px);
+
+  /* avatar + name scale */
+  --meta-avatar-ring: 42px;
+  --meta-avatar-glyph: 24px;
+  --meta-name-size: 22px;   /* ↑ bigger username */
+
+  /* icon row scale */
+  --meta-glyph-size: 56px;  /* ↑ bigger icons */
+  --meta-count-size: 12px;
+
+  /* thin dividers like the mock */
+  --meta-divider: 1px;
+}
+
+/* keep the panel slim and fixed-height */
+.metadata{
+  width: var(--meta-w);
+  height: var(--meta-h);
+}
+
+/* username now larger */
+.meta-username{
+  font-size: var(--meta-name-size);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+/* ── Tight icon row, side icons touch edges ───────────────── */
+.meta-actions{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* three equal tracks */
+  column-gap: 0;                      /* no gap between tracks */
+  align-items: start;
+  margin-bottom: 2px;
+  width: 100%;
+}
+
+/* place each button exactly: left edge, center, right edge */
+.meta-actions .meta-icon-btn:nth-child(1){ justify-self: start; }
+.meta-actions .meta-icon-btn:nth-child(2){ justify-self: center; }
+.meta-actions .meta-icon-btn:nth-child(3){ justify-self: end; }
+
+/* buttons themselves are tighter */
+.meta-icon-btn{
+  padding: 0;                 /* no side padding so they can hug edges */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;                   /* icon ↕ count spacing */
+}
+
+/* larger outlined glyphs */
+.meta-icon-glyph{
+  font-size: var(--meta-glyph-size);
+  --ms-opsz: 48;
+  --ms-wght: 250;
+  --ms-fill: 0;
+}
+
+/* small, crisp counts */
+.meta-icon-count{
+  font-size: var(--meta-count-size);
+  line-height: 1;
+}
+
+/* ── Keep chapters/tags aligned with left edge ────────────── */
+.meta-hr{ margin: 10px 0 12px; border-top-width: var(--meta-divider); }
+
+
+
+/* Keep the header row a fixed height so layout never shifts */
+.meta-header{
+  display: grid;
+  grid-template-columns: var(--meta-avatar-ring) 1fr; /* avatar + name */
+  align-items: center;
+  column-gap: 12px;
+
+  /* reserve height ≈ avatar ring so nothing grows when names are long */
+  min-height: calc(var(--meta-avatar-ring) + 2px);
+  margin-bottom: 10px;  /* space before the divider */
+}
+
+/* Username: single line + ellipsis, no wrap, no push */
+.meta-username{
+  font-size: var(--meta-name-size);
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;        /* prevent wrapping */
+  overflow: hidden;           /* clip excess */
+  text-overflow: ellipsis;    /* show … when too long */
+  min-width: 0;               /* allow ellipsis in CSS grid */
+}
+
+/* Keep the divider from visually touching the name */
+.meta-hr{
+  border: none;
+  border-top: var(--meta-divider) solid rgba(255,255,255,.95);
+  margin: 8px 0 12px;  /* a bit more top gap so text never kisses the line */
+}
+
+
+
+/* Reserve a fixed area for avatar + name */
+.meta-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  /* fixed block so divider never moves */
+  min-height: 48px;
+  max-height: 48px;
+  overflow: hidden;
+}
+
+/* Username smaller + allow wrapping, but keep inside the reserved height */
+.meta-username {
+  font-size: 18px;       /* ↓ smaller so most fit in one line */
+  font-weight: 700;
+  line-height: 1.1;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;     /* allow up to 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  /* align text towards the top of its box so extra line goes "up" */
+  align-self: flex-start;
+}
+
+
+
+/* Fixed-height header so divider never moves */
+.meta-header{
+  display: grid;
+  grid-template-columns: var(--meta-avatar-ring) 1fr;
+  align-items: center;              /* center avatar + text vertically */
+  column-gap: 10px;
+  height: 48px;                     /* lock the row height */
+  margin-bottom: 10px;
+  overflow: hidden;                 /* anything beyond 2 lines is clipped */
+}
+
+/* Username: smaller, can wrap, NO ellipsis, centered in the row */
+.meta-username{
+  font-size: 18px;                  /* smaller so most fit on one line */
+  font-weight: 700;
+  line-height: 1.15;
+
+  white-space: normal;              /* allow wrapping */
+  display: block;
+  overflow: hidden;                 /* cap to 2 lines without ellipsis */
+  max-height: calc(1.15em * 2);     /* 2 lines max */
+}
+
+/* keep avatar as-is (ring+glyph sizes set by your variables) */
+
+
+
+/* Fixed row height so divider never moves */
+:root{
+  --meta-header-h: 48px; /* tweak to 46–52px if you want */
+}
+
+.meta-header{
+  display: grid;
+  grid-template-columns: var(--meta-avatar-ring) 1fr; /* avatar + name */
+  column-gap: 10px;
+  align-items: center;      /* center avatar cell */
+  height: var(--meta-header-h);
+  margin-bottom: 10px;
+  overflow: hidden;         /* cap any overflow from long names */
+}
+
+/* Username: vertically centered in the row (no ellipsis), can wrap to 2 lines */
+.meta-username{
+  font-size: 18px;          /* your smaller size; bump if you want */
+  font-weight: 700;
+  line-height: 1.15;
+
+  /* Center single-line perfectly with the avatar */
+  display: flex;
+  align-items: center;      /* ← this is the key */
+  height: 100%;
+
+  /* allow up to two lines; clip anything beyond without layout shift */
+  white-space: normal;
+  overflow: hidden;
+  max-height: calc(1.15em * 2); /* about 2 lines */
+}
