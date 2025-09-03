@@ -1,21 +1,27 @@
 import React from "react"
-import IconStat from "./IconStat"
 
-type Props = {
+type LikeButtonProps = {
   count?: number
   active?: boolean
   onToggle?: () => void
-  className?: string
 }
-export default function LikeButton({ count, active, onToggle, className }: Props) {
+
+export default function LikeButton({
+  count = 0,
+  active = false,
+  onToggle,
+}: LikeButtonProps) {
   return (
-    <IconStat
-      icon="favorite"
-      label="Like"
-      count={count}
-      active={active}
-      onToggle={onToggle}
-      className={`like-btn ${className ?? ""}`}
-    />
+    <button
+      type="button"
+      className={`meta-icon-btn like ${active ? "is-active" : ""}`}
+      onClick={onToggle}
+      aria-pressed={active}
+    >
+      <span className="material-symbols-outlined meta-icon-glyph">
+        favorite
+      </span>
+      <span className="meta-icon-count">{count}</span>
+    </button>
   )
 }

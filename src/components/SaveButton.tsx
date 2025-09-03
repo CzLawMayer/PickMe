@@ -1,21 +1,27 @@
 import React from "react"
-import IconStat from "./IconStat"
 
-type Props = {
+type SaveButtonProps = {
   count?: number
   active?: boolean
   onToggle?: () => void
-  className?: string
 }
-export default function SaveButton({ count, active, onToggle, className }: Props) {
+
+export default function SaveButton({
+  count = 0,
+  active = false,
+  onToggle,
+}: SaveButtonProps) {
   return (
-    <IconStat
-      icon="bookmark"
-      label="Save"
-      count={count}
-      active={active}
-      onToggle={onToggle}
-      className={`save-btn ${className ?? ""}`}
-    />
+    <button
+      type="button"
+      className={`meta-icon-btn save ${active ? "is-active" : ""}`}
+      onClick={onToggle}
+      aria-pressed={active}
+    >
+      <span className="material-symbols-outlined meta-icon-glyph">
+        bookmark
+      </span>
+      <span className="meta-icon-count">{count}</span>
+    </button>
   )
 }

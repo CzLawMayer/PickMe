@@ -1,8 +1,7 @@
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import "./Home.css"
 import { sampleBooks } from "../booksData"
 
-// Reusable icon buttons (you said these files already exist)
 import LikeButton from "@/components/LikeButton"
 import StarButton from "@/components/StarButton"
 import SaveButton from "@/components/SaveButton"
@@ -15,6 +14,7 @@ type Book = {
   coverUrl?: string
   tags?: string[]
   rating?: string | number
+  ratingCount?: number
   likes?: number
   bookmarks?: number
   currentChapter?: number
@@ -29,11 +29,77 @@ export default function Home() {
   const center = count ? books[current] : null
   const mod = (x: number) => (count ? (x % count + count) % count : 0)
 
-  // arrows (top = next, bottom = prev)
-  const next = () => setCurrent((c) => (c + 1) % count)
-  const prev = () => setCurrent((c) => (c - 1 + count) % count)
+  // ─────────────────────────────────────────────────────────────
+  // Per-book memory maps
+  // ─────────────────────────────────────────────────────────────
+  const [likedById, setLikedById] = useState<Record<string, boolean>>({})
+  const [savedById, setSavedById] = useState<Record<string, boolean>>({})
+  const [starredById, setStarredById] = useState<Record<string, boolean>>({})
+  const [userRatingById, setUserRatingById] = useState<Record<string, number>>({})
 
-  // keyboard support
+  const centerId = center?.id ?? ""
+
+  const liked = !!likedById[centerId]
+  const saved = !!savedById[centerId]
+  const starred = !!starredById[centerId]
+  const userRating = userRatingById[centerId] ?? 0
+
+  const displayLikes = (center?.likes ?? 0) + (liked ? 1 : 0)
+  const displaySaves = (center?.bookmarks ?? 0) + (saved ? 1 : 0)
+
+  const baseRating =
+    typeof center?.rating === "string"
+      ? parseFloat(String(center?.rating).split("/")[0])
+      : Number(center?.rating ?? 0)
+
+  // If you have ratingCount in your data, we’ll weight by that.
+  // If not, we’ll use a smoothing prior so the number doesn’t swing too wildly on one vote.
+  const votes = Number((center as any)?.ratingCount ?? 0)
+
+  // Prior: pretend the base rating is backed by N votes (if ratingCount is missing).
+  // Tweak PRIOR_VOTES to make your base rating more/less “stubborn”.
+  const PRIOR_VOTES = 20
+
+  let combinedRating = baseRating
+
+  if (userRating > 0) {
+    if (votes > 0) {
+      // Weighted average with real vote count
+      combinedRating = (baseRating * votes + userRating) / (votes + 1)
+    } else if (baseRating > 0) {
+      // Weighted average with a prior vote weight
+      combinedRating = (baseRating * PRIOR_VOTES + userRating) / (PRIOR_VOTES + 1)
+    } else {
+      // No base rating—just show the user's rating
+      combinedRating = userRating
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Handlers
+  // ─────────────────────────────────────────────────────────────
+  const toggleLike = useCallback(() => {
+    if (!centerId) return
+    setLikedById(m => ({ ...m, [centerId]: !m[centerId] }))
+  }, [centerId])
+
+  const toggleSave = useCallback(() => {
+    if (!centerId) return
+    setSavedById(m => ({ ...m, [centerId]: !m[centerId] }))
+  }, [centerId])
+
+  // Star “active” (gold) is true if user rated > 0
+  const onRate = useCallback((val: number) => {
+    if (!centerId) return
+    setStarredById(m => ({ ...m, [centerId]: val > 0 }))
+    setUserRatingById(m => ({ ...m, [centerId]: val }))
+  }, [centerId])
+
+  // Navigation (top = next, bottom = prev)
+  const next = () => setCurrent(c => (c + 1) % count)
+  const prev = () => setCurrent(c => (c - 1 + count) % count)
+
+  // Keyboard support
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     switch (e.key) {
       case "ArrowRight":
@@ -65,7 +131,7 @@ export default function Home() {
     }
   }
 
-  // drag/swipe support
+  // Drag / swipe
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const dragActiveRef = useRef(false)
@@ -93,12 +159,6 @@ export default function Home() {
       dx < 0 ? next() : prev()
     }
   }
-
-  // helpers for metadata display
-  const ratingText =
-    center?.rating != null && center?.rating !== ""
-      ? `${center?.rating}/5`
-      : "—"
 
   return (
     <div className="app">
@@ -128,34 +188,36 @@ export default function Home() {
           {/* Avatar + username */}
           <div className="meta-header">
             <div className="meta-avatar" aria-hidden>
-              {/* Inline outlined person-in-circle to match mock */}
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
                 <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
                 <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
-            <p className="meta-username">{center?.user ?? "Unknown User"}</p>
+            <p className="meta-username" title={center?.user ?? ""}>
+              {center?.user ?? "Unknown User"}
+            </p>
           </div>
 
           <hr className="meta-hr" />
 
-          {/* Actions: Like / Star / Save (big outlined icons with counts) */}
+          {/* Actions: Like / Star (popover) / Save */}
           <div className="meta-actions">
             <LikeButton
-              count={center?.likes ?? 0}
-              active={false}
-              onToggle={() => {/* hook up later */}}
+              count={displayLikes}
+              active={liked}
+              onToggle={toggleLike}
             />
             <StarButton
-              ratingText={ratingText}
-              active={false}
-              onToggle={() => {/* hook up later */}}
+              rating={combinedRating}
+              userRating={userRating}
+              active={userRating > 0}
+              onRate={onRate}
             />
             <SaveButton
-              count={center?.bookmarks ?? 0}
-              active={false}
-              onToggle={() => {/* hook up later */}}
+              count={displaySaves}
+              active={saved}
+              onToggle={toggleSave}
             />
           </div>
 
@@ -174,7 +236,7 @@ export default function Home() {
           </ul>
         </div>
 
-        {/* Drag layer + cards */}
+        {/* Drag layer + cards (books layered over metadata, under arrows via CSS) */}
         <div
           className={`drag-layer${isDragging ? " dragging" : ""}`}
           style={{ transform: `translateX(${dragX}px)` }}
@@ -211,7 +273,7 @@ export default function Home() {
           })()}
         </div>
 
-        {/* Arrows (top = next, bottom = prev) */}
+        {/* Arrows (fixed; top = next, bottom = prev) */}
         <div className="vertical-arrows">
           <button
             type="button"
