@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
 import "./Home.css"
 import { sampleBooks } from "../booksData"
 
@@ -40,7 +40,6 @@ export default function Home() {
   const [userRatingById, setUserRatingById] = useState<Record<string, number>>({})
   const [menuOpen, setMenuOpen] = useState(false)
 
-
   const centerId = center?.id ?? ""
 
   const liked = !!likedById[centerId]
@@ -56,86 +55,85 @@ export default function Home() {
       ? parseFloat(String(center?.rating).split("/")[0])
       : Number(center?.rating ?? 0)
 
-  // If you have ratingCount in your data, we’ll weight by that.
-  // If not, we’ll use a smoothing prior so the number doesn’t swing too wildly on one vote.
   const votes = Number((center as any)?.ratingCount ?? 0)
-
-  // Prior: pretend the base rating is backed by N votes (if ratingCount is missing).
-  // Tweak PRIOR_VOTES to make your base rating more/less “stubborn”.
   const PRIOR_VOTES = 20
 
   let combinedRating = baseRating
-
   if (userRating > 0) {
     if (votes > 0) {
-      // Weighted average with real vote count
       combinedRating = (baseRating * votes + userRating) / (votes + 1)
     } else if (baseRating > 0) {
-      // Weighted average with a prior vote weight
       combinedRating = (baseRating * PRIOR_VOTES + userRating) / (PRIOR_VOTES + 1)
     } else {
-      // No base rating—just show the user's rating
       combinedRating = userRating
     }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Handlers
+  // Navigation
   // ─────────────────────────────────────────────────────────────
-  const toggleLike = useCallback(() => {
-    if (!centerId) return
-    setLikedById(m => ({ ...m, [centerId]: !m[centerId] }))
-  }, [centerId])
+  const next = useCallback(() => {
+    if (!count) return
+    setCurrent(c => (c + 1) % count)
+  }, [count])
 
-  const toggleSave = useCallback(() => {
-    if (!centerId) return
-    setSavedById(m => ({ ...m, [centerId]: !m[centerId] }))
-  }, [centerId])
+  const prev = useCallback(() => {
+    if (!count) return
+    setCurrent(c => (c - 1 + count) % count)
+  }, [count])
 
-  // Star “active” (gold) is true if user rated > 0
-  const onRate = useCallback((val: number) => {
-    if (!centerId) return
-    setStarredById(m => ({ ...m, [centerId]: val > 0 }))
-    setUserRatingById(m => ({ ...m, [centerId]: val }))
-  }, [centerId])
-
-  // Navigation (top = next, bottom = prev)
-  const next = () => setCurrent(c => (c + 1) % count)
-  const prev = () => setCurrent(c => (c - 1 + count) % count)
-
-  // Keyboard support
-  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    switch (e.key) {
-      case "ArrowRight":
-      case "d":
-      case "D":
-      case "PageDown":
-        e.preventDefault()
-        next()
-        break
-      case "ArrowLeft":
-      case "a":
-      case "A":
-      case "PageUp":
-        e.preventDefault()
-        prev()
-        break
-      case "Home":
-        e.preventDefault()
-        if (count) setCurrent(0)
-        break
-      case "End":
-        e.preventDefault()
-        if (count) setCurrent(count - 1)
-        break
-      case " ":
-        e.preventDefault()
-        e.shiftKey ? prev() : next()
-        break
+  // Global keyboard handler: prevents focus flicker and handles nav anywhere
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      switch (e.key) {
+        case "ArrowRight":
+        case "d":
+        case "D":
+        case "PageDown":
+          e.preventDefault()
+          e.stopPropagation()
+          next()
+          break
+        case "ArrowLeft":
+        case "a":
+        case "A":
+        case "PageUp":
+          e.preventDefault()
+          e.stopPropagation()
+          prev()
+          break
+        case "ArrowDown":
+        case "ArrowUp":
+          // prevent focus from jumping to other controls (the "flickering line")
+          e.preventDefault()
+          e.stopPropagation()
+          break
+        case "Home":
+          e.preventDefault()
+          e.stopPropagation()
+          if (count) setCurrent(0)
+          break
+        case "End":
+          e.preventDefault()
+          e.stopPropagation()
+          if (count) setCurrent(count - 1)
+          break
+        case " ":
+          e.preventDefault()
+          e.stopPropagation()
+          e.shiftKey ? prev() : next()
+          break
+        default:
+          break
+      }
     }
-  }
+    window.addEventListener("keydown", onKey, { passive: false })
+    return () => window.removeEventListener("keydown", onKey)
+  }, [count, next, prev])
 
+  // ─────────────────────────────────────────────────────────────
   // Drag / swipe
+  // ─────────────────────────────────────────────────────────────
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const dragActiveRef = useRef(false)
@@ -164,6 +162,25 @@ export default function Home() {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Interaction handlers
+  // ─────────────────────────────────────────────────────────────
+  const toggleLike = useCallback(() => {
+    if (!centerId) return
+    setLikedById(m => ({ ...m, [centerId]: !m[centerId] }))
+  }, [centerId])
+
+  const toggleSave = useCallback(() => {
+    if (!centerId) return
+    setSavedById(m => ({ ...m, [centerId]: !m[centerId] }))
+  }, [centerId])
+
+  const onRate = useCallback((val: number) => {
+    if (!centerId) return
+    setStarredById(m => ({ ...m, [centerId]: val > 0 }))
+    setUserRatingById(m => ({ ...m, [centerId]: val }))
+  }, [centerId])
+
   return (
     <div className="app">
       {/* Top bar */}
@@ -183,10 +200,12 @@ export default function Home() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(o => !o)}   // ← same spot toggles open/close
           >
-            {menuOpen ? "☰" : "☰"}
+            {menuOpen ? "X" : "☰"}
           </button>
         </div>
       </header>
+
+
 
       {/* Stage */}
       <main
@@ -194,12 +213,10 @@ export default function Home() {
         role="region"
         aria-roledescription="carousel"
         aria-label="Book carousel"
-        tabIndex={0}
-        onKeyDownCapture={handleKeyDown}
+        /* removed tabIndex so it can't show a focus ring */
       >
         {/* Metadata (fixed, left of center) */}
         <div className="metadata">
-          {/* Avatar + username */}
           <div className="meta-header">
             <div className="meta-avatar" aria-hidden>
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -215,7 +232,7 @@ export default function Home() {
 
           <hr className="meta-hr" />
 
-          {/* Actions: Like / Star (popover) / Save */}
+          {/* Actions */}
           <div className="meta-actions">
             <LikeButton
               count={displayLikes}
@@ -237,20 +254,18 @@ export default function Home() {
 
           <hr className="meta-hr" />
 
-          {/* Chapters */}
           <p className="meta-chapters">
             {(center?.currentChapter ?? 0)}/{center?.totalChapters ?? 0} Chapters
           </p>
 
           <hr className="meta-hr" />
 
-          {/* Tags stacked */}
           <ul className="meta-tags">
             {(center?.tags ?? []).map((t) => <li key={t}>{t}</li>)}
           </ul>
         </div>
 
-        {/* Drag layer + cards (books layered over metadata, under arrows via CSS) */}
+        {/* Drag layer + cards */}
         <div
           className={`drag-layer${isDragging ? " dragging" : ""}`}
           style={{ transform: `translateX(${dragX}px)` }}
@@ -287,7 +302,7 @@ export default function Home() {
           })()}
         </div>
 
-        {/* Arrows (fixed; top = next, bottom = prev) */}
+        {/* Arrows */}
         <div className="vertical-arrows">
           <button
             type="button"
@@ -295,7 +310,13 @@ export default function Home() {
             aria-label="Next book"
             aria-keyshortcuts="ArrowRight Space"
             title="Next"
-            onClick={next}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              next()
+              ;(e.currentTarget as HTMLButtonElement).blur()
+            }}
           >
             ›
           </button>
@@ -305,14 +326,20 @@ export default function Home() {
             aria-label="Previous book"
             aria-keyshortcuts="ArrowLeft Shift+Space"
             title="Previous"
-            onClick={prev}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              prev()
+              ;(e.currentTarget as HTMLButtonElement).blur()
+            }}
           >
             ‹
           </button>
         </div>
       </main>
+
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   )
 }
-
