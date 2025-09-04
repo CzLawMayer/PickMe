@@ -82,7 +82,7 @@ export default function Home() {
     setCurrent(c => (c - 1 + count) % count)
   }, [count])
 
-  // Global keyboard handler: prevents focus flicker and handles nav anywhere
+  // Global keyboard handler
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       switch (e.key) {
@@ -104,7 +104,6 @@ export default function Home() {
           break
         case "ArrowDown":
         case "ArrowUp":
-          // prevent focus from jumping to other controls (the "flickering line")
           e.preventDefault()
           e.stopPropagation()
           break
@@ -163,6 +162,22 @@ export default function Home() {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // Flip: center book front/back
+  // ─────────────────────────────────────────────────────────────
+  const [isFlipped, setIsFlipped] = useState(false)
+
+  useEffect(() => {
+    // reset flip whenever the current index changes
+    setIsFlipped(false)
+  }, [current])
+
+  const onFlipClick = (e: React.MouseEvent | React.PointerEvent) => {
+    // prevent this click from being treated as a drag start
+    e.stopPropagation()
+    setIsFlipped(f => !f)
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Interaction handlers
   // ─────────────────────────────────────────────────────────────
   const toggleLike = useCallback(() => {
@@ -198,14 +213,12 @@ export default function Home() {
             aria-haspopup="dialog"
             aria-controls="side-menu"
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(o => !o)}   // ← same spot toggles open/close
+            onClick={() => setMenuOpen(o => !o)}
           >
             {menuOpen ? "X" : "☰"}
           </button>
         </div>
       </header>
-
-
 
       {/* Stage */}
       <main
@@ -213,7 +226,6 @@ export default function Home() {
         role="region"
         aria-roledescription="carousel"
         aria-label="Book carousel"
-        /* removed tabIndex so it can't show a focus ring */
       >
         {/* Metadata (fixed, left of center) */}
         <div className="metadata">
@@ -286,15 +298,40 @@ export default function Home() {
             return order.map(({ cls, idx }) => {
               const b = books[idx]
               const bg = b.coverUrl ? `url("${b.coverUrl}") center/cover no-repeat` : undefined
+              const isCenter = idx === current
               return (
                 <div key={b.id} className={cls} aria-hidden={cls !== "book main-book"}>
+                  {/* 3D flip wrapper: only clickable on the center book */}
                   <div
-                    className="book-placeholder"
-                    style={{ background: bg }}
-                    role="img"
-                    aria-label={`${b.title} by ${b.author ?? "Unknown"}`}
+                    className={`book-inner${isCenter && isFlipped ? " is-flipped" : ""}`}
+                    onPointerDown={isCenter ? (e) => e.stopPropagation() : undefined}
+                    onClick={isCenter ? onFlipClick : undefined}
+                    role={isCenter ? "button" : undefined}
+                    aria-pressed={isCenter ? isFlipped : undefined}
+                    tabIndex={-1}
                   >
-                    {!b.coverUrl ? b.title : null}
+                    {/* FRONT */}
+                    <div className="book-face book-front">
+                      <div
+                        className="book-placeholder"
+                        style={{ background: bg }}
+                        role="img"
+                        aria-label={`${b.title} by ${b.author ?? "Unknown"}`}
+                      >
+                        {!b.coverUrl ? b.title : null}
+                      </div>
+                    </div>
+
+                    {/* BACK (empty placeholder for now) */}
+                    <div className="book-face book-back">
+                      <div
+                        className="book-placeholder back"
+                        role="img"
+                        aria-label={`${b.title} — back cover`}
+                      >
+                        {/* back cover img from backend later */}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )
