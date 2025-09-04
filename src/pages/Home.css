@@ -996,3 +996,23 @@ body {
   position: relative;
   z-index: 905;
 }
+
+
+
+/* ───────── Remove unwanted white outlines on books ───────── */
+.book-inner,
+.book-face,
+.book-placeholder {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.book-inner:focus,
+.book-inner:focus-visible,
+.book-face:focus,
+.book-face:focus-visible,
+.book-placeholder:focus,
+.book-placeholder:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
