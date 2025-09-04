@@ -898,52 +898,63 @@ body {
 }
 
 
-/* BOOK FLIPPING */
 
-/* Flip container: allow 3D to breathe, do not clip during rotation */
+
+
+/* ───────── BOOK FLIPPING (shadowless clean version) ───────── */
+
+/* The outer card (each book) provides perspective */
 .book {
   perspective: 1200px;
   -webkit-perspective: 1200px;
-  overflow: visible;          /* important: avoid edge cuts during flip */
-  box-shadow: none;
-  border-radius: 0;
+  overflow: visible;       /* avoid edge cuts during flip */
+  border-radius: 6px;      /* keep rounded edges */
+  box-shadow: none !important; /* remove all shadows */
 }
 
-/* Card that actually flips */
+/* The element that rotates */
 .book-inner {
   position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
+  transform-origin: center center;
   transition: transform 600ms cubic-bezier(.22,.61,.36,1);
   will-change: transform;
-
-  /* keep the rounded look on the flipping element */
-  border-radius: 6px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.45);
-
-  /* flip in place, not around the left edge */
-  transform-origin: center center;
+  border-radius: inherit;
+  box-shadow: none !important; /* remove shadow */
+  --flip-cushion: 0px;
+  transform: translateY(var(--flip-cushion)) rotateY(0deg);
+  cursor: default;
 }
 
-/* Faces clip to the rounded card */
+/* Faces (front + back) */
 .book-face {
   position: absolute;
   inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-radius: inherit;
-  overflow: hidden;
   display: grid;
   place-items: stretch;
+  border-radius: inherit;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: none !important; /* remove shadow */
 }
 
-/* Back face and placeholder */
-.book-back { transform: rotateY(180deg); }
+/* FRONT face */
+.book-front .book-placeholder {
+  background: #2d2d2d; /* or cover image fills this */
+}
+.book-front .book-placeholder[style*="url("] {
+  background-color: transparent;
+}
+
+/* BACK face */
+.book-back {
+  transform: rotateY(180deg);
+}
 .book-back .book-placeholder.back {
-  width: 100%;
-  height: 100%;
   background: #232323;
   display: grid;
   place-items: center;
@@ -952,72 +963,36 @@ body {
   opacity: 0.95;
 }
 
-/* Flip to the other side (negative = right->left) */
-.book-inner.is-flipped { transform: rotateY(-180deg); }
+/* Flip state */
+.book-inner.is-flipped {
+  transform: translateY(var(--flip-cushion)) rotateY(180deg);
+}
 
-/* Important: while flipped, lift the whole drag layer above the header */
-.drag-layer.flipping { z-index: 1200; }
+/* Optional cushion while animating */
+.book-inner.is-animating {
+  --flip-cushion: 10px;
+}
 
-/* Ensure clicks on the flipping card are handled by the inner, not the drag layer */
-.drag-layer .book-inner { pointer-events: auto; }
+/* Ensure clicks land on the flipper */
+.drag-layer .book-inner {
+  pointer-events: auto;
+}
 
-
-/* While the center book is flipped, let the carousel render above the header
-   and disable vertical clipping so the 3D corners aren't chopped. */
+/* While flipping, allow overhang and keep the center card above neighbors */
 .carousel.is-flipping {
   position: relative;
-  z-index: 2000;            /* above header/overlay */
-  overflow: visible !important;  /* stop the top cut during the 3D flip */
-}
-
-/* Keep the flip card’s 3D safe (if you don’t already have these) */
-.book {
-  perspective: 1200px;
-  -webkit-perspective: 1200px;
-  overflow: visible;        /* prevent card’s own clipping */
-}
-.book-inner {
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transform-origin: center center;
-  transition: transform 600ms cubic-bezier(.22,.61,.36,1);
-  border-radius: 6px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.45);
-}
-.book-face {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-radius: inherit;
-  overflow: hidden;
-}
-.book-back { transform: rotateY(180deg); }
-.book-inner.is-flipped { transform: rotateY(-180deg); } /* flip to the other side */
-
-
-.carousel.is-flipping {
-  position: relative;
-  z-index: 2000;
+  z-index: 1000;
   overflow: visible !important;
 }
-
-
-/* Keep drag layer under the arrows at all times */
-.drag-layer.flipping { z-index: 2 !important; }
-
-/* Make sure arrows are above everything within the carousel */
-.vertical-arrows { z-index: 4000 !important; }
-
-
-/* Make the page cursor normal (arrow) over the swipe layer */
-.drag-layer {
-  cursor: default;        /* was: grab */
+.carousel.is-flipping .book.main-book {
+  overflow: visible;
+  position: relative;
+  z-index: 1001;
 }
 
-.drag-layer.dragging {
-  cursor: default;        /* was: grabbing */
-}
-
-/* (optional) make the flip card not look like a link/button */
-.book-inner {
-  cursor: default;
+/* Center card safe even when idle */
+.book.main-book {
+  overflow: visible;
+  position: relative;
+  z-index: 905;
 }
