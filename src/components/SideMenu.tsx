@@ -43,11 +43,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
       >
         {/* Dark header bar like your mock */}
         <div className="menu-header">
-          <div className="menu-burger">
-            <i />
-            <i />
-            <i />
-          </div>
+          <span className="menu-emoji">📖</span>
           <span className="menu-title">Menu</span>
         </div>
 

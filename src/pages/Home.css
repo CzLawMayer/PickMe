@@ -832,7 +832,7 @@ body {
 .menu-title {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   line-height: 1;
   height: 100%;
 }
@@ -842,4 +842,57 @@ body {
   display: grid;
   place-items: center;
   font-size: var(--header-icon-size);
+}
+
+
+/* Sidebar header: match row layout on the left, match app header height overall */
+.menu-header {
+  /* tall enough to center the top-right menu button */
+  height: var(--app-header-h);
+  /* but never shorter than the row height */
+  min-height: var(--panel-row-h);
+
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 64px 1fr; /* emoji + title (same as rows) */
+  align-items: center;
+  background: #111;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+/* Emoji column: same size/placement as rows */
+.menu-header .menu-emoji {
+  display: grid;
+  place-items: center;
+  font-size: 34px;  /* matches .menu-item .menu-emoji */
+  height: 100%;
+}
+
+/* Title: same typography as rows, but LEFT-aligned (flex-start) */
+.menu-header .menu-title {
+  font-size: 26px;   /* matches .menu-text */
+  font-weight: 900;
+  letter-spacing: .2px;
+  display: flex;
+  align-items: center;       /* vertical center within the bar */
+  justify-content: flex-start; /* LEFT align (not centered) */
+  text-align: left;
+}
+
+
+.menu-item.fill { position: relative; }
+
+.menu-item.fill:hover {
+  transform: translateY(-1px);  /* keep your lift */
+}
+
+/* paint over the exposed 1px with the same background as the row */
+.menu-item.fill:hover::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: inherit;          /* matches the row’s color */
+  pointer-events: none;
 }
