@@ -1006,3 +1006,18 @@ body {
 
 /* Make sure arrows are above everything within the carousel */
 .vertical-arrows { z-index: 4000 !important; }
+
+
+/* Make the page cursor normal (arrow) over the swipe layer */
+.drag-layer {
+  cursor: default;        /* was: grab */
+}
+
+.drag-layer.dragging {
+  cursor: default;        /* was: grabbing */
+}
+
+/* (optional) make the flip card not look like a link/button */
+.book-inner {
+  cursor: default;
+}

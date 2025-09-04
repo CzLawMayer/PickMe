@@ -137,26 +137,51 @@ export default function Home() {
   const [isDragging, setIsDragging] = useState(false)
   const dragActiveRef = useRef(false)
   const dragStartXRef = useRef(0)
+  const wasDraggingRef = useRef(false)
+  const pointerIdRef = useRef<number | null>(null)
+
+
+  
+
+  const DRAG_START_THRESH = 6
+  const SWIPE_NAV_THRESH  = 60
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
+    // DO NOT capture yet — we only capture once it's truly a drag
     dragActiveRef.current = true
-    setIsDragging(true)
     dragStartXRef.current = e.clientX
+    pointerIdRef.current = e.pointerId
+    setIsDragging(false)
+    setDragX(0)
   }
+
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!dragActiveRef.current) return
     const dx = e.clientX - dragStartXRef.current
     setDragX(dx)
+
+    if (!isDragging && Math.abs(dx) > DRAG_START_THRESH) {
+      // NOW it's a drag → capture so we own the rest of the gesture
+      const pid = pointerIdRef.current
+      if (pid != null) {
+        (e.currentTarget as HTMLDivElement).setPointerCapture(pid)
+      }
+      setIsDragging(true)
+    }
   }
+
   function endDrag() {
     if (!dragActiveRef.current) return
     dragActiveRef.current = false
+
     const dx = dragX
+    const didSwipe = Math.abs(dx) > SWIPE_NAV_THRESH
+
     setIsDragging(false)
     setDragX(0)
-    const THRESH = 60
-    if (Math.abs(dx) > THRESH) {
+    pointerIdRef.current = null  // clear pointer id
+
+    if (didSwipe) {
       dx < 0 ? next() : prev()
     }
   }
@@ -172,7 +197,9 @@ export default function Home() {
   }, [current])
 
   const onFlipClick = (e: React.MouseEvent | React.PointerEvent) => {
-    // prevent this click from being treated as a drag start
+    // NEW: if this interaction turned into a drag, ignore the click
+    if (wasDraggingRef.current) return
+
     e.stopPropagation()
     setIsFlipped(f => !f)
   }
@@ -304,7 +331,6 @@ export default function Home() {
                   {/* 3D flip wrapper: only clickable on the center book */}
                   <div
                     className={`book-inner${isCenter && isFlipped ? " is-flipped" : ""}`}
-                    onPointerDown={isCenter ? (e) => e.stopPropagation() : undefined}
                     onClick={isCenter ? onFlipClick : undefined}
                     role={isCenter ? "button" : undefined}
                     aria-pressed={isCenter ? isFlipped : undefined}
