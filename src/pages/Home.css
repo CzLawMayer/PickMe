@@ -1247,3 +1247,69 @@ body {
   opacity: 0;
   pointer-events: none;
 }
+
+
+
+
+
+/* ───────── Page content (temporary numbers) ───────── */
+.spread .page-content {
+  font-size: 28px;
+  font-weight: 800;
+  opacity: .9;
+}
+
+/* ───────── Hinge points (match open animation) ───────── */
+.spread .pane.left  { transform-origin: right center; }
+.spread .pane.right { transform-origin: left  center; }
+
+/* ───────── Page turns (triggered by .turning-right / .turning-left) ───────── */
+/* Kill pane transitions while turning so keyframes take control */
+.spread.turning-right .pane,
+.spread.turning-left  .pane {
+  transition: none !important;
+}
+
+/* NEXT (→ / click right): animate the RIGHT page */
+.spread.turning-right .pane.right {
+  z-index: 5;
+  will-change: transform;
+  /* ensure a reliable start pose even if other rules set transform */
+  transform: rotateY(-180deg) !important;
+  animation: pageTurnNext 420ms cubic-bezier(.22,.61,.36,1) forwards !important;
+}
+
+/* PREV (← / click left): animate the LEFT page */
+.spread.turning-left .pane.left {
+  z-index: 5;
+  will-change: transform;
+  /* ensure a reliable start pose even if other rules set transform */
+  transform: rotateY(180deg) !important;
+  animation: pageTurnPrev 420ms cubic-bezier(.22,.61,.36,1) forwards !important;
+}
+
+/* ───────── Initial open (one-time unfold) ───────── */
+/* Scope to the ephemeral `.carousel.is-opening` so it won't retrigger later */
+.carousel.is-opening .spread.is-open .pane.right {
+  animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) forwards;
+}
+.carousel.is-opening .spread.is-open .pane.left {
+  transform: rotateY(0deg);
+}
+
+/* ───────── Keyframes (single source of truth) ───────── */
+/* Used only during the initial open */
+@keyframes rightPageUnfold {
+  from { transform: rotateY(-180deg); }
+  to   { transform: rotateY(0deg); }
+}
+
+/* Used for interactive page turns — names must stay as-is for JS onAnimationEnd */
+@keyframes pageTurnNext {  /* right page unfolds (same as open) */
+  0%   { transform: rotateY(-180deg); }
+  100% { transform: rotateY(0deg); }
+}
+@keyframes pageTurnPrev {  /* left page unfolds mirrored */
+  0%   { transform: rotateY(180deg); }
+  100% { transform: rotateY(0deg); }
+}

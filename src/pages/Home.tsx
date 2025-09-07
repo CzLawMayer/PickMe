@@ -14,7 +14,7 @@ type Book = {
   author?: string
   user?: string
   coverUrl?: string
-  backCoverUrl?: string 
+  backCoverUrl?: string
   tags?: string[]
   rating?: string | number
   ratingCount?: number
@@ -70,17 +70,57 @@ export default function Home() {
         : userRating
   }
 
-  // navigation
+  // navigation between books
   const next = useCallback(() => { if (count) setCurrent(c => (c + 1) % count) }, [count])
   const prev = useCallback(() => { if (count) setCurrent(c => (c - 1 + count) % count) }, [count])
+
+  // page flipping when "open"
+  const [page, setPage] = useState(0)
+  const [turnDir, setTurnDir] = useState<"left" | "right" | null>(null)
+
+  // start a turn (no timeout)
+  const turnPage = useCallback((dir: 1 | -1) => {
+    if (turnDir) return
+    setTurnDir(dir === 1 ? "right" : "left")
+  }, [turnDir])
+
+  // handle CSS animation end to finalize the turn
+// handle CSS animation end to finalize the turn
+  const onPageAnimEnd = useCallback((e: React.AnimationEvent<HTMLDivElement>) => {
+    if (!turnDir) return;
+
+    // Only react to the pane that actually flips
+    const el = e.target as HTMLElement;
+    const isRightPane = el.classList.contains("right");
+    const isLeftPane  = el.classList.contains("left");
+
+    // Accept both old and new keyframe names
+    const n = e.animationName;
+    const nextNames = new Set(["pageTurnRightToLeft", "pageTurnNext"]);
+    const prevNames = new Set(["pageTurnLeftToRight", "pageTurnPrev"]);
+
+    // Guard: only count the relevant pane/keyframe combo once
+    if (turnDir === "right" && isRightPane && nextNames.has(n)) {
+      setPage(p => p + 2);   // advance one spread
+      setTurnDir(null);
+    } else if (turnDir === "left" && isLeftPane && prevNames.has(n)) {
+      setPage(p => Math.max(0, p - 2)); // go back one spread
+      setTurnDir(null);
+    }
+  }, [turnDir]);
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       switch (e.key) {
         case "ArrowRight": case "d": case "D": case "PageDown":
-          e.preventDefault(); next(); break
+          e.preventDefault()
+          if (view === "open") turnPage(1); else next()
+          break
         case "ArrowLeft": case "a": case "A": case "PageUp":
-          e.preventDefault(); prev(); break
+          e.preventDefault()
+          if (view === "open") turnPage(-1); else prev()
+          break
         case "ArrowUp": case "ArrowDown":
           e.preventDefault(); break
         case "Home":
@@ -88,12 +128,15 @@ export default function Home() {
         case "End":
           e.preventDefault(); if (count) setCurrent(count - 1); break
         case " ":
-          e.preventDefault(); (e.shiftKey ? prev() : next()); break
+          e.preventDefault()
+          if (view === "open") turnPage(e.shiftKey ? -1 : 1)
+          else (e.shiftKey ? prev() : next())
+          break
       }
     }
     window.addEventListener("keydown", onKey, { passive: false })
     return () => window.removeEventListener("keydown", onKey)
-  }, [count, next, prev])
+  }, [count, next, prev, view, turnPage])
 
   // drag/swipe
   const [dragX, setDragX] = useState(0)
@@ -121,7 +164,6 @@ export default function Home() {
     if (!dragActiveRef.current) return
     const dx = e.clientX - dragStartXRef.current
     setDragX(dx)
-
     if (!isDragging && Math.abs(dx) > DRAG_START_THRESH) {
       wasDraggingRef.current = true
       const pid = pointerIdRef.current
@@ -133,20 +175,16 @@ export default function Home() {
   function endDrag(e?: React.PointerEvent<HTMLDivElement>) {
     if (!dragActiveRef.current) return
     dragActiveRef.current = false
-
     const pid = pointerIdRef.current
     if (pid != null && e?.currentTarget?.hasPointerCapture?.(pid)) {
       e.currentTarget.releasePointerCapture(pid)
     }
-
     const dx = dragX
     const didSwipe = Math.abs(dx) > SWIPE_NAV_THRESH
-
     setIsDragging(false)
     setDragX(0)
     pointerIdRef.current = null
-
-    if (didSwipe) { dx < 0 ? next() : prev() }
+    if (didSwipe) { dx < 0 ? (view === "open" ? turnPage(1) : next()) : (view === "open" ? turnPage(-1) : prev()) }
     queueMicrotask(() => { wasDraggingRef.current = false })
   }
 
@@ -154,16 +192,15 @@ export default function Home() {
   const onCenterClick = (e: React.MouseEvent | React.PointerEvent) => {
     if (wasDraggingRef.current) return
     e.stopPropagation()
-
     setView(prev => {
-      const next = prev === "front" ? "back" : prev === "back" ? "open" : "back"
-
-      // cross-fade only for front <-> back transitions
-      if ((prev === "front" && next === "back") || (prev === "back" && next === "front")) {
+      const nextView = prev === "front" ? "back" : prev === "back" ? "open" : "back"
+      if ((prev === "front" && nextView === "back") || (prev === "back" && nextView === "front")) {
         setFlipFading(true)
         window.setTimeout(() => setFlipFading(false), FLIP_FADE_MS)
       }
-      return next
+      // reset demo paging when opening
+      if (nextView === "open") setPage(0)
+      return nextView
     })
   }
 
@@ -269,20 +306,18 @@ export default function Home() {
             ]
             return order.map(({ cls, idx }) => {
               const b = books[idx]
-              const bg = b.coverUrl ? `url("${b.coverUrl}") center/cover no-repeat` : undefined
               const isCenter = idx === current
+              const frontBg = b.coverUrl
+                ? `url("${b.coverUrl}") center/cover no-repeat, #2d2d2d`
+                : "#2d2d2d"
+              const backBg = b.backCoverUrl
+                ? `url("${b.backCoverUrl}") center/cover no-repeat, #2d2d2d`
+                : "#2d2d2d"
 
               return (
                 <div key={b.id} className={cls} aria-hidden={cls !== "book main-book"}>
                   {(() => {
                     const isCenter = idx === current
-                    const frontBg = b.coverUrl
-                      ? `url("${b.coverUrl}") center/cover no-repeat, #2d2d2d`
-                      : "#2d2d2d"
-                    const backBg = b.backCoverUrl
-                      ? `url("${b.backCoverUrl}") center/cover no-repeat, #2d2d2d`
-                      : "#2d2d2d"
-
                     return (
                       <>
                         {/* Classic 3D flipper: two faces, front + back */}
@@ -308,60 +343,44 @@ export default function Home() {
                           tabIndex={-1}
                         >
                           {/* FRONT face */}
-
-                          <div
-                            className="book-face book-front"
-                            style={{
-                              transform: "rotateY(0deg)",                 // explicit
-                              backfaceVisibility: "hidden",
-                              WebkitBackfaceVisibility: "hidden",
-                              background: "#2d2d2d",                       // belt + suspenders fill
-                            }}
-                          >
+                          <div className="book-face book-front">
                             <div className="face-fill" style={{ background: frontBg }}>
                               {!b.coverUrl ? b.title : null}
                             </div>
                           </div>
 
                           {/* BACK face */}
-                          <div
-                            className="book-face book-back"
-                            style={{
-                              transform: "rotateY(180deg)",                // *** critical ***
-                              backfaceVisibility: "visible",                // render even if its back is facing
-                              WebkitBackfaceVisibility: "visible",
-                              background: "#2d2d2d",                        // paint the face itself
-                            }}
-                          >
-                            <div className="face-fill" style={{ background: backBg }}>
-                              {/* leave empty; you’ll style/populate later */}
-                            </div>
+                          <div className="book-face book-back">
+                            <div className="face-fill" style={{ background: backBg }} />
                           </div>
-
                         </div>
 
                         {/* OPEN spread (two panes same size as the book) */}
                         {isCenter && (
-                          <div
-                            className={
-                              "spread" +
-                              (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
-                            }
-                            onClick={onCenterClick}
-                            aria-hidden={view !== "open"}
-                            aria-label={view === "open" ? "Close book" : undefined}
-                          >
-                            <div className="pane left" />
-                            <div className="pane right" />
+                        <div
+                          className={
+                            "spread" +
+                            (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "") +
+                            (turnDir ? ` turning-${turnDir}` : "")
+                          }
+                          onAnimationEnd={onPageAnimEnd}   // ⬅️ here
+                          onClick={onCenterClick}
+                          aria-hidden={view !== "open"}
+                          aria-label={view === "open" ? "Close book" : undefined}
+                        >
+                          <div className="pane left"  onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(-1) }}>
+                            <div className="page-content">{page}</div>
                           </div>
+                          <div className="pane right" onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(1) }}>
+                            <div className="page-content">{page + 1}</div>
+                          </div>
+                        </div>
                         )}
                       </>
                     )
                   })()}
                 </div>
               )
-
-
             })
           })()}
         </div>
@@ -371,24 +390,34 @@ export default function Home() {
           <button
             type="button"
             className="arrow"
-            aria-label="Next book"
+            aria-label={view === "open" ? "Next page" : "Next book"}
             aria-keyshortcuts="ArrowRight Space"
-            title="Next"
+            title={view === "open" ? "Next page" : "Next"}
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); next(); (e.currentTarget as HTMLButtonElement).blur() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (view === "open") turnPage(1)
+              else next()
+              ;(e.currentTarget as HTMLButtonElement).blur()
+            }}
           >
             ›
           </button>
           <button
             type="button"
             className="arrow"
-            aria-label="Previous book"
+            aria-label={view === "open" ? "Previous page" : "Previous book"}
             aria-keyshortcuts="ArrowLeft Shift+Space"
-            title="Previous"
+            title={view === "open" ? "Prev page" : "Previous"}
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); prev(); (e.currentTarget as HTMLButtonElement).blur() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (view === "open") turnPage(-1)
+              else prev()
+              ;(e.currentTarget as HTMLButtonElement).blur()
+            }}
           >
             ‹
           </button>
