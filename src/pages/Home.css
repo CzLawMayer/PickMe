@@ -1020,313 +1020,57 @@ body {
 
 
 
-
-
-
-
-
-
-/* ───────── Flip container tweaks so we can fade it when the spread appears ───────── */
-.book { perspective: 1200px; -webkit-perspective: 1200px; overflow: visible; }
-.book-inner {
-  position: relative; width: 100%; height: 100%;
-  transform-style: preserve-3d; -webkit-transform-style: preserve-3d;
-  transition: transform 600ms cubic-bezier(.22,.61,.36,1), opacity 280ms ease;
-  border-radius: inherit; will-change: transform, opacity;
-}
-.book-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.book-back { transform: rotateY(180deg); }
-
-/* When 'open', keep the card flipped (back visible) but fade it out so the pages can take over */
-.book-inner.is-open { opacity: 0; pointer-events: none; }
-
-/* ───────── OPEN SPREAD (two pages folding in) ───────── */
-.open-book {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;            /* becomes clickable only when open */
-  opacity: 0;
-  transform: translateZ(0);        /* create new stacking context */
-  transition: opacity 300ms ease;
-  /* inherit the same perspective feel */
-  perspective: 1200px; -webkit-perspective: 1200px;
-}
-
-/* Enable interaction only when open */
-.open-book.is-open { opacity: 1; pointer-events: auto; }
-
-/* Spine in the middle */
-.open-spine {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 4px;
-  height: 100%;
-  transform: translateX(-50%);
-  background: linear-gradient(90deg, rgba(0,0,0,.35), rgba(255,255,255,.08), rgba(0,0,0,.35));
-  box-shadow: 0 0 18px rgba(0,0,0,.35) inset;
-  border-radius: 2px;
-  z-index: 2;
-}
-
-/* Pages */
-.open-book .page {
-  position: absolute;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  background: #e9e7e1;             /* paper color for now */
-  overflow: hidden;
-  transform-style: preserve-3d;
-  transition: transform 650ms cubic-bezier(.22,.61,.36,1), box-shadow 650ms ease;
-  will-change: transform, box-shadow;
-  /* subtle paper texture suggestion via gradient */
-  background-image:
-    radial-gradient(100% 100% at 50% 0%, rgba(255,255,255,.65) 0%, rgba(255,255,255,0) 60%),
-    linear-gradient(0deg, rgba(0,0,0,.02), rgba(0,0,0,.02));
-}
-
-/* Left page hinges on the spine’s right edge; starts folded (hidden) */
-.open-book .page.left {
-  left: 0;
-  border-right: 1px solid rgba(0,0,0,.08);
-  transform-origin: right center;
-  transform: rotateY(90deg);
-  box-shadow: -20px 0 35px rgba(0,0,0,.0);
-}
-
-/* Right page hinges on the spine’s left edge; starts folded (hidden) */
-.open-book .page.right {
-  right: 0;
-  border-left: 1px solid rgba(0,0,0,.08);
-  transform-origin: left center;
-  transform: rotateY(-90deg);
-  box-shadow: 20px 0 35px rgba(0,0,0,.0);
-}
-
-/* When open: both pages settle flat with soft inner shadows for depth */
-.open-book.is-open .page.left {
-  transform: rotateY(0deg);
-  box-shadow:
-    inset -14px 0 18px rgba(0,0,0,.12),
-    0 12px 24px rgba(0,0,0,.35);
-}
-.open-book.is-open .page.right {
-  transform: rotateY(0deg);
-  box-shadow:
-    inset 14px 0 18px rgba(0,0,0,.12),
-    0 12px 24px rgba(0,0,0,.35);
-}
-
-/* Keep the open spread above neighbors while center is open */
-.book.main-book .open-book { z-index: 1002; }
-.book.main-book .book-inner { z-index: 1001; }
-
-/* Optional: prevent white outlines from any element */
-.open-book, .open-spine, .open-book .page { outline: none !important; box-shadow: none; }
-
-
-
-/* 3D stage holder */
-.book-stage {
-  position: absolute;
-  inset: 0;
+/* ───────── Flip container (keep) ───────── */
+.book {
   perspective: 1200px;
   -webkit-perspective: 1200px;
+  overflow: visible;
 }
-
-/* Front/back covers: separate siblings (not backfaces) */
-.cover {
-  position: absolute;
-  inset: 0;
-  border-radius: 6px;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
-  transition: opacity 320ms ease, transform 600ms cubic-bezier(.22,.61,.36,1);
-  opacity: 0;
-  pointer-events: none;
-  display: grid;
-  place-items: center;
-}
-
-/* FRONT default pose */
-.cover-front {
-  transform: rotateY(0deg);
-}
-
-/* BACK default pose (kept rotated out until shown) */
-.cover-back {
-  transform: rotateY(-180deg);
-}
-
-/* Make the requested view visible */
-.cover.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: rotateY(0deg);
-}
-
-/* When switching to back, gently rotate the front away for flair */
-.book-stage:has(.cover-back.is-visible) .cover-front {
-  transform: rotateY(180deg);
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* OPEN spread: two book-sized panes side-by-side, centered */
-.spread {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--book-w) * 2);
-  height: var(--book-h);
-  transform: translate(-50%, -50%);
-  display: grid;
-  grid-template-columns: var(--book-w) var(--book-w);
-  gap: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 280ms ease;
-  z-index: 5; /* above covers when open */
-}
-
-/* Appear + enable click when open */
-.spread.is-open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Panes: same size as the book; initially folded; no styling */
-.spread .pane {
-  width: var(--book-w);
-  height: var(--book-h);
-  transform-style: preserve-3d;
-  transition: transform 650ms cubic-bezier(.22,.61,.36,1);
-}
-
-/* Fold-in animation from the center (spine) */
-.spread .pane.left  { transform-origin: right center; transform: rotateY(90deg); }
-.spread .pane.right { transform-origin: left  center; transform: rotateY(-90deg); }
-.spread.is-open .pane.left,
-.spread.is-open .pane.right { transform: rotateY(0deg); }
-
-
-
-/* --- Covers: default hidden unless .is-visible is present --- */
-.cover {
-  position: absolute;
-  inset: 0;
-  border-radius: 6px;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
-  transition: opacity 320ms ease, transform 600ms cubic-bezier(.22,.61,.36,1);
-  opacity: 0;
-  pointer-events: none;
-  display: grid;
-  place-items: center;
-}
-
-/* FRONT and BACK base rotations */
-.cover-front { transform: rotateY(0deg); }
-.cover-back  { transform: rotateY(0deg); } /* keep real back content unrotated; it's a separate element */
-
-/* Visible state */
-.cover.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Optional minimal fallback text so you can SEE non-image covers */
-.cover-fallback {
-  padding: 12px 16px;
-  font-weight: 700;
-  text-align: center;
-  /* no color/background set so it uses your existing theme */
-}
-
-/* Spread (two panes book-sized, side-by-side, centered) */
-.spread {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--book-w) * 2);
-  height: var(--book-h);
-  transform: translate(-50%, -50%);
-  display: grid;
-  grid-template-columns: var(--book-w) var(--book-w);
-  gap: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 280ms ease;
-  z-index: 5;
-}
-.spread.is-open { opacity: 1; pointer-events: auto; }
-
-.spread .pane {
-  width: var(--book-w);
-  height: var(--book-h);
-  transform-style: preserve-3d;
-  transition: transform 650ms cubic-bezier(.22,.61,.36,1);
-  /* no background — you’ll style later */
-}
-.spread .pane.left  { transform-origin: right center; transform: rotateY(90deg); }
-.spread .pane.right { transform-origin: left  center; transform: rotateY(-90deg); }
-.spread.is-open .pane.left,
-.spread.is-open .pane.right { transform: rotateY(0deg); }
-
-
-
-/* Covers — visible background */
-.cover-front,
-.cover-back {
-  background: #2d2d2d; /* same as your book-placeholder */
-  color: #fff;
-  font-size: 14px;
-  display: grid;
-  place-items: center;
-}
-
-/* Spread panes (open book) */
-.spread .pane {
-  background: #2d2d2d; /* same neutral fill so you see them */
-  color: #fff;
-  display: grid;
-  place-items: center;
-}
-
-
-
-/* === 3D FLIPPER (front/back) ================================== */
-.book { perspective: 1200px; -webkit-perspective: 1200px; overflow: visible; }
 
 .book-inner {
   position: relative;
-  width: 100%; height: 100%;
-  transform-style: preserve-3d; -webkit-transform-style: preserve-3d;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transition: transform 600ms cubic-bezier(.22,.61,.36,1), opacity 280ms ease;
+  border-radius: inherit;
   will-change: transform, opacity;
-  border-radius: 6px;
 }
 
 /* Faces */
 .book-face {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: stretch;
-  border-radius: inherit;
-  overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transition: opacity 220ms ease;  /* used for cross-fade guard */
 }
 
-/* Face content fill (visible fallback color) */
+/* Base rotations for faces */
+.book-front { transform: rotateY(0deg);  opacity: 1; }
+.book-back  { transform: rotateY(180deg); opacity: 0; }
+
+/* Flip to back (used for view === 'back' or 'open') */
+.book-inner.is-flipped { transform: rotateY(180deg); }
+.book-inner.is-flipped .book-front { opacity: 0; }
+.book-inner.is-flipped .book-back  { opacity: 1; }
+
+/* Brief cross-fade guard to avoid mirrored glimpse during flip */
+.book-inner.flip-fading .book-front { opacity: 0; }
+.book-inner.flip-fading.is-flipped .book-back { opacity: 1; }
+
+/* When 'open', fade the flipper so the spread takes over */
+.book-inner.is-open { opacity: 0; pointer-events: none; }
+
+/* Keep center card safely above neighbors when open */
+.book.main-book { overflow: visible; position: relative; z-index: 905; }
+
+/* Optional: visible fallback fill used by your JSX (.face-fill) */
 .face-fill {
   width: 100%;
   height: 100%;
-  background: #2d2d2d; /* neutral fallback (matches your previous placeholder) */
+  background: #2d2d2d;
   color: #fff;
   display: grid;
   place-items: center;
@@ -1334,25 +1078,13 @@ body {
   letter-spacing: 2px;
 }
 
-/* Front/back base rotations */
-.book-front { transform: rotateY(0deg); }
-.book-back  { transform: rotateY(180deg); }
+/* ───────── OPEN SPREAD (PRIORITY: bottom fixes kept) ───────── */
 
-/* Flip when center is on 'back' or 'open' */
-.book-inner.is-flipped { transform: rotateY(180deg); }
-
-/* When 'open', fade the flipper so the spread can take over */
-.book-inner.is-open { opacity: 0; pointer-events: none; }
-
-/* Keep the center card safely above neighbors during open */
-.carousel.is-flipping { position: relative; z-index: 1000; overflow: visible !important; }
-.carousel.is-flipping .book.main-book { overflow: visible; position: relative; z-index: 1001; }
-.book.main-book { overflow: visible; position: relative; z-index: 905; }
-
-/* === OPEN SPREAD (two panes) =================================== */
+/* Two book-sized panes; centered by default */
 .spread {
   position: absolute;
-  top: 50%; left: 50%;
+  top: 50%;
+  left: 50%;
   width: calc(var(--book-w) * 2);
   height: var(--book-h);
   transform: translate(-50%, -50%);
@@ -1363,150 +1095,26 @@ body {
   opacity: 0;
   transition: opacity 280ms ease;
   z-index: 1002;
-}
-
-.spread.is-open { opacity: 1; pointer-events: auto; }
-
-/* Panes: same size as a book (you can style later) */
-.spread .pane {
-  width: var(--book-w);
-  height: var(--book-h);
-  background: #2d2d2d;  /* visible for now; change/remove later */
-  color: #fff;
-  transform-style: preserve-3d;
-  transition: transform 650ms cubic-bezier(.22,.61,.36,1);
-  display: grid;
-  place-items: center;
-}
-
-/* Fold-in animation from the spine */
-.spread .pane.left  { transform-origin: right center; transform: rotateY(90deg); }
-.spread .pane.right { transform-origin: left  center; transform: rotateY(-90deg); }
-.spread.is-open .pane.left,
-.spread.is-open .pane.right { transform: rotateY(0deg); }
-
-
-
-/* Base: both faces can fade */
-.book-face { transition: opacity 220ms ease; }
-
-/* Default visible face */
-.book-front { opacity: 1; }
-.book-back  { opacity: 0; }
-
-/* When flipped, back is the visible face */
-.book-inner.is-flipped .book-front { opacity: 0; }
-.book-inner.is-flipped .book-back  { opacity: 1; }
-
-/* During the flip, enforce a brief cross-fade to avoid any mirrored text glimpse */
-.book-inner.flip-fading .book-front { opacity: 0; }
-.book-inner.flip-fading.is-flipped .book-back { opacity: 1; }
-
-
-
-/* === REAL-BOOK OPEN: fold right page, then slide to center ============ */
-
-/* Base spread: two book-sized panes */
-.spread {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--book-w) * 2);
-  height: var(--book-h);
-  display: grid;
-  grid-template-columns: var(--book-w) var(--book-w);
-  gap: 0;
-  pointer-events: none;
-  opacity: 0;
-  /* Centered by default */
-  transform: translate(-50%, -50%);
-  z-index: 1002;
-}
-
-/* Panes: visible (neutral) backgrounds so you can see them now */
-.spread .pane {
-  width: var(--book-w);
-  height: var(--book-h);
-  background: #2d2d2d;   /* you can style/replace later */
-  color: #fff;
-  display: grid;
-  place-items: center;
-  transform-style: preserve-3d;
-  transition: transform 360ms cubic-bezier(.22,.61,.36,1);
-}
-
-/* Pre-open state (while viewing the BACK cover):
-   - Keep the spread invisible
-   - Anchor its LEFT page over the current book’s position
-   - Fold the RIGHT page inward (hidden) */
-.spread.will-open {
-  opacity: 0;
-  /* Shift so LEFT page sits exactly where the closed book is */
-  transform: translate(calc(-50% + (var(--book-w) / 2)), -50%);
-}
-
-.spread.will-open .pane.left  { transform: rotateY(0deg); }
-.spread.will-open .pane.right { transform: rotateY(-90deg); }
-
-/* When OPEN:
-   1) Right page unfolds immediately (rotateY -90 → 0)
-   2) After a short delay, the whole spread slides to perfect center
-   This creates the “open first, then slide into place” feel. */
-.spread.is-open {
-  opacity: 1;
-  pointer-events: auto;
-  /* Slide to center AFTER the fold completes */
-  transition:
-    opacity 120ms ease 0ms,
-    transform 360ms cubic-bezier(.22,.61,.36,1) 280ms; /* 280ms delay */
-  transform: translate(-50%, -50%);
-}
-
-/* Right page unfolds immediately on open */
-.spread.is-open .pane.left  { transform: rotateY(0deg); }
-.spread.is-open .pane.right { transform: rotateY(0deg); }
-
-
-/* === REAL-BOOK OPEN: unfold right page, then slide to center ============ */
-
-/* Spread: two book-sized panes */
-.spread {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--book-w) * 2);
-  height: var(--book-h);
-  display: grid;
-  grid-template-columns: var(--book-w) var(--book-w);
-  gap: 0;
-  pointer-events: none;
-  opacity: 0;
-  /* centered by default; animations will override when opening */
-  transform: translate(-50%, -50%);
-  z-index: 1002;
   perspective: 1200px;
   -webkit-perspective: 1200px;
 }
 
-/* Panes: visible for now (same neutral you used before) */
+/* Panes (visible neutral fill so you can see them now) */
 .spread .pane {
   width: var(--book-w);
   height: var(--book-h);
-  background: #2d2d2d;   /* change/remove later */
+  background: #2d2d2d;
   color: #fff;
   display: grid;
   place-items: center;
   transform-style: preserve-3d;
 }
 
-/* Hinge setup */
+/* Hinges */
 .spread .pane.left  { transform-origin: right center; }
 .spread .pane.right { transform-origin: left  center; }
 
-/* Pre-open anchor:
-   While the back cover is visible (or just before opening),
-   keep the spread invisible and positioned so the LEFT page
-   sits exactly where the closed book is. The RIGHT page is folded in. */
+/* Pre-open ANCHOR over the closed book (left page sits on book, right folded in) */
 .spread.will-open {
   opacity: 0;
   transform: translate(calc(-50% + (var(--book-w) / 2)), -50%);
@@ -1515,22 +1123,19 @@ body {
 .spread.will-open .pane.right { transform: rotateY(-180deg); }
 
 /* On OPEN:
-   1) Right page unfolds (−180° → 0°)
-   2) Then, the whole spread slides into perfect center */
+   1) Right page unfolds immediately (−180° → 0°)
+   2) Then the whole spread slides to perfect center */
 .spread.is-open {
   opacity: 1;
   pointer-events: auto;
-  /* Slide AFTER the unfold finishes (delay matches the page animation) */
   animation: slideSpreadCenter 380ms cubic-bezier(.22,.61,.36,1) 420ms forwards;
 }
-
-/* Unfold the right page immediately */
 .spread.is-open .pane.right {
   animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) forwards;
 }
-.spread.is-open .pane.left { transform: rotateY(0deg); } /* stays flat */
+.spread.is-open .pane.left { transform: rotateY(0deg); }
 
-/* Keyframes */
+/* Keyframes (KEEP) */
 @keyframes rightPageUnfold {
   from { transform: rotateY(-180deg); }
   to   { transform: rotateY(0deg); }
