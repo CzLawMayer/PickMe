@@ -308,18 +308,36 @@ export default function Home() {
                           tabIndex={-1}
                         >
                           {/* FRONT face */}
-                          <div className="book-face book-front">
+
+                          <div
+                            className="book-face book-front"
+                            style={{
+                              transform: "rotateY(0deg)",                 // explicit
+                              backfaceVisibility: "hidden",
+                              WebkitBackfaceVisibility: "hidden",
+                              background: "#2d2d2d",                       // belt + suspenders fill
+                            }}
+                          >
                             <div className="face-fill" style={{ background: frontBg }}>
                               {!b.coverUrl ? b.title : null}
                             </div>
                           </div>
 
-                          {/* BACK face (independent from front) */}
-                          <div className="book-face book-back">
+                          {/* BACK face */}
+                          <div
+                            className="book-face book-back"
+                            style={{
+                              transform: "rotateY(180deg)",                // *** critical ***
+                              backfaceVisibility: "visible",                // render even if its back is facing
+                              WebkitBackfaceVisibility: "visible",
+                              background: "#2d2d2d",                        // paint the face itself
+                            }}
+                          >
                             <div className="face-fill" style={{ background: backBg }}>
                               {/* leave empty; you’ll style/populate later */}
                             </div>
                           </div>
+
                         </div>
 
                         {/* OPEN spread (two panes same size as the book) */}
