@@ -1152,3 +1152,65 @@ body {
 .book .book-inner.is-flipped {
   background: #2d2d2d !important; /* same gray as covers/spread */
 }
+
+
+/* On OPEN:
+   1) Whole spread slides into perfect center immediately
+   2) Then the right page unfolds (−180° → 0°) */
+.spread.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  animation: slideSpreadCenter 380ms cubic-bezier(.22,.61,.36,1) forwards; /* no delay */
+}
+
+/* Right page unfolds AFTER the slide finishes */
+.spread.is-open .pane.right {
+  animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) 380ms forwards; /* delay = slide duration */
+}
+.spread.is-open .pane.left {
+  transform: rotateY(0deg);
+}
+
+/* --- SOLID OPEN: no opacity fading during the slide --- */
+
+/* 1) While opening, don't fade the spread — keep it fully opaque */
+.carousel.is-opening .spread {
+  opacity: 1 !important;
+  transition: none !important;          /* kill opacity transition */
+  will-change: transform;                /* smooth slide only */
+}
+
+/* If you prefer to scope tighter, you can target .spread.is-open, but this works well. */
+.carousel.is-opening .spread.is-open {
+  opacity: 1 !important;
+}
+
+/* 2) Don't cross-fade the flipper when we switch to 'open' — just hide it instantly */
+.carousel.is-opening .book-inner {
+  /* only transform should animate; opacity should cut immediately */
+  transition: transform 600ms cubic-bezier(.22,.61,.36,1) !important;
+}
+.carousel.is-opening .book-inner.is-open {
+  opacity: 0 !important;                /* hide the closed book */
+}
+
+/* (Optional) If you still see any faint blending on some GPUs,
+   force the spread onto its own layer during the slide. */
+.carousel.is-opening .spread { transform: translateZ(0); }
+
+
+/* Smooth slide for metadata + arrows */
+.metadata,
+.vertical-arrows {
+  transition: left 380ms cubic-bezier(.22,.61,.36,1);
+  will-change: left;
+}
+
+/* When open, push UI to match the spread’s wider edges */
+.carousel.is-opening .metadata {
+  left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap));
+}
+
+.carousel.is-opening .vertical-arrows {
+  left: calc(50% + var(--book-w) + var(--arrow-gap));
+}
