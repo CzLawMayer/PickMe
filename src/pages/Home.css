@@ -1297,19 +1297,138 @@ body {
   transform: rotateY(0deg);
 }
 
-/* ───────── Keyframes (single source of truth) ───────── */
-/* Used only during the initial open */
-@keyframes rightPageUnfold {
-  from { transform: rotateY(-180deg); }
-  to   { transform: rotateY(0deg); }
+
+
+/* Disable ONLY interactive page-turn animations (keep the opening choreography) */
+.spread.turning-right .pane.right,
+.spread.turning-left  .pane.left {
+  animation: none !important;
+  transform: rotateY(0deg) !important;
 }
 
-/* Used for interactive page turns — names must stay as-is for JS onAnimationEnd */
-@keyframes pageTurnNext {  /* right page unfolds (same as open) */
-  0%   { transform: rotateY(-180deg); }
-  100% { transform: rotateY(0deg); }
+
+/* Keep the layout in its "open" positions as long as the book is open */
+.carousel.is-opening .metadata,
+.carousel.is-opened  .metadata {
+  left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap));
 }
-@keyframes pageTurnPrev {  /* left page unfolds mirrored */
-  0%   { transform: rotateY(180deg); }
-  100% { transform: rotateY(0deg); }
+
+.carousel.is-opening .vertical-arrows,
+.carousel.is-opened  .vertical-arrows {
+  left: calc(50% + var(--book-w) + var(--arrow-gap));
+}
+
+/* Hide/far-shift neighbors both during opening AND while open */
+.carousel.is-opening .book.left-book,
+.carousel.is-opened  .book.left-book {
+  left: calc(50% - (var(--book-w) * 3) - (var(--side-gap) * 2));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.carousel.is-opening .book.right-book,
+.carousel.is-opened  .book.right-book {
+  left: calc(50% + (var(--book-w) * 2) + (var(--side-gap) * 2));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Off-1 are fully hidden in both states too */
+.carousel.is-opening .book.left-off-1,
+.carousel.is-opened  .book.left-off-1,
+.carousel.is-opening .book.right-off-1,
+.carousel.is-opened  .book.right-off-1 {
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+/* When the book is open, stretch the arrows column to the book height
+   and space the three buttons vertically (top / middle / bottom). */
+.carousel.is-opened .vertical-arrows {
+  top: 50%;
+  transform: translateY(-50%);
+  height: var(--book-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* top / middle / bottom */
+  gap: 0;                         /* gap handled by space-between */
+}
+
+/* Optional: make the middle cover button feel distinct (same size for now) */
+.arrow--cover {
+  /* same base size; tweak if you want a focal control */
+  /* width: 52px; height: 52px; font-size: 22px; */
+}
+
+
+
+/* Keep open layout persistent */
+.carousel.is-opening .metadata,
+.carousel.is-opened  .metadata { left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap)); }
+
+.carousel.is-opening .vertical-arrows,
+.carousel.is-opened  .vertical-arrows { left: calc(50% + var(--book-w) + var(--arrow-gap)); }
+
+.carousel.is-opening .book.left-book,
+.carousel.is-opened  .book.left-book {
+  left: calc(50% - (var(--book-w) * 3) - (var(--side-gap) * 2));
+  opacity: 0; pointer-events: none;
+}
+.carousel.is-opening .book.right-book,
+.carousel.is-opened  .book.right-book {
+  left: calc(50% + (var(--book-w) * 2) + (var(--side-gap) * 2));
+  opacity: 0; pointer-events: none;
+}
+.carousel.is-opening .book.left-off-1,
+.carousel.is-opened  .book.left-off-1,
+.carousel.is-opening .book.right-off-1,
+.carousel.is-opened  .book.right-off-1 { opacity: 0; pointer-events: none; }
+
+/* Space arrows top/middle/bottom while open */
+.carousel.is-opened .vertical-arrows {
+  top: 50%;
+  transform: translateY(-50%);
+  height: var(--book-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0;
+}
+
+/* Center a tight 3-button stack beside the open book */
+.carousel.is-opening .vertical-arrows,
+.carousel.is-opened  .vertical-arrows {
+  top: 50%;
+  left: calc(50% + var(--book-w) + var(--arrow-gap));
+  transform: translateY(-50%);  /* center the whole stack vertically */
+  height: auto;                  /* no tall column */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;       /* pack the group around the center */
+  align-items: center;
+  gap: 35px;                      /* same spacing as your original */
+}
+
+/* Keep the cover button the same size as the others (optional explicit) */
+.arrow--cover {
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  line-height: 1;
+}
+
+
+/* Align arrows stack to the vertical center of the book, not the carousel */
+.carousel.is-opening .vertical-arrows,
+.carousel.is-opened  .vertical-arrows {
+  top: var(--book-offset);       /* match the book’s vertical anchor */
+  left: calc(50% + var(--book-w) + var(--arrow-gap));
+  transform: translateY(-50%);   /* center the stack on that point */
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 35px;                     /* same tight spacing as before */
 }
