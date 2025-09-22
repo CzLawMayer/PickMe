@@ -194,6 +194,7 @@ export default function Home() {
   }, [count, view, next, prev, turnPage, maxLeftPage])
 
   // ---------- Drag / swipe ----------
+// ---------- Drag / swipe ----------
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const dragActiveRef = useRef(false)
@@ -201,10 +202,44 @@ export default function Home() {
   const wasDraggingRef = useRef(false as boolean)
   const pointerIdRef = useRef<number | null>(null)
 
+  // --- Suppress accidental clicks on the open spread after a drag ---
+  const spreadDownRef = useRef<{ x: number; y: number } | null>(null)
+  const spreadDraggedRef = useRef(false)
+  const SPREAD_CLICK_MOVE_THRESH = 8 // px
+
+  function onSpreadPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    spreadDownRef.current = { x: e.clientX, y: e.clientY }
+    spreadDraggedRef.current = false
+  }
+
+  function onSpreadPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    const d = spreadDownRef.current
+    if (!d) return
+    const dx = Math.abs(e.clientX - d.x)
+    const dy = Math.abs(e.clientY - d.y)
+    // mark as dragged if moved enough; the *upcoming click* must be ignored
+    spreadDraggedRef.current =
+      dx > SPREAD_CLICK_MOVE_THRESH || dy > SPREAD_CLICK_MOVE_THRESH
+
+    // clear on the next macrotask, AFTER click fires
+    setTimeout(() => {
+      spreadDownRef.current = null
+      spreadDraggedRef.current = false
+    }, 0)
+  }
+
+  function onSpreadClickCapture(e: React.MouseEvent<HTMLDivElement>) {
+    if (spreadDraggedRef.current) {
+      e.preventDefault()
+      e.stopPropagation() // block the click so onCenterClick won’t fire
+    }
+  }
+
   const DRAG_START_THRESH = 6
   const SWIPE_NAV_THRESH = 60
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (view === "open") return // 🚫 block dragging while open
     dragActiveRef.current = true
     dragStartXRef.current = e.clientX
     pointerIdRef.current = e.pointerId
@@ -213,6 +248,7 @@ export default function Home() {
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (view === "open") return // 🚫 guard
     if (!dragActiveRef.current) return
     const dx = e.clientX - dragStartXRef.current
     setDragX(dx)
@@ -225,6 +261,7 @@ export default function Home() {
   }
 
   function endDrag(e?: React.PointerEvent<HTMLDivElement>) {
+    if (view === "open") return
     if (!dragActiveRef.current) return
     dragActiveRef.current = false
     const pid = pointerIdRef.current
@@ -247,9 +284,12 @@ export default function Home() {
       wasDraggingRef.current = false
     })
   }
+// ---------- Center click (front → back → open → back …) ----------
+
 
   // ---------- Center click (front → back → open → back …) ----------
   const onCenterClick = (e: React.MouseEvent | React.PointerEvent) => {
+    if (spreadDraggedRef.current) return
     if (wasDraggingRef.current) return
     e.stopPropagation()
     setView((prev) => {
@@ -370,7 +410,7 @@ export default function Home() {
 
         {/* Drag layer + cards */}
         <div
-          className={`drag-layer${isDragging ? " dragging" : ""}`}
+          className={`drag-layer${isDragging ? " dragging" : ""}` + (view === "open" ? " disabled" : "")}
           style={{ transform: `translateX(${dragX}px)` }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -441,6 +481,9 @@ export default function Home() {
                         "spread" +
                         (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
                       }
+                      onPointerDown={onSpreadPointerDown}   // ← add this
+                      onPointerUp={onSpreadPointerUp}       // ← add this
+                      onClickCapture={onSpreadClickCapture}
                       onClick={onCenterClick}
                       aria-hidden={view !== "open"}
                       aria-label={view === "open" ? "Close book" : undefined}

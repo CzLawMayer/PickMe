@@ -1668,3 +1668,9 @@ body {
   /* same base as your pages so it blends in */
   background: transparent;     /* panes already have #2d2d2d */
 }
+
+
+.drag-layer.disabled {
+  pointer-events: none; /* drag layer stops catching any drags/clicks */
+  cursor: default;
+}

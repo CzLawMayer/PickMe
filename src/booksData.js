@@ -13,7 +13,7 @@ export const sampleBooks = [
     bookmarks: 76,
     currentChapter: 0,
     totalChapters: 17,
-    dedication: "For my parents, who taught me to read the stars."
+    dedication: "meow meow meow MEOW"
   },
   {
     id: "bk-002",
