@@ -1432,3 +1432,36 @@ body {
   align-items: center;
   gap: 35px;                     /* same tight spacing as before */
 }
+
+
+/* Dedication page (page 0, left pane) */
+.dedication {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 6vmin;
+}
+
+.dedication-text {
+  max-width: 70%;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(16px, 2.2vmin, 22px);
+  line-height: 1.6;
+  opacity: 0.95;
+  letter-spacing: 0.2px;
+  /* subtle book vibe */
+  transform: translateY(-4%);
+}
+
+/* Optional faint ornament if you want a title look
+.dedication-text::before,
+.dedication-text::after {
+  content: "—";
+  display: block;
+  opacity: 0.6;
+}
+.dedication-text::before { margin-bottom: 10px; }
+.dedication-text::after  { margin-top: 10px;  }
+*/

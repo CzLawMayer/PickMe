@@ -22,6 +22,7 @@ type Book = {
   bookmarks?: number
   currentChapter?: number
   totalChapters?: number
+  dedication?: string
 }
 
 type BookView = "front" | "back" | "open"
@@ -399,7 +400,17 @@ export default function Home() {
                           className="pane left"
                           onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(-1) }}
                         >
-                          <div className="page-content">{page}</div>
+                          {page === 0 ? (
+                            <div className="dedication">
+                              <div className="dedication-text">
+                                {center?.dedication?.trim()
+                                  ? center.dedication
+                                  : "— Dedication —"}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="page-content">{page}</div>
+                          )}
                         </div>
                         <div
                           className="pane right"

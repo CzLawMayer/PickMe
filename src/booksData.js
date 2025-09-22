@@ -13,6 +13,7 @@ export const sampleBooks = [
     bookmarks: 76,
     currentChapter: 0,
     totalChapters: 17,
+    dedication: "For my parents, who taught me to read the stars."
   },
   {
     id: "bk-002",
@@ -26,6 +27,7 @@ export const sampleBooks = [
     bookmarks: 45,
     currentChapter: 3,
     totalChapters: 22,
+    dedication: "For my parents, who taught me to read the stars."
   },
   {
     id: "bk-003",
@@ -39,6 +41,7 @@ export const sampleBooks = [
     bookmarks: 132,
     currentChapter: 6,
     totalChapters: 28,
+    dedication: "For my parents, who taught me to read the stars."
   },
   {
     id: "bk-004",
@@ -52,6 +55,7 @@ export const sampleBooks = [
     bookmarks: 31,
     currentChapter: 2,
     totalChapters: 12,
+    dedication: "For my parents, who taught me to read the stars."
   },
   {
     id: "bk-005",
@@ -65,6 +69,7 @@ export const sampleBooks = [
     bookmarks: 90,
     currentChapter: 1,
     totalChapters: 10,
+    dedication: "For my parents, who taught me to read the stars."
   },
   {
     id: "bk-006",
@@ -78,6 +83,7 @@ export const sampleBooks = [
     bookmarks: 60,
     currentChapter: 5,
     totalChapters: 24,
+    dedication: "For my parents, who taught me to read the stars."
   },
   {
     id: "bk-007",
@@ -91,5 +97,6 @@ export const sampleBooks = [
     bookmarks: 18,
     currentChapter: 0,
     totalChapters: 8,
+    dedication: "For my parents, who taught me to read the stars."
   },
 ];
