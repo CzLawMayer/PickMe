@@ -1465,3 +1465,206 @@ body {
 .dedication-text::before { margin-bottom: 10px; }
 .dedication-text::after  { margin-top: 10px;  }
 */
+
+
+.arrow:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
+/* Table of Contents (page 1) */
+.toc {
+  width: 100%;
+  height: 100%;
+  padding: 6vmin 6vmin;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2vmin;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.toc-title {
+  font-size: clamp(18px, 2.4vmin, 24px);
+  letter-spacing: .3px;
+  text-align: left;
+  opacity: .95;
+}
+
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+.toc-list li { margin: .4rem 0; }
+
+.toc-link {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: .6rem;
+  font: inherit;
+  background: transparent;
+  color: inherit;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: .2rem 0;
+}
+
+.toc-link:hover .toc-chapter { text-decoration: underline; }
+.toc-dots   { letter-spacing: .1em; opacity: .5; white-space: nowrap; overflow: hidden; }
+.toc-page   { opacity: .85; font-variant-numeric: tabular-nums; }
+
+/* Chapter pages */
+.chapter-page {
+  width: 100%;
+  height: 100%;
+  padding: 6vmin;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2vmin;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.chapter-title {
+  font-size: clamp(18px, 2.6vmin, 26px);
+  letter-spacing: .3px;
+  text-align: left;
+  opacity: .98;
+}
+
+.chapter-body {
+  font-size: clamp(14px, 2vmin, 18px);
+  line-height: 1.7;
+  opacity: .95;
+}
+
+
+/* Keep page content inside the physical page */
+.spread .pane {
+  overflow: hidden;            /* no spill outside the page */
+}
+
+/* TOC layout: title + scrollable list */
+.toc {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr; /* title + list */
+  gap: 2vmin;
+  /* Important: allow the grid to actually shrink its children */
+  min-height: 0;
+}
+
+/* Make the list scroll within the page bounds */
+.toc-list {
+  overflow: auto;   /* enable scrolling */
+  min-height: 0;    /* allow it to shrink inside the grid */
+  max-height: 100%; /* never exceed the page */
+  padding-right: 4px; /* tiny gutter so scrollbar doesn't overlay text */
+}
+
+/* Optional: chapter page body can scroll too if content grows */
+.chapter-page {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2vmin;
+  min-height: 0;  /* critical with CSS grid */
+}
+
+.chapter-body {
+  overflow: auto;
+  min-height: 0;
+}
+
+/* Optional: nicer, subtle scrollbars */
+.toc-list::-webkit-scrollbar,
+.chapter-body::-webkit-scrollbar { width: 8px; }
+.toc-list::-webkit-scrollbar-thumb,
+.chapter-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.25);
+  border-radius: 8px;
+}
+.toc-list::-webkit-scrollbar-track,
+.chapter-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* Push the scrollbar further right */
+.toc-list {
+  overflow: auto;
+  min-height: 0;
+  max-height: 100%;
+  /* add extra gutter so scrollbar sits farther to the right of the text */
+  padding-right: 20px;  /* more space between text and scrollbar */
+  box-sizing: content-box; /* so padding doesn't shrink the scroll area */
+}
+
+/* You can also nudge the numbers separately if you want */
+.toc-list .toc-page {
+  margin-left: 8px; /* tiny gap between dots and number */
+}
+
+/* Optional: tweak scrollbar width again */
+.toc-list::-webkit-scrollbar { width: 8px; }
+/* optional thumb color as before */
+
+
+/* Make each TOC link a single row with three columns */
+.toc-list li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Flex container to keep chapter / dots / page on one line */
+.toc-link {
+  display: flex;
+  align-items: center;           /* vertically center all */
+  justify-content: space-between; /* push ends apart */
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+/* Ensure the chapter title stays together with its number */
+.toc-chapter {
+  flex: 0 1 auto; /* left side stays compact */
+  white-space: nowrap; /* prevent breaking “Chapter X” onto two lines */
+  margin-right: 6px;
+}
+
+/* The dots fill the middle */
+.toc-dots {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  margin: 0 6px;
+  opacity: .5;
+}
+
+/* Page number sticks to the far right */
+.toc-page {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  margin-left: 6px;
+}
+
+
+/* A neutral empty page when no content exists */
+.page-blank {
+  width: 100%;
+  height: 100%;
+  /* same base as your pages so it blends in */
+  background: transparent;     /* panes already have #2d2d2d */
+}

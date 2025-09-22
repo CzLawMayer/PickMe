@@ -8,6 +8,7 @@ import SaveButton from "@/components/SaveButton"
 
 import SideMenu from "@/components/SideMenu"
 
+// ---------- Types ----------
 type Book = {
   id: string
   title: string
@@ -23,85 +24,135 @@ type Book = {
   currentChapter?: number
   totalChapters?: number
   dedication?: string
+  chapters?: string[] // optional list of chapter titles
 }
 
 type BookView = "front" | "back" | "open"
 
+// ---------- Component ----------
 export default function Home() {
-  const [books] = useState<Book[]>(sampleBooks)
+  // data
+  const [books] = useState<Book[]>(Array.isArray(sampleBooks) ? sampleBooks : [])
+  const count = books.length
+
+  // selection / ui
   const [current, setCurrent] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // book state
   const [view, setView] = useState<BookView>("front")
-  const [isOpening, setIsOpening] = useState(false) // drives the open animation only
+  const [isOpening, setIsOpening] = useState(false) // only during initial open animation
 
-  const count = books.length
-  const center = count ? books[current] : null
-  const mod = (x: number) => (count ? (x % count + count) % count : 0)
+  const center: Book | null = count ? books[mod(current, count)] : null
   const isOpenLayout = view === "open" || isOpening
 
+  // when switching books, go back to the front cover
   useEffect(() => {
     setView("front")
+    setPage(0)
   }, [current])
 
-  // per-book memory
+  // ---------- Per-book toggles ----------
   const [likedById, setLikedById] = useState<Record<string, boolean>>({})
   const [savedById, setSavedById] = useState<Record<string, boolean>>({})
-  const [starredById, setStarredById] = useState<Record<string, boolean>>({})
   const [userRatingById, setUserRatingById] = useState<Record<string, number>>({})
+
   const centerId = center?.id ?? ""
-  const liked = !!likedById[centerId]
-  const saved = !!savedById[centerId]
-  const userRating = userRatingById[centerId] ?? 0
+  const liked = !!(centerId && likedById[centerId])
+  const saved = !!(centerId && savedById[centerId])
+  const userRating = centerId ? (userRatingById[centerId] ?? 0) : 0
 
   const displayLikes = (center?.likes ?? 0) + (liked ? 1 : 0)
   const displaySaves = (center?.bookmarks ?? 0) + (saved ? 1 : 0)
 
   const baseRating =
     typeof center?.rating === "string"
-      ? parseFloat(String(center?.rating).split("/")[0])
+      ? parseFloat(String(center?.rating).split("/")[0] || "0")
       : Number(center?.rating ?? 0)
 
   const votesRaw = center?.ratingCount ?? 0
   const votes = Number.isFinite(Number(votesRaw)) ? Number(votesRaw) : 0
   const PRIOR_VOTES = 20
-  let combinedRating = baseRating
-  if (userRating > 0) {
-    combinedRating =
-      votes > 0
+  const combinedRating =
+    userRating > 0
+      ? votes > 0
         ? (baseRating * votes + userRating) / (votes + 1)
         : baseRating > 0
         ? (baseRating * PRIOR_VOTES + userRating) / (PRIOR_VOTES + 1)
         : userRating
-  }
+      : baseRating
 
-  // navigation between books
+  // ---------- Carousel nav (closed) ----------
   const next = useCallback(() => {
-    if (count) setCurrent((c) => (c + 1) % count)
+    if (!count) return
+    setCurrent((c) => mod(c + 1, count))
   }, [count])
+
   const prev = useCallback(() => {
-    if (count) setCurrent((c) => (c - 1 + count) % count)
+    if (!count) return
+    setCurrent((c) => mod(c - 1, count))
   }, [count])
 
-  // page flipping when "open" — INSTANT (no animation): +2 / -2
+  // ---------- Pages model (open) ----------
+  // page 0 = dedication (left)
+  // page 1 = table of contents (right)
+  // page 2.. = chapters, 1 chapter per page
+  const chapterCount = (() => {
+    if (!center) return 0
+    if (Array.isArray(center.chapters) && center.chapters.length > 0) return center.chapters.length
+    const n = Number(center.totalChapters ?? 0)
+    return Number.isFinite(n) && n > 0 ? n : 0
+  })()
+
+  const chapterTitles: string[] = (() => {
+    if (center && Array.isArray(center.chapters) && center.chapters.length === chapterCount) {
+      return center.chapters.slice()
+    }
+    return Array.from({ length: chapterCount }, (_, i) => `Chapter ${i + 1}`)
+  })()
+
+  // total pages & bounds
+  const totalPages = 2 + chapterCount
+  const maxLeftPage = lastEven(totalPages - 1) // last even ≤ totalPages-1
+
   const [page, setPage] = useState(0)
-  const turnPage = useCallback((dir: 1 | -1) => {
-    setPage((p) => Math.max(0, p + 2 * dir))
-  }, [])
 
-  // ⚠️ define flipFading + constant BEFORE any use in deps
+  const clampToSpread = useCallback(
+    (p: number) => Math.max(0, Math.min(p, Math.max(0, maxLeftPage))),
+    [maxLeftPage]
+  )
+
+  // page flipping when "open": step by 2 (left page index)
+  const turnPage = useCallback(
+    (dir: 1 | -1) => setPage((p) => clampToSpread(p + 2 * dir)),
+    [clampToSpread]
+  )
+
+  const gotoChapter = useCallback(
+    (k: number) => {
+      // chapter k (1-based) -> page k+1; ensure left page is even
+      const p = k + 1
+      const left = p % 2 === 0 ? p : p - 1
+      setPage(clampToSpread(left))
+    },
+    [clampToSpread]
+  )
+
+  const atStart = page <= 0
+  const atEnd = page >= maxLeftPage
+
+  // ---------- Flip cross-fade ----------
   const [flipFading, setFlipFading] = useState(false)
-  const FLIP_FADE_MS = 260 // cross-fade front/back only
+  const FLIP_FADE_MS = 260
 
-  // Close open spread and return to the FRONT cover
   const returnToCover = useCallback(() => {
     setPage(0)
     setFlipFading(true)
     window.setTimeout(() => setFlipFading(false), FLIP_FADE_MS)
     setView("front")
-  }, [FLIP_FADE_MS])
+  }, []) // duration constant is fine to omit in deps
 
-  // keyboard
+  // ---------- Keyboard ----------
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       switch (e.key) {
@@ -121,17 +172,15 @@ export default function Home() {
           if (view === "open") turnPage(-1)
           else prev()
           break
-        case "ArrowUp":
-        case "ArrowDown":
-          e.preventDefault()
-          break
         case "Home":
           e.preventDefault()
-          if (count) setCurrent(0)
+          if (view === "open") setPage(0)
+          else if (count) setCurrent(0)
           break
         case "End":
           e.preventDefault()
-          if (count) setCurrent(count - 1)
+          if (view === "open") setPage(maxLeftPage)
+          else if (count) setCurrent(count - 1)
           break
         case " ":
           e.preventDefault()
@@ -142,14 +191,14 @@ export default function Home() {
     }
     window.addEventListener("keydown", onKey, { passive: false })
     return () => window.removeEventListener("keydown", onKey)
-  }, [count, next, prev, view, turnPage])
+  }, [count, view, next, prev, turnPage, maxLeftPage])
 
-  // drag/swipe
+  // ---------- Drag / swipe ----------
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const dragActiveRef = useRef(false)
   const dragStartXRef = useRef(0)
-  const wasDraggingRef = useRef(false)
+  const wasDraggingRef = useRef(false as boolean)
   const pointerIdRef = useRef<number | null>(null)
 
   const DRAG_START_THRESH = 6
@@ -199,23 +248,23 @@ export default function Home() {
     })
   }
 
-  // center click: front → back → open → back …
+  // ---------- Center click (front → back → open → back …) ----------
   const onCenterClick = (e: React.MouseEvent | React.PointerEvent) => {
     if (wasDraggingRef.current) return
     e.stopPropagation()
     setView((prev) => {
-      const nextView = prev === "front" ? "back" : prev === "back" ? "open" : "back"
+      const nextView: BookView =
+        prev === "front" ? "back" : prev === "back" ? "open" : "back"
 
-      // BACK → OPEN: trigger the open choreography
+      // Kick off open choreography when going back → open
       if (prev === "back" && nextView === "open") {
         setPage(0)
         setIsOpening(true)
-        // opening timeline ≈ slide (380ms) + unfold (420ms) = 800ms
-        const OPEN_TOTAL_MS = 800
+        const OPEN_TOTAL_MS = 800 // slide + unfold (match your CSS)
         window.setTimeout(() => setIsOpening(false), OPEN_TOTAL_MS)
       }
 
-      // front ↔ back cross-fade
+      // Cross-fade when front/back toggling
       if (
         (prev === "front" && nextView === "back") ||
         (prev === "back" && nextView === "front")
@@ -228,7 +277,7 @@ export default function Home() {
     })
   }
 
-  // actions
+  // ---------- Actions ----------
   const toggleLike = useCallback(() => {
     if (!centerId) return
     setLikedById((m) => ({ ...m, [centerId]: !m[centerId] }))
@@ -242,12 +291,12 @@ export default function Home() {
   const onRate = useCallback(
     (val: number) => {
       if (!centerId) return
-      setStarredById((m) => ({ ...m, [centerId]: val > 0 }))
       setUserRatingById((m) => ({ ...m, [centerId]: val }))
     },
     [centerId]
   )
 
+  // ---------- Render ----------
   return (
     <div className="app">
       {/* Top bar */}
@@ -276,7 +325,7 @@ export default function Home() {
       <main
         className={
           "carousel" +
-          (isOpenLayout ? " is-opened" : "") +   // stays while book is open
+          (isOpenLayout ? " is-opened" : "") +   // persistent while open
           (isOpening ? " is-opening" : "")       // only during opening animation
         }
         role="region"
@@ -331,15 +380,16 @@ export default function Home() {
         >
           {count > 0 && (() => {
             const order = [
-              { cls: "book left-off-1",  idx: mod(current - 2) },
-              { cls: "book left-book",   idx: mod(current - 1) },
-              { cls: "book main-book",   idx: mod(current + 0) },
-              { cls: "book right-book",  idx: mod(current + 1) },
-              { cls: "book right-off-1", idx: mod(current + 2) },
+              { cls: "book left-off-1",  idx: mod(current - 2, count) },
+              { cls: "book left-book",   idx: mod(current - 1, count) },
+              { cls: "book main-book",   idx: mod(current + 0, count) },
+              { cls: "book right-book",  idx: mod(current + 1, count) },
+              { cls: "book right-off-1", idx: mod(current + 2, count) },
             ]
             return order.map(({ cls, idx }) => {
               const b = books[idx]
-              const isCenter = idx === current
+              const isCenter = idx === mod(current, count)
+
               const frontBg = b.coverUrl
                 ? `url("${b.coverUrl}") center/cover no-repeat, #2d2d2d`
                 : "#2d2d2d"
@@ -348,79 +398,136 @@ export default function Home() {
                 : "#2d2d2d"
 
               return (
-                <div key={b.id} className={cls} aria-hidden={cls !== "book main-book"}>
-                  <>
-                    {/* Closed flipper: front/back */}
-                    <div
-                      className={
-                        "book-inner" +
-                        (isCenter && (view === "back" || view === "open") ? " is-flipped" : "") +
-                        (isCenter && view === "open" ? " is-open" : "") +
-                        (isCenter && flipFading ? " flip-fading" : "")
-                      }
-                      onClick={isCenter ? onCenterClick : undefined}
-                      role={isCenter ? "button" : undefined}
-                      aria-label={
-                        isCenter
-                          ? view === "front"
-                            ? "Show back cover"
-                            : view === "back"
-                            ? "Open book"
-                            : "Close book"
-                          : undefined
-                      }
-                      aria-pressed={isCenter ? (view !== "front") : undefined}
-                      tabIndex={-1}
-                    >
-                      {/* FRONT face */}
-                      <div className="book-face book-front">
-                        <div className="face-fill" style={{ background: frontBg }}>
-                          {!b.coverUrl ? b.title : null}
-                        </div>
-                      </div>
-
-                      {/* BACK face */}
-                      <div className="book-face book-back">
-                        <div className="face-fill" style={{ background: backBg }} />
+                <div key={b.id} className={cls} aria-hidden={!isCenter}>
+                  {/* Closed flipper: front/back */}
+                  <div
+                    className={
+                      "book-inner" +
+                      (isCenter && (view === "back" || view === "open") ? " is-flipped" : "") +
+                      (isCenter && view === "open" ? " is-open" : "") +
+                      (isCenter && flipFading ? " flip-fading" : "")
+                    }
+                    onClick={isCenter ? onCenterClick : undefined}
+                    role={isCenter ? "button" : undefined}
+                    aria-label={
+                      isCenter
+                        ? view === "front"
+                          ? "Show back cover"
+                          : view === "back"
+                          ? "Open book"
+                          : "Close book"
+                        : undefined
+                    }
+                    aria-pressed={isCenter ? (view !== "front") : undefined}
+                    tabIndex={-1}
+                  >
+                    {/* FRONT face */}
+                    <div className="book-face book-front">
+                      <div className="face-fill" style={{ background: frontBg }}>
+                        {!b.coverUrl ? b.title : null}
                       </div>
                     </div>
 
-                    {/* OPEN spread (kept opening animation; no page-turn animation) */}
-                    {isCenter && (
+                    {/* BACK face */}
+                    <div className="book-face book-back">
+                      <div className="face-fill" style={{ background: backBg }} />
+                    </div>
+                  </div>
+
+                  {/* OPEN spread */}
+                  {isCenter && (
+                    <div
+                      className={
+                        "spread" +
+                        (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
+                      }
+                      onClick={onCenterClick}
+                      aria-hidden={view !== "open"}
+                      aria-label={view === "open" ? "Close book" : undefined}
+                    >
+                      {/* LEFT pane (page == even number) */}
                       <div
-                        className={
-                          "spread" +
-                          (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
-                        }
-                        onClick={onCenterClick}
-                        aria-hidden={view !== "open"}
-                        aria-label={view === "open" ? "Close book" : undefined}
+                        className="pane left"
+                        onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(-1) }}
                       >
-                        <div
-                          className="pane left"
-                          onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(-1) }}
-                        >
-                          {page === 0 ? (
-                            <div className="dedication">
-                              <div className="dedication-text">
-                                {center?.dedication?.trim()
-                                  ? center.dedication
-                                  : "— Dedication —"}
-                              </div>
+                        {page === 0 ? (
+                          // Dedication (page 0)
+                          <div className="dedication">
+                            <div className="dedication-text">
+                              {typeof center?.dedication === "string" && center.dedication.trim()
+                                ? center.dedication
+                                : "— Dedication —"}
                             </div>
-                          ) : (
-                            <div className="page-content">{page}</div>
-                          )}
-                        </div>
-                        <div
-                          className="pane right"
-                          onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(1) }}
-                        >
-                          <div className="page-content">{page + 1}</div>
-                        </div>
+                          </div>
+                        ) : (
+                          (() => {
+                            if (page >= 2) {
+                              const chapIdx = page - 2 // 0-based
+                              if (chapIdx >= 0 && chapIdx < chapterCount) {
+                                return (
+                                  <div className="chapter-page">
+                                    <h2 className="chapter-title">{chapterTitles[chapIdx]}</h2>
+                                    <div className="chapter-body">
+                                      <p>(Chapter {chapIdx + 1} content goes here.)</p>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                            }
+                            return <div className="page-blank" aria-hidden="true" />
+                          })()
+                        )}
                       </div>
-                    )}
-                  </>
+
+                      {/* RIGHT pane (page+1) */}
+                      <div
+                        className="pane right"
+                        onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(1) }}
+                      >
+                        {page === 0 ? (
+                          // Table of Contents (page 1)
+                          <div className="toc">
+                            <h3 className="toc-title">Contents</h3>
+                            <ol className="toc-list">
+                              {chapterTitles.map((t, i) => (
+                                <li key={i}>
+                                  <button
+                                    type="button"
+                                    className="toc-link"
+                                    onClick={(e) => { e.stopPropagation(); gotoChapter(i + 1) }}
+                                    aria-label={`Go to ${t}`}
+                                    title={`Go to ${t}`}
+                                  >
+                                    <span className="toc-chapter">{t}</span>
+                                    <span className="toc-dots" aria-hidden>…………………………………………</span>
+                                    <span className="toc-page">{i + 2}</span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+                        ) : (
+                          (() => {
+                            const rightPage = page + 1
+                            if (rightPage >= 2) {
+                              const chapIdx = rightPage - 2
+                              if (chapIdx >= 0 && chapIdx < chapterCount) {
+                                return (
+                                  <div className="chapter-page">
+                                    <h2 className="chapter-title">{chapterTitles[chapIdx]}</h2>
+                                    <div className="chapter-body">
+                                      <p>(Chapter {chapIdx + 1} content continues here.)</p>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                            }
+                            return <div className="page-blank" aria-hidden="true" />
+                          })()
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })
@@ -435,7 +542,8 @@ export default function Home() {
             className="arrow"
             aria-label={view === "open" ? "Next page" : "Next book"}
             aria-keyshortcuts="ArrowRight Space"
-            title={view === "open" ? "Next page" : "Next"}
+            title={view === "open" ? (atEnd ? "Last page" : "Next page") : "Next"}
+            disabled={view === "open" && atEnd}
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -473,7 +581,8 @@ export default function Home() {
             className="arrow"
             aria-label={view === "open" ? "Previous page" : "Previous book"}
             aria-keyshortcuts="ArrowLeft Shift+Space"
-            title={view === "open" ? "Prev page" : "Previous"}
+            title={view === "open" ? (atStart ? "First page" : "Previous page") : "Previous"}
+            disabled={view === "open" && atStart}
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -491,4 +600,15 @@ export default function Home() {
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   )
+}
+
+// ---------- helpers ----------
+function mod(x: number, n: number) {
+  // safe modulo for negatives
+  return n ? ((x % n) + n) % n : 0
+}
+function lastEven(n: number) {
+  if (!Number.isFinite(n)) return 0
+  const m = Math.max(0, Math.floor(n))
+  return m % 2 === 0 ? m : m - 1
 }
