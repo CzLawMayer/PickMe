@@ -1726,9 +1726,8 @@ body {
 /* Panel container (black rounded square) */
 /* Panel: base (always visible, lives below by default) */
 .reader-menu-panel {
-  background: #111;
+  background: #1f1f1f;
   color: #fff;
-  border: 1px solid rgba(255,255,255,.12);
   border-radius: 18px;
   padding: 14px 16px;
   width: 20vw;                 /* your width */
@@ -1938,3 +1937,11 @@ body {
   transform: translateY(50%);
   transition: transform 700ms cubic-bezier(.25,.8,.25,1); /* slower when going to open */
 }
+
+.reader-menu-grid button:nth-child(1) { background: #f4511e; }
+.reader-menu-grid button:nth-child(2) { background: #d81b60; }
+.reader-menu-grid button:nth-child(3) { background: #6a1b9a; }
+.reader-menu-grid button:nth-child(4) { background: #e53935; }
+.reader-menu-grid button:nth-child(5) { background: #7c4dff; }
+.reader-menu-grid button:nth-child(6) { background: #e2a9f1; }
+.reader-menu-grid button:nth-child(7) { background: #43a047; }
