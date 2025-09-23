@@ -41,7 +41,26 @@ export default function Home() {
 
   // book state
   const [view, setView] = useState<BookView>("front")
-  const [isOpening, setIsOpening] = useState(false) // only during initial open animation
+  const [isOpening, setIsOpening] = useState(false)
+  const [page, setPage] = useState(0)   // 👈 moved up here
+
+  // reader menu (bottom sheet) — only used while book is open
+  const [readerMenuOpen, setReaderMenuOpen] = useState(false)
+
+  // Close the reader menu any time we leave "open" view
+  useEffect(() => {
+    if (view !== "open") setReaderMenuOpen(false)
+  }, [view])
+
+  // Close the reader menu on Escape
+  useEffect(() => {
+    if (!readerMenuOpen) return
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setReaderMenuOpen(false)
+    }
+    window.addEventListener("keydown", onEsc)
+    return () => window.removeEventListener("keydown", onEsc)
+  }, [readerMenuOpen])
 
   const center: Book | null = count ? books[mod(current, count)] : null
   const isOpenLayout = view === "open" || isOpening
@@ -114,8 +133,6 @@ export default function Home() {
   // total pages & bounds
   const totalPages = 2 + chapterCount
   const maxLeftPage = lastEven(totalPages - 1) // last even ≤ totalPages-1
-
-  const [page, setPage] = useState(0)
 
   const clampToSpread = useCallback(
     (p: number) => Math.max(0, Math.min(p, Math.max(0, maxLeftPage))),
@@ -638,6 +655,44 @@ export default function Home() {
             ‹
           </button>
         </div>
+
+        {view === "open" && (
+  <div className={"reader-menu" + (readerMenuOpen ? " is-open" : "")}>
+    {/* Toggle button (chevron) */}
+    <button
+      type="button"
+      className="reader-menu-toggle"
+      aria-label={readerMenuOpen ? "Hide reader menu" : "Show reader menu"}
+      aria-expanded={readerMenuOpen}
+      onClick={(e) => {
+        e.stopPropagation()
+        setReaderMenuOpen(o => !o)
+      }}
+    >
+      <span className="reader-menu-chevron" aria-hidden>⌃</span>
+    </button>
+
+    {/* Sliding panel */}
+    <div
+      className="reader-menu-panel"
+      role="menu"
+      aria-hidden={!readerMenuOpen}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="reader-menu-grid">
+        {/* 7 placeholder actions (we’ll wire these later) */}
+        <button className="reader-menu-item" role="menuitem" aria-label="Font size">A</button>
+        <button className="reader-menu-item" role="menuitem" aria-label="Font">F</button>
+        <button className="reader-menu-item" role="menuitem" aria-label="Light / Dark">☀︎</button>
+        <button className="reader-menu-item" role="menuitem" aria-label="Dictionary">📖</button>
+        <button className="reader-menu-item" role="menuitem" aria-label="Notes">✍︎</button>
+        <button className="reader-menu-item" role="menuitem" aria-label="Line height">↕︎</button>
+        <button className="reader-menu-item" role="menuitem" aria-label="Text to Speech">🔊</button>
+      </div>
+    </div>
+  </div>
+)}
+
       </main>
 
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />

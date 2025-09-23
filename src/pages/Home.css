@@ -1674,3 +1674,116 @@ body {
   pointer-events: none; /* drag layer stops catching any drags/clicks */
   cursor: default;
 }
+
+
+/* ───────────────── Reader bottom menu (open-book only) ───────────────── */
+
+.reader-menu {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 1100;
+  pointer-events: none;                 /* children re-enable */
+}
+
+/* pack toggle + panel vertically */
+.reader-menu-toggle,
+.reader-menu-panel {
+  pointer-events: auto;
+}
+
+/* Chevron toggle button */
+.reader-menu-toggle {
+  appearance: none;
+  border: none;
+  background: #1f1f1f;
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,.45);
+  transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+  margin: 0 auto 10px auto;
+}
+.reader-menu.is-open .reader-menu-toggle .reader-menu-chevron {
+  transform: rotate(180deg); /* points down when open */
+}
+.reader-menu-toggle:hover { transform: translateY(-1px); }
+.reader-menu-toggle:active { transform: translateY(0); }
+.reader-menu-chevron {
+  display: inline-block;
+  transform: translateY(-1px);
+}
+
+/* Panel container (black rounded square) */
+.reader-menu-panel {
+  background: #111;                    /* black panel */
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  padding: 14px 16px;
+  width: min(720px, 86vw);
+  margin: 0 auto;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+  transform: translateY(16px);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 240ms cubic-bezier(.22,.61,.36,1), opacity 200ms ease, visibility 0ms linear 200ms;
+}
+.reader-menu.is-open .reader-menu-panel {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  transition: transform 300ms cubic-bezier(.22,.61,.36,1), opacity 220ms ease, visibility 0ms;
+}
+
+/* 7 rounded square buttons */
+.reader-menu-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 14px;
+  justify-items: center;
+  align-items: center;
+}
+
+.reader-menu-item {
+  appearance: none;
+  border: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 800;
+  background: #242424;                 /* neutral for now */
+  color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+  transition: transform 120ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+.reader-menu-item:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 10px 20px rgba(0,0,0,.45);
+}
+.reader-menu-item:active { transform: translateY(0); }
+
+/* Tight screens: let buttons wrap but stay centered */
+@media (max-width: 680px) {
+  .reader-menu-panel { width: min(560px, 92vw); }
+  .reader-menu-grid {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, 1fr);
+    justify-items: center;
+    row-gap: 12px;
+  }
+}
