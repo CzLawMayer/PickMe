@@ -1709,7 +1709,9 @@ body {
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(0,0,0,.45);
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
-  margin: 0 auto 10px auto;
+  margin: 40px auto 10px auto;
+  position: relative;
+  top: 80px;
 }
 .reader-menu.is-open .reader-menu-toggle .reader-menu-chevron {
   transform: rotate(180deg); /* points down when open */
@@ -1924,3 +1926,6 @@ body {
   transform: translateY(0) !important; /* reset offset on close */
   top: 0 !important;
 }
+
+
+
