@@ -684,7 +684,17 @@ export default function Home() {
         <button className="reader-menu-item" role="menuitem" aria-label="Font size">A</button>
         <button className="reader-menu-item" role="menuitem" aria-label="Font">F</button>
         <button className="reader-menu-item" role="menuitem" aria-label="Light / Dark">☀︎</button>
-        <button className="reader-menu-item" role="menuitem" aria-label="Dictionary">📖</button>
+        <button
+          className="reader-menu-item"
+          role="menuitem"
+          aria-label="Dictionary"
+          onClick={(e) => {
+            e.stopPropagation()
+            setReaderMenuOpen(false)  // 👈 close the menu
+          }}
+        >
+          📖
+        </button>
         <button className="reader-menu-item" role="menuitem" aria-label="Notes">✍︎</button>
         <button className="reader-menu-item" role="menuitem" aria-label="Line height">↕︎</button>
         <button className="reader-menu-item" role="menuitem" aria-label="Text to Speech">🔊</button>

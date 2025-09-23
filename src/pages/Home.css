@@ -1722,33 +1722,39 @@ body {
 }
 
 /* Panel container (black rounded square) */
+/* Panel: base (always visible, lives below by default) */
 .reader-menu-panel {
-  background: #111;                    /* black panel */
+  background: #111;
   color: #fff;
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 18px;
   padding: 14px 16px;
-  width: min(720px, 86vw);
+  width: 20vw;                 /* your width */
   margin: 0 auto;
   box-shadow: 0 12px 30px rgba(0,0,0,.55);
-  transform: translateY(16px);
-  opacity: 0;
-  visibility: hidden;
-  transition: transform 240ms cubic-bezier(.22,.61,.36,1), opacity 200ms ease, visibility 0ms linear 200ms;
+
+  /* 👇 start off-screen; one transition handles both directions */
+  transform: translateY(100%);
+  transition: transform 300ms cubic-bezier(.22,.61,.36,1);
+
+  /* 👇 keep constant so there’s no fade/snap */
+  opacity: 1 !important;
+  visibility: visible !important;
 }
+
+/* Panel when OPEN (pulled up to show top half) */
 .reader-menu.is-open .reader-menu-panel {
-  transform: translateY(0);
-  opacity: 1;
-  visibility: visible;
-  transition: transform 300ms cubic-bezier(.22,.61,.36,1), opacity 220ms ease, visibility 0ms;
+  transform: translateY(50%);
+  /* no transition here */
 }
+
 
 /* 7 rounded square buttons */
 .reader-menu-grid {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 14px;
+  gap: 0px;
   justify-items: center;
   align-items: center;
 }
@@ -1786,4 +1792,135 @@ body {
     justify-items: center;
     row-gap: 12px;
   }
+}
+
+
+/* Keep the menu pinned bottom-center */
+.reader-menu {
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  z-index: 1100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Chevron still clickable */
+.reader-menu-toggle {
+  pointer-events: auto;
+  margin-bottom: 8px; /* small gap above the bottom edge */
+}
+
+/* Panel: fully hidden when CLOSED */
+.reader-menu-panel {
+  pointer-events: auto;
+  width: min(720px, 86vw);
+  margin: 0 auto;
+
+  /* start fully hidden below */
+  transform: translateY(100%);
+  transition: transform 300ms cubic-bezier(.22,.61,.36,1);
+}
+
+/* Panel: only TOP HALF visible when OPEN (peek) */
+.reader-menu.is-open .reader-menu-panel {
+  /* pulled up — only top half visible */
+  transform: translateY(50%);
+  transition: transform 300ms cubic-bezier(.22,.61,.36,1);
+}
+
+
+/* Make button size a variable so math is easy */
+.reader-menu-panel {
+  --reader-btn: 64px;                /* matches .reader-menu-item width/height */
+  overflow: visible;                 /* allow buttons to peek out */
+  padding-top: calc(14px + var(--reader-btn) / 2); /* room for the half-inside part */
+}
+
+/* Lift the entire grid up by half a button */
+.reader-menu-grid {
+  transform: translateY(calc(-1 * var(--reader-btn) / 2));
+}
+
+/* (optional) ensure items render on top of the panel edge if needed */
+.reader-menu-item {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Make buttons peek with their centers on the panel top edge --- */
+.reader-menu-panel { overflow: visible; padding-top: 14px !important; } /* cancel any extra top padding */
+.reader-menu-grid { position: relative; top: -32px !important; }        /* 32px = half of your 64px buttons */
+
+.reader-menu-panel {
+  overflow: visible; /* let buttons peek out */
+  padding-top: 14px !important; /* keep your original padding */
+}
+
+.reader-menu-grid {
+  position: relative;
+  top: -46px !important; /* 32px (half button) + 14px padding */
+}
+
+.reader-menu-grid {
+  position: relative;
+  top: -16px !important; /* center of button on panel top edge */
+}
+
+.reader-menu-grid {
+  display: flex;
+  justify-content: center; /* center group */
+  gap: 18px; /* controls spacing */
+}
+
+.reader-menu-grid {
+  display: flex;              /* flex instead of grid */
+  justify-content: center;    /* center horizontally */
+  align-items: center;        /* align vertically */
+  gap: 8px;                   /* adjust spacing */
+  flex-wrap: wrap;            /* allows wrapping on small screens */
+}
+
+.reader-menu-item {
+  width: 64px;
+  height: 64px;
+  /* …other styles */
+}
+
+.reader-menu-panel {
+  width: min(550px, 70vw); /* or any value you want */
+  margin: 0 auto;
+}
+
+
+/* Clip anything outside when CLOSED so peeking is hidden */
+.reader-menu-panel { 
+  overflow: hidden;              /* default: closed */
+}
+
+/* Allow peeking only when OPEN */
+.reader-menu.is-open .reader-menu-panel {
+  overflow: visible;             /* open: buttons can stick out */
+}
+
+/* Optional: drop the offset when closed */
+.reader-menu:not(.is-open) .reader-menu-grid {
+  top: 0 !important;
+}
+
+.reader-menu-panel {
+  /* base styles … */
+  overflow: hidden; /* hide overspill when closed */
+}
+
+.reader-menu.is-open .reader-menu-panel {
+  overflow: visible; /* let buttons peek when open */
+}
+
+.reader-menu:not(.is-open) .reader-menu-grid {
+  transform: translateY(0) !important; /* reset offset on close */
+  top: 0 !important;
 }
