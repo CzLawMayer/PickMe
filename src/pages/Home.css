@@ -2194,3 +2194,41 @@ body {
 .toc-link {
   font-family: var(--reader-font-family) !important;
 }
+
+
+
+/* ───────── Reader page theme (scoped to the open spread) ───────── */
+.spread {
+  --reader-page-bg: #2d2d2d;  /* default dark */
+  --reader-page-fg: #ffffff;
+}
+
+/* Physical pages (left/right panes) */
+.spread .pane {
+  background: var(--reader-page-bg) !important;
+  color: var(--reader-page-fg) !important;
+}
+
+/* Ensure all common text inside pages inherits the fg color */
+.dedication-text,
+.toc,
+.toc-title,
+.toc-list,
+.toc-link,
+.toc-page,
+.chapter-page,
+.chapter-title,
+.chapter-body {
+  color: var(--reader-page-fg) !important;
+}
+
+/* TOC button should look like text on the page */
+.toc-link {
+  background: transparent;
+  border: none;
+}
+
+/* Optional: lighten the dot leader a bit in dark, dim in light */
+.toc-dots { opacity: 0.5; }
+
+/* (No changes to the rest of the UI; metadata/arrows/header keep app theme) */

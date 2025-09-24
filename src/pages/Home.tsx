@@ -71,6 +71,8 @@ export default function Home() {
   const [fontSizeIndex, setFontSizeIndex] = useState<0 | 1 | 2 | 3 | 4>(2)
   const [lineHeight, setLineHeight] = useState(1.7) // default line spacing
 
+  const [readerLight, setReaderLight] = useState(false)
+
   // Close font popover on outside click or Escape
   useEffect(() => {
     if (!fontPanelOpen) return
@@ -590,6 +592,8 @@ export default function Home() {
                         ["--reader-font-scale" as any]: String(FONT_SCALES[fontSizeIndex]),
                         ["--reader-line" as any]: String(lineHeight),
                         ["--reader-font-family" as any]: FONT_STYLES[fontStyleIndex].css,
+                        ["--reader-page-bg" as any]: readerLight ? "#ffffff" : "#2d2d2d",
+                        ["--reader-page-fg" as any]: readerLight ? "#000000" : "#ffffff",
                       }}
                     >
 
@@ -873,7 +877,17 @@ export default function Home() {
             </div>
           )}
         </button>
-        <button className="reader-menu-item" role="menuitem" aria-label="Light / Dark">☀︎</button>
+        <button
+          type="button"
+          className="reader-menu-item"
+          role="menuitem"
+          aria-label={readerLight ? "Switch to dark pages" : "Switch to light pages"}
+          aria-pressed={readerLight}
+          onClick={(e) => { e.stopPropagation(); setReaderLight(v => !v) }}
+          title={readerLight ? "Dark mode" : "Light mode"}
+        >
+          {readerLight ? "🌙" : "☀︎"}
+        </button>
         <button
           className="reader-menu-item"
           role="menuitem"
