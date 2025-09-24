@@ -29,6 +29,21 @@ type Book = {
 
 type BookView = "front" | "back" | "open"
 
+
+export const FONT_SCALES = [0.85, 0.95, 1.0, 1.10, 1.25] as const
+
+export const FONT_STYLES = [
+  { name: "Serif (Georgia)", css: "Georgia, 'Times New Roman', serif" },
+  { name: "Sans-serif (Arial)", css: "Arial, Helvetica, sans-serif" },
+  { name: "Sans-serif (Roboto)", css: "'Roboto', sans-serif" },
+  { name: "Serif (Merriweather)", css: "'Merriweather', serif" },
+  { name: "Sans-serif (Open Sans)", css: "'Open Sans', sans-serif" },
+  { name: "Monospace (Courier)", css: "'Courier New', Courier, monospace" },
+] as const
+
+
+
+
 // ---------- Component ----------
 export default function Home() {
   // data
@@ -44,8 +59,75 @@ export default function Home() {
   const [isOpening, setIsOpening] = useState(false)
   const [page, setPage] = useState(0)   // 👈 moved up here
 
+
   // reader menu (bottom sheet) — only used while book is open
   const [readerMenuOpen, setReaderMenuOpen] = useState(false)
+
+  const [fontPanelOpen, setFontPanelOpen] = useState(false)
+  const fontBtnRef = useRef<HTMLButtonElement | null>(null)
+  const fontPanelRef = useRef<HTMLDivElement | null>(null)
+
+  // 5-step preset; index 2 (middle) is default
+  const [fontSizeIndex, setFontSizeIndex] = useState<0 | 1 | 2 | 3 | 4>(2)
+  const [lineHeight, setLineHeight] = useState(1.7) // default line spacing
+
+  // Close font popover on outside click or Escape
+  useEffect(() => {
+    if (!fontPanelOpen) return
+    function onDocMouseDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (fontPanelRef.current?.contains(t) || fontBtnRef.current?.contains(t)) return
+      setFontPanelOpen(false)
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setFontPanelOpen(false)
+    }
+    document.addEventListener("mousedown", onDocMouseDown)
+    window.addEventListener("keydown", onEsc)
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown)
+      window.removeEventListener("keydown", onEsc)
+    }
+  }, [fontPanelOpen])
+
+  // ───────── Reader customization (font style) ─────────
+  const [fontStylePanelOpen, setFontStylePanelOpen] = useState(false)
+  const fontStyleBtnRef = useRef<HTMLButtonElement | null>(null)
+  const fontStylePanelRef = useRef<HTMLDivElement | null>(null)
+  const [fontStyleIndex, setFontStyleIndex] = useState<0 | 1 | 2 | 3 | 4 | 5>(0) // first = current default
+
+  // Close font-style popover on outside click or Escape
+  useEffect(() => {
+    if (!fontStylePanelOpen) return
+    function onDocMouseDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (fontStylePanelRef.current?.contains(t) || fontStyleBtnRef.current?.contains(t)) return
+      setFontStylePanelOpen(false)
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setFontStylePanelOpen(false)
+    }
+    document.addEventListener("mousedown", onDocMouseDown)
+    window.addEventListener("keydown", onEsc)
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown)
+      window.removeEventListener("keydown", onEsc)
+    }
+  }, [fontStylePanelOpen])
+
+  // Auto-close one popover when the other opens
+  useEffect(() => { if (fontPanelOpen) setFontStylePanelOpen(false) }, [fontPanelOpen])
+  useEffect(() => { if (fontStylePanelOpen) setFontPanelOpen(false) }, [fontStylePanelOpen])
+
+  // Close both when leaving the open-book view
+  useEffect(() => {
+    if (view !== "open") {
+      setFontPanelOpen(false)
+      setFontStylePanelOpen(false)
+    }
+  }, [view])
+
+
 
   // Close the reader menu any time we leave "open" view
   useEffect(() => {
@@ -498,13 +580,19 @@ export default function Home() {
                         "spread" +
                         (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
                       }
-                      onPointerDown={onSpreadPointerDown}   // ← add this
-                      onPointerUp={onSpreadPointerUp}       // ← add this
+                      onPointerDown={onSpreadPointerDown}
+                      onPointerUp={onSpreadPointerUp}
                       onClickCapture={onSpreadClickCapture}
                       onClick={onCenterClick}
                       aria-hidden={view !== "open"}
                       aria-label={view === "open" ? "Close book" : undefined}
+                      style={{
+                        ["--reader-font-scale" as any]: String(FONT_SCALES[fontSizeIndex]),
+                        ["--reader-line" as any]: String(lineHeight),
+                        ["--reader-font-family" as any]: FONT_STYLES[fontStyleIndex].css,
+                      }}
                     >
+
                       {/* LEFT pane (page == even number) */}
                       <div
                         className="pane left"
@@ -681,8 +769,110 @@ export default function Home() {
     >
       <div className="reader-menu-grid">
         {/* 7 placeholder actions (we’ll wire these later) */}
-        <button className="reader-menu-item" role="menuitem" aria-label="Font size">A</button>
-        <button className="reader-menu-item" role="menuitem" aria-label="Font">F</button>
+        <button
+          ref={fontBtnRef}
+          type="button"
+          className={"reader-menu-item" + (fontPanelOpen ? " is-active" : "")}
+          role="menuitem"
+          aria-label="Font & line spacing"
+          aria-haspopup="dialog"
+          aria-expanded={fontPanelOpen}
+          onClick={(e) => {
+            e.stopPropagation()
+            setFontPanelOpen(o => !o)
+          }}
+          style={{ position: "relative" }} // anchor the popover
+        >
+          A
+          {/* Popover */}
+          {fontPanelOpen && (
+            <div
+              ref={fontPanelRef}
+              className="reader-popover"
+              role="dialog"
+              aria-label="Reading appearance"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Font size row (5 options; middle is default) */}
+              <div className="font-size-row" role="radiogroup" aria-label="Font size">
+                {FONT_SCALES.map((scale, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={
+                      "font-size-option" + (fontSizeIndex === idx ? " is-active" : "")
+                    }
+                    role="radio"
+                    aria-checked={fontSizeIndex === idx}
+                    onClick={() => setFontSizeIndex(idx as 0|1|2|3|4)}
+                    title={idx < 2 ? "Smaller" : idx === 2 ? "Default" : "Larger"}
+                  >
+                    <span style={{ fontSize: `${(14 * scale).toFixed(2)}px` }}>A</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Line spacing slider */}
+              <div className="line-height-wrap">
+                <label className="lh-label" htmlFor="lh-range">Line spacing</label>
+                <input
+                  id="lh-range"
+                  className="lh-range"
+                  type="range"
+                  min={1.2}
+                  max={2.0}
+                  step={0.05}
+                  value={lineHeight}
+                  onChange={(e) => setLineHeight(parseFloat(e.target.value))}
+                  aria-valuemin={1.2}
+                  aria-valuemax={2.0}
+                  aria-valuenow={lineHeight}
+                />
+                <div className="lh-value">{lineHeight.toFixed(2)}×</div>
+              </div>
+            </div>
+          )}
+        </button>
+        <button
+          ref={fontStyleBtnRef}
+          type="button"
+          className={"reader-menu-item" + (fontStylePanelOpen ? " is-active" : "")}
+          role="menuitem"
+          aria-label="Font style"
+          aria-haspopup="dialog"
+          aria-expanded={fontStylePanelOpen}
+          onClick={(e) => {
+            e.stopPropagation()
+            setFontStylePanelOpen(o => !o)
+          }}
+          style={{ position: "relative" }}
+        >
+          F
+          {fontStylePanelOpen && (
+            <div
+              ref={fontStylePanelRef}
+              className="reader-popover reader-fontstyle-popover"
+              role="dialog"
+              aria-label="Font style"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="font-style-grid">
+                {FONT_STYLES.map((f, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={"font-style-option" + (fontStyleIndex === idx ? " is-active" : "")}
+                    onClick={() => setFontStyleIndex(idx as 0|1|2|3|4|5)}
+                    title={f.name}
+                    style={{ fontFamily: f.css }}
+                  >
+                    Aa
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </button>
         <button className="reader-menu-item" role="menuitem" aria-label="Light / Dark">☀︎</button>
         <button
           className="reader-menu-item"
