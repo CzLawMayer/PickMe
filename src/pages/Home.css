@@ -2232,3 +2232,179 @@ body {
 .toc-dots { opacity: 0.5; }
 
 /* (No changes to the rest of the UI; metadata/arrows/header keep app theme) */
+
+
+/* Anchor wrapper for each menu item + its popover */
+.reader-menu-item-wrap { position: relative; display: inline-block; }
+
+/* Ensure the sliding panel doesn't clip popovers */
+.reader-menu-panel { overflow: visible; }
+
+/* ───────── Dictionary (always dark) — positioned above its button ───────── */
+.reader-dict-popover {
+  position: absolute;
+  bottom: 100%;                     /* sit above the button */
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;              /* gap above button */
+  z-index: 1100;                    /* above menu panel */
+
+  width: min(420px, 86vw);
+  max-height: 80vh;                 /* never exceed viewport */
+  overflow: hidden;                 /* no outer scrollbars */
+  display: grid;
+  grid-template-rows: auto auto 1fr;/* title, form, results */
+  background: #0f0f0f !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+}
+
+/* Title */
+.dict-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-align: center;
+  color: #fff;
+}
+
+/* Form */
+.dict-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dict-input {
+  width: 100%;
+  background: #1b1b1b !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  outline: none;
+  caret-color: #fff;
+}
+.dict-input::placeholder { color: rgba(255,255,255,.55); }
+.dict-input:focus {
+  border-color: #28a9ff !important;
+  box-shadow: 0 0 0 2px rgba(40,169,255,.25) inset;
+}
+
+/* Define button */
+.dict-go {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #242424;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 800;
+  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
+}
+.dict-go:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+.dict-go:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Results list scrolls internally; always dark */
+.dict-results {
+  overflow: auto;
+  padding-right: 6px;
+  display: grid;
+  gap: 10px;
+  background: #0f0f0f;
+  color: #fff;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.35) transparent;
+}
+.dict-results::-webkit-scrollbar { width: 8px; }
+.dict-results::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.35);
+  border-radius: 8px;
+}
+.dict-results::-webkit-scrollbar-track { background: transparent; }
+
+/* Each entry card (dark) */
+.dict-entry {
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #151515 !important;
+  color: #fff !important;
+}
+.dict-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.dict-word { font-weight: 900; font-size: 18px; }
+.dict-phon { opacity: .8; font-size: 14px; }
+.dict-pos  {
+  opacity: .8; font-size: 12px;
+  border: 1px solid rgba(255,255,255,.2);
+  padding: 2px 6px; border-radius: 999px;
+}
+.dict-senses { margin: 0 0 0 18px; padding: 0; display: grid; gap: 6px; }
+.dict-eg  { opacity: .8; font-size: 12px; margin-top: 2px; }
+
+/* ───────── Notepad popover — positioned above its button ───────── */
+.reader-note-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  z-index: 1100;
+
+  width: min(420px, 86vw);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f0f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 16px;
+  gap: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+}
+
+/* Title */
+.note-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+  color: #fff;
+}
+
+/* Textarea */
+.note-textarea {
+  flex: 1;
+  resize: none;
+  width: 100%;
+  min-height: 200px;
+  background: #1b1b1b;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  line-height: 1.6;
+  outline: none;
+}
+.note-textarea::placeholder { color: rgba(255,255,255,.55); }
+.note-textarea:focus {
+  border-color: #28a9ff;
+  box-shadow: 0 0 0 2px rgba(40,169,255,.25) inset;
+}
+.note-textarea::-webkit-scrollbar { width: 8px; }
+.note-textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,.35); border-radius: 8px; }
+.note-textarea::-webkit-scrollbar-track { background: transparent; }

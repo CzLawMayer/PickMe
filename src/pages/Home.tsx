@@ -73,6 +73,130 @@ export default function Home() {
 
   const [readerLight, setReaderLight] = useState(false)
 
+    // ───────── Reader dictionary (popover) ─────────
+  const [dictOpen, setDictOpen] = useState(false)
+  const dictBtnRef = useRef<HTMLButtonElement | null>(null)
+  const dictPanelRef = useRef<HTMLDivElement | null>(null)
+
+  const [dictQuery, setDictQuery] = useState("")
+  const [dictLoading, setDictLoading] = useState(false)
+  const [dictError, setDictError] = useState<string | null>(null)
+
+  type DictSense = { definition: string; example?: string }
+  type DictEntry = { word: string; phonetic?: string; partOfSpeech?: string; senses: DictSense[] }
+  const [dictResults, setDictResults] = useState<DictEntry[] | null>(null)
+
+
+  // ───────── Reader customization (notepad) ─────────
+  const [notePanelOpen, setNotePanelOpen] = useState(false)
+  const noteBtnRef = useRef<HTMLButtonElement | null>(null)
+  const notePanelRef = useRef<HTMLDivElement | null>(null)
+
+  // Single notes area shared across all books
+  const [notes, setNotes] = useState("")
+
+  // Close popover on outside click or Escape
+  useEffect(() => {
+    if (!notePanelOpen) return
+    function onDocMouseDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (notePanelRef.current?.contains(t) || noteBtnRef.current?.contains(t)) return
+      setNotePanelOpen(false)
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setNotePanelOpen(false)
+    }
+    document.addEventListener("mousedown", onDocMouseDown)
+    window.addEventListener("keydown", onEsc)
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown)
+      window.removeEventListener("keydown", onEsc)
+    }
+  }, [notePanelOpen])
+
+
+  // Open/close behavior
+  useEffect(() => {
+    if (!dictOpen) return
+    function onDocMouseDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (dictPanelRef.current?.contains(t) || dictBtnRef.current?.contains(t)) return
+      setDictOpen(false)
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setDictOpen(false)
+    }
+    document.addEventListener("mousedown", onDocMouseDown)
+    window.addEventListener("keydown", onEsc)
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown)
+      window.removeEventListener("keydown", onEsc)
+    }
+  }, [dictOpen])
+
+  // Close when leaving reader view
+  useEffect(() => { if (view !== "open") setDictOpen(false) }, [view])
+
+  // Close other popovers when dictionary opens
+  useEffect(() => {
+    if (dictOpen) {
+      setFontPanelOpen(false)
+      setFontStylePanelOpen(false)
+    }
+  }, [dictOpen])
+
+  // Focus input when opened
+  const dictInputRef = useRef<HTMLInputElement | null>(null)
+  useEffect(() => { if (dictOpen) setTimeout(() => dictInputRef.current?.focus(), 0) }, [dictOpen])
+
+  const noteTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+  useEffect(() => {
+    if (notePanelOpen && noteTextareaRef.current) {
+      // Focus the textarea
+      const ta = noteTextareaRef.current
+      ta.focus()
+      // Move cursor to the end
+      const end = ta.value.length
+      ta.setSelectionRange(end, end)
+    }
+  }, [notePanelOpen])
+
+  // Fetch definition from dictionaryapi.dev
+  async function lookupWord(q: string) {
+    const word = q.trim()
+    if (!word) return
+    setDictLoading(true); setDictError(null); setDictResults(null)
+    try {
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+      if (!res.ok) throw new Error("Not found")
+      const data = await res.json()
+      const entries: DictEntry[] = (Array.isArray(data) ? data : []).slice(0, 3).map((e: any) => {
+        const phon = e.phonetic || e.phonetics?.[0]?.text || undefined
+        const firstPOS = e.meanings?.[0]?.partOfSpeech || undefined
+        const senses: DictSense[] =
+          (e.meanings || []).flatMap((m: any) =>
+            (m.definitions || []).slice(0, 2).map((d: any) => ({
+              definition: d.definition,
+              example: d.example,
+            }))
+          )
+        return { word: e.word, phonetic: phon, partOfSpeech: firstPOS, senses }
+      })
+      if (!entries.length) throw new Error("No results")
+      setDictResults(entries)
+    } catch {
+      setDictError("No definition found.")
+    } finally {
+      setDictLoading(false)
+    }
+  }
+
+  function onDictSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    lookupWord(dictQuery)
+  }
+
+
   // Close font popover on outside click or Escape
   useEffect(() => {
     if (!fontPanelOpen) return
@@ -255,44 +379,67 @@ export default function Home() {
 
   // ---------- Keyboard ----------
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      switch (e.key) {
-        case "ArrowRight":
-        case "d":
-        case "D":
-        case "PageDown":
-          e.preventDefault()
-          if (view === "open") turnPage(1)
-          else next()
-          break
-        case "ArrowLeft":
-        case "a":
-        case "A":
-        case "PageUp":
-          e.preventDefault()
-          if (view === "open") turnPage(-1)
-          else prev()
-          break
-        case "Home":
-          e.preventDefault()
-          if (view === "open") setPage(0)
-          else if (count) setCurrent(0)
-          break
-        case "End":
-          e.preventDefault()
-          if (view === "open") setPage(maxLeftPage)
-          else if (count) setCurrent(count - 1)
-          break
-        case " ":
-          e.preventDefault()
-          if (view === "open") turnPage(e.shiftKey ? -1 : 1)
-          else (e.shiftKey ? prev() : next())
-          break
-      }
+  function onKey(e: KeyboardEvent) {
+    const target = e.target as HTMLElement | null
+
+    // Ignore when typing in an editable element
+    const isEditableEl =
+      !!target &&
+      (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        (target as HTMLElement).isContentEditable ||
+        target.getAttribute("role") === "textbox"
+      )
+    if (isEditableEl) return
+
+    // If any popover is open, ignore all navigation keys (includes arrows, a/d).
+    // Also: Space is NOT a navigation key anymore (globally disabled).
+    const anyPopoverOpen = dictOpen || notePanelOpen || fontPanelOpen || fontStylePanelOpen
+    if (anyPopoverOpen) {
+      const navKeys = ["ArrowRight", "ArrowLeft", "PageDown", "PageUp", "a", "A", "d", "D"]
+      if (navKeys.includes(e.key)) return
     }
-    window.addEventListener("keydown", onKey, { passive: false })
-    return () => window.removeEventListener("keydown", onKey)
-  }, [count, view, next, prev, turnPage, maxLeftPage])
+
+    switch (e.key) {
+      case "ArrowRight":
+      case "d":
+      case "D":
+      case "PageDown":
+        e.preventDefault()
+        if (view === "open") turnPage(1)
+        else next()
+        break
+      case "ArrowLeft":
+      case "a":
+      case "A":
+      case "PageUp":
+        e.preventDefault()
+        if (view === "open") turnPage(-1)
+        else prev()
+        break
+      case "Home":
+        e.preventDefault()
+        if (view === "open") setPage(0)
+        else if (count) setCurrent(0)
+        break
+      case "End":
+        e.preventDefault()
+        if (view === "open") setPage(maxLeftPage)
+        else if (count) setCurrent(count - 1)
+        break
+
+      // NOTE: We intentionally do NOT handle " " (Space) anymore.
+      // It will no longer flip pages or do anything in the global handler.
+    }
+  }
+
+  window.addEventListener("keydown", onKey, { passive: false })
+  return () => window.removeEventListener("keydown", onKey)
+}, [
+  count, view, next, prev, turnPage, maxLeftPage,
+  dictOpen, notePanelOpen, fontPanelOpen, fontStylePanelOpen
+])
 
   // ---------- Drag / swipe ----------
 // ---------- Drag / swipe ----------
@@ -693,7 +840,7 @@ export default function Home() {
             type="button"
             className="arrow"
             aria-label={view === "open" ? "Next page" : "Next book"}
-            aria-keyshortcuts="ArrowRight Space"
+            aria-keyshortcuts="ArrowRight"
             title={view === "open" ? (atEnd ? "Last page" : "Next page") : "Next"}
             disabled={view === "open" && atEnd}
             onMouseDown={(e) => e.stopPropagation()}
@@ -732,7 +879,7 @@ export default function Home() {
             type="button"
             className="arrow"
             aria-label={view === "open" ? "Previous page" : "Previous book"}
-            aria-keyshortcuts="ArrowLeft Shift+Space"
+            aria-keyshortcuts="ArrowLeft"
             title={view === "open" ? (atStart ? "First page" : "Previous page") : "Previous"}
             disabled={view === "open" && atStart}
             onMouseDown={(e) => e.stopPropagation()}
@@ -899,8 +1046,113 @@ export default function Home() {
         >
           📖
         </button>
-        <button className="reader-menu-item" role="menuitem" aria-label="Notes">✍︎</button>
-        <button className="reader-menu-item" role="menuitem" aria-label="Line height">↕︎</button>
+        <div className="reader-menu-item-wrap">
+          <button
+            ref={dictBtnRef}
+            type="button"
+            className={"reader-menu-item" + (dictOpen ? " is-active" : "")}
+            role="menuitem"
+            aria-label="Dictionary"
+            aria-haspopup="dialog"
+            aria-expanded={dictOpen}
+            onClick={(e) => {
+              e.stopPropagation()
+              setDictOpen(o => !o)
+              // optional: immediately blur to avoid Space re-activating the button
+              requestAnimationFrame(() => dictBtnRef.current?.blur())
+            }}
+            title="Dictionary"
+          >
+            ✍︎
+          </button>
+
+          {dictOpen && (
+            <div
+              ref={dictPanelRef}
+              className="reader-popover reader-dict-popover"
+              role="dialog"
+              aria-label="Dictionary lookup"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="dict-title">Dictionary</h3>
+              <form className="dict-form" onSubmit={onDictSubmit}>
+                <input
+                  ref={dictInputRef}
+                  className="dict-input"
+                  type="text"
+                  placeholder="Type a word…"
+                  value={dictQuery}
+                  onChange={(e) => setDictQuery(e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  aria-label="Enter a word"
+                />
+                <button className="dict-go" type="submit" disabled={dictLoading || !dictQuery.trim()}>
+                  {dictLoading ? "…" : "Define"}
+                </button>
+              </form>
+
+              <div className="dict-results">
+                {dictError && <div className="dict-error">{dictError}</div>}
+                {!dictError && dictResults?.map((en, i) => (
+                  <div key={i} className="dict-entry">
+                    <div className="dict-head">
+                      <span className="dict-word">{en.word}</span>
+                      {en.phonetic && <span className="dict-phon">{en.phonetic}</span>}
+                      {en.partOfSpeech && <span className="dict-pos">{en.partOfSpeech}</span>}
+                    </div>
+                    <ol className="dict-senses">
+                      {en.senses.slice(0, 4).map((s, j) => (
+                        <li key={j}>
+                          <span className="dict-def">{s.definition}</span>
+                          {s.example && <div className="dict-eg">“{s.example}”</div>}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 6. Notepad */}
+        <div className="reader-menu-item-wrap">
+          <button
+            ref={noteBtnRef}
+            type="button"
+            className="reader-menu-item"
+            role="menuitem"
+            aria-label="Notepad"
+            onClick={(e) => {
+              e.stopPropagation()
+              setNotePanelOpen(o => !o)
+              requestAnimationFrame(() => noteBtnRef.current?.blur())
+            }}
+          >
+            📝
+          </button>
+
+          {notePanelOpen && (
+            <div
+              ref={notePanelRef}
+              className="reader-popover reader-note-popover"
+              role="dialog"
+              aria-label="Notepad"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="note-title">Notepad</h3>
+              <textarea
+                ref={noteTextareaRef}
+                className="note-textarea"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                placeholder="Write your notes here…"
+              />
+            </div>
+          )}
+        </div>
+
         <button className="reader-menu-item" role="menuitem" aria-label="Text to Speech">🔊</button>
       </div>
     </div>
