@@ -2408,3 +2408,70 @@ body {
 .note-textarea::-webkit-scrollbar { width: 8px; }
 .note-textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,.35); border-radius: 8px; }
 .note-textarea::-webkit-scrollbar-track { background: transparent; }
+
+/* ───────── TTS popover ───────── */
+.reader-tts-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  z-index: 1100;
+
+  width: min(420px, 86vw);
+  background: #0f0f0f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+  display: grid;
+  gap: 10px;
+}
+
+.tts-title {
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 6px;
+}
+
+.tts-controls {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tts-btn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #242424;
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 100ms ease, filter 120ms ease;
+}
+.tts-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+
+.tts-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.tts-label { opacity: .9; font-size: 14px; }
+.tts-select, .tts-range {
+  width: 100%;
+  background: #1b1b1b;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  padding: 8px 10px;
+  outline: none;
+}
+.tts-value { opacity: .9; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.tts-hint { opacity: .7; font-size: 12px; text-align: center; margin-top: 4px; }

@@ -95,6 +95,136 @@ export default function Home() {
   // Single notes area shared across all books
   const [notes, setNotes] = useState("")
 
+
+
+  // ───────── Reader TTS (Web Speech API) ─────────
+  const [ttsOpen, setTtsOpen] = useState(false)
+  const ttsBtnRef = useRef<HTMLButtonElement | null>(null)
+  const ttsPanelRef = useRef<HTMLDivElement | null>(null)
+
+  type TTSState = {
+    speaking: boolean
+    paused: boolean
+    rate: number
+    pitch: number
+    voiceURI?: string
+  }
+  const [tts, setTts] = useState<TTSState>({
+    speaking: false,
+    paused: false,
+    rate: 1.0,
+    pitch: 1.0,
+    voiceURI: undefined,
+  })
+
+  // Voices
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  useEffect(() => {
+    function loadVoices() {
+      const v = window.speechSynthesis?.getVoices?.() ?? []
+      setVoices(v)
+      if (!tts.voiceURI && v.length) {
+        setTts(s => ({ ...s, voiceURI: v.find(x => x.lang?.startsWith("en"))?.voiceURI || v[0]?.voiceURI }))
+      }
+    }
+    loadVoices()
+    // some browsers populate asynchronously
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = loadVoices
+    }
+    return () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.onvoiceschanged = null
+    }
+  }, [tts.voiceURI])
+
+  // Close popover on outside click / Esc
+  useEffect(() => {
+    if (!ttsOpen) return
+    function onDocMouseDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (ttsPanelRef.current?.contains(t) || ttsBtnRef.current?.contains(t)) return
+      setTtsOpen(false)
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setTtsOpen(false)
+    }
+    document.addEventListener("mousedown", onDocMouseDown)
+    window.addEventListener("keydown", onEsc)
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown)
+      window.removeEventListener("keydown", onEsc)
+    }
+  }, [ttsOpen])
+
+  // Close TTS when leaving open-book view
+  useEffect(() => { if (view !== "open") setTtsOpen(false) }, [view])
+
+  // Stop speech on unmount or when switching books/pages
+  useEffect(() => {
+    return () => { try { window.speechSynthesis?.cancel() } catch {} }
+  }, [])
+  useEffect(() => {
+    // stop when changing book or turning pages
+    try { window.speechSynthesis?.cancel() } catch {}
+    setTts(s => ({ ...s, speaking: false, paused: false }))
+  }, [current, page])
+
+  // Helpers — grab visible spread text (both panes)
+  function getVisiblePageText() {
+    if (view !== "open") return ""
+    const root = document.querySelector(".spread.is-open") as HTMLElement | null
+    if (!root) return ""
+    const bodies = Array.from(root.querySelectorAll(".chapter-page .chapter-body")) as HTMLElement[]
+    const text = bodies.map(b => b.innerText || "").join("\n\n").trim()
+    return text || "No readable chapter text on this spread."
+  }
+
+  function playTTS() {
+    const synth = window.speechSynthesis
+    if (!synth) return
+    const text = getVisiblePageText()
+    if (!text) return
+
+    synth.cancel() // clear any existing queue
+    const u = new SpeechSynthesisUtterance(text)
+    u.rate = tts.rate
+    u.pitch = tts.pitch
+    const v = voices.find(v => v.voiceURI === tts.voiceURI)
+    if (v) u.voice = v
+
+    u.onstart = () => setTts(s => ({ ...s, speaking: true, paused: false }))
+    u.onpause = () => setTts(s => ({ ...s, paused: true }))
+    u.onresume = () => setTts(s => ({ ...s, paused: false }))
+    u.onend = () => setTts(s => ({ ...s, speaking: false, paused: false }))
+    u.onerror = () => setTts(s => ({ ...s, speaking: false, paused: false }))
+
+    synth.speak(u)
+  }
+
+  function pauseTTS() {
+    try {
+      if (window.speechSynthesis?.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause()
+        setTts(s => ({ ...s, paused: true }))
+      }
+    } catch {}
+  }
+  function resumeTTS() {
+    try {
+      if (window.speechSynthesis?.paused) {
+        window.speechSynthesis.resume()
+        setTts(s => ({ ...s, paused: false }))
+      }
+    } catch {}
+  }
+  function stopTTS() {
+    try {
+      window.speechSynthesis?.cancel()
+    } catch {}
+    setTts(s => ({ ...s, speaking: false, paused: false }))
+  }
+
+
   // Close popover on outside click or Escape
   useEffect(() => {
     if (!notePanelOpen) return
@@ -395,7 +525,7 @@ export default function Home() {
 
     // If any popover is open, ignore all navigation keys (includes arrows, a/d).
     // Also: Space is NOT a navigation key anymore (globally disabled).
-    const anyPopoverOpen = dictOpen || notePanelOpen || fontPanelOpen || fontStylePanelOpen
+    const anyPopoverOpen = dictOpen || notePanelOpen || fontPanelOpen || fontStylePanelOpen || ttsOpen
     if (anyPopoverOpen) {
       const navKeys = ["ArrowRight", "ArrowLeft", "PageDown", "PageUp", "a", "A", "d", "D"]
       if (navKeys.includes(e.key)) return
@@ -1153,7 +1283,98 @@ export default function Home() {
           )}
         </div>
 
-        <button className="reader-menu-item" role="menuitem" aria-label="Text to Speech">🔊</button>
+        <div className="reader-menu-item-wrap">
+          <button
+            ref={ttsBtnRef}
+            type="button"
+            className={"reader-menu-item" + (ttsOpen ? " is-active" : "")}
+            role="menuitem"
+            aria-label="Read Aloud"
+            aria-haspopup="dialog"
+            aria-expanded={ttsOpen}
+            onClick={(e) => {
+              e.stopPropagation()
+              setTtsOpen(o => !o)
+              requestAnimationFrame(() => ttsBtnRef.current?.blur()) // avoid Space re-triggering button
+            }}
+            title="Read Aloud"
+          >
+            🔊
+          </button>
+
+          {ttsOpen && (
+            <div
+              ref={ttsPanelRef}
+              className="reader-popover reader-tts-popover"
+              role="dialog"
+              aria-label="Read Aloud controls"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="tts-title">Read Aloud</h3>
+
+              <div className="tts-controls">
+                {!tts.speaking && (
+                  <button className="tts-btn tts-play" type="button" onClick={playTTS}>Play</button>
+                )}
+                {tts.speaking && !tts.paused && (
+                  <button className="tts-btn tts-pause" type="button" onClick={pauseTTS}>Pause</button>
+                )}
+                {tts.speaking && tts.paused && (
+                  <button className="tts-btn tts-resume" type="button" onClick={resumeTTS}>Resume</button>
+                )}
+                <button className="tts-btn tts-stop" type="button" onClick={stopTTS}>Stop</button>
+              </div>
+
+              <div className="tts-row">
+                <label className="tts-label" htmlFor="tts-voice">Voice</label>
+                <select
+                  id="tts-voice"
+                  className="tts-select"
+                  value={tts.voiceURI || ""}
+                  onChange={(e) => setTts(s => ({ ...s, voiceURI: e.target.value }))}
+                >
+                  {voices.map(v => (
+                    <option key={v.voiceURI} value={v.voiceURI}>
+                      {v.name} {v.lang ? `(${v.lang})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="tts-row">
+                <label className="tts-label" htmlFor="tts-rate">Rate</label>
+                <input
+                  id="tts-rate"
+                  className="tts-range"
+                  type="range"
+                  min={0.8}
+                  max={1.4}
+                  step={0.05}
+                  value={tts.rate}
+                  onChange={(e) => setTts(s => ({ ...s, rate: parseFloat(e.target.value) }))}
+                />
+                <div className="tts-value">{tts.rate.toFixed(2)}×</div>
+              </div>
+
+              <div className="tts-row">
+                <label className="tts-label" htmlFor="tts-pitch">Pitch</label>
+                <input
+                  id="tts-pitch"
+                  className="tts-range"
+                  type="range"
+                  min={0.8}
+                  max={1.2}
+                  step={0.05}
+                  value={tts.pitch}
+                  onChange={(e) => setTts(s => ({ ...s, pitch: parseFloat(e.target.value) }))}
+                />
+                <div className="tts-value">{tts.pitch.toFixed(2)}</div>
+              </div>
+
+              <p className="tts-hint">Reads the visible pages. Turning pages stops playback.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </div>
