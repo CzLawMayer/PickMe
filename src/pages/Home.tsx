@@ -337,6 +337,7 @@ export default function Home() {
   const [chap1Pages, setChap1Pages] = useState<React.ReactNode[]>([])
 
   // Measure the available content box inside a page (based on the open spread)
+// Paginate chapter 1 into fixed-height, line-snapped pages (accounts for flex gap)
   useEffect(() => {
     if (!center) return;
     if (view !== "open") return;
@@ -344,97 +345,119 @@ export default function Home() {
     const raf = requestAnimationFrame(() => {
       if (!probeRef.current) return;
 
+      // 1) Sync probe with current reader typography
       const probeRoot = probeRef.current as HTMLElement;
       probeRoot.style.setProperty("--reader-font-scale", String(FONT_SCALES[fontSizeIndex]));
       probeRoot.style.setProperty("--reader-line", String(lineHeight));
       probeRoot.style.setProperty("--reader-font-family", FONT_STYLES[fontStyleIndex].css);
 
-      // 1) Exact visible page size
+      // 2) Measure exact visible page
       const pane = paneLeftRef.current || paneRightRef.current;
       if (!pane) return;
       const paneRect = pane.getBoundingClientRect();
-      const pageW = Math.floor(paneRect.width);
-      const pageH = Math.floor(paneRect.height);
+      const pageW = paneRect.width;   // keep fractional px
+      const pageH = paneRect.height;  // keep fractional px
       if (!pageW || !pageH) return;
 
-      // 2) Chapter text
+      // 3) Input text
       const textRaw =
         Array.isArray(center.chapterTexts) && center.chapterTexts.length > 0
           ? String(center.chapterTexts[0] ?? "")
           : "";
       if (!textRaw.trim()) { setChap1Pages([]); return; }
-
       const paragraphs = splitParagraphs(textRaw);
-      const probe = probeRef.current!;
 
-      const pageEl  = probe.querySelector(".chapter-page")  as HTMLElement;
-      const titleEl = probe.querySelector(".chapter-title") as HTMLElement;
-      const bodyEl  = probe.querySelector(".chapter-body")  as HTMLElement;
+      // 4) Probe DOM handles
+      const pageEl  = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
+      const titleEl = probeRef.current!.querySelector(".chapter-title") as HTMLElement;
+      const bodyEl  = probeRef.current!.querySelector(".chapter-body") as HTMLElement;
 
-      // 3) Size the probe page to EXACT visible page
+      // Size probe page exactly like visible page
       pageEl.style.width = `${pageW}px`;
       pageEl.style.height = `${pageH}px`;
       pageEl.style.boxSizing = "border-box";
 
-      // Mirror live padding from the visible page
+      // Mirror live padding
       let padTop = "6vmin", padRight = "6vmin", padBottom = "6vmin", padLeft = "6vmin";
       const visiblePage = document.querySelector(".spread .chapter-page") as HTMLElement | null;
       if (visiblePage) {
         const cs = getComputedStyle(visiblePage);
-        padTop = cs.paddingTop || padTop;
-        padRight = cs.paddingRight || padRight;
+        padTop    = cs.paddingTop    || padTop;
+        padRight  = cs.paddingRight  || padRight;
         padBottom = cs.paddingBottom || padBottom;
-        padLeft = cs.paddingLeft || padLeft;
+        padLeft   = cs.paddingLeft   || padLeft;
       }
-      pageEl.style.paddingTop    = padTop;
-      pageEl.style.paddingRight  = padRight;
+      pageEl.style.paddingTop = padTop;
+      pageEl.style.paddingRight = padRight;
       pageEl.style.paddingBottom = padBottom;
-      pageEl.style.paddingLeft   = padLeft;
+      pageEl.style.paddingLeft = padLeft;
 
-      // Numeric paddings + gap
+      // In the probe, let body grow so scrollHeight reflects overflow
+      bodyEl.style.flex = "0 0 auto";
+      bodyEl.style.minHeight = "0";
+      bodyEl.style.overflow = "visible";
+
+      // ---- LINE GRID & CONTENT BOX ----
       const csPage = getComputedStyle(pageEl);
       const pT = parseFloat(csPage.paddingTop)    || 0;
       const pB = parseFloat(csPage.paddingBottom) || 0;
-      const rowGap = parseFloat(csPage.rowGap || csPage.gap) || 0;
+      const CONTENT_H = pageH - pT - pB;
 
-      // The max body height on a blank page (no title)
-      const BLANK_BODY_H = pageH - pT - pB;
-
-      // Hard-clamp the body area so overflow is detectable
-      bodyEl.style.flex = "0 0 auto";
-      bodyEl.style.minHeight = "0";
-      bodyEl.style.overflow = "visible"; // probe can grow in scrollHeight
-      // We'll set bodyEl.style.height per page below
-
-      // Helper: set body height for current page state (with/without title)
-      function setBodyHeightFor(withTitle: boolean): number {
-        // title must already have its text set so offsetHeight is real
-        const tH = withTitle ? (titleEl.offsetHeight || 0) : 0;
-        const h  = Math.max(0, Math.floor(BLANK_BODY_H - (withTitle ? (rowGap + tH) : 0)));
-        bodyEl.style.height = `${h}px`;
-        return h;
+      // Actual line-height in px
+      let linePx = parseFloat(getComputedStyle(bodyEl).lineHeight);
+      if (!isFinite(linePx) || linePx <= 0) {
+        const tmp = document.createElement("span");
+        tmp.textContent = "A";
+        tmp.style.visibility = "hidden";
+        bodyEl.appendChild(tmp);
+        linePx = tmp.getBoundingClientRect().height || 16;
+        bodyEl.removeChild(tmp);
       }
 
-      // Robust overflow check: compare body scroll vs our hard height
-      const overflowed = () => bodyEl.scrollHeight > bodyEl.clientHeight;
+      const SAFETY_PAD = 1; // px cushion so rounding never admits a half line
+      const snapToLineGrid = (h: number) => {
+        const lines = Math.max(0, Math.floor((h - SAFETY_PAD) / linePx));
+        return lines * linePx;
+      };
 
+      const BLANK_BODY_H = snapToLineGrid(CONTENT_H);
+
+      // Read the container's flex row-gap (this was the missing piece)
+      const rowGap =
+        parseFloat((csPage as any).rowGap || csPage.gap || "0") || 0;
+
+      // Set body height for pages with/without title, subtracting title height + margin + row gap
+      const setBodyHeightFor = (withTitle: boolean) => {
+        const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0; // fractional height
+        const tGap = withTitle ? (parseFloat(getComputedStyle(titleEl).marginBottom) || 0) : 0;
+        const inter = withTitle ? (tGap + rowGap) : 0; // ← account for flex gap too
+        const target  = Math.max(0, CONTENT_H - tH - inter);
+        const snapped = snapToLineGrid(target);
+        bodyEl.style.height = `${snapped}px`;
+        return snapped;
+      };
+
+      // One overflow checker
+      const overflowed = () =>
+        bodyEl.scrollHeight > bodyEl.clientHeight ||
+        pageEl.scrollHeight  > pageEl.clientHeight;
+
+      // Helpers
       const makeP   = () => document.createElement("p");
       const setPText = (p: HTMLParagraphElement, t: string) => { p.textContent = t; };
 
-      // Slice a long paragraph into pieces that fit a *blank* page (no title)
+      // Slice whole paragraph to blank pages (no title)
       function sliceParagraphBlank(parText: string): string[] {
         const out: string[] = [];
-
-        // Temporarily configure blank page geometry
         titleEl.textContent = "";
         bodyEl.innerHTML = "";
         bodyEl.style.height = `${BLANK_BODY_H}px`;
 
-        // Quick-fit
+        // quick-fit
         const p = makeP(); setPText(p, parText); bodyEl.appendChild(p);
         if (!overflowed()) { out.push(parText); return out; }
 
-        // Word slices via binary search; char fallback for giant words
+        // word binary search; char fallback
         const words = parText.split(/\s+/);
         let start = 0;
         while (start < words.length) {
@@ -467,14 +490,12 @@ export default function Home() {
         return out;
       }
 
-      // Fit as much as possible of `parText` onto the *current* page state
+      // Fit as much as possible on the current (partially filled) page
       function fitPieceOnCurrentPage(parText: string): { first: string; rest: string[] } {
-        // try whole paragraph
         const quick = makeP(); setPText(quick, parText); bodyEl.appendChild(quick);
         if (!overflowed()) { return { first: parText, rest: [] }; }
         bodyEl.removeChild(quick);
 
-        // binary search by words with existing content preserved
         const words = parText.split(/\s+/);
         let lo = 1, hi = words.length, best = 0;
         while (lo <= hi) {
@@ -493,7 +514,7 @@ export default function Home() {
           return { first, rest };
         }
 
-        // char fallback for the first word
+        // char fallback
         const firstWord = words[0] || "";
         if (!firstWord) return { first: "", rest: [] };
 
@@ -514,25 +535,25 @@ export default function Home() {
           return { first, rest };
         }
 
-        return { first: "", rest: [parText] }; // nothing fits with current leftovers
+        return { first: "", rest: [parText] };
       }
 
-      // 4) Build pages
+      // 5) Build pages
       const pages: React.ReactNode[] = [];
       let i = 0;
       let firstPageDone = false;
 
       while (i < paragraphs.length) {
         const withTitle = !firstPageDone;
-        // Set title text *before* computing height, so titleEl.offsetHeight is real
         titleEl.textContent = withTitle ? (center.chapters?.[0] || "Chapter 1") : "";
         bodyEl.innerHTML = "";
-        setBodyHeightFor(withTitle); // hard-clamp body area for this page
+
+        // Snap height for THIS page (depends on actual title height + margin + row gap)
+        setBodyHeightFor(withTitle);
 
         const bucket: (string | { SPLIT: string[] })[] = [];
 
         while (i < paragraphs.length) {
-          // try full paragraph
           const pEl = makeP(); setPText(pEl, paragraphs[i]); bodyEl.appendChild(pEl);
           if (!overflowed()) {
             bucket.push(paragraphs[i]);
@@ -540,16 +561,13 @@ export default function Home() {
             continue;
           }
 
-          // remove and split
           bodyEl.removeChild(pEl);
 
           if (bodyEl.childElementCount === 0) {
-            // page is empty → split on blank page (bigger body area)
             const parts = sliceParagraphBlank(paragraphs[i]);
             if (parts.length) { bucket.push({ SPLIT: parts }); i++; }
             break; // close page
           } else {
-            // page has content → fit remainder into current leftovers
             const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
             if (first) {
               bucket.push(first);
@@ -560,7 +578,7 @@ export default function Home() {
           }
         }
 
-        // render nodes for this page
+        // Bucket -> nodes; only first piece of any split goes here
         const nodes: React.ReactNode[] = [];
         for (const item of bucket) {
           if (typeof item === "string") {
@@ -583,18 +601,20 @@ export default function Home() {
 
       setChap1Pages(pages);
 
-      // Adjust tail/clamp
+      // 6) Clamp spread if total changed
       setTimeout(() => {
-        const claimedChapters    = Number(center?.totalChapters ?? 0) || (center?.chapters?.length ?? 0);
-        const remainingChapters  = Math.max(0, claimedChapters - 1);
-        const newTotalPages      = 2 + pages.length + remainingChapters;
-        const newMaxLeft         = newTotalPages > 0 ? ((newTotalPages - 1) & ~1) : 0;
+        const claimedChapters   = Number(center?.totalChapters ?? 0) || (center?.chapters?.length ?? 0);
+        const remainingChapters = Math.max(0, claimedChapters - 1);
+        const newTotalPages     = 2 + pages.length + remainingChapters;
+        const newMaxLeft        = Math.max(0, (newTotalPages - 1) & ~1); // lastEven
         setPage((p) => (p > newMaxLeft ? newMaxLeft : p));
       }, 0);
     });
 
     return () => cancelAnimationFrame(raf);
   }, [center, view, fontSizeIndex, lineHeight, fontStyleIndex]);
+
+
 
 
 

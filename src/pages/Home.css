@@ -2806,3 +2806,6 @@ body {
 
 .chapter-body { overflow: hidden !important; }
 .pagination-probe .chapter-body { overflow: visible !important; }
+
+/* Kill flex gap on chapter pages so pagination only needs title margin */
+.chapter-page { gap: 0 !important; }
