@@ -2475,3 +2475,334 @@ body {
 .tts-value { opacity: .9; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
 
 .tts-hint { opacity: .7; font-size: 12px; text-align: center; margin-top: 4px; }
+
+/* Reader paragraphs: one blank line between paragraphs */
+.chapter-body p {
+  margin: 0;
+}
+.chapter-body p + p {
+  margin-top: 1em; /* blank line */
+}
+
+/* Hidden pagination measurer: matches page typography and width */
+.pagination-probe {
+  position: fixed;
+  left: -99999px;
+  top: -99999px;
+  visibility: hidden;
+  pointer-events: none;
+  width: 0; /* we set width dynamically in JS */
+}
+
+.pagination-probe .chapter-page {
+  /* mirror the real page paddings if you set them in your UI */
+  padding: 6vmin; /* your real .chapter-page padding should be accounted in available width/height calc */
+}
+
+.pagination-probe .chapter-title {
+  margin: 0 0 0.6em 0; /* small gap under title on first page */
+  font-weight: 700;
+  font-size: 1.15em;
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+}
+
+.pagination-probe .chapter-body {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+}
+
+/* Make each page a fixed, non-scrollable box */
+.spread .pane {
+  /* your existing sizing already defines the page height; just ensure no scroll */
+  overflow: hidden;
+}
+
+/* Use flex so the title sits on top and the body fills the rest */
+.chapter-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* If you have padding on .chapter-page, keep it the same in the probe too */
+  box-sizing: border-box;
+}
+
+/* Title never scrolls */
+.chapter-title {
+  flex: 0 0 auto;
+  margin: 0 0 0.6em 0;
+}
+
+/* Body fills remaining space and must NOT scroll */
+.chapter-body {
+  flex: 1 1 auto;
+  min-height: 0;          /* critical so flexed child can shrink without forcing overflow */
+  overflow: hidden;       /* kill scrollbars – pagination ensures content fits */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+}
+
+/* Paragraph spacing: blank line between paragraphs */
+.chapter-body p {
+  margin: 0;
+}
+.chapter-body p + p {
+  margin-top: 1em;
+}
+
+/* Ensure the hidden measurer matches the real page layout */
+.pagination-probe {
+  position: fixed;
+  left: -99999px;
+  top: -99999px;
+  visibility: hidden;
+  pointer-events: none;
+}
+.pagination-probe .chapter-page {
+  display: flex;
+  flex-direction: column;
+  height: auto;           /* we explicitly control width, we measure heights dynamically */
+  box-sizing: border-box;
+}
+.pagination-probe .chapter-title { margin: 0 0 0.6em 0; }
+.pagination-probe .chapter-body {
+  /* mirror the visible rules so measurements are accurate */
+  min-height: 0;
+  overflow: visible;      /* the probe can overflow during measuring; we just read height */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+}
+
+:root {
+  --reader-font-base: 1rem;        /* you can set another base if you want */
+  --reader-font-scale: 1;          /* already defined via TS variable */
+}
+
+/* Visible pages are fixed-height, no scroll */
+.spread .pane { overflow: hidden; }
+
+.chapter-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.chapter-title {
+  flex: 0 0 auto;
+  margin: 0 0 0.6em 0;
+  font-weight: 700;
+  /* Scale title along with body (optional slight boost) */
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+}
+
+.chapter-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden; /* no scrollbars; paginator ensures fit */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+  /* REAL layout-based font scaling */
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
+}
+
+/* Paragraph spacing: blank line between paragraphs */
+.chapter-body p { margin: 0; }
+.chapter-body p + p { margin-top: 1em; }
+
+/* Probe must mirror visible layout (no transform either!) */
+.pagination-probe {
+  position: fixed; left: -99999px; top: -99999px; visibility: hidden; pointer-events: none;
+}
+.pagination-probe .chapter-page {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.pagination-probe .chapter-title {
+  margin: 0 0 0.6em 0;
+  font-weight: 700;
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+}
+.pagination-probe .chapter-body {
+  min-height: 0;
+  overflow: visible; /* let it grow so scrollHeight reflects overflow */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: var(--reader-line, 1.7);
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
+}
+
+
+.chapter-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 6vmin;                  /* your page padding */
+}
+
+.chapter-title {
+  flex: 0 0 auto;
+  margin: 0 0 0.6em 0;
+  font-weight: 700;
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
+  line-height: var(--reader-line);
+  font-family: var(--reader-font-family);
+}
+
+.chapter-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;                /* <- IMPORTANT: no scrollbars */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: var(--reader-line);
+  font-family: var(--reader-font-family);
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
+}
+
+/* probe mirrors the same layout + padding */
+.pagination-probe .chapter-page {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 6vmin;                  /* <- match visible page */
+}
+.pagination-probe .chapter-title {
+  margin: 0 0 0.6em 0;
+  font-weight: 700;
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
+  line-height: var(--reader-line);
+  font-family: var(--reader-font-family);
+}
+.pagination-probe .chapter-body {
+  min-height: 0;
+  overflow: visible;               /* grow so scrollHeight reflects overflow */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: var(--reader-line);
+  font-family: var(--reader-font-family);
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
+}
+
+.chapter-body p { margin: 0; }
+.chapter-body p + p { margin-top: 1em; }
+
+/* ===== FINAL AUTHORITATIVE READER OVERRIDES (must be last) ===== */
+
+/* Layout + sizing: fixed, non-scrollable pages */
+.spread .pane { overflow: hidden !important; }
+
+/* Visible page */
+.chapter-page {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  padding: 6vmin !important;                    /* ← your page padding */
+}
+
+/* Title only on first page (content logic handles presence); layout-wise: fixed block */
+.chapter-title {
+  flex: 0 0 auto !important;
+  margin: 0 0 0.6em 0 !important;
+  font-weight: 700 !important;
+  /* scale via font-size, not transform */
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15) !important;
+  line-height: var(--reader-line, 1.7) !important;
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
+  transform: none !important;
+}
+
+/* Body fills the remaining space; NEVER scroll; NO transforms */
+.chapter-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;                  /* ← kills scrollbars */
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  line-height: var(--reader-line, 1.7) !important;
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1)) !important;
+  transform: none !important;                   /* ← critical */
+}
+
+/* One blank line between paragraphs */
+.chapter-body p { margin: 0 !important; }
+.chapter-body p + p { margin-top: 1em !important; }
+
+/* Probe must mirror visible layout EXACTLY (no transforms, same padding) */
+.pagination-probe .chapter-page {
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  padding: 6vmin !important;                    /* match .chapter-page */
+}
+.pagination-probe .chapter-title {
+  margin: 0 0 0.6em 0 !important;
+  font-weight: 700 !important;
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15) !important;
+  line-height: var(--reader-line, 1.7) !important;
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
+  transform: none !important;
+}
+.pagination-probe .chapter-body {
+  min-height: 0 !important;
+  overflow: visible !important;                 /* so scrollHeight grows for measuring */
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  line-height: var(--reader-line, 1.7) !important;
+  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1)) !important;
+  transform: none !important;                   /* ← critical */
+}
+
+
+.pagination-probe {
+  position: absolute;          /* inside spread */
+  left: -99999px;
+  top: -99999px;
+  visibility: hidden;          /* invisible but measurable */
+  pointer-events: none;
+}
+
+.pagination-probe .chapter-page {
+  display: flex;
+  flex-direction: column;
+  height: auto;                /* JS sets width/height/box-sizing */
+  box-sizing: border-box;
+  padding: 6vmin;              /* must match the real page (or mirror in JS) */
+}
+
+.pagination-probe .chapter-title,
+.pagination-probe .chapter-body {
+  font-family: var(--reader-font-family);
+  line-height: var(--reader-line);
+  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
+}
+
+.chapter-body { overflow: hidden !important; }
+.pagination-probe .chapter-body { overflow: visible !important; }
