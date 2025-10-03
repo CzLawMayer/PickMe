@@ -1270,6 +1270,23 @@ export default function Home() {
                   {readerLight ? "🌙" : "☀︎"}
                 </button>
 
+                <button
+                  type="button"
+                  className="reader-menu-item"
+                  role="menuitem"
+                  aria-label="Close reader menu"
+                  title="Close"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setReaderMenuOpen(false)
+                  }}
+                >
+                  📖
+                </button>
+
+
+
+
                 {/* Dictionary (single, working) */}
                 <div className="reader-menu-item-wrap">
                   <button
