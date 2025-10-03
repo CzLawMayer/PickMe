@@ -17,6 +17,7 @@
     "embla-carousel-react": "^8.6.0",
     "hammerjs": "^2.0.8",
     "lucide-react": "^0.542.0",
+    "pagedjs": "^0.4.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-helmet": "^6.1.0",
