@@ -80,6 +80,16 @@ function snapToDeviceLineGrid(cssPixels: number, lineCssPx: number) {
   return lines * lineCssPx; // fractional CSS px is fine; browser will rasterize accurately
 }
 
+const DPR =
+  typeof window !== "undefined" && window.devicePixelRatio
+    ? window.devicePixelRatio
+    : 1;
+
+function snapToDevicePixel(cssPx: number) {
+  if (cssPx <= 0) return 0;
+  return Math.floor(cssPx * DPR) / DPR;
+}
+
 
 // ---------- Component ----------
 export default function Home() {
@@ -392,8 +402,8 @@ export default function Home() {
         const pane = paneLeftRef.current || paneRightRef.current;
         if (!pane) return;
         const paneRect = pane.getBoundingClientRect();
-        const pageW = paneRect.width;   // fractional CSS px
-        const pageH = paneRect.height;  // fractional CSS px
+        const pageW = snapToDevicePixel(paneRect.width);
+        const pageH = snapToDevicePixel(paneRect.height);
         if (!pageW || !pageH) return;
 
         // 3) Input text
@@ -411,8 +421,8 @@ export default function Home() {
         bodyEl.style.overflow = "auto";
 
         // Size probe page exactly like visible page
-        pageEl.style.width = `${pageW}px`;
-        pageEl.style.height = `${pageH}px`;
+        pageEl.style.width  = `${pageW}px`;
+        pageEl.style.height = `${pageH}px`; // already device-snapped above
         pageEl.style.boxSizing = "border-box";
 
         // Mirror live paddings from a visible page (so probe math matches)
@@ -452,9 +462,11 @@ export default function Home() {
 
         // Measure the real line step (fractional CSS px) and define snapping
         const lineStepCss = measureLineStepPx(bodyEl);
-        const SAFETY_LINES = 0.75;  // try 1 for more room at bottom
+        const lineStepAdjusted = lineStepCss * 1.01;
+        const SAFETY_LINES = 0.35;  // try 1 for more room at bottom
         const MIN_LINES = 3;        // ensures at least a few visible lines
         const fontPx = parseFloat(getComputedStyle(bodyEl).fontSize) || 16;
+        const EXTRA_LINES = 1;
 
         // NEW: account for .chapter-body vertical padding (we added 0.5lh top/bottom in CSS)
         const csBody = getComputedStyle(bodyEl);
@@ -463,21 +475,24 @@ export default function Home() {
         const CONTENT_H_FOR_BODY = Math.max(0, CONTENT_H - bodyPadTop - bodyPadBot);
 
         // Snap the blank-page body CONTENT height (no title) to full line-boxes
-        let BLANK_BODY_H = snapToDeviceLineGrid(CONTENT_H, lineStepCss);
-
-        // Apply shared safety (reserve ~¾ line) and keep at least a few lines
-        BLANK_BODY_H = Math.max(lineStepCss * MIN_LINES, BLANK_BODY_H - SAFETY_LINES * lineStepCss);
+        let BLANK_BODY_H = snapToDeviceLineGrid(CONTENT_H, lineStepAdjusted);
+        BLANK_BODY_H = Math.max(
+          lineStepAdjusted * MIN_LINES,
+          BLANK_BODY_H - (SAFETY_LINES + EXTRA_LINES) * lineStepAdjusted
+        );
+        BLANK_BODY_H = snapToDevicePixel(BLANK_BODY_H);
 
 
         // Overflow checker (rect-based, tolerates fractional spill)
-        const EPS = 0.8; // CSS px tolerance (>0.5 avoids DPR rounding traps)
+        const EPS = 0.8;
         const overflowed = () => {
           const bodyR = bodyEl.getBoundingClientRect();
           const last = bodyEl.lastElementChild as HTMLElement | null;
           if (last) {
             const lastR = last.getBoundingClientRect();
-            // allow 1px breathing room for descenders
-            return lastR.bottom - (bodyR.bottom - bodyPadBot - 1) > EPS;
+            const mb = parseFloat(getComputedStyle(last).marginBottom) || 0;
+            // compare last content edge + margin-bottom against the body content bottom
+            return (lastR.bottom + mb) - (bodyR.bottom - bodyPadBot - 1) > EPS;
           }
           return (bodyEl.scrollHeight - bodyEl.clientHeight) > 0.5;
         };
@@ -487,26 +502,24 @@ export default function Home() {
         const setPText = (p: HTMLParagraphElement, t: string) => { p.textContent = t; };
 
         // Compute body height for a page (depending on title presence), SNAPPED in device px
+
         const setBodyHeightFor = (withTitle: boolean) => {
-          const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0; // fractional OK
+          const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0;
           const tGap = withTitle ? (parseFloat(getComputedStyle(titleEl).marginBottom) || 0) : 0;
           const inter = withTitle ? (tGap + rowGap) : 0;
 
-          // Budget is page content area minus title+gaps; .chapter-body has NO vertical padding now.
           const targetContent = Math.max(0, CONTENT_H - tH - inter);
 
-          // Snap to whole line boxes (CSS px)
-          let snappedContent = snapToDeviceLineGrid(targetContent, lineStepCss);
+          let snappedContent = snapToDeviceLineGrid(targetContent, lineStepAdjusted);
+          snappedContent = Math.max(
+            lineStepAdjusted * MIN_LINES,
+            snappedContent - (SAFETY_LINES + EXTRA_LINES) * lineStepAdjusted
+          );
 
-          // ✅ Always subtract one extra line worth of height
-          // This gives all pages (not just the first) a visible bottom margin line.
-          snappedContent = Math.max(lineStepCss * MIN_LINES, snappedContent - (SAFETY_LINES + 1) * lineStepCss);
-
-          // Apply to the probe .chapter-body as CONTENT height
-          bodyEl.style.height = `${snappedContent}px`;
-
-          return snappedContent; // used for the visible page style
-        };
+          const deviceSnapped = snapToDevicePixel(snappedContent);
+          bodyEl.style.height = `${deviceSnapped}px`;
+          return deviceSnapped;
+        };       
 
         // Slice whole paragraph into blank pages (no title)
         function sliceParagraphBlank(parText: string): string[] {
@@ -658,10 +671,9 @@ export default function Home() {
               {withTitle && <h2 className="chapter-title">{center.chapters?.[0] || "Chapter 1"}</h2>}
               <div
                 className="chapter-body"
-                style={{ height: `${snappedBodyH}px`, boxSizing: "border-box", overflow: "hidden" }}
+                style={{ height: `${snappedBodyH}px`, boxSizing: "content-box", overflow: "hidden" }}
               >
                 {nodes}
-                {!withTitle && <i className="bottom-safety-spacer" aria-hidden="true" />}
               </div>
             </div>
           );

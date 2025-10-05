@@ -2877,3 +2877,43 @@ body {
 .spread .chapter-page .chapter-body {
   padding-bottom: calc(0.85 * var(--reader-line, 1.7) * 1em);
 }
+
+
+.spread .chapter-page .chapter-body p {
+  margin: 0 0 1em;         /* keep spacing between paragraphs */
+}
+
+/* ✅ remove the trailing gap on the page */
+.spread .chapter-page .chapter-body > :last-child {
+  margin-bottom: 0 !important;
+}
+
+/* optional, tiny bottom padding for aesthetics */
+.spread .chapter-page .chapter-body {
+  padding-bottom: 0.25em;
+  box-sizing: content-box; /* matches your JS pagination math */
+}
+
+
+/* --- Reader paragraphs: remove bottom gap & keep consistent spacing --- */
+.spread .chapter-page .chapter-body p {
+  margin: 0; /* kill the UA 1em top/bottom margins */
+}
+
+/* spacing only *between* paragraphs */
+.spread .chapter-page .chapter-body p + p {
+  /* use your reader line variable for consistent rhythm */
+  margin-top: calc(0.75em * var(--reader-line, 1.6));
+}
+
+/* absolutely no extra space after the last paragraph on the page */
+.spread .chapter-page .chapter-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* prevent margin-collapsing with first/last child and keep height exact */
+.spread .chapter-page .chapter-body {
+  box-sizing: content-box;
+  overflow: hidden;          /* visible pages shouldn't scroll */
+  padding-block: 0.5px;      /* tiny pad stops parent/child margin-collapse */
+}
