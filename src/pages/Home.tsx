@@ -452,6 +452,8 @@ export default function Home() {
 
         // Measure the real line step (fractional CSS px) and define snapping
         const lineStepCss = measureLineStepPx(bodyEl);
+        const SAFETY_LINES = 0.75;  // try 1 for more room at bottom
+        const MIN_LINES = 3;        // ensures at least a few visible lines
         const fontPx = parseFloat(getComputedStyle(bodyEl).fontSize) || 16;
 
         // NEW: account for .chapter-body vertical padding (we added 0.5lh top/bottom in CSS)
@@ -461,7 +463,10 @@ export default function Home() {
         const CONTENT_H_FOR_BODY = Math.max(0, CONTENT_H - bodyPadTop - bodyPadBot);
 
         // Snap the blank-page body CONTENT height (no title) to full line-boxes
-        const BLANK_BODY_H = snapToDeviceLineGrid(CONTENT_H, lineStepCss);
+        let BLANK_BODY_H = snapToDeviceLineGrid(CONTENT_H, lineStepCss);
+
+        // Apply shared safety (reserve ~¾ line) and keep at least a few lines
+        BLANK_BODY_H = Math.max(lineStepCss * MIN_LINES, BLANK_BODY_H - SAFETY_LINES * lineStepCss);
 
 
         // Overflow checker (rect-based, tolerates fractional spill)
@@ -491,7 +496,11 @@ export default function Home() {
           const targetContent = Math.max(0, CONTENT_H - tH - inter);
 
           // Snap to whole line boxes (CSS px)
-          const snappedContent = snapToDeviceLineGrid(targetContent, lineStepCss);
+          let snappedContent = snapToDeviceLineGrid(targetContent, lineStepCss);
+
+          // ✅ Always subtract one extra line worth of height
+          // This gives all pages (not just the first) a visible bottom margin line.
+          snappedContent = Math.max(lineStepCss * MIN_LINES, snappedContent - (SAFETY_LINES + 1) * lineStepCss);
 
           // Apply to the probe .chapter-body as CONTENT height
           bodyEl.style.height = `${snappedContent}px`;
@@ -647,8 +656,12 @@ export default function Home() {
           pages.push(
             <div className="chapter-page" key={pages.length}>
               {withTitle && <h2 className="chapter-title">{center.chapters?.[0] || "Chapter 1"}</h2>}
-              <div className="chapter-body" style={{ height: `${snappedBodyH}px`, boxSizing: "content-box" }}>
+              <div
+                className="chapter-body"
+                style={{ height: `${snappedBodyH}px`, boxSizing: "border-box", overflow: "hidden" }}
+              >
                 {nodes}
+                {!withTitle && <i className="bottom-safety-spacer" aria-hidden="true" />}
               </div>
             </div>
           );

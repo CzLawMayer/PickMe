@@ -2864,3 +2864,16 @@ body {
   padding-bottom: 0 !important;
   overflow: hidden; /* visible pages clip cleanly; probe will be set to 'auto' in JS */
 }
+
+/* Invisible buffer so the last line never gets buried on later pages */
+.bottom-safety-spacer {
+  display: block;
+  height: calc(0.85 * var(--reader-line, 1.7) * 1em); /* ~0.85 line of space */
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Reserve ~0.85 line at the bottom of every page so the last line is never clipped */
+.spread .chapter-page .chapter-body {
+  padding-bottom: calc(0.85 * var(--reader-line, 1.7) * 1em);
+}
