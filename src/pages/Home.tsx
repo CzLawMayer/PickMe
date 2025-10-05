@@ -59,6 +59,28 @@ function splitParagraphs(raw: string): string[] {
     .filter(Boolean)
 }
 
+
+
+function measureLineStepPx(el: HTMLElement): number {
+  // Measure the line *step* with two lines so we capture the real line box
+  const s = document.createElement("span");
+  s.style.visibility = "hidden";
+  s.style.whiteSpace = "pre";
+  s.textContent = "A\nA";
+  el.appendChild(s);
+  const r = s.getBoundingClientRect(); // fractional CSS px
+  el.removeChild(s);
+  return r.height / 2; // one line step in CSS px (fractional)
+}
+
+function snapToDeviceLineGrid(cssPixels: number, lineCssPx: number) {
+  if (cssPixels <= 0 || lineCssPx <= 0) return 0;
+  // floor to an integer count of line boxes (small +ε avoids dropping a line due to fp drift)
+  const lines = Math.floor((cssPixels + 0.01) / lineCssPx);
+  return lines * lineCssPx; // fractional CSS px is fine; browser will rasterize accurately
+}
+
+
 // ---------- Component ----------
 export default function Home() {
   // data
@@ -84,6 +106,8 @@ export default function Home() {
   const [fontSizeIndex, setFontSizeIndex] = useState<0 | 1 | 2 | 3 | 4>(2)
   const [lineHeight, setLineHeight] = useState(1.7)
   const [readerLight, setReaderLight] = useState(false)
+  const [debouncedLH, setDebouncedLH] = useState(lineHeight)
+
 
   // Font style popover
   const [fontStylePanelOpen, setFontStylePanelOpen] = useState(false)
@@ -117,6 +141,13 @@ export default function Home() {
   type TTSState = { speaking: boolean; paused: boolean; rate: number; pitch: number; voiceURI?: string }
   const [tts, setTts] = useState<TTSState>({ speaking: false, paused: false, rate: 1.0, pitch: 1.0, voiceURI: undefined })
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedLH(lineHeight), 120) // 120ms debounce
+    return () => clearTimeout(t)
+  }, [lineHeight])
+
+
 
   // Close the reader menu any time we leave "open" view
   useEffect(() => { if (view !== "open") setReaderMenuOpen(false) }, [view])
@@ -342,281 +373,321 @@ export default function Home() {
     if (!center) return;
     if (view !== "open") return;
 
-    const raf = requestAnimationFrame(() => {
-      if (!probeRef.current) return;
+    let raf1 = 0;
+    let raf2 = 0;
 
-      // 1) Sync probe with current reader typography
-      const probeRoot = probeRef.current as HTMLElement;
-      probeRoot.style.setProperty("--reader-font-scale", String(FONT_SCALES[fontSizeIndex]));
-      probeRoot.style.setProperty("--reader-line", String(lineHeight));
-      probeRoot.style.setProperty("--reader-font-family", FONT_STYLES[fontStyleIndex].css);
+    // rAF #1: wait for React to commit DOM + inline styles (e.g., --reader-line)
+    raf1 = requestAnimationFrame(() => {
+      // rAF #2: wait for the browser to fully apply CSS vars and recalc layout
+      raf2 = requestAnimationFrame(() => {
+        if (!probeRef.current) return;
 
-      // 2) Measure exact visible page
-      const pane = paneLeftRef.current || paneRightRef.current;
-      if (!pane) return;
-      const paneRect = pane.getBoundingClientRect();
-      const pageW = paneRect.width;   // keep fractional px
-      const pageH = paneRect.height;  // keep fractional px
-      if (!pageW || !pageH) return;
+        // 1) Sync probe with current reader typography
+        const probeRoot = probeRef.current as HTMLElement;
+        probeRoot.style.setProperty("--reader-font-scale", String(FONT_SCALES[fontSizeIndex]));
+        probeRoot.style.setProperty("--reader-line", String(debouncedLH));
+        probeRoot.style.setProperty("--reader-font-family", FONT_STYLES[fontStyleIndex].css);
 
-      // 3) Input text
-      const textRaw =
-        Array.isArray(center.chapterTexts) && center.chapterTexts.length > 0
-          ? String(center.chapterTexts[0] ?? "")
-          : "";
-      if (!textRaw.trim()) { setChap1Pages([]); return; }
-      const paragraphs = splitParagraphs(textRaw);
+        // 2) Measure exact visible page box (choose whichever pane is mounted)
+        const pane = paneLeftRef.current || paneRightRef.current;
+        if (!pane) return;
+        const paneRect = pane.getBoundingClientRect();
+        const pageW = paneRect.width;   // fractional CSS px
+        const pageH = paneRect.height;  // fractional CSS px
+        if (!pageW || !pageH) return;
 
-      // 4) Probe DOM handles
-      const pageEl  = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
-      const titleEl = probeRef.current!.querySelector(".chapter-title") as HTMLElement;
-      const bodyEl  = probeRef.current!.querySelector(".chapter-body") as HTMLElement;
+        // 3) Input text
+        const textRaw =
+          Array.isArray(center.chapterTexts) && center.chapterTexts.length > 0
+            ? String(center.chapterTexts[0] ?? "")
+            : "";
+        if (!textRaw.trim()) { setChap1Pages([]); return; }
+        const paragraphs = splitParagraphs(textRaw);
 
-      // Size probe page exactly like visible page
-      pageEl.style.width = `${pageW}px`;
-      pageEl.style.height = `${pageH}px`;
-      pageEl.style.boxSizing = "border-box";
+        // 4) Probe DOM handles
+        const pageEl  = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
+        const titleEl = probeRef.current!.querySelector(".chapter-title") as HTMLElement;
+        const bodyEl  = probeRef.current!.querySelector(".chapter-body") as HTMLElement;
+        bodyEl.style.overflow = "auto";
 
-      // Mirror live padding
-      let padTop = "6vmin", padRight = "6vmin", padBottom = "6vmin", padLeft = "6vmin";
-      const visiblePage = document.querySelector(".spread .chapter-page") as HTMLElement | null;
-      if (visiblePage) {
-        const cs = getComputedStyle(visiblePage);
-        padTop    = cs.paddingTop    || padTop;
-        padRight  = cs.paddingRight  || padRight;
-        padBottom = cs.paddingBottom || padBottom;
-        padLeft   = cs.paddingLeft   || padLeft;
-      }
-      pageEl.style.paddingTop = padTop;
-      pageEl.style.paddingRight = padRight;
-      pageEl.style.paddingBottom = padBottom;
-      pageEl.style.paddingLeft = padLeft;
+        // Size probe page exactly like visible page
+        pageEl.style.width = `${pageW}px`;
+        pageEl.style.height = `${pageH}px`;
+        pageEl.style.boxSizing = "border-box";
 
-      // In the probe, let body grow so scrollHeight reflects overflow
-      bodyEl.style.flex = "0 0 auto";
-      bodyEl.style.minHeight = "0";
-      bodyEl.style.overflow = "visible";
+        // Mirror live paddings from a visible page (so probe math matches)
+        let padTop = "6vmin", padRight = "6vmin", padBottom = "6vmin", padLeft = "6vmin";
+        const visiblePage = document.querySelector(".spread .chapter-page") as HTMLElement | null;
+        if (visiblePage) {
+          const cs = getComputedStyle(visiblePage);
+          padTop    = cs.paddingTop    || padTop;
+          padRight  = cs.paddingRight  || padRight;
+          padBottom = cs.paddingBottom || padBottom;
+          padLeft   = cs.paddingLeft   || padLeft;
+        }
+        pageEl.style.paddingTop = padTop;
+        pageEl.style.paddingRight = padRight;
+        pageEl.style.paddingBottom = padBottom;
+        pageEl.style.paddingLeft = padLeft;
 
-      // ---- LINE GRID & CONTENT BOX ----
-      const csPage = getComputedStyle(pageEl);
-      const pT = parseFloat(csPage.paddingTop)    || 0;
-      const pB = parseFloat(csPage.paddingBottom) || 0;
-      const CONTENT_H = pageH - pT - pB;
+        // In the probe, let body grow so scrollHeight reflects overflow
+        bodyEl.style.flex = "0 0 auto";
+        bodyEl.style.minHeight = "0";
+        bodyEl.style.overflow = "visible";
+        bodyEl.style.boxSizing = "content-box";
 
-      // Actual line-height in px
-      let linePx = parseFloat(getComputedStyle(bodyEl).lineHeight);
-      if (!isFinite(linePx) || linePx <= 0) {
-        const tmp = document.createElement("span");
-        tmp.textContent = "A";
-        tmp.style.visibility = "hidden";
-        bodyEl.appendChild(tmp);
-        linePx = tmp.getBoundingClientRect().height || 16;
-        bodyEl.removeChild(tmp);
-      }
 
-      const SAFETY_PAD = 1; // px cushion so rounding never admits a half line
-      const snapToLineGrid = (h: number) => {
-        const lines = Math.max(0, Math.floor((h - SAFETY_PAD) / linePx));
-        return lines * linePx;
-      };
+        // Force layout so computed rects are current
+        void pageEl.getBoundingClientRect();
 
-      const BLANK_BODY_H = snapToLineGrid(CONTENT_H);
+        // ---- LINE GRID & CONTENT BOX (device-pixel safe) ----
+        const csPage = getComputedStyle(pageEl);
+        const pT = parseFloat(csPage.paddingTop)    || 0;
+        const pB = parseFloat(csPage.paddingBottom) || 0;
+        const CONTENT_H = pageH - pT - pB;
 
-      // Read the container's flex row-gap (this was the missing piece)
-      const rowGap =
-        parseFloat((csPage as any).rowGap || csPage.gap || "0") || 0;
+        // Read the container's flex row-gap (if any)
+        const rowGap =
+          parseFloat((csPage as any).rowGap || (csPage as any).gap || "0") || 0;
 
-      // Set body height for pages with/without title, subtracting title height + margin + row gap
-      const setBodyHeightFor = (withTitle: boolean) => {
-        const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0; // fractional height
-        const tGap = withTitle ? (parseFloat(getComputedStyle(titleEl).marginBottom) || 0) : 0;
-        const inter = withTitle ? (tGap + rowGap) : 0; // ← account for flex gap too
-        const target  = Math.max(0, CONTENT_H - tH - inter);
-        const snapped = snapToLineGrid(target);
-        bodyEl.style.height = `${snapped}px`;
-        return snapped;
-      };
+        // Measure the real line step (fractional CSS px) and define snapping
+        const lineStepCss = measureLineStepPx(bodyEl);
+        const fontPx = parseFloat(getComputedStyle(bodyEl).fontSize) || 16;
 
-      // One overflow checker
-      const overflowed = () =>
-        bodyEl.scrollHeight > bodyEl.clientHeight ||
-        pageEl.scrollHeight  > pageEl.clientHeight;
+        // NEW: account for .chapter-body vertical padding (we added 0.5lh top/bottom in CSS)
+        const csBody = getComputedStyle(bodyEl);
+        const bodyPadTop = parseFloat(csBody.paddingTop) || 0;
+        const bodyPadBot = parseFloat(csBody.paddingBottom) || 0;
+        const CONTENT_H_FOR_BODY = Math.max(0, CONTENT_H - bodyPadTop - bodyPadBot);
 
-      // Helpers
-      const makeP   = () => document.createElement("p");
-      const setPText = (p: HTMLParagraphElement, t: string) => { p.textContent = t; };
+        // Snap the blank-page body CONTENT height (no title) to full line-boxes
+        const BLANK_BODY_H = snapToDeviceLineGrid(CONTENT_H, lineStepCss);
 
-      // Slice whole paragraph to blank pages (no title)
-      function sliceParagraphBlank(parText: string): string[] {
-        const out: string[] = [];
-        titleEl.textContent = "";
-        bodyEl.innerHTML = "";
-        bodyEl.style.height = `${BLANK_BODY_H}px`;
 
-        // quick-fit
-        const p = makeP(); setPText(p, parText); bodyEl.appendChild(p);
-        if (!overflowed()) { out.push(parText); return out; }
-
-        // word binary search; char fallback
-        const words = parText.split(/\s+/);
-        let start = 0;
-        while (start < words.length) {
-          let lo = 1, hi = words.length - start, best = 0;
-          while (lo <= hi) {
-            const mid  = (lo + hi) >> 1;
-            const cand = words.slice(start, start + mid).join(" ");
-            titleEl.textContent = ""; bodyEl.innerHTML = "";
-            const p2 = makeP(); setPText(p2, cand); bodyEl.appendChild(p2);
-            if (!overflowed()) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+        // Overflow checker (rect-based, tolerates fractional spill)
+        const EPS = 0.8; // CSS px tolerance (>0.5 avoids DPR rounding traps)
+        const overflowed = () => {
+          const bodyR = bodyEl.getBoundingClientRect();
+          const last = bodyEl.lastElementChild as HTMLElement | null;
+          if (last) {
+            const lastR = last.getBoundingClientRect();
+            // allow 1px breathing room for descenders
+            return lastR.bottom - (bodyR.bottom - bodyPadBot - 1) > EPS;
           }
-          if (best === 0) {
-            const word = words[start];
-            let loC = 1, hiC = word.length, bestC = 0;
-            while (loC <= hiC) {
-              const midC = (loC + hiC) >> 1;
+          return (bodyEl.scrollHeight - bodyEl.clientHeight) > 0.5;
+        };
+
+        // Helpers
+        const makeP = () => document.createElement("p");
+        const setPText = (p: HTMLParagraphElement, t: string) => { p.textContent = t; };
+
+        // Compute body height for a page (depending on title presence), SNAPPED in device px
+        const setBodyHeightFor = (withTitle: boolean) => {
+          const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0; // fractional OK
+          const tGap = withTitle ? (parseFloat(getComputedStyle(titleEl).marginBottom) || 0) : 0;
+          const inter = withTitle ? (tGap + rowGap) : 0;
+
+          // Budget is page content area minus title+gaps; .chapter-body has NO vertical padding now.
+          const targetContent = Math.max(0, CONTENT_H - tH - inter);
+
+          // Snap to whole line boxes (CSS px)
+          const snappedContent = snapToDeviceLineGrid(targetContent, lineStepCss);
+
+          // Apply to the probe .chapter-body as CONTENT height
+          bodyEl.style.height = `${snappedContent}px`;
+
+          return snappedContent; // used for the visible page style
+        };
+
+        // Slice whole paragraph into blank pages (no title)
+        function sliceParagraphBlank(parText: string): string[] {
+          const out: string[] = [];
+          titleEl.textContent = "";
+          bodyEl.innerHTML = "";
+          bodyEl.style.height = `${BLANK_BODY_H}px`;
+
+          // quick-fit
+          const p = makeP(); setPText(p, parText); bodyEl.appendChild(p);
+          if (!overflowed()) { out.push(parText); return out; }
+
+          // word binary search; char fallback
+          const words = parText.split(/\s+/);
+          let start = 0;
+          while (start < words.length) {
+            let lo = 1, hi = words.length - start, best = 0;
+            while (lo <= hi) {
+              const mid  = (lo + hi) >> 1;
+              const cand = words.slice(start, start + mid).join(" ");
               titleEl.textContent = ""; bodyEl.innerHTML = "";
-              const p3 = makeP(); setPText(p3, word.slice(0, midC)); bodyEl.appendChild(p3);
-              if (!overflowed()) { bestC = midC; loC = midC + 1; } else { hiC = midC - 1; }
+              const p2 = makeP(); setPText(p2, cand); bodyEl.appendChild(p2);
+              if (!overflowed()) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
             }
-            const slice = word.slice(0, Math.max(1, bestC));
-            out.push(slice);
-            const rest = word.slice(slice.length);
-            if (rest) words[start] = rest; else start++;
-          } else {
-            out.push(words.slice(start, start + best).join(" "));
-            start += best;
+            if (best === 0) {
+              const word = words[start];
+              let loC = 1, hiC = word.length, bestC = 0;
+              while (loC <= hiC) {
+                const midC = (loC + hiC) >> 1;
+                titleEl.textContent = ""; bodyEl.innerHTML = "";
+                const p3 = makeP(); setPText(p3, word.slice(0, midC)); bodyEl.appendChild(p3);
+                if (!overflowed()) { bestC = midC; loC = midC + 1; } else { hiC = midC - 1; }
+              }
+              const slice = word.slice(0, Math.max(1, bestC));
+              out.push(slice);
+              const rest = word.slice(slice.length);
+              if (rest) words[start] = rest; else start++;
+            } else {
+              out.push(words.slice(start, start + best).join(" "));
+              start += best;
+            }
           }
-        }
-        return out;
-      }
-
-      // Fit as much as possible on the current (partially filled) page
-      function fitPieceOnCurrentPage(parText: string): { first: string; rest: string[] } {
-        const quick = makeP(); setPText(quick, parText); bodyEl.appendChild(quick);
-        if (!overflowed()) { return { first: parText, rest: [] }; }
-        bodyEl.removeChild(quick);
-
-        const words = parText.split(/\s+/);
-        let lo = 1, hi = words.length, best = 0;
-        while (lo <= hi) {
-          const mid = (lo + hi) >> 1;
-          const probeP = makeP(); setPText(probeP, words.slice(0, mid).join(" "));
-          bodyEl.appendChild(probeP);
-          const ok = !overflowed();
-          bodyEl.removeChild(probeP);
-          if (ok) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+          return out;
         }
 
-        if (best > 0) {
-          const first = words.slice(0, best).join(" ");
-          const tail  = words.slice(best).join(" ");
-          const rest  = tail ? sliceParagraphBlank(tail) : [];
-          return { first, rest };
+        // Fit as much as possible on the current (partially filled) page
+        function fitPieceOnCurrentPage(parText: string): { first: string; rest: string[] } {
+          const quick = makeP(); setPText(quick, parText); bodyEl.appendChild(quick);
+          if (!overflowed()) { return { first: parText, rest: [] }; }
+          bodyEl.removeChild(quick);
+
+          const words = parText.split(/\s+/);
+          let lo = 1, hi = words.length, best = 0;
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            const probeP = makeP(); setPText(probeP, words.slice(0, mid).join(" "));
+            bodyEl.appendChild(probeP);
+            const ok = !overflowed();
+            bodyEl.removeChild(probeP);
+            if (ok) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+          }
+
+          if (best > 0) {
+            const first = words.slice(0, best).join(" ");
+            const tail  = words.slice(best).join(" ");
+            const rest  = tail ? sliceParagraphBlank(tail) : [];
+            return { first, rest };
+          }
+
+          // char fallback
+          const firstWord = words[0] || "";
+          if (!firstWord) return { first: "", rest: [] };
+
+          let loC = 1, hiC = firstWord.length, bestC = 0;
+          while (loC <= hiC) {
+            const midC = (loC + hiC) >> 1;
+            const probeP = makeP(); setPText(probeP, firstWord.slice(0, midC));
+            bodyEl.appendChild(probeP);
+            const ok = !overflowed();
+            bodyEl.removeChild(probeP);
+            if (ok) { bestC = midC; loC = midC + 1; } else { hiC = midC - 1; }
+          }
+
+          if (bestC > 0) {
+            const first = firstWord.slice(0, bestC);
+            const tail  = firstWord.slice(bestC) + (words.length > 1 ? " " + words.slice(1).join(" ") : "");
+            const rest  = tail ? sliceParagraphBlank(tail) : [];
+            return { first, rest };
+          }
+
+          return { first: "", rest: [parText] };
         }
 
-        // char fallback
-        const firstWord = words[0] || "";
-        if (!firstWord) return { first: "", rest: [] };
-
-        let loC = 1, hiC = firstWord.length, bestC = 0;
-        while (loC <= hiC) {
-          const midC = (loC + hiC) >> 1;
-          const probeP = makeP(); setPText(probeP, firstWord.slice(0, midC));
-          bodyEl.appendChild(probeP);
-          const ok = !overflowed();
-          bodyEl.removeChild(probeP);
-          if (ok) { bestC = midC; loC = midC + 1; } else { hiC = midC - 1; }
-        }
-
-        if (bestC > 0) {
-          const first = firstWord.slice(0, bestC);
-          const tail  = firstWord.slice(bestC) + (words.length > 1 ? " " + words.slice(1).join(" ") : "");
-          const rest  = tail ? sliceParagraphBlank(tail) : [];
-          return { first, rest };
-        }
-
-        return { first: "", rest: [parText] };
-      }
-
-      // 5) Build pages
-      const pages: React.ReactNode[] = [];
-      let i = 0;
-      let firstPageDone = false;
-
-      while (i < paragraphs.length) {
-        const withTitle = !firstPageDone;
-        titleEl.textContent = withTitle ? (center.chapters?.[0] || "Chapter 1") : "";
-        bodyEl.innerHTML = "";
-
-        // Snap height for THIS page (depends on actual title height + margin + row gap)
-        setBodyHeightFor(withTitle);
-
-        const bucket: (string | { SPLIT: string[] })[] = [];
+        // 5) Build pages
+        const pages: React.ReactNode[] = [];
+        let i = 0;
+        let firstPageDone = false;
 
         while (i < paragraphs.length) {
-          const pEl = makeP(); setPText(pEl, paragraphs[i]); bodyEl.appendChild(pEl);
-          if (!overflowed()) {
-            bucket.push(paragraphs[i]);
-            i++;
-            continue;
-          }
+          const withTitle = !firstPageDone;
+          titleEl.textContent = withTitle ? (center.chapters?.[0] || "Chapter 1") : "";
+          bodyEl.innerHTML = "";
 
-          bodyEl.removeChild(pEl);
+          // Snap height for THIS page (depends on actual title height + margin + row gap)
+          const snappedBodyH = setBodyHeightFor(withTitle);
 
-          if (bodyEl.childElementCount === 0) {
-            const parts = sliceParagraphBlank(paragraphs[i]);
-            if (parts.length) { bucket.push({ SPLIT: parts }); i++; }
-            break; // close page
-          } else {
-            const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
-            if (first) {
-              bucket.push(first);
-              if (rest.length) paragraphs.splice(i + 1, 0, ...rest);
+          const bucket: (string | { SPLIT: string[] })[] = [];
+
+          while (i < paragraphs.length) {
+            const pEl = makeP(); setPText(pEl, paragraphs[i]); bodyEl.appendChild(pEl);
+            if (!overflowed()) {
+              bucket.push(paragraphs[i]);
               i++;
+              continue;
             }
-            break; // close page
+
+            bodyEl.removeChild(pEl);
+
+            if (bodyEl.childElementCount === 0) {
+              const parts = sliceParagraphBlank(paragraphs[i]);
+              if (parts.length) { bucket.push({ SPLIT: parts }); i++; }
+              break; // close page
+            } else {
+              const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
+              if (first) {
+                bucket.push(first);
+                if (rest.length) paragraphs.splice(i + 1, 0, ...rest);
+                i++;
+              }
+              break; // close page
+            }
           }
+
+          // Bucket -> nodes; only first piece of any split goes here
+          const nodes: React.ReactNode[] = [];
+          for (const item of bucket) {
+            if (typeof item === "string") {
+              nodes.push(<p key={nodes.length}>{item}</p>);
+            } else {
+              const [first, ...rest] = item.SPLIT;
+              nodes.push(<p key={nodes.length}>{first}</p>);
+              if (rest.length) paragraphs.splice(i, 0, ...rest);
+            }
+          }
+
+          // IMPORTANT: apply the snapped height to the *visible* page's body
+          pages.push(
+            <div className="chapter-page" key={pages.length}>
+              {withTitle && <h2 className="chapter-title">{center.chapters?.[0] || "Chapter 1"}</h2>}
+              <div className="chapter-body" style={{ height: `${snappedBodyH}px`, boxSizing: "content-box" }}>
+                {nodes}
+              </div>
+            </div>
+          );
+          firstPageDone = true;
         }
 
-        // Bucket -> nodes; only first piece of any split goes here
-        const nodes: React.ReactNode[] = [];
-        for (const item of bucket) {
-          if (typeof item === "string") {
-            nodes.push(<p key={nodes.length}>{item}</p>);
-          } else {
-            const [first, ...rest] = item.SPLIT;
-            nodes.push(<p key={nodes.length}>{first}</p>);
-            if (rest.length) paragraphs.splice(i, 0, ...rest);
-          }
-        }
+        setChap1Pages(pages);
 
-        pages.push(
-          <div className="chapter-page" key={pages.length}>
-            {withTitle && <h2 className="chapter-title">{center.chapters?.[0] || "Chapter 1"}</h2>}
-            <div className="chapter-body">{nodes}</div>
-          </div>
-        );
-        firstPageDone = true;
-      }
-
-      setChap1Pages(pages);
-
-      // 6) Clamp spread if total changed
-      setTimeout(() => {
-        const claimedChapters   = Number(center?.totalChapters ?? 0) || (center?.chapters?.length ?? 0);
-        const remainingChapters = Math.max(0, claimedChapters - 1);
-        const newTotalPages     = 2 + pages.length + remainingChapters;
-        const newMaxLeft        = Math.max(0, (newTotalPages - 1) & ~1); // lastEven
-        setPage((p) => (p > newMaxLeft ? newMaxLeft : p));
-      }, 0);
+        // 6) Clamp spread if total changed
+        setTimeout(() => {
+          const claimedChapters   = Number(center?.totalChapters ?? 0) || (center?.chapters?.length ?? 0);
+          const remainingChapters = Math.max(0, claimedChapters - 1);
+          const newTotalPages     = 2 + pages.length + remainingChapters;
+          const newMaxLeft        = Math.max(0, (newTotalPages - 1) & ~1); // lastEven
+          setPage((p) => (p > newMaxLeft ? newMaxLeft : p));
+        }, 0);
+      });
     });
 
-    return () => cancelAnimationFrame(raf);
-  }, [center, view, fontSizeIndex, lineHeight, fontStyleIndex]);
+    return () => {
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [center, view, fontSizeIndex, debouncedLH, fontStyleIndex]);
 
 
 
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try { await (document as any).fonts?.ready; } catch {}
+      if (!cancelled) {
+        // nudge state to re-run the pagination effect using actual font metrics
+        setLineHeight((v) => v);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
 
 
@@ -965,6 +1036,7 @@ export default function Home() {
                         "spread" +
                         (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
                       }
+                      lang="en"
                       onPointerDown={onSpreadPointerDown}
                       onPointerUp={onSpreadPointerUp}
                       onClickCapture={onSpreadClickCapture}

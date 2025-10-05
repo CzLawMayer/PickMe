@@ -2480,9 +2480,7 @@ body {
 .chapter-body p {
   margin: 0;
 }
-.chapter-body p + p {
-  margin-top: 1em; /* blank line */
-}
+
 
 /* Hidden pagination measurer: matches page typography and width */
 .pagination-probe {
@@ -2553,7 +2551,8 @@ body {
   margin: 0;
 }
 .chapter-body p + p {
-  margin-top: 1em;
+  /* 1em follows the paragraph's font-size; multiplying by --reader-line makes it one full line box */
+  margin-top: calc(1em * var(--reader-line));
 }
 
 /* Ensure the hidden measurer matches the real page layout */
@@ -2741,8 +2740,8 @@ body {
   min-height: 0 !important;
   overflow: hidden !important;                  /* ← kills scrollbars */
   white-space: normal !important;
-  word-break: break-word !important;
-  overflow-wrap: anywhere !important;
+  word-break: normal !important;        /* ← change */
+  overflow-wrap: break-word !important;  /* ← change */
   line-height: var(--reader-line, 1.7) !important;
   font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
   font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1)) !important;
@@ -2751,7 +2750,8 @@ body {
 
 /* One blank line between paragraphs */
 .chapter-body p { margin: 0 !important; }
-.chapter-body p + p { margin-top: 1em !important; }
+.chapter-body p + p { margin-top: 1lh !important; }
+
 
 /* Probe must mirror visible layout EXACTLY (no transforms, same padding) */
 .pagination-probe .chapter-page {
@@ -2772,8 +2772,8 @@ body {
   min-height: 0 !important;
   overflow: visible !important;                 /* so scrollHeight grows for measuring */
   white-space: normal !important;
-  word-break: break-word !important;
-  overflow-wrap: anywhere !important;
+  word-break: normal !important;        /* ← change */
+  overflow-wrap: break-word !important; /* ← change */
   line-height: var(--reader-line, 1.7) !important;
   font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
   font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1)) !important;
@@ -2809,3 +2809,58 @@ body {
 
 /* Kill flex gap on chapter pages so pagination only needs title margin */
 .chapter-page { gap: 0 !important; }
+
+/* keep the last line from getting shaved by compositor rounding */
+.chapter-body { padding-bottom: 1px; }
+
+
+.pagination-probe .chapter-body p + p {
+  margin-top: calc(1em * var(--reader-line));
+}
+
+.chapter-title {
+  margin-bottom: calc(1em * var(--reader-line)); /* exactly 1 line */
+}
+
+/* keep the last line from getting shaved by compositor rounding */
+.chapter-body { padding-bottom: 1px; }
+
+
+/* exactly one extra line between paragraphs */
+.chapter-body p + p { margin-top: calc(1em * var(--reader-line)); }
+
+/* title spacing = one full line (so JS can subtract it cleanly) */
+.chapter-title { margin-bottom: calc(1em * var(--reader-line)); }
+
+/* tiny safety against GPU rounding on the visible page */
+.chapter-body { padding-bottom: 1px; }
+
+.pagination-probe .chapter-body p + p { margin-top: calc(1em * var(--reader-line)); }
+
+
+.chapter-body p {
+  text-align: justify !important;
+  text-align-last: left !important;  /* last line not stretched */
+  hyphens: auto !important;
+  -webkit-hyphens: auto !important;
+  -ms-hyphens: auto !important;
+}
+
+.chapter-title {
+  text-wrap: balance;
+}
+
+
+.chapter-body {
+  padding-top: 0.5lh !important;
+  padding-bottom: 0.5lh !important;
+}
+
+/* Pagination expects 'height' to mean CONTENT height (not padding). */
+.chapter-body,
+.pagination-probe .chapter-body {
+  box-sizing: content-box !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden; /* visible pages clip cleanly; probe will be set to 'auto' in JS */
+}
