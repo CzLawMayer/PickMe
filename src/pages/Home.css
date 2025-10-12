@@ -2635,3 +2635,9 @@ body {
   /* was 6vmin; tweak to taste */
   padding: 5vmin;
 }
+
+/* 1 line of cushion */
+.spread { --reader-cushion: calc(1em * var(--reader-line, 1.7)); }
+
+/* Or 2 lines */
+// .spread { --reader-cushion: calc(2 * 1em * var(--reader-line, 1.7)); }
