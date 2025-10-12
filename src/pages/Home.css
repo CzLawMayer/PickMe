@@ -2476,444 +2476,162 @@ body {
 
 .tts-hint { opacity: .7; font-size: 12px; text-align: center; margin-top: 4px; }
 
-/* Reader paragraphs: one blank line between paragraphs */
-.chapter-body p {
-  margin: 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== Reader pagination — clean baseline ===== */
+
+/* Variables (JS updates most of these via inline styles) */
+:root{
+  --reader-font-base: 1rem;
+  --reader-font-scale: 1;             /* JS sets on .spread */
+  --reader-line: 1.7;                  /* JS sets on .spread */
+  --reader-font-family: Georgia, 'Times New Roman', serif; /* JS sets */
+  --reader-cushion: 0px;               /* JS sets (n * line step) */
 }
 
+/* Each page lives inside a pane; panes never scroll */
+.spread .pane{ overflow:hidden; }
 
-/* Hidden pagination measurer: matches page typography and width */
-.pagination-probe {
-  position: fixed;
-  left: -99999px;
-  top: -99999px;
-  visibility: hidden;
-  pointer-events: none;
-  width: 0; /* we set width dynamically in JS */
+/* Page box (visible) */
+.chapter-page{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  box-sizing:border-box;
+  padding:6vmin;                       /* keep in sync with your design */
+  gap:0;
 }
 
-.pagination-probe .chapter-page {
-  /* mirror the real page paddings if you set them in your UI */
-  padding: 6vmin; /* your real .chapter-page padding should be accounted in available width/height calc */
+/* Title block (first page when present) */
+.chapter-title{
+  flex:0 0 auto;
+  margin:0 0 calc(1em * var(--reader-line)) 0;   /* exactly one line below */
+  font-weight:700;
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale) * 1.15);
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  transform:none;
 }
 
-.pagination-probe .chapter-title {
-  margin: 0 0 0.6em 0; /* small gap under title on first page */
-  font-weight: 700;
-  font-size: 1.15em;
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+/* Text body (visible): fixed-height set by JS; never scrolls */
+.chapter-body{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  box-sizing:content-box;               /* JS height is content height */
+  /* JS sets a precise pixel height; default here is only for fallback */
+  height:auto;
+  padding:0;
+  padding-bottom:var(--reader-cushion); /* bottom safety/cushion */
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale));
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  white-space:normal;
+  word-break:normal;
+  overflow-wrap:break-word;
+  transform:none;
 }
 
-.pagination-probe .chapter-body {
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+/* Paragraph rhythm: no bottom margins; spacing only *between* paragraphs */
+.chapter-body > p{ margin:0; }
+.chapter-body > p + p{ margin-top:calc(1em * var(--reader-line)); } /* one blank line */
+.chapter-body > *:last-child{ margin-bottom:0; }
+
+/* ---------- Hidden pagination probe (must mirror visible layout) ---------- */
+
+.pagination-probe{
+  position:absolute;
+  left:-99999px; top:-99999px;
+  visibility:hidden;
+  pointer-events:none;
 }
 
-/* Make each page a fixed, non-scrollable box */
-.spread .pane {
-  /* your existing sizing already defines the page height; just ensure no scroll */
-  overflow: hidden;
+.pagination-probe .chapter-page{
+  display:flex;
+  flex-direction:column;
+  box-sizing:border-box;
+  padding:6vmin;                        /* match .chapter-page exactly */
+  gap:0;
 }
 
-/* Use flex so the title sits on top and the body fills the rest */
-.chapter-page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  /* If you have padding on .chapter-page, keep it the same in the probe too */
-  box-sizing: border-box;
+.pagination-probe .chapter-title{
+  margin:0 0 calc(1em * var(--reader-line)) 0;
+  font-weight:700;
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale) * 1.15);
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  transform:none;
 }
 
-/* Title never scrolls */
-.chapter-title {
-  flex: 0 0 auto;
-  margin: 0 0 0.6em 0;
+.pagination-probe .chapter-body{
+  min-height:0;
+  /* Keep parity with visible page to avoid scroll-vs-clip mismatches */
+  overflow:hidden;
+  box-sizing:content-box;
+  height:auto;
+  padding:0;
+  padding-bottom:var(--reader-cushion);
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale));
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  white-space:normal;
+  word-break:normal;
+  overflow-wrap:break-word;
+  transform:none;
 }
 
-/* Body fills remaining space and must NOT scroll */
-.chapter-body {
-  flex: 1 1 auto;
-  min-height: 0;          /* critical so flexed child can shrink without forcing overflow */
-  overflow: hidden;       /* kill scrollbars – pagination ensures content fits */
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
+.pagination-probe .chapter-body > p{ margin:0; }
+.pagination-probe .chapter-body > p + p{ margin-top:calc(1em * var(--reader-line)); }
+.pagination-probe .chapter-body > *:last-child{ margin-bottom:0; }
+
+
+/* ---- Make chapter text span the full page like a book ---- */
+
+/* Use the full page width; prevent upstream max-width/blog styles */
+.spread .chapter-page .chapter-body,
+.spread .chapter-page .chapter-body > * {
+  width: auto;
+  max-width: none;
+  margin-inline: 0;
+  align-self: stretch;
 }
 
-/* Paragraph spacing: blank line between paragraphs */
-.chapter-body p {
-  margin: 0;
-}
-.chapter-body p + p {
-  /* 1em follows the paragraph's font-size; multiplying by --reader-line makes it one full line box */
-  margin-top: calc(1em * var(--reader-line));
-}
-
-/* Ensure the hidden measurer matches the real page layout */
-.pagination-probe {
-  position: fixed;
-  left: -99999px;
-  top: -99999px;
-  visibility: hidden;
-  pointer-events: none;
-}
-.pagination-probe .chapter-page {
-  display: flex;
-  flex-direction: column;
-  height: auto;           /* we explicitly control width, we measure heights dynamically */
-  box-sizing: border-box;
-}
-.pagination-probe .chapter-title { margin: 0 0 0.6em 0; }
-.pagination-probe .chapter-body {
-  /* mirror the visible rules so measurements are accurate */
-  min-height: 0;
-  overflow: visible;      /* the probe can overflow during measuring; we just read height */
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
-}
-
-:root {
-  --reader-font-base: 1rem;        /* you can set another base if you want */
-  --reader-font-scale: 1;          /* already defined via TS variable */
-}
-
-/* Visible pages are fixed-height, no scroll */
-.spread .pane { overflow: hidden; }
-
-.chapter-page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.chapter-title {
-  flex: 0 0 auto;
-  margin: 0 0 0.6em 0;
-  font-weight: 700;
-  /* Scale title along with body (optional slight boost) */
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
-}
-
-.chapter-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden; /* no scrollbars; paginator ensures fit */
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
-  /* REAL layout-based font scaling */
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
-}
-
-/* Paragraph spacing: blank line between paragraphs */
-.chapter-body p { margin: 0; }
-.chapter-body p + p { margin-top: 1em; }
-
-/* Probe must mirror visible layout (no transform either!) */
-.pagination-probe {
-  position: fixed; left: -99999px; top: -99999px; visibility: hidden; pointer-events: none;
-}
-.pagination-probe .chapter-page {
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-.pagination-probe .chapter-title {
-  margin: 0 0 0.6em 0;
-  font-weight: 700;
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
-}
-.pagination-probe .chapter-body {
-  min-height: 0;
-  overflow: visible; /* let it grow so scrollHeight reflects overflow */
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: var(--reader-line, 1.7);
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif);
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
-}
-
-
-.chapter-page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 6vmin;                  /* your page padding */
-}
-
-.chapter-title {
-  flex: 0 0 auto;
-  margin: 0 0 0.6em 0;
-  font-weight: 700;
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
-  line-height: var(--reader-line);
-  font-family: var(--reader-font-family);
-}
-
-.chapter-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;                /* <- IMPORTANT: no scrollbars */
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: var(--reader-line);
-  font-family: var(--reader-font-family);
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
-}
-
-/* probe mirrors the same layout + padding */
-.pagination-probe .chapter-page {
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  padding: 6vmin;                  /* <- match visible page */
-}
-.pagination-probe .chapter-title {
-  margin: 0 0 0.6em 0;
-  font-weight: 700;
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15);
-  line-height: var(--reader-line);
-  font-family: var(--reader-font-family);
-}
-.pagination-probe .chapter-body {
-  min-height: 0;
-  overflow: visible;               /* grow so scrollHeight reflects overflow */
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: var(--reader-line);
-  font-family: var(--reader-font-family);
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
-}
-
-.chapter-body p { margin: 0; }
-.chapter-body p + p { margin-top: 1em; }
-
-/* ===== FINAL AUTHORITATIVE READER OVERRIDES (must be last) ===== */
-
-/* Layout + sizing: fixed, non-scrollable pages */
-.spread .pane { overflow: hidden !important; }
-
-/* Visible page */
-.chapter-page {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  box-sizing: border-box !important;
-  padding: 6vmin !important;                    /* ← your page padding */
-}
-
-/* Title only on first page (content logic handles presence); layout-wise: fixed block */
-.chapter-title {
-  flex: 0 0 auto !important;
-  margin: 0 0 0.6em 0 !important;
-  font-weight: 700 !important;
-  /* scale via font-size, not transform */
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15) !important;
-  line-height: var(--reader-line, 1.7) !important;
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
-  transform: none !important;
-}
-
-/* Body fills the remaining space; NEVER scroll; NO transforms */
-.chapter-body {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow: hidden !important;                  /* ← kills scrollbars */
-  white-space: normal !important;
-  word-break: normal !important;        /* ← change */
-  overflow-wrap: break-word !important;  /* ← change */
-  line-height: var(--reader-line, 1.7) !important;
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1)) !important;
-  transform: none !important;                   /* ← critical */
-}
-
-/* One blank line between paragraphs */
-.chapter-body p { margin: 0 !important; }
-.chapter-body p + p { margin-top: 1lh !important; }
-
-
-/* Probe must mirror visible layout EXACTLY (no transforms, same padding) */
-.pagination-probe .chapter-page {
-  display: flex !important;
-  flex-direction: column !important;
-  box-sizing: border-box !important;
-  padding: 6vmin !important;                    /* match .chapter-page */
-}
-.pagination-probe .chapter-title {
-  margin: 0 0 0.6em 0 !important;
-  font-weight: 700 !important;
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1) * 1.15) !important;
-  line-height: var(--reader-line, 1.7) !important;
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
-  transform: none !important;
-}
-.pagination-probe .chapter-body {
-  min-height: 0 !important;
-  overflow: visible !important;                 /* so scrollHeight grows for measuring */
-  white-space: normal !important;
-  word-break: normal !important;        /* ← change */
-  overflow-wrap: break-word !important; /* ← change */
-  line-height: var(--reader-line, 1.7) !important;
-  font-family: var(--reader-font-family, Georgia, 'Times New Roman', serif) !important;
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1)) !important;
-  transform: none !important;                   /* ← critical */
-}
-
-
-.pagination-probe {
-  position: absolute;          /* inside spread */
-  left: -99999px;
-  top: -99999px;
-  visibility: hidden;          /* invisible but measurable */
-  pointer-events: none;
-}
-
-.pagination-probe .chapter-page {
-  display: flex;
-  flex-direction: column;
-  height: auto;                /* JS sets width/height/box-sizing */
-  box-sizing: border-box;
-  padding: 6vmin;              /* must match the real page (or mirror in JS) */
-}
-
-.pagination-probe .chapter-title,
-.pagination-probe .chapter-body {
-  font-family: var(--reader-font-family);
-  line-height: var(--reader-line);
-  font-size: calc(var(--reader-font-base, 1rem) * var(--reader-font-scale, 1));
-}
-
-.chapter-body { overflow: hidden !important; }
-.pagination-probe .chapter-body { overflow: visible !important; }
-
-/* Kill flex gap on chapter pages so pagination only needs title margin */
-.chapter-page { gap: 0 !important; }
-
-/* keep the last line from getting shaved by compositor rounding */
-.chapter-body { padding-bottom: 1px; }
-
-
-.pagination-probe .chapter-body p + p {
-  margin-top: calc(1em * var(--reader-line));
-}
-
-.chapter-title {
-  margin-bottom: calc(1em * var(--reader-line)); /* exactly 1 line */
-}
-
-/* keep the last line from getting shaved by compositor rounding */
-.chapter-body { padding-bottom: 1px; }
-
-
-/* exactly one extra line between paragraphs */
-.chapter-body p + p { margin-top: calc(1em * var(--reader-line)); }
-
-/* title spacing = one full line (so JS can subtract it cleanly) */
-.chapter-title { margin-bottom: calc(1em * var(--reader-line)); }
-
-/* tiny safety against GPU rounding on the visible page */
-.chapter-body { padding-bottom: 1px; }
-
-.pagination-probe .chapter-body p + p { margin-top: calc(1em * var(--reader-line)); }
-
-
-.chapter-body p {
-  text-align: justify !important;
-  text-align-last: left !important;  /* last line not stretched */
-  hyphens: auto !important;
-  -webkit-hyphens: auto !important;
-  -ms-hyphens: auto !important;
-}
-
-.chapter-title {
-  text-wrap: balance;
-}
-
-
-.chapter-body {
-  padding-top: 0.5lh !important;
-  padding-bottom: 0.5lh !important;
-}
-
-/* Pagination expects 'height' to mean CONTENT height (not padding). */
-.chapter-body,
-.pagination-probe .chapter-body {
-  box-sizing: content-box !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  overflow: hidden; /* visible pages clip cleanly; probe will be set to 'auto' in JS */
-}
-
-/* Invisible buffer so the last line never gets buried on later pages */
-.bottom-safety-spacer {
-  display: block;
-  height: calc(0.85 * var(--reader-line, 1.7) * 1em); /* ~0.85 line of space */
-  pointer-events: none;
-  visibility: hidden;
-}
-
-/* Reserve ~0.85 line at the bottom of every page so the last line is never clipped */
+/* Paragraphs: fully justify, but keep the last line left-aligned */
 .spread .chapter-page .chapter-body {
-  padding-bottom: calc(0.85 * var(--reader-line, 1.7) * 1em);
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  text-justify: inter-word; /* helps on some browsers */
 }
 
-
+/* If anything still forces a narrow column, nuke it with specificity */
 .spread .chapter-page .chapter-body p {
-  margin: 0 0 1em;         /* keep spacing between paragraphs */
+  max-width: none !important;
+  margin-inline: 0 !important;
 }
 
-/* ✅ remove the trailing gap on the page */
-.spread .chapter-page .chapter-body > :last-child {
-  margin-bottom: 0 !important;
-}
-
-/* optional, tiny bottom padding for aesthetics */
-.spread .chapter-page .chapter-body {
-  padding-bottom: 0.25em;
-  box-sizing: content-box; /* matches your JS pagination math */
-}
-
-
-/* --- Reader paragraphs: remove bottom gap & keep consistent spacing --- */
-.spread .chapter-page .chapter-body p {
-  margin: 0; /* kill the UA 1em top/bottom margins */
-}
-
-/* spacing only *between* paragraphs */
-.spread .chapter-page .chapter-body p + p {
-  /* use your reader line variable for consistent rhythm */
-  margin-top: calc(0.75em * var(--reader-line, 1.6));
-}
-
-/* absolutely no extra space after the last paragraph on the page */
-.spread .chapter-page .chapter-body p:last-child {
-  margin-bottom: 0;
-}
-
-/* prevent margin-collapsing with first/last child and keep height exact */
-.spread .chapter-page .chapter-body {
-  box-sizing: content-box;
-  overflow: hidden;          /* visible pages shouldn't scroll */
-  padding-block: 0.5px;      /* tiny pad stops parent/child margin-collapse */
+/* (Optional) want smaller/larger page margins? adjust once here */
+.spread .chapter-page {
+  /* was 6vmin; tweak to taste */
+  padding: 5vmin;
 }

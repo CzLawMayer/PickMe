@@ -75,9 +75,9 @@ function measureLineStepPx(el: HTMLElement): number {
 
 function snapToDeviceLineGrid(cssPixels: number, lineCssPx: number) {
   if (cssPixels <= 0 || lineCssPx <= 0) return 0;
-  // floor to an integer count of line boxes (small +ε avoids dropping a line due to fp drift)
-  const lines = Math.floor((cssPixels + 0.01) / lineCssPx);
-  return lines * lineCssPx; // fractional CSS px is fine; browser will rasterize accurately
+  const SAFE_EPS = 0.5; // shave a tiny amount so we never sit *on* a rounding edge
+  const lines = Math.floor((cssPixels - SAFE_EPS) / lineCssPx);
+  return Math.max(0, lines) * lineCssPx;
 }
 
 const DPR =
@@ -117,6 +117,8 @@ export default function Home() {
   const [lineHeight, setLineHeight] = useState(1.7)
   const [readerLight, setReaderLight] = useState(false)
   const [debouncedLH, setDebouncedLH] = useState(lineHeight)
+  const [bottomCushionPx, setBottomCushionPx] = useState(0)
+
 
 
   // Font style popover
@@ -379,6 +381,7 @@ export default function Home() {
 
   // Measure the available content box inside a page (based on the open spread)
 // Paginate chapter 1 into fixed-height, line-snapped pages (accounts for flex gap)
+// Paginate chapter 1 into fixed-height, line-snapped pages (accounts for flex gap)
   useEffect(() => {
     if (!center) return;
     if (view !== "open") return;
@@ -386,9 +389,7 @@ export default function Home() {
     let raf1 = 0;
     let raf2 = 0;
 
-    // rAF #1: wait for React to commit DOM + inline styles (e.g., --reader-line)
     raf1 = requestAnimationFrame(() => {
-      // rAF #2: wait for the browser to fully apply CSS vars and recalc layout
       raf2 = requestAnimationFrame(() => {
         if (!probeRef.current) return;
 
@@ -418,11 +419,10 @@ export default function Home() {
         const pageEl  = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
         const titleEl = probeRef.current!.querySelector(".chapter-title") as HTMLElement;
         const bodyEl  = probeRef.current!.querySelector(".chapter-body") as HTMLElement;
-        bodyEl.style.overflow = "auto";
 
         // Size probe page exactly like visible page
         pageEl.style.width  = `${pageW}px`;
-        pageEl.style.height = `${pageH}px`; // already device-snapped above
+        pageEl.style.height = `${pageH}px`;
         pageEl.style.boxSizing = "border-box";
 
         // Mirror live paddings from a visible page (so probe math matches)
@@ -440,99 +440,99 @@ export default function Home() {
         pageEl.style.paddingBottom = padBottom;
         pageEl.style.paddingLeft = padLeft;
 
-        // In the probe, let body grow so scrollHeight reflects overflow
+        // Probe body must match visible layout
         bodyEl.style.flex = "0 0 auto";
         bodyEl.style.minHeight = "0";
-        bodyEl.style.overflow = "visible";
+        bodyEl.style.overflow = "hidden";        // IMPORTANT: match visible page
         bodyEl.style.boxSizing = "content-box";
-
 
         // Force layout so computed rects are current
         void pageEl.getBoundingClientRect();
 
-        // ---- LINE GRID & CONTENT BOX (device-pixel safe) ----
+        // ---- LINE GRID & CONTENT BOX ----
         const csPage = getComputedStyle(pageEl);
-        const pT = parseFloat(csPage.paddingTop)    || 0;
+        const pT = parseFloat(csPage.paddingTop) || 0;
         const pB = parseFloat(csPage.paddingBottom) || 0;
         const CONTENT_H = pageH - pT - pB;
 
-        // Read the container's flex row-gap (if any)
         const rowGap =
           parseFloat((csPage as any).rowGap || (csPage as any).gap || "0") || 0;
 
-        // Measure the real line step (fractional CSS px) and define snapping
         const lineStepCss = measureLineStepPx(bodyEl);
-        const lineStepAdjusted = lineStepCss * 1.01;
-        const SAFETY_LINES = 0.35;  // try 1 for more room at bottom
-        const MIN_LINES = 3;        // ensures at least a few visible lines
-        const fontPx = parseFloat(getComputedStyle(bodyEl).fontSize) || 16;
-        const EXTRA_LINES = 1;
+        const MIN_LINES = 3;
 
-        // NEW: account for .chapter-body vertical padding (we added 0.5lh top/bottom in CSS)
+        // Bottom cushion (kept as 1 line; change to 2 if you want two)
+        const BOTTOM_CUSHION_LINES = 1;
+        const cushionPx = BOTTOM_CUSHION_LINES * lineStepCss;
+
+        probeRoot.style.setProperty("--reader-cushion", `${cushionPx}px`);
+        bodyEl.style.setProperty("--reader-cushion", `${cushionPx}px`);
+        if (spreadRef.current) {
+          spreadRef.current.style.setProperty("--reader-cushion", `${cushionPx}px`);
+        }
+        setBottomCushionPx(cushionPx);
+
+        // Account for .chapter-body vertical padding
         const csBody = getComputedStyle(bodyEl);
         const bodyPadTop = parseFloat(csBody.paddingTop) || 0;
         const bodyPadBot = parseFloat(csBody.paddingBottom) || 0;
+
+        // Available content height for text lines (no title yet)
         const CONTENT_H_FOR_BODY = Math.max(0, CONTENT_H - bodyPadTop - bodyPadBot);
 
         // Snap the blank-page body CONTENT height (no title) to full line-boxes
-        let BLANK_BODY_H = snapToDeviceLineGrid(CONTENT_H, lineStepAdjusted);
-        BLANK_BODY_H = Math.max(
-          lineStepAdjusted * MIN_LINES,
-          BLANK_BODY_H - (SAFETY_LINES + EXTRA_LINES) * lineStepAdjusted
+        const BLANK_BODY_H = Math.max(
+          lineStepCss * MIN_LINES,
+          snapToDeviceLineGrid(CONTENT_H_FOR_BODY, lineStepCss)
         );
-        BLANK_BODY_H = snapToDevicePixel(BLANK_BODY_H);
+        bodyEl.style.height = `${BLANK_BODY_H}px`;
 
-
-        // Overflow checker (rect-based, tolerates fractional spill)
-        const EPS = 0.8;
+        // Overflow checker — scroll metric only (robust & simple)
         const overflowed = () => {
-          const bodyR = bodyEl.getBoundingClientRect();
+          // if scrollHeight still reports overflow, that’s enough
+          if ((bodyEl.scrollHeight - bodyEl.clientHeight) > 0.5) return true;
+
           const last = bodyEl.lastElementChild as HTMLElement | null;
-          if (last) {
-            const lastR = last.getBoundingClientRect();
-            const mb = parseFloat(getComputedStyle(last).marginBottom) || 0;
-            // compare last content edge + margin-bottom against the body content bottom
-            return (lastR.bottom + mb) - (bodyR.bottom - bodyPadBot - 1) > EPS;
-          }
-          return (bodyEl.scrollHeight - bodyEl.clientHeight) > 0.5;
+          if (!last) return false;
+
+          const bodyR = bodyEl.getBoundingClientRect();
+          const lastR = last.getBoundingClientRect();
+          const mb = parseFloat(getComputedStyle(last).marginBottom) || 0;
+          const EPS = 0.5;
+
+          // Compare: (last content edge + bottom margin) vs (body content bottom - bottom padding)
+          return (lastR.bottom + mb) > (bodyR.bottom - bodyPadBot - EPS);
         };
 
         // Helpers
         const makeP = () => document.createElement("p");
         const setPText = (p: HTMLParagraphElement, t: string) => { p.textContent = t; };
 
-        // Compute body height for a page (depending on title presence), SNAPPED in device px
-
+        // Compute body height for a page (depending on title presence)
         const setBodyHeightFor = (withTitle: boolean) => {
           const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0;
           const tGap = withTitle ? (parseFloat(getComputedStyle(titleEl).marginBottom) || 0) : 0;
-          const inter = withTitle ? (tGap + rowGap) : 0;
+          const inter = withTitle ? tGap : 0; // add container row-gap if you use it
 
-          const targetContent = Math.max(0, CONTENT_H - tH - inter);
-
-          let snappedContent = snapToDeviceLineGrid(targetContent, lineStepAdjusted);
-          snappedContent = Math.max(
-            lineStepAdjusted * MIN_LINES,
-            snappedContent - (SAFETY_LINES + EXTRA_LINES) * lineStepAdjusted
+          const targetContent = Math.max(0, CONTENT_H_FOR_BODY - tH - inter);
+          const snappedContent = Math.max(
+            lineStepCss * MIN_LINES,
+            snapToDeviceLineGrid(targetContent, lineStepCss)
           );
-
-          const deviceSnapped = snapToDevicePixel(snappedContent);
-          bodyEl.style.height = `${deviceSnapped}px`;
-          return deviceSnapped;
-        };       
+          bodyEl.style.height = `${snappedContent}px`;
+          return snappedContent;
+        };
 
         // Slice whole paragraph into blank pages (no title)
-        function sliceParagraphBlank(parText: string): string[] {
+        const sliceParagraphBlank = (parText: string): string[] => {
           const out: string[] = [];
           titleEl.textContent = "";
           bodyEl.innerHTML = "";
           bodyEl.style.height = `${BLANK_BODY_H}px`;
 
-          // quick-fit
           const p = makeP(); setPText(p, parText); bodyEl.appendChild(p);
           if (!overflowed()) { out.push(parText); return out; }
 
-          // word binary search; char fallback
           const words = parText.split(/\s+/);
           let start = 0;
           while (start < words.length) {
@@ -563,10 +563,9 @@ export default function Home() {
             }
           }
           return out;
-        }
+        };
 
-        // Fit as much as possible on the current (partially filled) page
-        function fitPieceOnCurrentPage(parText: string): { first: string; rest: string[] } {
+        const fitPieceOnCurrentPage = (parText: string): { first: string; rest: string[] } => {
           const quick = makeP(); setPText(quick, parText); bodyEl.appendChild(quick);
           if (!overflowed()) { return { first: parText, rest: [] }; }
           bodyEl.removeChild(quick);
@@ -589,7 +588,6 @@ export default function Home() {
             return { first, rest };
           }
 
-          // char fallback
           const firstWord = words[0] || "";
           if (!firstWord) return { first: "", rest: [] };
 
@@ -611,7 +609,7 @@ export default function Home() {
           }
 
           return { first: "", rest: [parText] };
-        }
+        };
 
         // 5) Build pages
         const pages: React.ReactNode[] = [];
@@ -665,7 +663,7 @@ export default function Home() {
             }
           }
 
-          // IMPORTANT: apply the snapped height to the *visible* page's body
+          // IMPORTANT: apply the snapped height to the *visible* page's body — exactly
           pages.push(
             <div className="chapter-page" key={pages.length}>
               {withTitle && <h2 className="chapter-title">{center.chapters?.[0] || "Chapter 1"}</h2>}
@@ -698,6 +696,7 @@ export default function Home() {
       if (raf2) cancelAnimationFrame(raf2);
     };
   }, [center, view, fontSizeIndex, debouncedLH, fontStyleIndex]);
+
 
 
 
@@ -1070,10 +1069,11 @@ export default function Home() {
                       aria-label={view === "open" ? "Close book" : undefined}
                       style={{
                         ["--reader-font-scale" as any]: String(FONT_SCALES[fontSizeIndex]),
-                        ["--reader-line" as any]: String(lineHeight),
+                        ["--reader-line" as any]: String(debouncedLH),
                         ["--reader-font-family" as any]: FONT_STYLES[fontStyleIndex].css,
                         ["--reader-page-bg" as any]: readerLight ? "#ffffff" : "#2d2d2d",
                         ["--reader-page-fg" as any]: readerLight ? "#000000" : "#ffffff",
+                        ["--reader-cushion" as any]: `${bottomCushionPx}px`,
                       }}
                     >
                       {/* LEFT pane (even index) */}
