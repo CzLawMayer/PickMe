@@ -226,6 +226,39 @@ export default function Home() {
       ta.setSelectionRange(end, end)
     }
   }, [notePanelOpen])
+  useEffect(() => {
+    if (!ttsOpen) return;
+    function onDocMouseDown(e: MouseEvent) {
+      const t = e.target as Node;
+      if (ttsPanelRef.current?.contains(t) || ttsBtnRef.current?.contains(t)) return;
+      setTtsOpen(false);
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setTtsOpen(false);
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown);
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [ttsOpen]);
+
+  useEffect(() => {
+    if (ttsOpen) {
+      setFontPanelOpen(false);
+      setFontStylePanelOpen(false);
+      setDictOpen(false);
+      setNotePanelOpen(false);
+    }
+  }, [ttsOpen]);
+
+  // If any other popover opens, close TTS
+  useEffect(() => {
+    if (fontPanelOpen || fontStylePanelOpen || dictOpen || notePanelOpen) {
+      setTtsOpen(false);
+    }
+  }, [fontPanelOpen, fontStylePanelOpen, dictOpen, notePanelOpen]);
 
   // Auto-close one popover when the other opens
   useEffect(() => { if (fontPanelOpen) setFontStylePanelOpen(false) }, [fontPanelOpen])

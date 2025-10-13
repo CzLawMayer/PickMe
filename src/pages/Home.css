@@ -2645,3 +2645,68 @@ body {
   text-align-last: center !important; /* keeps the final wrapped line centered */
   text-wrap: balance;                  /* nicer multi-line centering where supported */
 }
+
+
+
+
+
+
+
+
+
+/* === TOC scrollbar on LIGHT pages (keep style, just gray colors) === */
+/* Matches when you toggled white pages: --reader-page-bg: #ffffff */
+.spread[style*="--reader-page-bg: #fff"] .toc-list {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #9aa0a6 rgba(0,0,0,0.12); /* thumb / track */
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar {
+  width: 8px; /* same width as dark */
+}
+.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.12);      /* light gray track */
+}
+.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-thumb {
+  background: #9aa0a6;               /* medium gray thumb */
+  border-radius: 8px;                 /* same rounded feel */
+}
+.spread[style*="--reader-page-bg: #fff"] .toc-list:hover::-webkit-scrollbar-thumb {
+  background: #7d8590;               /* slightly darker on hover */
+}
+
+/* === TOC scrollbar — light page theme (same style as dark) === */
+/* Match your inline light value (--reader-page-bg: #ffffff) */
+.spread[style*="--reader-page-bg:#ffffff"] .toc-list,
+.spread[style*="--reader-page-bg: #ffffff"] .toc-list,
+.spread[style*="--reader-page-bg:#fff"] .toc-list,
+.spread[style*="--reader-page-bg: #fff"] .toc-list {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+}
+
+/* WebKit (Chrome/Safari/Edge) */
+.spread[style*="--reader-page-bg:#ffffff"] .toc-list::-webkit-scrollbar,
+.spread[style*="--reader-page-bg: #ffffff"] .toc-list::-webkit-scrollbar,
+.spread[style*="--reader-page-bg:#fff"] .toc-list::-webkit-scrollbar,
+.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar {
+  width: 8px; /* same as dark */
+}
+
+.spread[style*="--reader-page-bg:#ffffff"] .toc-list::-webkit-scrollbar-track,
+.spread[style*="--reader-page-bg: #ffffff"] .toc-list::-webkit-scrollbar-track,
+.spread[style*="--reader-page-bg:#fff"] .toc-list::-webkit-scrollbar-track,
+.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-track {
+  background: transparent; /* same as dark */
+}
+
+.spread[style*="--reader-page-bg:#ffffff"] .toc-list::-webkit-scrollbar-thumb,
+.spread[style*="--reader-page-bg: #ffffff"] .toc-list::-webkit-scrollbar-thumb,
+.spread[style*="--reader-page-bg:#fff"] .toc-list::-webkit-scrollbar-thumb,
+.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.35); /* dark thumb for white bg */
+  border-radius: 8px;              /* same rounded feel */
+}
