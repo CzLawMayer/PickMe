@@ -153,6 +153,8 @@ export default function Home() {
   type TTSState = { speaking: boolean; paused: boolean; rate: number; pitch: number; voiceURI?: string }
   const [tts, setTts] = useState<TTSState>({ speaking: false, paused: false, rate: 1.0, pitch: 1.0, voiceURI: undefined })
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const ttsUtterRef = useRef<SpeechSynthesisUtterance | null>(null);
+
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedLH(lineHeight), 120) // 120ms debounce
@@ -297,40 +299,74 @@ export default function Home() {
     return text || "No readable chapter text on this spread."
   }
   function playTTS() {
-    const synth = window.speechSynthesis
-    if (!synth) return
-    const text = getVisiblePageText()
-    if (!text) return
-    synth.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.rate = tts.rate
-    u.pitch = tts.pitch
-    const v = voices.find((vv) => vv.voiceURI === tts.voiceURI)
-    if (v) u.voice = v
-    u.onstart = () => setTts((s) => ({ ...s, speaking: true, paused: false }))
-    u.onpause = () => setTts((s) => ({ ...s, paused: true }))
-    u.onresume = () => setTts((s) => ({ ...s, paused: false }))
-    u.onend = () => setTts((s) => ({ ...s, speaking: false, paused: false }))
-    u.onerror = () => setTts((s) => ({ ...s, speaking: false, paused: false }))
-    synth.speak(u)
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+
+    const text = getVisiblePageText();
+    if (!text) return;
+
+    // Stop any existing speech and clear previous utterance
+    try { synth.cancel(); } catch {}
+    ttsUtterRef.current = null;
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = tts.rate;
+    u.pitch = tts.pitch;
+    const v = voices.find((vv) => vv.voiceURI === tts.voiceURI);
+    if (v) u.voice = v;
+
+    // Keep a reference so pause/resume know what they’re resuming
+    ttsUtterRef.current = u;
+
+    // Update UI state promptly (some browsers delay events)
+    setTts((s) => ({ ...s, speaking: true, paused: false }));
+
+    u.onstart = () => setTts((s) => ({ ...s, speaking: true, paused: false }));
+    u.onpause = () => setTts((s) => ({ ...s, paused: true }));
+    u.onresume = () => setTts((s) => ({ ...s, paused: false }));
+    u.onend = () => { ttsUtterRef.current = null; setTts((s) => ({ ...s, speaking: false, paused: false })); };
+    u.onerror = () => { ttsUtterRef.current = null; setTts((s) => ({ ...s, speaking: false, paused: false })); };
+
+    synth.speak(u);
   }
+
   function pauseTTS() {
     try {
-      if (window.speechSynthesis?.speaking && !window.speechSynthesis.paused) {
-        window.speechSynthesis.pause()
-        setTts((s) => ({ ...s, paused: true }))
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+        setTts((s) => ({ ...s, paused: true }));
       }
     } catch {}
   }
+
   function resumeTTS() {
     try {
-      if (window.speechSynthesis?.paused) {
-        window.speechSynthesis.resume()
-        setTts((s) => ({ ...s, paused: false }))
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+
+      // Only resume if we actually have a paused utterance
+      if (ttsUtterRef.current && synth.paused) {
+        synth.resume();
+        setTts((s) => ({ ...s, paused: false, speaking: true }));
+        return;
+      }
+
+      // Fallback: if some browsers drop the paused flag but we still have an utterance
+      if (ttsUtterRef.current && !synth.speaking) {
+        synth.speak(ttsUtterRef.current);
+        setTts((s) => ({ ...s, paused: false, speaking: true }));
       }
     } catch {}
   }
-  function stopTTS() { try { window.speechSynthesis?.cancel() } catch {}; setTts((s) => ({ ...s, speaking: false, paused: false })) }
+
+  function stopTTS() {
+    try { window.speechSynthesis?.cancel(); } catch {}
+    ttsUtterRef.current = null;
+    setTts((s) => ({ ...s, speaking: false, paused: false }));
+  }
+
 
   // Focus dictionary input when open
   useEffect(() => { if (dictOpen) setTimeout(() => dictInputRef.current?.focus(), 0) }, [dictOpen])
@@ -978,6 +1014,10 @@ export default function Home() {
   const onRate = useCallback((val: number) => { if (!centerId) return; setUserRatingById((m) => ({ ...m, [centerId]: val })) }, [centerId])
 
   // ---------- Render ----------
+  const canResume =
+    typeof window !== "undefined" &&
+    !!ttsUtterRef.current &&
+    window.speechSynthesis?.paused === true;
   return (
     <div className="app">
       {/* Top bar */}
@@ -1583,7 +1623,17 @@ export default function Home() {
                       <div className="tts-controls">
                         {!tts.speaking && (<button className="tts-btn tts-play" type="button" onClick={playTTS}>Play</button>)}
                         {tts.speaking && !tts.paused && (<button className="tts-btn tts-pause" type="button" onClick={pauseTTS}>Pause</button>)}
-                        {tts.speaking && tts.paused && (<button className="tts-btn tts-resume" type="button" onClick={resumeTTS}>Resume</button>)}
+                        {tts.speaking && tts.paused && (
+                          <button
+                            className="tts-btn tts-resume"
+                            type="button"
+                            onClick={resumeTTS}
+                            disabled={!canResume}
+                            title={!canResume ? "Nothing to resume" : "Resume"}
+                          >
+                            Resume
+                          </button>
+                        )}
                         <button className="tts-btn tts-stop" type="button" onClick={stopTTS}>Stop</button>
                       </div>
 
