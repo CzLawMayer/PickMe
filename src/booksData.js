@@ -10,9 +10,11 @@ export const sampleBooks = [
     rating: "4.5",
     likes: 423,
     bookmarks: 76,
-    currentChapter: 1,          // ← optional: show you're on chapter 1
+    currentChapter: 1,
     totalChapters: 17,
-    dedication: "meow meow meow MEOW",   // ← missing comma was here
+    dedication: "meow meow meow MEOW",
+    // Added titles for the first two chapters so the centered title shows nicely
+    chapters: ["Names", "Memory", "Balls"],
     chapterTexts: [
 `My name is Names.
 
@@ -30,7 +32,57 @@ Kind, no pun intended, was a kind man. He was a year younger than the rest of us
 
 “I think?” I said bluntly as my voice cracked. “I don’t know, Kind. I feel like I flew away with the millions of tons of cigarette ash that we covered the campus with over these four years. I feel like I’m going to disappear.”
 
-“You are not having fun,” he said.`
+“You are not having fun,” he said.`,
+/* -------------------- Chapter 2 (Memory) -------------------- */
+`My name is Memory.
+
+My mom died giving birth to me. I was told that she held me tightly, covered in her blood, and cried out, “Me morí,” which means “I died” in Spanish. Those were her last words. “Me morí” sounds like “Memory,” and that was the twisted reasoning my father had when choosing my name, right before clogging the exhaust of our car with a wet towel and attempting to suffocate us both. I was the only survivor.
+
+Growing up, I never had any friends. But at university, Kind became my first friend. I don’t think I was his best friend, but he for sure was mine. We met on the first day of classes when our Art History professor asked us to get in pairs and get to know each other. I’ll forever be thankful for that professor’s life, because God knows I would have spent the next four years of my life alone if it wasn’t for that one conversation. Kind was a silent person, as silent as one can be, but people just seemed to gravitate towards his indifference towards the world and its pain. Everything was simply better when he was around. He had such a comfortable soul.
+
+Kind yearned for romance, while I, myself, wasn’t really the relationship kind of guy. Every year, he would somehow survive a “we’re going to get married and have babies” relationship that would last about five or six months, tops. After the breakups, driven by grief and his relentless spirit to find love, we would spend the remaining months of the year hunting for romance, quite unsuccessfully most of the time.
+
+Regardless of how many girls we fell for every single week, my heart always belonged to Names. I caught glimpses of her eyes everywhere I went after I first saw them four years ago, and everywhere I went I thought she was beautiful. I somehow and somewhat belonged to her. Kind, trying to help me ask her out, joined us three and Archie to give a presentation about world hunger on our first week at university. However, that only chained me eternally to her as a friend. As the years passed by, my friendship with her grew larger, but the shyness of my love grew even larger as well, to the point I simply couldn’t endure the idea of her eventually treating me like a stranger when we’d inevitably break up after graduation.
+
+One terrible evening inside my apartment, one week before our graduation, her pretty laugh, coming from downstairs, woke me up.
+
+I hazily walked down the stairs in my pijamas. My three P.M. nap had turned my day into night, and Kind had taken the liberty of gathering the whole friend group inside my apartment to watch the video of our terrible first presentation and cry about it. As I stepped into the kitchen, Archie graciously and promptly pointed out that I was wearing pijamas at eight P.M. and brought the community together to ridicule me. But hey, at least they ordered pizza.
+
+“Guys? Guys! They are saying that aliens are real!” shouted Alex suddenly. “On the news!”
+
+Everyone turned their fingers away from my face as we all immediately turned our heads to see the news. All my friends saw pictures of UFOs, mass terror, and neon lights in the skies.
+
+I, myself, saw Kind kissing Names on the mouth.`,
+
+`I don’t drink alcohol. I don’t like the taste of alcohol. I don’t like how it makes you feel before, during, or after you drink it. That said, I drank three glasses of vodka, took five tequila shots, and smoked twenty-eight cigarettes in my evening with Kind inside Memory’s apartment. One thing led to another. We laughed, we smoked, we kissed, we drank.
+
+At three in the morning, after we had laughed our hearts out, he scooped me up and carried me across the street from the apartment to my dorm room. He held me up like a princess as we moved through the dark alleys, spinning us beneath a streetlamp, nearly making the both of us puke. He gave me four long kisses on our way up the elevator.
+
+After attempting to put the key inside the keyhole of my own tiny dorm room for three minutes, he threw me, while also somehow gracefully landing on top of me, on my bed.
+
+“The stars are moving!” he yelled as he gently placed my bedsheets on top of me.
+
+“Those are airplanes, idiot.” I said.
+
+He laughed harshly and stood up quickly. I couldn’t see him, but I could distinguish his silhouette amongst the darkness. Everything was a pale dark blue, and the room was filled with tiny moving stars and airplanes. The walls were melting and swirling as if we were laughing inside a Van Gogh painting. It was nauseating.
+
+“Kind, I’m really sad about something,” I said without thinking, “why didn’t Memory ever ask me out? Am I ugly or something?”
+
+“You are the prettiest girl I know,” he said softly and gently as he began walking towards the door. “Names, try to have fun at least!”
+
+“Stop saying that!” I exclaimed, somewhat sadly. “It shouldn’t be this complicated!”
+
+He took a short breath, preparing to answer, and tried to turn around swiftly while making finger guns, but he stumbled over himself and fell straight to the ground with a loud crash.
+
+I laughed at his fall and began closing my eyes for longer and longer intervals of time until I finally drifted off to sleep.
+
+I woke up the next morning to an awful, awful smell.
+
+Kind was lying on the floor, with his head twisted towards the door. From it, several long rivers of blood had been flowing towards me, branching all the way up to the furthest wall of the room, resembling the gnarled limbs of a massive, twisted tree. The blood was almost black, and there were flies in his eyes.
+
+He was dead.
+
+His funeral was held two days later, on an appropriately rainy, freezing day. I always thought I’d meet his parents on graduation day, and I always thought I’d see them cry out of pride for their son, not out of pure agony. To my surprise, more than a hundred people attended the funeral, and every single one of them were crying. Memory, being his best friend, was asked to give a speech, but he refused to, so everyone just stayed silent.`
     ],
   },
 
@@ -118,4 +170,4 @@ Kind, no pun intended, was a kind man. He was a year younger than the rest of us
     totalChapters: 8,
     dedication: "For my parents, who taught me to read the stars."
   },
-]
+];

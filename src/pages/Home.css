@@ -2639,5 +2639,9 @@ body {
 /* 1 line of cushion */
 .spread { --reader-cushion: calc(1em * var(--reader-line, 1.7)); }
 
-/* Or 2 lines */
-// .spread { --reader-cushion: calc(2 * 1em * var(--reader-line, 1.7)); }
+.chapter-title,
+.pagination-probe .chapter-title {
+  text-align: center !important;
+  text-align-last: center !important; /* keeps the final wrapped line centered */
+  text-wrap: balance;                  /* nicer multi-line centering where supported */
+}

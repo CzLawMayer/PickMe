@@ -377,11 +377,10 @@ export default function Home() {
   const paneRightRef = useRef<HTMLDivElement | null>(null)
   const probeRef = useRef<HTMLDivElement | null>(null)
   const [pageBox, setPageBox] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
-  const [chap1Pages, setChap1Pages] = useState<React.ReactNode[]>([])
+  const [chapterPages, setChapterPages] = useState<React.ReactNode[][]>([])
+
 
   // Measure the available content box inside a page (based on the open spread)
-// Paginate chapter 1 into fixed-height, line-snapped pages (accounts for flex gap)
-// Paginate chapter 1 into fixed-height, line-snapped pages (accounts for flex gap)
   useEffect(() => {
     if (!center) return;
     if (view !== "open") return;
@@ -407,13 +406,11 @@ export default function Home() {
         const pageH = snapToDevicePixel(paneRect.height);
         if (!pageW || !pageH) return;
 
-        // 3) Input text
-        const textRaw =
-          Array.isArray(center.chapterTexts) && center.chapterTexts.length > 0
-            ? String(center.chapterTexts[0] ?? "")
-            : "";
-        if (!textRaw.trim()) { setChap1Pages([]); return; }
-        const paragraphs = splitParagraphs(textRaw);
+        // 3) Pull all chapter texts we actually have
+        const texts: string[] = Array.isArray(center.chapterTexts)
+          ? center.chapterTexts.map((t) => String(t ?? "")).filter((t) => t.trim().length > 0)
+          : [];
+        if (texts.length === 0) { setChapterPages([]); return; }
 
         // 4) Probe DOM handles
         const pageEl  = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
@@ -425,7 +422,7 @@ export default function Home() {
         pageEl.style.height = `${pageH}px`;
         pageEl.style.boxSizing = "border-box";
 
-        // Mirror live paddings from a visible page (so probe math matches)
+        // Mirror real paddings from a visible page (so probe math matches)
         let padTop = "6vmin", padRight = "6vmin", padBottom = "6vmin", padLeft = "6vmin";
         const visiblePage = document.querySelector(".spread .chapter-page") as HTMLElement | null;
         if (visiblePage) {
@@ -440,10 +437,10 @@ export default function Home() {
         pageEl.style.paddingBottom = padBottom;
         pageEl.style.paddingLeft = padLeft;
 
-        // Probe body must match visible layout
+        // Body matches visible layout (no scrolling)
         bodyEl.style.flex = "0 0 auto";
         bodyEl.style.minHeight = "0";
-        bodyEl.style.overflow = "hidden";        // IMPORTANT: match visible page
+        bodyEl.style.overflow = "hidden";
         bodyEl.style.boxSizing = "content-box";
 
         // Force layout so computed rects are current
@@ -455,22 +452,16 @@ export default function Home() {
         const pB = parseFloat(csPage.paddingBottom) || 0;
         const CONTENT_H = pageH - pT - pB;
 
-        const rowGap =
-          parseFloat((csPage as any).rowGap || (csPage as any).gap || "0") || 0;
-
         const lineStepCss = measureLineStepPx(bodyEl);
         const MIN_LINES = 3;
 
-        // Bottom cushion (kept as 1 line; change to 2 if you want two)
+        // Reserve a bottom cushion (e.g., 1 line)
         const BOTTOM_CUSHION_LINES = 1;
-        const cushionPx = BOTTOM_CUSHION_LINES * lineStepCss;
-
-        probeRoot.style.setProperty("--reader-cushion", `${cushionPx}px`);
-        bodyEl.style.setProperty("--reader-cushion", `${cushionPx}px`);
-        if (spreadRef.current) {
-          spreadRef.current.style.setProperty("--reader-cushion", `${cushionPx}px`);
-        }
-        setBottomCushionPx(cushionPx);
+        const CUSHION_PX = BOTTOM_CUSHION_LINES * lineStepCss;
+        // push to CSS var for both probe + visible pages
+        probeRoot.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
+        bodyEl.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
+        setBottomCushionPx(CUSHION_PX);
 
         // Account for .chapter-body vertical padding
         const csBody = getComputedStyle(bodyEl);
@@ -487,20 +478,15 @@ export default function Home() {
         );
         bodyEl.style.height = `${BLANK_BODY_H}px`;
 
-        // Overflow checker — scroll metric only (robust & simple)
+        // Overflow checker — scroll metric + margin-aware
         const overflowed = () => {
-          // if scrollHeight still reports overflow, that’s enough
           if ((bodyEl.scrollHeight - bodyEl.clientHeight) > 0.5) return true;
-
           const last = bodyEl.lastElementChild as HTMLElement | null;
           if (!last) return false;
-
           const bodyR = bodyEl.getBoundingClientRect();
           const lastR = last.getBoundingClientRect();
           const mb = parseFloat(getComputedStyle(last).marginBottom) || 0;
           const EPS = 0.5;
-
-          // Compare: (last content edge + bottom margin) vs (body content bottom - bottom padding)
           return (lastR.bottom + mb) > (bodyR.bottom - bodyPadBot - EPS);
         };
 
@@ -512,8 +498,7 @@ export default function Home() {
         const setBodyHeightFor = (withTitle: boolean) => {
           const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0;
           const tGap = withTitle ? (parseFloat(getComputedStyle(titleEl).marginBottom) || 0) : 0;
-          const inter = withTitle ? tGap : 0; // add container row-gap if you use it
-
+          const inter = withTitle ? tGap : 0;
           const targetContent = Math.max(0, CONTENT_H_FOR_BODY - tH - inter);
           const snappedContent = Math.max(
             lineStepCss * MIN_LINES,
@@ -611,81 +596,104 @@ export default function Home() {
           return { first: "", rest: [parText] };
         };
 
-        // 5) Build pages
-        const pages: React.ReactNode[] = [];
-        let i = 0;
-        let firstPageDone = false;
+        // 5) Build pages for every chapter we have text for
+        const pagesByChapter: React.ReactNode[][] = [];
 
-        while (i < paragraphs.length) {
-          const withTitle = !firstPageDone;
-          titleEl.textContent = withTitle ? (center.chapters?.[0] || "Chapter 1") : "";
-          bodyEl.innerHTML = "";
+        for (let chapIdx = 0; chapIdx < texts.length; chapIdx++) {
+          const title = (center.chapters && center.chapters[chapIdx]) ? center.chapters[chapIdx] : `Chapter ${chapIdx + 1}`;
+          const paragraphs = splitParagraphs(texts[chapIdx]);
 
-          // Snap height for THIS page (depends on actual title height + margin + row gap)
-          const snappedBodyH = setBodyHeightFor(withTitle);
-
-          const bucket: (string | { SPLIT: string[] })[] = [];
+          const chapterOut: React.ReactNode[] = [];
+          let i = 0;
+          let firstPageOfChapter = true;
 
           while (i < paragraphs.length) {
-            const pEl = makeP(); setPText(pEl, paragraphs[i]); bodyEl.appendChild(pEl);
-            if (!overflowed()) {
-              bucket.push(paragraphs[i]);
-              i++;
-              continue;
-            }
+            const withTitle = firstPageOfChapter;
+            titleEl.textContent = withTitle ? title : "";
+            bodyEl.innerHTML = "";
 
-            bodyEl.removeChild(pEl);
+            // Snap height for THIS page (depends on actual title height + margin)
+            const snappedBodyH = setBodyHeightFor(withTitle);
 
-            if (bodyEl.childElementCount === 0) {
-              const parts = sliceParagraphBlank(paragraphs[i]);
-              if (parts.length) { bucket.push({ SPLIT: parts }); i++; }
-              break; // close page
-            } else {
-              const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
-              if (first) {
-                bucket.push(first);
-                if (rest.length) paragraphs.splice(i + 1, 0, ...rest);
+            const bucket: (string | { SPLIT: string[] })[] = [];
+
+            while (i < paragraphs.length) {
+              const pEl = makeP(); setPText(pEl, paragraphs[i]); bodyEl.appendChild(pEl);
+              if (!overflowed()) {
+                bucket.push(paragraphs[i]);
                 i++;
+                continue;
               }
-              break; // close page
-            }
-          }
 
-          // Bucket -> nodes; only first piece of any split goes here
-          const nodes: React.ReactNode[] = [];
-          for (const item of bucket) {
-            if (typeof item === "string") {
-              nodes.push(<p key={nodes.length}>{item}</p>);
-            } else {
-              const [first, ...rest] = item.SPLIT;
-              nodes.push(<p key={nodes.length}>{first}</p>);
-              if (rest.length) paragraphs.splice(i, 0, ...rest);
-            }
-          }
+              bodyEl.removeChild(pEl);
 
-          // IMPORTANT: apply the snapped height to the *visible* page's body — exactly
-          pages.push(
-            <div className="chapter-page" key={pages.length}>
-              {withTitle && <h2 className="chapter-title">{center.chapters?.[0] || "Chapter 1"}</h2>}
-              <div
-                className="chapter-body"
-                style={{ height: `${snappedBodyH}px`, boxSizing: "content-box", overflow: "hidden" }}
-              >
-                {nodes}
+              if (bodyEl.childElementCount === 0) {
+                const parts = sliceParagraphBlank(paragraphs[i]);
+                if (parts.length) { bucket.push({ SPLIT: parts }); i++; }
+                break; // close page
+              } else {
+                const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
+                if (first) {
+                  bucket.push(first);
+                  if (rest.length) paragraphs.splice(i + 1, 0, ...rest);
+                  i++;
+                }
+                break; // close page
+              }
+            }
+
+            // Bucket -> nodes; only first piece of any split goes here
+            const nodes: React.ReactNode[] = [];
+            for (const item of bucket) {
+              if (typeof item === "string") {
+                nodes.push(<p key={nodes.length}>{item}</p>);
+              } else {
+                const [first, ...rest] = item.SPLIT;
+                nodes.push(<p key={nodes.length}>{first}</p>);
+                if (rest.length) paragraphs.splice(i, 0, ...rest);
+              }
+            }
+
+            chapterOut.push(
+              <div className="chapter-page" key={`${chapIdx}-${chapterOut.length}`}>
+                {withTitle && <h2 className="chapter-title">{title}</h2>}
+                <div
+                  className="chapter-body"
+                  style={{ height: `${snappedBodyH}px`, boxSizing: "content-box", overflow: "hidden" }}
+                >
+                  {nodes}
+                </div>
               </div>
-            </div>
-          );
-          firstPageDone = true;
+            );
+
+            firstPageOfChapter = false;
+          }
+
+          // If the chapter text was empty, keep at least one placeholder page
+          if (chapterOut.length === 0) {
+            chapterOut.push(
+              <div className="chapter-page" key={`${chapIdx}-empty`}>
+                <h2 className="chapter-title">{title}</h2>
+                <div className="chapter-body" style={{ height: `${BLANK_BODY_H}px`, boxSizing: "content-box", overflow: "hidden" }}>
+                  <p>(No content)</p>
+                </div>
+              </div>
+            );
+          }
+
+          pagesByChapter.push(chapterOut);
         }
 
-        setChap1Pages(pages);
+        setChapterPages(pagesByChapter);
 
-        // 6) Clamp spread if total changed
+        // 6) Clamp spread if total changed (accounts for future chapters as single pages)
         setTimeout(() => {
-          const claimedChapters   = Number(center?.totalChapters ?? 0) || (center?.chapters?.length ?? 0);
-          const remainingChapters = Math.max(0, claimedChapters - 1);
-          const newTotalPages     = 2 + pages.length + remainingChapters;
-          const newMaxLeft        = Math.max(0, (newTotalPages - 1) & ~1); // lastEven
+          const claimedChapters   = Number(center?.totalChapters ?? 0) || (center?.chapters?.length ?? 0) || texts.length;
+          const materialized      = pagesByChapter.length;
+          const materializedPages = pagesByChapter.reduce((sum, arr) => sum + arr.length, 0);
+          const remainingChapters = Math.max(0, claimedChapters - materialized);
+          const newTotalPages     = 2 + materializedPages + remainingChapters;
+          const newMaxLeft        = Math.max(0, (newTotalPages - 1) & ~1);
           setPage((p) => (p > newMaxLeft ? newMaxLeft : p));
         }, 0);
       });
@@ -696,6 +704,7 @@ export default function Home() {
       if (raf2) cancelAnimationFrame(raf2);
     };
   }, [center, view, fontSizeIndex, debouncedLH, fontStyleIndex]);
+
 
 
 
@@ -721,38 +730,55 @@ export default function Home() {
   // page 1 = table of contents (right)
   // page 2.. = chapter 1 paginated pages
   const chapterCount = (() => {
-    if (!center) return 0
-    if (Array.isArray(center.chapters) && center.chapters.length > 0) return center.chapters.length
-    const n = Number(center.totalChapters ?? 0)
-    return Number.isFinite(n) && n > 0 ? n : 0
-  })()
+    if (!center) return 0;
+    if (Array.isArray(center.chapters) && center.chapters.length > 0) return center.chapters.length;
+    const n = Number(center.totalChapters ?? 0);
+    return Number.isFinite(n) && n > 0 ? n : (Array.isArray(center.chapterTexts) ? center.chapterTexts.length : 0);
+  })();
 
   const chapterTitles: string[] = (() => {
-    if (!center) return []
+    if (!center) return [];
     if (Array.isArray(center.chapters) && center.chapters.length === chapterCount) {
-      return center.chapters.slice()
+      return center.chapters.slice();
     }
-    return Array.from({ length: chapterCount }, (_, i) => `Chapter ${i + 1}`)
-  })()
+    return Array.from({ length: chapterCount }, (_, i) => `Chapter ${i + 1}`);
+  })();
 
   const claimedChapters = (() => {
-    const n = Number(center?.totalChapters ?? 0)
-    if (Number.isFinite(n) && n > 0) return n
-    return chapterTitles.length
-  })()
+    const n = Number(center?.totalChapters ?? 0);
+    if (Number.isFinite(n) && n > 0) return n;
+    return chapterTitles.length;
+  })();
 
-  const chap1Count = chap1Pages.length || (center?.chapterTexts?.[0] ? 1 : 0)
-  const remainingChapters = Math.max(0, claimedChapters - 1)
-  const totalPages = 2 + chap1Count + remainingChapters
-  const maxLeftPage = lastEven(totalPages - 1)
+  // Flattened pages for all materialized chapters
+  const flatPages: React.ReactNode[] = chapterPages.flat();
+
+  // Remaining chapters we don't have text for yet count as 1 page each
+  const remainingChapters = Math.max(0, claimedChapters - chapterPages.length);
+  const totalPages = 2 + flatPages.length + remainingChapters;
+  const maxLeftPage = lastEven(totalPages - 1);
+
+  // Compute the starting page number of each chapter (1-based pages)
+  const startPageOfChapter: number[] = (() => {
+    const starts: number[] = [];
+    let acc = 2; // first chapter starts at page 2 (right pane in your model)
+    for (let i = 0; i < claimedChapters; i++) {
+      starts.push(acc);
+      const len = i < chapterPages.length ? Math.max(1, chapterPages[i].length) : 1;
+      acc += len;
+    }
+    return starts;
+  })();
 
   const clampToSpread = useCallback((p: number) => Math.max(0, Math.min(p, Math.max(0, maxLeftPage))), [maxLeftPage])
   const turnPage = useCallback((dir: 1 | -1) => setPage((p) => clampToSpread(p + 2 * dir)), [clampToSpread])
   const gotoChapter = useCallback((k: number) => {
-    const p = k + 1
-    const left = p % 2 === 0 ? p : p - 1
-    setPage(clampToSpread(left))
-  }, [clampToSpread])
+    // k is 1-based index (you pass i+1 from the TOC)
+    const idx = Math.max(0, k - 1);
+    const p = startPageOfChapter[idx] ?? 2;
+    const left = p % 2 === 0 ? p : p - 1;
+    setPage(clampToSpread(left));
+  }, [clampToSpread, startPageOfChapter]);
 
   const atStart = page <= 0
   const atEnd = page >= maxLeftPage
@@ -1094,8 +1120,8 @@ export default function Home() {
                           (() => {
                             const localIdx = page - 2
                             if (localIdx >= 0) {
-                              if (localIdx < chap1Pages.length) {
-                                return chap1Pages[localIdx]
+                              if (localIdx < flatPages.length) {
+                                return flatPages[localIdx];
                               }
                               return (
                                 <div className="chapter-page">
@@ -1132,7 +1158,7 @@ export default function Home() {
                                     <span className="toc-chapter">{t}</span>
                                     <span className="toc-dots" aria-hidden>…………………………………………</span>
                                     <span className="toc-page">
-                                      {i === 0 ? 2 : 2 + chap1Pages.length + (i - 1)}
+                                      {startPageOfChapter[i] ?? 2}
                                     </span>
                                   </button>
                                 </li>
@@ -1144,8 +1170,8 @@ export default function Home() {
                             const rightPage = page + 1
                             const localIdx = rightPage - 2
                             if (localIdx >= 0) {
-                              if (localIdx < chap1Pages.length) {
-                                return chap1Pages[localIdx]
+                              if (localIdx < flatPages.length) {
+                                return flatPages[localIdx];
                               }
                               return (
                                 <div className="chapter-page">
