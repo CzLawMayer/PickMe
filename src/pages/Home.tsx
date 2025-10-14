@@ -59,7 +59,29 @@ function splitParagraphs(raw: string): string[] {
     .filter(Boolean)
 }
 
-
+function segmentText(text: string, target = 220): string[] {
+  const paras = text.split(/\n{2,}/).map(s => s.trim()).filter(Boolean)
+  const out: string[] = []
+  for (const p of paras) {
+    const sentences = p.split(/(?<=[.!?])\s+(?=[A-Z0-9"'])/g)
+    for (const s of sentences) {
+      if (s.length <= target) { out.push(s); continue }
+      const words = s.split(/\s+/)
+      let acc = ""
+      for (const w of words) {
+        const next = acc ? acc + " " + w : w
+        if (next.length > target && acc) {
+          out.push(acc)
+          acc = w
+        } else {
+          acc = next
+        }
+      }
+      if (acc) out.push(acc)
+    }
+  }
+  return out
+}
 
 function measureLineStepPx(el: HTMLElement): number {
   // Measure the line *step* with two lines so we capture the real line box
@@ -153,7 +175,10 @@ export default function Home() {
   type TTSState = { speaking: boolean; paused: boolean; rate: number; pitch: number; voiceURI?: string }
   const [tts, setTts] = useState<TTSState>({ speaking: false, paused: false, rate: 1.0, pitch: 1.0, voiceURI: undefined })
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const ttsUtterRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const ttsUtterRef = useRef<SpeechSynthesisUtterance | null>(null); // current live utterance
+  const ttsTextRef = useRef<string>("");                              // full text we started speaking
+  const ttsLastCharRef = useRef<number>(0);                           // last boundary char index
+  const ttsWasPausedRef = useRef<boolean>(false);   
 
 
   useEffect(() => {
@@ -285,10 +310,6 @@ export default function Home() {
   }, [tts.voiceURI])
   useEffect(() => { if (view !== "open") setTtsOpen(false) }, [view])
   useEffect(() => () => { try { window.speechSynthesis?.cancel() } catch {} }, [])
-  useEffect(() => {
-    try { window.speechSynthesis?.cancel() } catch {}
-    setTts((s) => ({ ...s, speaking: false, paused: false }))
-  }, [current, page])
 
   function getVisiblePageText() {
     if (view !== "open") return ""
@@ -298,74 +319,158 @@ export default function Home() {
     const text = bodies.map((b) => b.innerText || "").join("\n\n").trim()
     return text || "No readable chapter text on this spread."
   }
-  function playTTS() {
+
+// Tracks "generation" of the active utterance; invalidates stale handlers.
+  const ttsSeqRef = useRef(0);
+  const ttsSegmentsRef = useRef<string[]>([]);
+  const ttsSegIndexRef = useRef(0);     // which segment we’re on
+  const ttsCharInSegRef = useRef(0);  
+
+  function speakSegment(segIndex: number, charStart = 0) {
     const synth = window.speechSynthesis;
-    if (!synth) return;
+    const segs = ttsSegmentsRef.current;
+    const seg = segs[segIndex] || "";
+    if (!synth || !seg.trim()) return;
 
-    const text = getVisiblePageText();
-    if (!text) return;
+    // Invalidate any in-flight handlers, then assign a fresh generation id
+    ++ttsSeqRef.current;
+    const mySeq = ++ttsSeqRef.current;
 
-    // Stop any existing speech and clear previous utterance
+    // If a previous utterance exists (paused or speaking), cancel it
     try { synth.cancel(); } catch {}
-    ttsUtterRef.current = null;
 
-    const u = new SpeechSynthesisUtterance(text);
+    const slice = seg.slice(charStart);
+    const u = new SpeechSynthesisUtterance(slice);
     u.rate = tts.rate;
     u.pitch = tts.pitch;
-    const v = voices.find((vv) => vv.voiceURI === tts.voiceURI);
+    const v = voices.find(vv => vv.voiceURI === tts.voiceURI);
     if (v) u.voice = v;
 
-    // Keep a reference so pause/resume know what they’re resuming
+    // Bookkeeping for this segment
     ttsUtterRef.current = u;
+    ttsSegIndexRef.current = segIndex;
+    ttsCharInSegRef.current = charStart;
 
-    // Update UI state promptly (some browsers delay events)
-    setTts((s) => ({ ...s, speaking: true, paused: false }));
+    u.onboundary = (e: any) => {
+      if (ttsSeqRef.current !== mySeq) return;
+      if (typeof e.charIndex === "number") {
+        ttsCharInSegRef.current = charStart + e.charIndex;
+      }
+    };
 
-    u.onstart = () => setTts((s) => ({ ...s, speaking: true, paused: false }));
-    u.onpause = () => setTts((s) => ({ ...s, paused: true }));
-    u.onresume = () => setTts((s) => ({ ...s, paused: false }));
-    u.onend = () => { ttsUtterRef.current = null; setTts((s) => ({ ...s, speaking: false, paused: false })); };
-    u.onerror = () => { ttsUtterRef.current = null; setTts((s) => ({ ...s, speaking: false, paused: false })); };
+    u.onstart = () => {
+      if (ttsSeqRef.current !== mySeq) return;
+      setTts(s => ({ ...s, speaking: true, paused: false }));
+    };
+
+    u.onpause = () => {
+      if (ttsSeqRef.current !== mySeq) return;
+      ttsWasPausedRef.current = true;
+      setTts(s => ({ ...s, paused: true }));
+    };
+
+    u.onresume = () => {
+      if (ttsSeqRef.current !== mySeq) return;
+      setTts(s => ({ ...s, paused: false }));
+    };
+
+    const finish = () => {
+      if (ttsSeqRef.current !== mySeq) return;
+      ttsUtterRef.current = null;
+
+      // Auto-advance if we’re not paused/stopped and there are more segments
+      if (!window.speechSynthesis?.paused && !ttsWasPausedRef.current) {
+        const nextIdx = segIndex + 1;
+        if (nextIdx < ttsSegmentsRef.current.length) {
+          speakSegment(nextIdx, 0);
+          return;
+        }
+      }
+
+      // Finished
+      ttsWasPausedRef.current = false;
+      ttsCharInSegRef.current = 0;
+      setTts(s => ({ ...s, speaking: false, paused: false }));
+    };
+
+    u.onend = finish;
+    u.onerror = finish;
 
     synth.speak(u);
   }
 
-  function pauseTTS() {
-    try {
-      const synth = window.speechSynthesis;
-      if (!synth) return;
-      if (synth.speaking && !synth.paused) {
-        synth.pause();
-        setTts((s) => ({ ...s, paused: true }));
-      }
-    } catch {}
+  function playTTS() {
+    const text = getVisiblePageText();
+    if (!text) return;
+
+    // Build chunks and reset progress
+    ttsSegmentsRef.current = segmentText(text, 220);
+    ttsSegIndexRef.current = 0;
+    ttsCharInSegRef.current = 0;
+
+    // Keep old refs up to date (not strictly needed now, but harmless)
+    ttsTextRef.current = text;
+    ttsLastCharRef.current = 0;
+    ttsWasPausedRef.current = false;
+
+    speakSegment(0, 0);
   }
 
-  function resumeTTS() {
-    try {
-      const synth = window.speechSynthesis;
-      if (!synth) return;
-
-      // Only resume if we actually have a paused utterance
-      if (ttsUtterRef.current && synth.paused) {
-        synth.resume();
-        setTts((s) => ({ ...s, paused: false, speaking: true }));
-        return;
-      }
-
-      // Fallback: if some browsers drop the paused flag but we still have an utterance
-      if (ttsUtterRef.current && !synth.speaking) {
-        synth.speak(ttsUtterRef.current);
-        setTts((s) => ({ ...s, paused: false, speaking: true }));
-      }
-    } catch {}
+  function pauseTTS() {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    if (ttsUtterRef.current && synth.speaking && !synth.paused) {
+      try { synth.pause(); } catch {}
+      ttsWasPausedRef.current = true;
+      setTts(s => ({ ...s, paused: true }));
+    }
   }
 
   function stopTTS() {
     try { window.speechSynthesis?.cancel(); } catch {}
+    ++ttsSeqRef.current;                  // invalidate any in-flight handlers
     ttsUtterRef.current = null;
-    setTts((s) => ({ ...s, speaking: false, paused: false }));
+
+    // Clear all progress so there’s nothing to resume
+    ttsWasPausedRef.current = false;
+    ttsLastCharRef.current = 0;
+    ttsTextRef.current = "";
+    ttsSegmentsRef.current = [];
+    ttsSegIndexRef.current = 0;
+    ttsCharInSegRef.current = 0;
+
+    setTts(s => ({ ...s, speaking: false, paused: false }));
   }
+
+  function resumeTTS() {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+
+    // Case A: the engine is actually paused with a live utterance
+    if (ttsUtterRef.current && synth.paused) {
+      try { synth.resume(); } catch {}
+      setTts(s => ({ ...s, paused: false }));
+      return;
+    }
+
+    // Case B: fallback — resume from our current segment
+    if (!ttsSegmentsRef.current.length) return; // nothing to resume
+    if (!ttsWasPausedRef.current) return;
+
+    const segIdx = ttsSegIndexRef.current;
+    const charStart = Math.max(0, ttsCharInSegRef.current || 0); // if no boundary support, this will be 0
+    speakSegment(segIdx, charStart);
+  }
+
+
+  useEffect(() => {
+    try { window.speechSynthesis?.cancel() } catch {}
+    ttsUtterRef.current = null;
+    ttsWasPausedRef.current = false;
+    ttsLastCharRef.current = 0;
+    setTts((s) => ({ ...s, speaking: false, paused: false }));
+  }, [current, page]);
+
 
 
   // Focus dictionary input when open
@@ -1015,9 +1120,10 @@ export default function Home() {
 
   // ---------- Render ----------
   const canResume =
-    typeof window !== "undefined" &&
-    !!ttsUtterRef.current &&
-    window.speechSynthesis?.paused === true;
+    (!!ttsUtterRef.current && window.speechSynthesis?.paused) ||
+    (ttsWasPausedRef.current &&
+    (ttsCharInSegRef.current > 0 ||
+      ttsSegIndexRef.current < (ttsSegmentsRef.current.length || 0)));
   return (
     <div className="app">
       {/* Top bar */}
