@@ -180,6 +180,25 @@ export default function Home() {
   const ttsLastCharRef = useRef<number>(0);                           // last boundary char index
   const ttsWasPausedRef = useRef<boolean>(false);   
 
+  const ttsLiveApplyTimerRef = useRef<number | null>(null);
+  const LIVE_APPLY_DELAY = 150;
+
+  function restartFromProgress() {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+
+    const full = ttsTextRef.current || "";
+    if (!full.trim()) return;
+
+    // start from the last known boundary (safe-guard within range)
+    const start = Math.max(0, Math.min(ttsLastCharRef.current, Math.max(0, full.length - 1)));
+    const remaining = full.slice(start);
+    if (!remaining.trim()) return;
+
+    // Speak remaining with the *current* rate/pitch/voice
+    speakText(remaining, start);
+  }
+
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedLH(lineHeight), 120) // 120ms debounce
@@ -428,18 +447,16 @@ export default function Home() {
 
   function stopTTS() {
     try { window.speechSynthesis?.cancel(); } catch {}
-    ++ttsSeqRef.current;                  // invalidate any in-flight handlers
+    if (ttsLiveApplyTimerRef.current != null) {
+      clearTimeout(ttsLiveApplyTimerRef.current);
+      ttsLiveApplyTimerRef.current = null;
+    }
+    ++ttsSeqRef.current; // invalidate any in-flight handlers
     ttsUtterRef.current = null;
-
-    // Clear all progress so there’s nothing to resume
     ttsWasPausedRef.current = false;
     ttsLastCharRef.current = 0;
     ttsTextRef.current = "";
-    ttsSegmentsRef.current = [];
-    ttsSegIndexRef.current = 0;
-    ttsCharInSegRef.current = 0;
-
-    setTts(s => ({ ...s, speaking: false, paused: false }));
+    setTts((s) => ({ ...s, speaking: false, paused: false }));
   }
 
   function resumeTTS() {
@@ -462,9 +479,35 @@ export default function Home() {
     speakSegment(segIdx, charStart);
   }
 
+  useEffect(() => {
+    // Only when we're actively speaking (not paused/stopped)
+    if (!tts.speaking || tts.paused) return;
+
+    // Nothing to restart from if we don't have the original text
+    if (!ttsTextRef.current) return;
+
+    if (ttsLiveApplyTimerRef.current != null) {
+      clearTimeout(ttsLiveApplyTimerRef.current);
+    }
+    ttsLiveApplyTimerRef.current = window.setTimeout(() => {
+      restartFromProgress();
+    }, LIVE_APPLY_DELAY) as unknown as number;
+
+    return () => {
+      if (ttsLiveApplyTimerRef.current != null) {
+        clearTimeout(ttsLiveApplyTimerRef.current);
+        ttsLiveApplyTimerRef.current = null;
+      }
+    };
+  }, [tts.rate, tts.pitch, tts.voiceURI, tts.speaking, tts.paused]);
+
 
   useEffect(() => {
     try { window.speechSynthesis?.cancel() } catch {}
+    if (ttsLiveApplyTimerRef.current != null) {
+      clearTimeout(ttsLiveApplyTimerRef.current);
+      ttsLiveApplyTimerRef.current = null;
+    }
     ttsUtterRef.current = null;
     ttsWasPausedRef.current = false;
     ttsLastCharRef.current = 0;
