@@ -2710,3 +2710,6 @@ body {
   background: rgba(0, 0, 0, 0.35); /* dark thumb for white bg */
   border-radius: 8px;              /* same rounded feel */
 }
+
+
+.menu-list .menu-item { display: flex; align-items: center; text-decoration: none; color: inherit; }

@@ -8,6 +8,10 @@ import SaveButton from "@/components/SaveButton"
 
 import SideMenu from "@/components/SideMenu"
 
+import { Link } from "react-router-dom";
+
+
+
 // ---------- Types ----------
 type Book = {
   id: string
@@ -1201,16 +1205,21 @@ export default function Home() {
         {/* Metadata */}
         <div className="metadata">
           <div className="meta-header">
-            <div className="meta-avatar" aria-hidden>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <div className="meta-avatar" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
                 <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
                 <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
-            <p className="meta-username" title={center?.user ?? ""}>
+            <Link
+              to="/profile"
+              className="meta-username"
+              title={center?.user ?? ""}
+              onClick={(e) => e.stopPropagation()}
+            >
               {center?.user ?? "Unknown User"}
-            </p>
+            </Link>
           </div>
 
           <hr className="meta-hr" />
@@ -1378,7 +1387,7 @@ export default function Home() {
                                     title={`Go to ${t}`}
                                   >
                                     <span className="toc-chapter">{t}</span>
-                                    <span className="toc-dots" aria-hidden>…………………………………………</span>
+                                    <span className="toc-dots" aria-hidden="true">…………………………………………</span>
                                     <span className="toc-page">
                                       {startPageOfChapter[i] ?? 2}
                                     </span>
@@ -1409,7 +1418,7 @@ export default function Home() {
                       </div>
 
                       {/* Hidden measurer — must live INSIDE the spread to inherit variables */}
-                      <div ref={probeRef} className="pagination-probe" aria-hidden>
+                      <div ref={probeRef} className="pagination-probe" aria-hidden="true">
                         <div className="chapter-page">
                           <h2 className="chapter-title"></h2>
                           <div className="chapter-body"></div>
@@ -1495,7 +1504,7 @@ export default function Home() {
               aria-expanded={readerMenuOpen}
               onClick={(e) => { e.stopPropagation(); setReaderMenuOpen((o) => !o) }}
             >
-              <span className="reader-menu-chevron" aria-hidden>⌃</span>
+              <span className="reader-menu-chevron" aria-hidden="true">⌃</span>
             </button>
 
             <div
