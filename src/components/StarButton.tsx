@@ -1,13 +1,9 @@
 import React, { useEffect, useRef, useState } from "react"
 
 type StarButtonProps = {
-  /** Aggregated rating to display (e.g., combinedRating from Home.tsx) */
   rating?: number | string
-  /** User’s own rating (1..5). Used for color + popover default, NOT for display text */
   userRating?: number
-  /** Optional active style (usually derived from !!userRating) */
   active?: boolean
-  /** Called when the user picks 1..5 */
   onRate?: (value: number) => void
 }
 
@@ -31,10 +27,8 @@ export default function StarButton({
   const btnRef = useRef<HTMLButtonElement | null>(null)
   const popRef = useRef<HTMLDivElement | null>(null)
 
-  // ALWAYS display the aggregated rating passed in via `rating`
   const displayRating = coerceRating(rating)
 
-  // Close on outside click / ESC
   useEffect(() => {
     if (!open) return
     function onDocClick(e: MouseEvent) {
@@ -57,7 +51,6 @@ export default function StarButton({
     }
   }, [open])
 
-  // Keyboard support for the popover
   function onKeyDown(e: React.KeyboardEvent) {
     if (!open) {
       if (e.key === "Enter" || e.key === " ") {
@@ -80,7 +73,8 @@ export default function StarButton({
       })
     } else if (e.key === "Enter" || e.key === " ") {
       const val = hoverValue ?? userRating ?? 5
-      onRate?.(val)
+      const next = val === (userRating ?? 0) ? 0 : val // ⬅️ toggle off if same
+      onRate?.(next)
       setOpen(false)
       setHoverValue(null)
     }
@@ -97,58 +91,69 @@ export default function StarButton({
       aria-haspopup="dialog"
       aria-expanded={open}
       onClick={() => setOpen(o => !o)}
+      onDoubleClick={(e) => {
+        // quick double-click clears any existing rating
+        if ((userRating ?? 0) > 0) {
+          e.preventDefault()
+          e.stopPropagation()
+          onRate?.(0)
+          setOpen(false)
+          setHoverValue(null)
+        }
+      }}
       onKeyDown={onKeyDown}
+      title={isActive ? "Double-click to clear rating" : undefined}
     >
-      {/* Main star icon */}
       <span className="material-symbols-outlined meta-icon-glyph">star</span>
-      {/* Display the aggregated rating only */}
       <span className="meta-icon-count">{displayRating.toFixed(1)}/5</span>
 
-      {/* Popover with 5 selectable stars */}
       {open && (
         <div ref={popRef} className="star-popover" role="dialog" aria-label="Rate this book">
           <div
             className="star-row"
             role="radiogroup"
             aria-label="Set rating from 1 to 5 stars"
-            onMouseLeave={() => setHoverValue(null)}  // reset only when leaving the row
-            >
+            onMouseLeave={() => setHoverValue(null)}
+          >
             {[1, 2, 3, 4, 5].map((n) => {
-                const filled = (hoverValue ?? userRating ?? 0) >= n
-                return (
+              const filled = (hoverValue ?? userRating ?? 0) >= n
+              return (
                 <button
-                    key={n}
-                    type="button"
-                    className="star-item"
-                    role="radio"
-                    aria-checked={(userRating ?? 0) === n}
-                    onMouseEnter={() => setHoverValue(n)}
-                    onClick={(e) => {
+                  key={n}
+                  type="button"
+                  className="star-item"
+                  role="radio"
+                  aria-checked={(userRating ?? 0) === n}
+                  onMouseEnter={() => setHoverValue(n)}
+                  onClick={(e) => {
                     e.stopPropagation()
-                    onRate?.(n)
+                    const current = userRating ?? 0
+                    const next = current === n ? 0 : n // ⬅️ toggle if same star
+                    onRate?.(next)
                     setOpen(false)
                     setHoverValue(null)
-                    }}
+                  }}
+                  title={(userRating ?? 0) === n ? "Click again to clear" : `Rate ${n}/5`}
                 >
-                    <span
+                  <span
                     className="material-symbols-outlined"
                     style={{
-                        fontSize: 28,
-                        ["--ms-fill" as any]: filled ? 1 : 0,
-                        color: filled ? "#f2ac15" : "inherit",
+                      fontSize: 28,
+                      ["--ms-fill" as any]: filled ? 1 : 0,
+                      color: filled ? "#f2ac15" : "inherit",
                     }}
-                    >
+                  >
                     star
-                    </span>
+                  </span>
                 </button>
-                )
+              )
             })}
-            </div>
-
-
+          </div>
 
           <div className="star-hint">
-            {hoverValue ? `${hoverValue}/5` : (userRating ? `${userRating}/5` : "Choose rating")}
+            {hoverValue
+              ? `${hoverValue}/5`
+              : (userRating ? `${userRating}/5` : "Choose rating")}
           </div>
         </div>
       )}
