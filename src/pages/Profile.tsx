@@ -70,6 +70,151 @@ export default function ProfilePage() {
   const nameFit = useFitText(14, 42);
   const handleFit = useFitText(12, 28);
 
+
+  const storiesRef = useRef<HTMLDivElement | null>(null);
+  const [storiesPos, setStoriesPos] = useState(0); // 0..100
+
+
+  // ratio of visible area to total scrollable (0..1). If >=1, no slider.
+  const [storiesRatio, setStoriesRatio] = useState(1);
+
+
+  const progressRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingRef = useRef(false);
+  const [canScrollStories, setCanScrollStories] = useState(false); // show/hide pill
+  const [storiesProgress, setStoriesProgress] = useState(0);       // 0..1
+  const [thumbPct, setThumbPct] = useState(0.5);                   // visible/total (0..1)
+
+  // compute scrollability, thumb size, and progress
+  const recomputeStories = () => {
+    const vp = storiesRef.current;
+    if (!vp) return;
+    const total = vp.scrollWidth;
+    const visible = vp.clientWidth;
+    const max = Math.max(0, total - visible);
+    setCanScrollStories(max > 1);               // show only if content wider than viewport
+    setThumbPct(Math.max(0.08, Math.min(1, visible / total))); // min 8% for usability
+    setStoriesProgress(max ? vp.scrollLeft / max : 0);
+  };
+
+  // mount + resize listeners
+  useLayoutEffect(() => {
+    recomputeStories();
+    const onResize = () => recomputeStories();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // keep pill synced when user scrolls naturally
+  useLayoutEffect(() => {
+    const vp = storiesRef.current;
+    if (!vp) return;
+    const onScroll = () => recomputeStories();
+    vp.addEventListener("scroll", onScroll, { passive: true });
+    return () => vp.removeEventListener("scroll", onScroll);
+  }, []);
+
+
+  // Update ratio on mount + resize + whenever the viewport size changes
+  useLayoutEffect(() => {
+    const vp = storiesRef.current;
+    if (!vp) return;
+
+    const compute = () => {
+      const ratio = vp.scrollWidth > 0 ? vp.clientWidth / vp.scrollWidth : 1;
+      setStoriesRatio(Math.min(1, Math.max(0, ratio)));
+    };
+
+    compute();
+
+    // Track element size changes precisely
+    const ro = new ResizeObserver(compute);
+    ro.observe(vp);
+    return () => ro.disconnect();
+  }, []);
+
+  // Drag handling for the pill
+  const draggingRef = useRef(false);
+  const onDragAt = (clientX: number) => {
+    const vp = storiesRef.current;
+    const track = document.querySelector(".stories-pill") as HTMLDivElement | null;
+    if (!vp || !track) return;
+
+    const rect = track.getBoundingClientRect();
+    const ratio = storiesRatio;                            // viewport / total
+    const relative = (clientX - rect.left) / rect.width;  // 0..1 across track
+    // Left edge of the thumb moves from 0..(1 - ratio)
+    const newEdge = Math.min(1 - ratio, Math.max(0, relative - ratio / 2));
+    const pos = (newEdge / Math.max(1e-6, 1 - ratio)) * 100; // 0..100 scroll %
+    setStoriesPos(pos);
+
+    const max = vp.scrollWidth - vp.clientWidth;
+    vp.scrollTo({ left: (pos / 100) * max, behavior: "smooth" });
+  };
+  const onMouseDownPill = (e: React.MouseEvent<HTMLDivElement>) => {
+    draggingRef.current = true;
+    onDragAt(e.clientX);
+    const onMove = (ev: MouseEvent) => draggingRef.current && onDragAt(ev.clientX);
+    const onUp = () => {
+      draggingRef.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp, { once: true });
+  };
+  const onTouchStartPill = (e: React.TouchEvent<HTMLDivElement>) => {
+    draggingRef.current = true;
+    onDragAt(e.touches[0].clientX);
+    const onMove = (ev: TouchEvent) =>
+      draggingRef.current && onDragAt(ev.touches[0].clientX);
+    const onEnd = () => {
+      draggingRef.current = false;
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchcancel", onEnd);
+    };
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onEnd, { once: true });
+    window.addEventListener("touchcancel", onEnd, { once: true });
+  };
+
+
+  // Keep slider synced when user scrolls with mouse/trackpad
+  useLayoutEffect(() => {
+    const vp = storiesRef.current;
+    if (!vp) return;
+    const onScroll = () => {
+      const max = vp.scrollWidth - vp.clientWidth;
+      const ratio = max > 0 ? vp.scrollLeft / max : 0;
+      setStoriesPos(Math.round(ratio * 100));
+    };
+    vp.addEventListener("scroll", onScroll, { passive: true });
+    return () => vp.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Keep position aligned on resize
+  useLayoutEffect(() => {
+    const onResize = () => {
+      const vp = storiesRef.current;
+      if (!vp) return;
+      const max = vp.scrollWidth - vp.clientWidth;
+      const left = (storiesPos / 100) * max;
+      vp.scrollTo({ left });
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [storiesPos]);
+
+  // On mount, align to current storiesPos
+  useLayoutEffect(() => {
+    const vp = storiesRef.current;
+    if (!vp) return;
+    const max = vp.scrollWidth - vp.clientWidth;
+    vp.scrollLeft = (storiesPos / 100) * max;
+  }, []);
+
+
   return (
     <div className="profile-app">
       {/* Top bar (same as Home) */}
@@ -149,7 +294,8 @@ export default function ProfilePage() {
                       height: 8,
                       gap: 0,
                       width: "75%",
-                      marginLeft: "auto",
+                      marginLeft: 0,
+                      justifySelf: "start",
                     }}
                   >
                     <div className="bar bar-1" />
@@ -165,13 +311,92 @@ export default function ProfilePage() {
           {/* LEFT — Row 2: Stories (title + black box fills the row) */}
           <section className="cell stories-cell section">
             <h2 className="section-title">Stories</h2>
-            <div className="strip stories-strip" />
+
+            <div className="strip stories-strip">
+              {/* Viewport that horizontally scrolls */}
+              <div className="stories-viewport" ref={storiesRef} aria-label="Stories">
+                <div className="stories-track">
+                  {/* 10 placeholders */}
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                  <div className="story-cover" aria-label="Story placeholder" />
+                </div>
+              </div>
+
+              {/* Bottom slider control (pages of 5) */}
+              {canScrollStories && (
+                <div
+                  className="stories-progress"
+                  ref={progressRef}
+                  role="slider"
+                  aria-label="Scroll stories"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(storiesProgress * 100)}
+                  tabIndex={0}
+                  onPointerDown={(e) => {
+                    progressRef.current?.setPointerCapture(e.pointerId);
+                    isDraggingRef.current = true;
+                    const bar = progressRef.current!;
+                    const vp = storiesRef.current!;
+                    const rect = bar.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const ratio = Math.max(0, Math.min(1, (x - (thumbPct * rect.width) / 2) / (rect.width - thumbPct * rect.width)));
+                    const max = vp.scrollWidth - vp.clientWidth;
+                    vp.scrollTo({ left: ratio * max});
+                  }}
+                  onPointerMove={(e) => {
+                    if (!isDraggingRef.current) return;
+                    const bar = progressRef.current!;
+                    const vp = storiesRef.current!;
+                    const rect = bar.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const ratio = Math.max(0, Math.min(1, (x - (thumbPct * rect.width) / 2) / (rect.width - thumbPct * rect.width)));
+                    const max = vp.scrollWidth - vp.clientWidth;
+                    vp.scrollTo({ left: ratio * max });
+                  }}
+                  onPointerUp={() => { isDraggingRef.current = false; }}
+                  onPointerCancel={() => { isDraggingRef.current = false; }}
+                  onKeyDown={(e) => {
+                    const vp = storiesRef.current;
+                    if (!vp) return;
+                    const max = vp.scrollWidth - vp.clientWidth;
+                    const step = vp.clientWidth * 0.1; // 10% step with arrows
+                    if (e.key === "ArrowRight") vp.scrollTo({ left: Math.min(vp.scrollLeft + step, max)});
+                    if (e.key === "ArrowLeft")  vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0)});
+                  }}
+                >
+                  <div
+                    className="stories-thumb"
+                    style={{
+                      width: `${thumbPct * 100}%`,
+                      left: `${storiesProgress * (100 - thumbPct * 100)}%`,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </section>
 
           {/* LEFT — Row 3: Top 5 Favorites (title + black box fills the row) */}
           <section className="cell favorites-cell section">
             <h2 className="section-title">Top 5 Favorites</h2>
-            <div className="strip favorites-strip" />
+            <div className="strip favorites-strip">
+              <div className="favorites-grid">
+                <div className="fav-cover" aria-label="Favorite book placeholder" />
+                <div className="fav-cover" aria-label="Favorite book placeholder" />
+                <div className="fav-cover" aria-label="Favorite book placeholder" />
+                <div className="fav-cover" aria-label="Favorite book placeholder" />
+                <div className="fav-cover" aria-label="Favorite book placeholder" />
+              </div>
+            </div>
           </section>
 
           {/* CENTER — spans all 3 rows */}
@@ -229,7 +454,7 @@ export default function ProfilePage() {
                   <hr className="meta-hr" />
 
                   <div className="align-left">
-                    <ul class="meta-tags meta-tags--outline">
+                    <ul className="meta-tags meta-tags--outline">
                       <li>Fantasy</li>
                       <li>Adventure</li>
                       <li>Mystery</li>
@@ -255,7 +480,15 @@ export default function ProfilePage() {
           {/* RIGHT — Row 3: Currently Reading (title + black box fills the row) */}
           <section className="cell current-cell section">
             <h2 className="section-title">Currently Reading</h2>
-            <div className="strip current-strip" />
+            <div className="strip current-strip">
+              <div className="current-grid">
+                <div className="cur-cover" aria-label="Currently reading placeholder" />
+                <div className="cur-cover" aria-label="Currently reading placeholder" />
+                <div className="cur-cover" aria-label="Currently reading placeholder" />
+                <div className="cur-cover" aria-label="Currently reading placeholder" />
+                <div className="cur-cover" aria-label="Currently reading placeholder" />
+              </div>
+            </div>
           </section>
         </div>
       </main>

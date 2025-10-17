@@ -430,3 +430,200 @@
 .profile-id .profile-handle {
   margin-top: -0.22em;         /* visually compensates for added room above */
 }
+
+/* Ensure strips have visible height */
+.favorites-strip,
+.current-strip {
+  min-height: clamp(120px, 22vh, 220px);
+}
+
+/* 5-up, evenly spaced grids INSIDE each strip */
+.favorites-strip .favorites-grid,
+.current-strip .current-grid {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(70px, 1fr));
+  gap: clamp(8px, 1.6vw, 16px);
+  align-items: center;   /* vertical centering */
+  justify-items: center; /* center each cover in its column */
+  padding: clamp(8px, 1.2vw, 12px);
+  box-sizing: border-box;
+}
+
+/* Mini covers (same aspect as the center cover) */
+.fav-cover,
+.cur-cover {
+  width: 100%;
+  max-width: clamp(70px, 14vw, 130px);
+  aspect-ratio: 12 / 17;
+  background: #1b1b1b;
+  border: none;
+}
+
+/* ===== Stories: 10 items total; show 5 per view with slider ===== */
+.stories-strip {
+  --stories-gap: clamp(8px, 1.6vw, 16px);
+  display: grid;
+  grid-template-rows: 1fr auto;     /* row 1 = covers, row 2 = slider */
+  gap: 8px;
+  min-height: clamp(120px, 22vh, 220px);
+  padding: clamp(8px, 1.2vw, 12px);
+  box-sizing: border-box;
+}
+
+.stories-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;                /* Firefox hide */
+}
+.stories-viewport::-webkit-scrollbar { display: none; } /* WebKit hide */
+
+/* FLEX track: width grows naturally (10 items * 20% + gaps ≈ 2 pages) */
+.stories-track {
+  display: flex;
+  gap: var(--stories-gap);
+  align-items: center;
+}
+
+/* Each cover occupies exactly 1/5 of viewport width (minus gap compensation) */
+.story-cover {
+  flex: 0 0 calc((100% - (4 * var(--stories-gap))) / 5);
+  aspect-ratio: 12 / 17;
+  background: #1b1b1b;
+  border: none;
+  scroll-snap-align: center;
+}
+
+/* Slider styling */
+.stories-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  outline: none;
+}
+.stories-slider::-webkit-slider-thumb,
+.stories-slider::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #000;
+}
+
+
+.stories-viewport { scroll-snap-type: x proximity; }
+.story-cover { scroll-snap-align: start; }
+
+/* Stories container (from your working version) */
+.stories-strip {
+  --stories-gap: clamp(8px, 1.6vw, 16px);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  min-height: clamp(120px, 22vh, 220px);
+  padding: clamp(8px, 1.2vw, 12px);
+  box-sizing: border-box;
+}
+.stories-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  /* choose one: softer snapping, or none */
+  scroll-snap-type: x proximity;  /* smoother than mandatory */
+  scrollbar-width: none;
+}
+.stories-viewport::-webkit-scrollbar { display: none; }
+.stories-track {
+  display: flex;
+  gap: var(--stories-gap);
+  align-items: center;
+}
+.story-cover {
+  flex: 0 0 calc((100% - (4 * var(--stories-gap))) / 5); /* exactly 5 visible */
+  aspect-ratio: 12 / 17;
+  background: #1b1b1b;
+  border: none;
+  scroll-snap-align: center;
+}
+
+/* === Custom pill slider (like your screenshot) === */
+.stories-pill {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  overflow: hidden;
+  cursor: pointer;
+  /* tiny inset to keep it off edges */
+  margin: 2px 2px 0 2px;
+}
+.stories-pill__thumb {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: #e5e5e5;              /* light gray “oval” */
+  /* width and left are set inline. We also define a CSS var for left calc */
+  transition: left 160ms ease, width 160ms ease, transform 80ms ease;
+  will-change: left, width;
+}
+.stories-pill:active .stories-pill__thumb {
+  transform: scaleY(0.92);
+}
+
+/* Pill progress container */
+.stories-progress {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.14); /* subtle track like your screenshot */
+  outline: none;
+  touch-action: none;  /* smoother pointer drag on mobile */
+  cursor: pointer;
+}
+
+/* White oval thumb that grows/shrinks with visible area */
+.stories-thumb {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 2px #000;  /* thin dark outline like the image */
+  pointer-events: none;        /* dragging is handled on container */
+}
+
+/* Optional: slightly taller on very small screens */
+@media (max-width: 520px) {
+  .stories-progress { height: 10px; }
+  .stories-thumb { top: 1px; bottom: 1px; }
+}
+
+/* Stories: NO snap at all, and no auto-smoothing from CSS */
+.stories-viewport {
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+}
+.story-cover {
+  scroll-snap-align: none !important;
+}
+
+/* Clean pill slider — no grey track line */
+.stories-progress {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: transparent;   /* removed grey line */
+  outline: none;
+  touch-action: none;
+  cursor: pointer;
+}
+
