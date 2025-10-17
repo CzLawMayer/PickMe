@@ -14,6 +14,10 @@
   box-sizing: border-box;
 }
 
+.header {
+  background-color: #000;
+}
+
 /* ===== Global grid (3 columns × 3 rows) ===== */
 .profile-grid {
   height: 100%;
@@ -234,19 +238,18 @@
 .library-cell { display: flex; flex-direction: column; min-height: 0; }
 .shelf {
   background: #4b2419;
-  padding: 16px;
+  padding: 20px;
   border: 1px solid rgba(0,0,0,0.2);
   border-radius: 0;
   flex: 1 1 auto;             /* fill the rest of the (row1–2) area */
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   min-height: 0;
 }
 .shelf-row {
   background: #111;
   flex: 1;
-  box-shadow: inset 0 3px 0 rgba(0,0,0,0.25);
   border-radius: 0;
 }
 
@@ -259,4 +262,173 @@
     grid-template-columns: minmax(0, 1fr) fit-content(clamp(220px, 42vw, 320px)) minmax(0, 1fr);
     gap: 12px;
   }
+}
+
+/* Center icon + count in each column */
+.meta-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+}
+
+.meta-actions .meta-icon-btn {
+  display: flex;
+  flex-direction: column;      /* icon on top, number below */
+  align-items: center;         /* center horizontally */
+  justify-content: center;     /* center vertically within the cell */
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.meta-actions .meta-icon-glyph { line-height: 1; }
+
+/* Number styling */
+.meta-actions .meta-icon-count {
+  margin-left: 0;              /* no side offset */
+  text-align: center;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;  /* keeps digits lined up */
+}
+
+/* Remove the left/right justification overrides (they shift centering) */
+.meta-actions .meta-icon-btn:first-child { justify-content: center; }
+.meta-actions .meta-icon-btn:last-child  { justify-content: center; }
+
+/* Let the identity block be a container for cqw sizing */
+.profile-id { container-type: inline-size; }
+
+/* Name uses as much space as possible without blowing layout */
+.profile-id .profile-name {
+  margin: 0 0 2px;
+  font-weight: 800;
+  line-height: 1.05;
+  /* Scale with container width; clamp to sensible min/max */
+  font-size: clamp(1rem, 8cqw, 2.4rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Handle slightly smaller but still responsive */
+.profile-id .profile-handle {
+  margin: 0 0 8px;
+  opacity: 0.8;
+  font-weight: 600;
+  line-height: 1.1;
+  font-size: clamp(0.9rem, 5cqw, 1.6rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Make the color bars take 75% of the identity row width and sit flush right */
+.profile-bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 8px;
+  gap: 0;
+  width: 75%;
+  margin-left: auto;   /* pushes the bars to the right edge */
+}
+
+/* bars already fill 100% of the .profile-bars width */
+.profile-bars .bar { width: 100%; height: 100%; }
+
+.meta-actions .meta-icon-count {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure the right side of the identity row can grow and has measurable width */
+.profile-card { 
+  display: flex; 
+  align-items: center; 
+  gap: 18px; 
+  min-width: 0;              /* <-- allow shrinking inside grid cell */
+}
+.profile-id { 
+  flex: 1 1 auto;            /* <-- take remaining space next to avatar */
+  min-width: 0;              /* <-- critical to avoid zero-width clipping */
+  container-type: inline-size; 
+}
+
+/* Make sure the identity text is visible on dark backgrounds */
+.identity-cell, 
+.profile-identity, 
+.profile-id {
+  color: #fff;               /* set text color explicitly */
+}
+
+/* Keep the “fill the space” sizing for name/handle */
+.profile-id .profile-name {
+  margin: 0 0 2px;
+  font-weight: 800;
+  line-height: 1.05;
+  font-size: clamp(1rem, 8cqw, 2.4rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-id .profile-handle {
+  margin: 0 0 8px;
+  opacity: 0.8;
+  font-weight: 600;
+  line-height: 1.1;
+  font-size: clamp(0.9rem, 5cqw, 1.6rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right-aligned colored bars using 75% of the available inline size */
+.profile-bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 8px;
+  gap: 0;
+  width: 75%;
+  margin-left: auto;         /* pushes the bars to the right edge */
+}
+
+/* Left-align the colored bar under the identity text */
+.profile-bars {
+  width: 75%;
+  margin-left: 0;     /* was auto */
+  margin-right: auto; /* keep it flush to the left */
+}
+
+/* Make the identity grid default to left-aligned items */
+.profile-id {
+  justify-items: start;   /* grid children align to the left */
+}
+
+/* Pin the color bars to the left and keep them at 75% width */
+.profile-bars {
+  width: 75%;
+  margin: 0;              /* reset any previous auto margins */
+  justify-self: start;    /* left edge of the profile-id grid */
+  align-self: start;
+  place-self: start;      /* shorthand; safe if supported */
+  display: grid;          /* keep your 4-column bar grid */
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* If something upstream set centering via logical margins, nuke it */
+.profile-bars {
+  margin-inline: 0;
+}
+
+/* ==== FORCE COLORED BAR TO LEFT UNDER NAME ==== */
+.identity-cell .profile-id {
+  justify-items: start;              /* grid children default left */
+  text-align: left;
+}
+
+.identity-cell .profile-id .profile-bars {
+  width: 75%;
+  margin: 0 !important;              /* kill any margin-left:auto */
+  margin-right: auto !important;     /* anchor left edge */
+  justify-self: start !important;    /* left within the grid cell */
+  align-self: start !important;
 }
