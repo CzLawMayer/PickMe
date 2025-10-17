@@ -1,4 +1,3 @@
-// src/pages/Profile.tsx
 import { useState } from "react";
 import "./Profile.css";
 import SideMenu from "@/components/SideMenu";
@@ -9,12 +8,11 @@ import SaveButton from "@/components/SaveButton";
 export default function ProfilePage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Simple local state to make the metadata controls functional
+  // Local state for the metadata actions
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [userRating, setUserRating] = useState(0);
 
-  // Example combined rating (same idea as Home): if the user rates, blend with base
   const baseRating = 4.2;
   const priorVotes = 20;
   const combinedRating =
@@ -30,12 +28,8 @@ export default function ProfilePage() {
           Pick<span>M</span>e!
         </h1>
         <div className="header-icons">
-          <div className="icon" aria-label="write">
-            ✏️
-          </div>
-          <div className="icon" aria-label="search">
-            🔍
-          </div>
+          <div className="icon" aria-label="write">✏️</div>
+          <div className="icon" aria-label="search">🔍</div>
           <button
             type="button"
             className="icon icon-menu"
@@ -50,28 +44,18 @@ export default function ProfilePage() {
       </header>
 
       <main className="profile-page">
+        {/* Global 3×3 grid: rows = [top | middle | bottom], cols = [L | C | R] */}
         <div className="profile-grid">
-          {/* LEFT COLUMN */}
-          <div className="profile-left">
-            {/* Wrapper: avatar + name + handle + colored bars */}
+
+          {/* LEFT — Row 1: Identity */}
+          <section className="cell identity-cell">
             <div className="profile-identity">
               <div className="profile-card">
                 <div className="profile-avatar" aria-hidden>
-                  <svg
-                    width="96"
-                    height="96"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden
-                  >
+                  <svg width="96" height="96" viewBox="0 0 24 24" fill="none" aria-hidden>
                     <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
                     <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                    <path
-                      d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
+                    <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
                 <div className="profile-id">
@@ -86,29 +70,25 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+          </section>
 
-            {/* Wrapper: Stories (title + square) */}
-            <section className="section stories-section">
-              <h2 className="section-title">Stories</h2>
-              <div className="strip stories-strip" />
-            </section>
+          {/* LEFT — Row 2: Stories (title + black box fills the row) */}
+          <section className="cell stories-cell section">
+            <h2 className="section-title">Stories</h2>
+            <div className="strip stories-strip" />
+          </section>
 
-            {/* Wrapper: Top 5 Favorites (title + square) */}
-            <section className="section favorites-section">
-              <h2 className="section-title">Top 5 Favorites</h2>
-              <div className="strip favorites-strip" />
-            </section>
-          </div>
+          {/* LEFT — Row 3: Top 5 Favorites (title + black box fills the row) */}
+          <section className="cell favorites-cell section">
+            <h2 className="section-title">Top 5 Favorites</h2>
+            <div className="strip favorites-strip" />
+          </section>
 
-          {/* CENTER COLUMN */}
-          <div className="profile-center">
+          {/* CENTER — spans all 3 rows */}
+          <section className="cell feature-cell">
             <div className="feature-card">
-              {/* Wrapper: book + metadata together so we can center/move as one block */}
               <div className="feature-stack">
-                <div
-                  className="feature-cover-placeholder"
-                  aria-label="Featured book cover placeholder"
-                />
+                <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" />
                 <div className="feature-info">
                   <h3 className="feature-title">Example Book Title</h3>
 
@@ -116,33 +96,10 @@ export default function ProfilePage() {
 
                   <div className="feature-author">
                     <span className="meta-avatar--sm" aria-hidden>
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        aria-hidden
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="9"
-                          stroke="white"
-                          strokeWidth="2"
-                        />
-                        <circle
-                          cx="12"
-                          cy="9"
-                          r="3"
-                          stroke="white"
-                          strokeWidth="2"
-                        />
-                        <path
-                          d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
-                          stroke="white"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                        <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                        <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                     </span>
                     <span className="feature-author-name">Author Name</span>
@@ -160,9 +117,7 @@ export default function ProfilePage() {
                       rating={combinedRating}
                       userRating={userRating}
                       active={userRating > 0}
-                      onRate={(v) =>
-                        setUserRating((prev) => (prev === v ? 0 : v))
-                      }
+                      onRate={(v) => setUserRating((prev) => (prev === v ? 0 : v))}
                     />
                     <SaveButton
                       count={(saved ? 1 : 0) + 56}
@@ -174,7 +129,7 @@ export default function ProfilePage() {
                   <hr className="meta-hr" />
 
                   <div className="align-left">
-                    <p className="meta-chapters">5 / 20 Chapters</p>
+                    <p className="meta-chapters"><span>5 / 20 Chapters</span></p>
                   </div>
 
                   <hr className="meta-hr" />
@@ -189,29 +144,23 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* RIGHT COLUMN */}
-          <div className="profile-right">
-            {/* Wrapper: Library (title + shelf) */}
-            <section className="section library-section">
-              <h2 className="section-title right-title">Library</h2>
-              <div className="shelf" role="grid" aria-label="Bookshelf">
-                <div className="shelf-row" role="row" />
-                <div className="shelf-row" role="row" />
-                <div className="shelf-row" role="row" />
-              </div>
-            </section>
+          {/* RIGHT — Rows 1–2: Library (title stuck to top, shelf fills rest) */}
+          <section className="cell library-cell section">
+            <h2 className="section-title right-title">Library</h2>
+            <div className="shelf" role="grid" aria-label="Bookshelf">
+              <div className="shelf-row" role="row" />
+              <div className="shelf-row" role="row" />
+              <div className="shelf-row" role="row" />
+            </div>
+          </section>
 
-            {/* Wrapper: Currently Reading (title + square), pushed to bottom */}
-            <section
-              className="section current-section"
-              style={{ marginTop: "auto" }}
-            >
-              <h2 className="section-title">Currently Reading</h2>
-              <div className="strip current-strip" />
-            </section>
-          </div>
+          {/* RIGHT — Row 3: Currently Reading (title + black box fills the row) */}
+          <section className="cell current-cell section">
+            <h2 className="section-title">Currently Reading</h2>
+            <div className="strip current-strip" />
+          </section>
         </div>
       </main>
 
