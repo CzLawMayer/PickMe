@@ -13,10 +13,7 @@
   padding: clamp(12px, 2vw, 24px);   /* page margin */
   box-sizing: border-box;
 }
-
-.header {
-  background-color: #000;
-}
+.header { background-color: #000; }
 
 /* ===== Global grid (3 columns × 3 rows) ===== */
 .profile-grid {
@@ -32,9 +29,7 @@
 .identity-cell { grid-column: 1; grid-row: 1; }
 .stories-cell  { grid-column: 1; grid-row: 2; }
 .favorites-cell{ grid-column: 1; grid-row: 3; }
-
 .feature-cell  { grid-column: 2; grid-row: 1 / 4; } /* span all rows */
-
 .library-cell  { grid-column: 3; grid-row: 1 / 3; } /* spans rows 1–2 */
 .current-cell  { grid-column: 3; grid-row: 3; }
 
@@ -42,21 +37,65 @@
 .cell { min-width: 0; min-height: 0; overflow: hidden; }
 
 /* ===== Titles ===== */
+.section { container-type: inline-size; } /* for responsive titles */
 .section-title {
   margin: 0 0 10px;
-  font-size: clamp(1rem, 1.3vw, 1.5rem);
-  font-weight: 700;
+  font-size: clamp(0.9rem, 5cqw, 1.6rem);  /* matches @username curve */
+  line-height: 1.1;
+  font-weight: 600;
 }
 
 /* ===== Left: identity block ===== */
-.profile-card { display: flex; align-items: center; gap: 18px; }
-.profile-avatar { width: 96px; height: 96px; display: inline-flex; align-items: center; justify-content: center; }
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0; /* allow shrinking inside grid cell */
+}
+.profile-avatar {
+  width: 96px; height: 96px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 .profile-avatar svg { width: 96px; height: 96px; }
-.profile-id .profile-name { margin: 0 0 2px; }
-.profile-id .profile-handle { margin: 0 0 8px; opacity: 0.75; }
 
-/* Single row of 4 tight color bars (no gaps) */
-.profile-bars { display: grid; grid-template-columns: repeat(4, 1fr); height: 8px; gap: 0; }
+/* Make identity a grid so we can left-pin children and use cqw units */
+.profile-id {
+  display: grid;
+  grid-auto-rows: max-content;
+  flex: 1 1 auto;
+  min-width: 0;
+  container-type: inline-size;
+  justify-items: start;       /* left-align children */
+  text-align: left;
+  color: #fff;                /* visible on dark backgrounds */
+}
+.profile-id .profile-name {
+  margin: 0 0 2px;
+  font-weight: 800;
+  line-height: 1.05;
+  font-size: clamp(1rem, 8cqw, 2.4rem);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-id .profile-handle {
+  margin: 0 0 8px;
+  opacity: 0.8;
+  font-weight: 600;
+  line-height: 1.1;
+  font-size: clamp(0.9rem, 5cqw, 1.6rem);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Single row of 4 tight color bars (no gaps), left-aligned, 75% width */
+.profile-bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 8px;
+  gap: 0;
+  width: 75%;
+  margin: 0;                   /* no auto-centering */
+  justify-self: start;         /* pin to left */
+  align-self: start;
+}
 .profile-bars .bar { width: 100%; height: 100%; }
 .bar-1 { background: #de5a43; }
 .bar-2 { background: #d006c1; }
@@ -78,8 +117,8 @@
   justify-self: center;        /* keep centered in the middle column */
   height: 100%;
   display: flex;
-  align-items: center;         /* horizontal center */
-  justify-content: center;     /* vertical center */
+  align-items: center;         /* cross-axis center */
+  justify-content: center;     /* main-axis center */
   padding: clamp(12px, 1.6vw, 16px);
   box-sizing: border-box;
   text-align: center;
@@ -89,22 +128,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(10px, 2vh, 14px); /* a touch larger gap above title */
+  gap: clamp(10px, 2vh, 14px);
   min-width: 0;
   max-height: 100%;
 }
 
 /* Book + metadata share width token; add 25% book width on each side */
-:root { --fit-w: min(clamp(130px, 24vh, 260px), 42vw); } /* slightly bigger default */
+:root { --fit-w: min(clamp(130px, 24vh, 260px), 42vw); }
 .feature-card .feature-stack {
   width: var(--fit-w);
   max-width: 100%;
   padding-left: calc(var(--fit-w) * 0.25);
   padding-right: calc(var(--fit-w) * 0.25);
-  box-sizing: content-box;   /* padding becomes visual side space */
+  box-sizing: content-box;     /* padding becomes visual side space */
   margin: 0 auto;
 }
-
 .feature-cover-placeholder {
   width: var(--fit-w);
   aspect-ratio: 12 / 17;
@@ -122,9 +160,10 @@
   container-type: inline-size; /* enables cqw scaling below */
 }
 .feature-title {
-  margin: 0 0 6px;
-  font-size: clamp(0.9rem, 1.6vh, 1.15rem);
-  font-weight: 800;
+  margin: 0 0 10px;
+  font-weight: 900;
+  line-height: 1.1;
+  font-size: clamp(1.25rem, 6.2cqw, 2.2rem); /* bigger than @username */
 }
 
 /* subtle separators */
@@ -141,49 +180,65 @@
 }
 .meta-avatar--sm { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; }
 .meta-avatar--sm svg { width: 26px; height: 26px; }
-.feature-author-name { font-weight: 600; font-size: clamp(0.85rem, 1.4vh, 1rem); }
+.feature-author-name { font-weight: 600; font-size: clamp(0.95rem, 4.2cqw, 1.25rem); }
 
-/* ===== Actions row — 3 equal columns, edge-to-edge, big icons ===== */
+/* Chapters (same size as author, single line) */
+.feature-info .meta-chapters {
+  font-size: clamp(0.95rem, 4.2cqw, 1.25rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+/* ===== Actions row — 3 equal columns, icon over count, centered ===== */
 .meta-actions {
   width: 100%;
   max-width: var(--fit-w);
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0;
   align-items: center;
   justify-content: normal;
-  padding: 0;
+  padding-block: 6px;  /* breathing room */
   margin: 0;
   container-type: inline-size; /* cqw for icon/count scaling */
-  overflow: visible; /* popover */
+  overflow: visible;           /* popover */
 }
 .meta-actions .meta-icon-btn {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
+  flex-direction: column;      /* icon on top, number below */
+  align-items: center;         /* center horizontally */
+  justify-content: center;     /* center vertically within the cell */
+  gap: 6px;
   width: 100%;
+  min-width: 0;
   padding: 0;
   margin: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
-.meta-actions .meta-icon-btn:first-child { justify-content: flex-start; } /* heart → left */
-.meta-actions .meta-icon-btn:last-child  { justify-content: flex-end;   } /* save  → right */
-
-.meta-actions .meta-icon-glyph { font-size: clamp(28px, 7.5cqw, 44px); line-height: 1; }
+/* big glyphs */
+.meta-actions .meta-icon-glyph {
+  font-size: clamp(52px, 12cqw, 96px);
+  line-height: 1;
+}
+/* SVG fallback if your glyph is an SVG element */
+.meta-actions .meta-icon-btn svg {
+  height: clamp(48px, 11cqw, 92px);
+  width: auto;
+}
+/* keep counts neat */
 .meta-actions .meta-icon-count {
   white-space: nowrap;
+  text-align: center;
   line-height: 1.1;
-  margin-left: clamp(6px, 1cqw, 10px);
-  font-size: clamp(0.78rem, 3.4cqw, 1rem);
-}
-
-/* Keep counts on smaller screens if possible */
-@media (max-width: 560px), (max-height: 680px) {
-  .meta-actions .meta-icon-glyph { font-size: clamp(26px, 8cqw, 38px); }
-  .meta-actions .meta-icon-count { font-size: clamp(0.7rem, 3cqw, 0.9rem); margin-left: clamp(4px, 0.8cqw, 8px); }
+  font-size: clamp(0.78rem, 3.2cqw, 1rem);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Star popover positioning (relative to the star button) */
@@ -215,23 +270,50 @@
 .feature-title,
 .feature-author-name,
 .align-left,
-.align-left * { overflow-wrap: anywhere; word-break: break-word; hyphens: auto; }
-
-/* Keep “Chapters” as one line; scale with container width */
-.feature-info .meta-chapters {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
-  font-size: clamp(0.72rem, 3.2cqw, 0.95rem);
-  line-height: 1.2;
-  margin: 0;
+.align-left * {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
 }
-.feature-info .meta-chapters > span { display: inline-block; max-width: 100%; transform-origin: left center; }
 
-/* Genres vertical, always visible (no max-height to hide items) */
-.feature-info .meta-tags { padding: 0; margin: 0; }
-.feature-info .meta-tags li { list-style: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.vertical-tags { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(4px, 0.8vh, 6px); }
+/* ===== Genres as outline chips (no separators, left-aligned, wrapping) ===== */
+.feature-info .meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;   /* each new row starts at the left */
+  align-items: center;
+  gap: 8px 10px;                 /* row / column gap */
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: left;
+}
+.feature-info .meta-tags li {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;             /* symmetric, keeps text centered in pill */
+  border-radius: 999px;          /* full pill */
+  line-height: 1;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: clamp(0.85rem, 3.2cqw, 1.05rem);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+.feature-info .meta-tags li:active { transform: translateY(1px); }
+/* Outline style */
+.feature-info .meta-tags.meta-tags--outline li {
+  color: #fff;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: inset 0 0 0 0 rgba(255,255,255,0);
+}
+.feature-info .meta-tags.meta-tags--outline li:hover {
+  border-color: rgba(255,255,255,0.36);
+  background: rgba(255,255,255,0.10);
+}
+/* Ensure no old separator remnants */
+.feature-info .meta-tags li::before,
+.feature-info .meta-tags li::after { content: none !important; }
 
 /* ===== Right: library ===== */
 .right-title { display: flex; align-items: baseline; gap: 6px; }
@@ -264,171 +346,87 @@
   }
 }
 
-/* Center icon + count in each column */
-.meta-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: center;
+/* Small viewports: keep counts readable */
+@media (max-width: 560px), (max-height: 680px) {
+  .meta-actions .meta-icon-glyph { font-size: clamp(26px, 8cqw, 38px); }
+  .meta-actions .meta-icon-count { font-size: clamp(0.7rem, 3cqw, 0.9rem); }
 }
 
-.meta-actions .meta-icon-btn {
-  display: flex;
-  flex-direction: column;      /* icon on top, number below */
-  align-items: center;         /* center horizontally */
-  justify-content: center;     /* center vertically within the cell */
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-}
-
-.meta-actions .meta-icon-glyph { line-height: 1; }
-
-/* Number styling */
-.meta-actions .meta-icon-count {
-  margin-left: 0;              /* no side offset */
-  text-align: center;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;  /* keeps digits lined up */
-}
-
-/* Remove the left/right justification overrides (they shift centering) */
-.meta-actions .meta-icon-btn:first-child { justify-content: center; }
-.meta-actions .meta-icon-btn:last-child  { justify-content: center; }
-
-/* Let the identity block be a container for cqw sizing */
-.profile-id { container-type: inline-size; }
-
-/* Name uses as much space as possible without blowing layout */
-.profile-id .profile-name {
-  margin: 0 0 2px;
-  font-weight: 800;
-  line-height: 1.05;
-  /* Scale with container width; clamp to sensible min/max */
-  font-size: clamp(1rem, 8cqw, 2.4rem);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Handle slightly smaller but still responsive */
-.profile-id .profile-handle {
-  margin: 0 0 8px;
-  opacity: 0.8;
-  font-weight: 600;
-  line-height: 1.1;
-  font-size: clamp(0.9rem, 5cqw, 1.6rem);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Make the color bars take 75% of the identity row width and sit flush right */
-.profile-bars {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  height: 8px;
-  gap: 0;
-  width: 75%;
-  margin-left: auto;   /* pushes the bars to the right edge */
-}
-
-/* bars already fill 100% of the .profile-bars width */
-.profile-bars .bar { width: 100%; height: 100%; }
-
-.meta-actions .meta-icon-count {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Ensure the right side of the identity row can grow and has measurable width */
-.profile-card { 
-  display: flex; 
-  align-items: center; 
-  gap: 18px; 
-  min-width: 0;              /* <-- allow shrinking inside grid cell */
-}
-.profile-id { 
-  flex: 1 1 auto;            /* <-- take remaining space next to avatar */
-  min-width: 0;              /* <-- critical to avoid zero-width clipping */
-  container-type: inline-size; 
-}
-
-/* Make sure the identity text is visible on dark backgrounds */
-.identity-cell, 
-.profile-identity, 
-.profile-id {
-  color: #fff;               /* set text color explicitly */
-}
-
-/* Keep the “fill the space” sizing for name/handle */
-.profile-id .profile-name {
-  margin: 0 0 2px;
-  font-weight: 800;
-  line-height: 1.05;
-  font-size: clamp(1rem, 8cqw, 2.4rem);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.profile-id .profile-handle {
-  margin: 0 0 8px;
-  opacity: 0.8;
-  font-weight: 600;
-  line-height: 1.1;
-  font-size: clamp(0.9rem, 5cqw, 1.6rem);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Right-aligned colored bars using 75% of the available inline size */
-.profile-bars {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  height: 8px;
-  gap: 0;
-  width: 75%;
-  margin-left: auto;         /* pushes the bars to the right edge */
-}
-
-/* Left-align the colored bar under the identity text */
-.profile-bars {
-  width: 75%;
-  margin-left: 0;     /* was auto */
-  margin-right: auto; /* keep it flush to the left */
-}
-
-/* Make the identity grid default to left-aligned items */
-.profile-id {
-  justify-items: start;   /* grid children align to the left */
-}
-
-/* Pin the color bars to the left and keep them at 75% width */
-.profile-bars {
-  width: 75%;
-  margin: 0;              /* reset any previous auto margins */
-  justify-self: start;    /* left edge of the profile-id grid */
-  align-self: start;
-  place-self: start;      /* shorthand; safe if supported */
-  display: grid;          /* keep your 4-column bar grid */
-  grid-template-columns: repeat(4, 1fr);
-}
-
-/* If something upstream set centering via logical margins, nuke it */
-.profile-bars {
-  margin-inline: 0;
-}
-
-/* ==== FORCE COLORED BAR TO LEFT UNDER NAME ==== */
+/* 1) FORCE the colored bar to align LEFT under the username (75% width) */
 .identity-cell .profile-id {
-  justify-items: start;              /* grid children default left */
-  text-align: left;
+  display: grid;                /* ensure grid so self-alignment works */
+  justify-items: start;         /* children default left */
 }
-
 .identity-cell .profile-id .profile-bars {
   width: 75%;
-  margin: 0 !important;              /* kill any margin-left:auto */
-  margin-right: auto !important;     /* anchor left edge */
-  justify-self: start !important;    /* left within the grid cell */
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  justify-self: start !important;
   align-self: start !important;
+}
+
+/* 2) Give genre chips a faint hue while keeping the outline look */
+.feature-info .meta-tags.meta-tags--outline li {
+  /* base outline you liked */
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: inset 0 0 0 0 rgba(255,255,255,0);
+  /* subtle tint */
+  background: hsla(var(--chip-h, 0), 75%, 60%, 0.14);
+  border-color: hsla(var(--chip-h, 0), 75%, 60%, 0.35);
+}
+/* pleasant rotating hues (very soft) */
+.feature-info .meta-tags.meta-tags--outline li:nth-child(6n+1){ --chip-h: 210; } /* blue */
+.feature-info .meta-tags.meta-tags--outline li:nth-child(6n+2){ --chip-h: 12;  } /* orange */
+.feature-info .meta-tags.meta-tags--outline li:nth-child(6n+3){ --chip-h: 280; } /* purple */
+.feature-info .meta-tags.meta-tags--outline li:nth-child(6n+4){ --chip-h: 140; } /* green */
+.feature-info .meta-tags.meta-tags--outline li:nth-child(6n+5){ --chip-h: 320; } /* magenta */
+.feature-info .meta-tags.meta-tags--outline li:nth-child(6n+6){ --chip-h: 40;  } /* amber */
+
+/* 3) Center the chapter count text */
+.feature-info .align-left .meta-chapters {
+  text-align: center;
+  margin: 0 auto;
+}
+
+/* Keep tag color on hover (no grayscale) */
+.feature-info .meta-tags.meta-tags--outline li:hover {
+  background: hsla(var(--chip-h, 0), 75%, 60%, 0.22) !important; /* slightly stronger tint */
+  border-color: hsla(var(--chip-h, 0), 75%, 60%, 0.46) !important;
+  filter: none !important;          /* prevent any grayscale/brightness filters */
+  -webkit-filter: none !important;
+}
+
+/* Center the genre chips (rows wrap, each row centered) */
+.feature-info .meta-tags {
+  justify-content: center;   /* was flex-start */
+  text-align: center;
+}
+
+/* prevent descenders from clipping on the user's name */
+.profile-id .profile-name {
+  line-height: 1.18;          /* was ~1.05; give ink some room */
+  padding-bottom: 2px;        /* tiny baseline buffer for g/j/y/q */
+  overflow: hidden;           /* keep horizontal ellipsis behavior */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* belt-and-suspenders: ensure the grid row can accommodate the extra ink */
+.profile-id {
+  grid-auto-rows: max-content; /* already set, but keep here to be explicit */
+}
+
+/* --- Fix descender clipping on user's name (g/j/y/q) --- */
+.profile-id .profile-name {
+  line-height: 1.24;          /* more vertical room for descenders */
+  padding-bottom: 0.18em;      /* tiny buffer below baseline */
+  white-space: nowrap;
+  overflow: hidden;            /* keep ellipsis behavior */
+  text-overflow: ellipsis;
+}
+
+/* Pull the handle back up slightly so the overall spacing looks unchanged */
+.profile-id .profile-handle {
+  margin-top: -0.22em;         /* visually compensates for added room above */
 }

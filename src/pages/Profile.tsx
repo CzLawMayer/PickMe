@@ -122,7 +122,7 @@ export default function ProfilePage() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    Your Name
+                    ggggggjjjjjjjjllloomwww
                   </h2>
                   <div
                     className="profile-handle"
@@ -180,7 +180,7 @@ export default function ProfilePage() {
               <div className="feature-stack">
                 <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" />
                 <div className="feature-info">
-                  <h3 className="feature-title">Example Book Title</h3>
+                  <h3 className="feature-title">Everything To Get More and Balls</h3>
 
                   <hr className="meta-hr" />
 
@@ -229,10 +229,12 @@ export default function ProfilePage() {
                   <hr className="meta-hr" />
 
                   <div className="align-left">
-                    <ul className="meta-tags vertical-tags">
+                    <ul class="meta-tags meta-tags--outline">
                       <li>Fantasy</li>
                       <li>Adventure</li>
                       <li>Mystery</li>
+                      <li>Young Adult</li>
+                      <li>Magic</li>
                     </ul>
                   </div>
                 </div>
