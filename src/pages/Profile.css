@@ -627,3 +627,320 @@
   cursor: pointer;
 }
 
+/* Put Favorites & Currently Reading AT THE TOP, use full width */
+.favorites-strip,
+.current-strip {
+  display: grid !important;       /* become the positioning context */
+  grid-auto-rows: max-content;    /* rows size to content */
+  align-content: start !important;/* ⬅️ vertical placement = top */
+  justify-items: stretch;         /* children can fill width */
+}
+
+/* The 5-up grids fill the strip width and sit at the very top */
+.favorites-strip .favorites-grid,
+.current-strip  .current-grid {
+  align-self: start !important;   /* top edge of the strip */
+  justify-self: stretch !important;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);  /* five even columns */
+  gap: clamp(8px, 1.6vw, 16px);
+  justify-items: center;          /* center each cover in its cell */
+  align-items: start;             /* covers align to top inside cells */
+  margin: 0;
+  padding: clamp(8px, 1.2vw, 12px); /* keep your inner padding */
+  box-sizing: border-box;
+}
+
+/* Covers still fill their cells (no width cap) */
+.fav-cover,
+.cur-cover {
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 12 / 17;
+  height: auto;
+  background: #1b1b1b;
+  border: none;
+}
+
+/* ==== TIGHT, EVEN STRIPS (Stories / Favorites / Currently Reading) ==== */
+
+/* 0) Stop rows 2–3 from stretching; size exactly to content */
+.profile-grid {
+  grid-template-rows: auto max-content max-content !important;
+}
+
+/* 1) Strips = just a tight wrapper with even padding */
+.favorites-strip,
+.current-strip,
+.stories-strip {
+  display: block !important;
+  padding: clamp(10px, 1.6vw, 16px) !important;
+  box-sizing: border-box;
+  min-height: 0 !important;
+}
+
+/* Kill the “fill leftover space” behavior from section strips */
+.section .strip {
+  flex: 0 0 auto !important;
+}
+
+/* 2) Favorites & Currently Reading — 5-up, full width, centered covers */
+.favorites-strip .favorites-grid,
+.current-strip  .current-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: clamp(8px, 1.6vw, 16px) !important;
+  justify-items: center !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important; /* padding comes from the strip */
+}
+
+.fav-cover,
+.cur-cover {
+  width: 100% !important;
+  max-width: none !important;
+  aspect-ratio: 12 / 17 !important;
+  height: auto !important;
+  background: #1b1b1b;
+  border: none;
+}
+
+/* 3) Stories — 10 items, show 5 per view, tight wrapper, smooth scroll */
+.stories-strip { position: relative; }
+
+.stories-viewport {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-behavior: auto !important;     /* JS handles smoothness */
+  scroll-snap-type: none !important;
+  scrollbar-width: none;
+}
+.stories-viewport::-webkit-scrollbar { display: none; }
+
+.stories-track {
+  display: flex !important;
+  gap: clamp(8px, 1.6vw, 16px) !important;
+  align-items: center !important;        /* vertically centered row of books */
+}
+
+.story-cover {
+  flex: 0 0 calc((100% - (4 * clamp(8px, 1.6vw, 16px))) / 5) !important; /* 5 visible */
+  aspect-ratio: 12 / 17 !important;
+  height: auto !important;
+  background: #1b1b1b;
+  border: none;
+  scroll-snap-align: none !important;
+}
+
+/* Custom pill slider sits inside the strip without adding extra height */
+.stories-progress {
+  position: absolute !important;
+  left: clamp(10px, 1.6vw, 16px);
+  right: clamp(10px, 1.6vw, 16px);
+  bottom: clamp(10px, 1.6vw, 16px);
+  height: 8px;
+  border-radius: 9999px;
+  background: transparent !important; /* no grey line behind */
+  outline: none;
+  touch-action: none;
+  cursor: pointer;
+  margin: 0 !important;
+}
+.stories-thumb {
+  position: absolute;
+  top: 1px; bottom: 1px; left: 0;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 2px #000;
+  pointer-events: none;
+}
+
+/* === Layout reset: 3-row page with bottom-aligned row 3 === */
+.profile-grid {
+  /* Top fits, middle stretches, bottom fits */
+  grid-template-rows: auto 1fr auto !important;
+}
+
+/* Left column cells */
+.identity-cell  { grid-column: 1; grid-row: 1; align-self: start; }
+.stories-cell   { grid-column: 1; grid-row: 2; align-self: stretch; }
+.favorites-cell { grid-column: 1; grid-row: 3; align-self: end; }
+
+/* Center stays spanning all rows */
+.feature-cell   { grid-column: 2; grid-row: 1 / 4; align-self: stretch; }
+
+/* Right column cells */
+.library-cell   { grid-column: 3; grid-row: 1 / 3; align-self: stretch; }
+.current-cell   { grid-column: 3; grid-row: 3; align-self: end; }
+
+/* === Make Library fill the available vertical space on the right === */
+.library-cell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.library-cell .shelf {
+  flex: 1 1 auto;  /* stretches through row 2 */
+  min-height: 0;
+}
+
+/* === Keep Stories compact, centered in row 2, no overlap === */
+.stories-cell.section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Title on top, strip centers itself within the remaining space */
+.stories-cell .section-title { margin-bottom: 8px; }
+.stories-strip {
+  display: grid !important;
+  grid-template-rows: max-content max-content; /* covers row, then pill row */
+  align-content: center;   /* centers the covers+pill block vertically in row 2 */
+  justify-items: stretch;
+  gap: 8px;
+  padding: clamp(8px, 1.2vw, 12px);
+  background: #000;        /* keep the black box */
+  box-sizing: border-box;
+  min-height: 0;           /* no forced extra height */
+}
+
+/* Viewport stays scrollable and tall enough for the covers */
+.stories-viewport {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-behavior: auto !important;      /* JS handles smoothness */
+  scroll-snap-type: none !important;
+  scrollbar-width: none;
+  min-height: 0;
+}
+.stories-viewport::-webkit-scrollbar { display: none; }
+
+.stories-track {
+  display: flex !important;
+  gap: clamp(8px, 1.6vw, 16px) !important;
+  align-items: center !important;
+}
+
+/* Exactly 5 visible across; same size as before */
+.story-cover {
+  flex: 0 0 calc((100% - (4 * clamp(8px, 1.6vw, 16px))) / 5) !important;
+  aspect-ratio: 12 / 17 !important;
+  height: auto !important;
+  background: #1b1b1b;
+  border: none;
+}
+
+/* Stories pill lives in normal flow (prevents overlap with username) */
+.stories-progress {
+  position: static !important;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: transparent !important;  /* no grey line */
+  margin: 2px 0 0 0;                   /* small breathing space under covers */
+  touch-action: none;
+  cursor: pointer;
+}
+.stories-thumb {
+  position: relative;
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 2px #000;
+}
+
+/* === Favorites & Currently Reading: sit at the bottom and use full width === */
+.favorites-cell.section,
+.current-cell.section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.favorites-strip,
+.current-strip {
+  display: block !important;
+  padding: clamp(10px, 1.6vw, 16px) !important;
+  box-sizing: border-box;
+  background: #000;
+}
+
+.favorites-strip .favorites-grid,
+.current-strip  .current-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: clamp(8px, 1.6vw, 16px) !important;
+  justify-items: center !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important; /* padding is on the strip */
+}
+
+.fav-cover,
+.cur-cover {
+  width: 100% !important;
+  max-width: none !important;
+  aspect-ratio: 12 / 17 !important;
+  height: auto !important;
+  background: #1b1b1b;
+  border: none;
+}
+
+/* ===== Large-screen spacing tuning ===== */
+@media (min-width: 1200px) and (min-height: 850px) {
+  /* 1) Let row 1 (identity) grow to eat spare height */
+  .identity-cell { align-self: stretch; }
+  .profile-identity {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;                /* nicely centered within the taller row */
+    padding-block: clamp(8px, 3vh, 36px);   /* add breathable vertical padding */
+  }
+
+  /* Bigger avatar on tall/wide screens */
+  .profile-avatar,
+  .profile-avatar svg {
+    width: clamp(96px, 12vh, 148px);
+    height: clamp(96px, 12vh, 148px);
+  }
+
+  /* More space between name/handle/bars without changing your auto-fit sizing */
+  .profile-id {
+    row-gap: clamp(4px, 1.4vh, 18px);
+  }
+  .profile-id .profile-name { line-height: 1.2; }
+  .profile-id .profile-handle { line-height: 1.25; }
+
+  /* 2) Pull Stories down toward Favorites (reduces big gap below) */
+  .stories-cell { align-self: stretch; }
+  .stories-strip {
+    align-content: end !important;         /* sit at the bottom of its grid row */
+    min-height: 0;                         /* don’t force extra height */
+  }
+
+  /* Keep covers their normal size while the row compresses/expands */
+  .stories-viewport { min-height: 0; }
+  .stories-track {
+    align-items: center !important;
+  }
+  .story-cover {
+    flex: 0 0 calc((100% - (4 * clamp(8px, 1.6vw, 16px))) / 5) !important;
+    aspect-ratio: 12 / 17 !important;
+    height: auto !important;
+  }
+
+  /* 3) Favorites & Currently Reading stay bottom-aligned (already), just ensure no extra padding inflation */
+  .favorites-strip,
+  .current-strip {
+    padding-block: clamp(8px, 1.4vh, 16px) !important;
+  }
+}
+
+/* Slightly earlier breakpoint: nudge Stories down even if only moderately large */
+@media (min-width: 1024px) and (min-height: 760px) {
+  .stories-strip { align-content: end !important; }
+}
