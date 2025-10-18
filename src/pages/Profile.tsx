@@ -4,6 +4,7 @@ import SideMenu from "@/components/SideMenu";
 import LikeButton from "@/components/LikeButton";
 import StarButton from "@/components/StarButton";
 import SaveButton from "@/components/SaveButton";
+import { Link } from "react-router-dom";
 
 /* --- Tiny hook to auto-fit text to its line without reflowing layout --- */
 function useFitText(minPx = 12, maxPx = 48) {
@@ -70,42 +71,60 @@ export default function ProfilePage() {
   const nameFit = useFitText(14, 42);
   const handleFit = useFitText(12, 28);
 
-
+  /* =========================
+     STORIES: dynamic slider
+  ========================== */
   const storiesRef = useRef<HTMLDivElement | null>(null);
-  const [storiesPos, setStoriesPos] = useState(0); // 0..100
-
-
-  // ratio of visible area to total scrollable (0..1). If >=1, no slider.
-  const [storiesRatio, setStoriesRatio] = useState(1);
-
-
   const progressRef = useRef<HTMLDivElement | null>(null);
-  const isDraggingRef = useRef(false);
+  const draggingRef = useRef(false);
+
   const [canScrollStories, setCanScrollStories] = useState(false); // show/hide pill
   const [storiesProgress, setStoriesProgress] = useState(0);       // 0..1
-  const [thumbPct, setThumbPct] = useState(0.5);                   // visible/total (0..1)
+  const [thumbPct, setThumbPct] = useState(1);                     // 0..1
+  const [storiesCount, setStoriesCount] = useState(0);             // number of covers
 
-  // compute scrollability, thumb size, and progress
+  // Recompute scrollability, thumb size, and progress
   const recomputeStories = () => {
     const vp = storiesRef.current;
     if (!vp) return;
+
+    const count = vp.querySelectorAll(".stories-track .story-cover").length;
+    setStoriesCount(count);
+
     const total = vp.scrollWidth;
     const visible = vp.clientWidth;
     const max = Math.max(0, total - visible);
-    setCanScrollStories(max > 1);               // show only if content wider than viewport
-    setThumbPct(Math.max(0.08, Math.min(1, visible / total))); // min 8% for usability
+
+    // pill appears only if there are >5 covers AND overflow exists
+    const show = count > 5 && max > 0.5;
+    setCanScrollStories(show);
+
+    // thumb size exactly equals visible/total (proportional)
+    setThumbPct(total > 0 ? visible / total : 1);
+
+    // position 0..1
     setStoriesProgress(max ? vp.scrollLeft / max : 0);
   };
 
-  // mount + resize listeners
+  // mount + resize + element size change
   useLayoutEffect(() => {
     recomputeStories();
     const onResize = () => recomputeStories();
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+
+    const vp = storiesRef.current;
+    let ro: ResizeObserver | undefined;
+    if (vp) {
+      ro = new ResizeObserver(recomputeStories);
+      ro.observe(vp);
+    }
+    return () => {
+      window.removeEventListener("resize", onResize);
+      ro?.disconnect();
+    };
   }, []);
 
-  // keep pill synced when user scrolls naturally
+  // keep pill in sync with natural horizontal scrolling
   useLayoutEffect(() => {
     const vp = storiesRef.current;
     if (!vp) return;
@@ -114,113 +133,46 @@ export default function ProfilePage() {
     return () => vp.removeEventListener("scroll", onScroll);
   }, []);
 
-
-  // Update ratio on mount + resize + whenever the viewport size changes
-  useLayoutEffect(() => {
-    const vp = storiesRef.current;
-    if (!vp) return;
-
-    const compute = () => {
-      const ratio = vp.scrollWidth > 0 ? vp.clientWidth / vp.scrollWidth : 1;
-      setStoriesRatio(Math.min(1, Math.max(0, ratio)));
-    };
-
-    compute();
-
-    // Track element size changes precisely
-    const ro = new ResizeObserver(compute);
-    ro.observe(vp);
-    return () => ro.disconnect();
-  }, []);
-
   // Drag handling for the pill
-  const draggingRef = useRef(false);
   const onDragAt = (clientX: number) => {
     const vp = storiesRef.current;
-    const track = document.querySelector(".stories-pill") as HTMLDivElement | null;
-    if (!vp || !track) return;
+    const bar = progressRef.current;
+    if (!vp || !bar) return;
 
-    const rect = track.getBoundingClientRect();
-    const ratio = storiesRatio;                            // viewport / total
-    const relative = (clientX - rect.left) / rect.width;  // 0..1 across track
-    // Left edge of the thumb moves from 0..(1 - ratio)
-    const newEdge = Math.min(1 - ratio, Math.max(0, relative - ratio / 2));
-    const pos = (newEdge / Math.max(1e-6, 1 - ratio)) * 100; // 0..100 scroll %
-    setStoriesPos(pos);
+    const rect = bar.getBoundingClientRect();
+    const t = thumbPct; // 0..1
+    const x = clientX - rect.left;
+
+    // usable track width once the thumb width is considered
+    const usable = rect.width * (1 - t);
+    const clamped = Math.max(0, Math.min(usable, x - (t * rect.width) / 2));
+    const ratio = usable > 0 ? clamped / usable : 0;
 
     const max = vp.scrollWidth - vp.clientWidth;
-    vp.scrollTo({ left: (pos / 100) * max, behavior: "smooth" });
+    vp.scrollTo({ left: ratio * max });
   };
-  const onMouseDownPill = (e: React.MouseEvent<HTMLDivElement>) => {
+
+  const onPointerDownPill = (e: React.PointerEvent<HTMLDivElement>) => {
     draggingRef.current = true;
+    progressRef.current?.setPointerCapture(e.pointerId);
     onDragAt(e.clientX);
-    const onMove = (ev: MouseEvent) => draggingRef.current && onDragAt(ev.clientX);
-    const onUp = () => {
-      draggingRef.current = false;
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp, { once: true });
   };
-  const onTouchStartPill = (e: React.TouchEvent<HTMLDivElement>) => {
-    draggingRef.current = true;
-    onDragAt(e.touches[0].clientX);
-    const onMove = (ev: TouchEvent) =>
-      draggingRef.current && onDragAt(ev.touches[0].clientX);
-    const onEnd = () => {
-      draggingRef.current = false;
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onEnd);
-      window.removeEventListener("touchcancel", onEnd);
-    };
-    window.addEventListener("touchmove", onMove, { passive: true });
-    window.addEventListener("touchend", onEnd, { once: true });
-    window.addEventListener("touchcancel", onEnd, { once: true });
+  const onPointerMovePill = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingRef.current) return;
+    onDragAt(e.clientX);
   };
-
-
-  // Keep slider synced when user scrolls with mouse/trackpad
-  useLayoutEffect(() => {
-    const vp = storiesRef.current;
-    if (!vp) return;
-    const onScroll = () => {
-      const max = vp.scrollWidth - vp.clientWidth;
-      const ratio = max > 0 ? vp.scrollLeft / max : 0;
-      setStoriesPos(Math.round(ratio * 100));
-    };
-    vp.addEventListener("scroll", onScroll, { passive: true });
-    return () => vp.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Keep position aligned on resize
-  useLayoutEffect(() => {
-    const onResize = () => {
-      const vp = storiesRef.current;
-      if (!vp) return;
-      const max = vp.scrollWidth - vp.clientWidth;
-      const left = (storiesPos / 100) * max;
-      vp.scrollTo({ left });
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [storiesPos]);
-
-  // On mount, align to current storiesPos
-  useLayoutEffect(() => {
-    const vp = storiesRef.current;
-    if (!vp) return;
-    const max = vp.scrollWidth - vp.clientWidth;
-    vp.scrollLeft = (storiesPos / 100) * max;
-  }, []);
-
+  const onPointerUpPill = () => {
+    draggingRef.current = false;
+  };
 
   return (
     <div className="profile-app">
       {/* Top bar (same as Home) */}
       <header className="header">
         <h1 className="logo">
-          Pick<span>M</span>e!
+          <Link to="/" className="logo-link" aria-label="Go to home">
+            Pick<span>M</span>e!
+          </Link>
         </h1>
         <div className="header-icons">
           <button type="button" className="icon" aria-label="write">✏️</button>
@@ -253,6 +205,7 @@ export default function ProfilePage() {
                     <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
+
                 <div className="profile-id" style={{ display: "grid", alignContent: "start" }}>
                   {/* These auto-fit to the available width/line via useFitText */}
                   <h2
@@ -269,6 +222,7 @@ export default function ProfilePage() {
                   >
                     ggggggjjjjjjjjllloomwww
                   </h2>
+
                   <div
                     className="profile-handle"
                     ref={handleFit.ref as React.RefObject<HTMLDivElement>}
@@ -285,7 +239,7 @@ export default function ProfilePage() {
                     @username
                   </div>
 
-                  {/* Color bars: right-aligned and exactly 75% of row width */}
+                  {/* Color bars: left-aligned and exactly 75% of row width */}
                   <div
                     className="profile-bars"
                     style={{
@@ -316,21 +270,13 @@ export default function ProfilePage() {
               {/* Viewport that horizontally scrolls */}
               <div className="stories-viewport" ref={storiesRef} aria-label="Stories">
                 <div className="stories-track">
-                  {/* 10 placeholders */}
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
-                  <div className="story-cover" aria-label="Story placeholder" />
+                  {[...Array(30)].map((_, i) => (
+                    <div key={i} className="story-cover" aria-label="Story placeholder" />
+                  ))}
                 </div>
               </div>
 
-              {/* Bottom slider control (pages of 5) */}
+              {/* Custom pill slider — only if needed */}
               {canScrollStories && (
                 <div
                   className="stories-progress"
@@ -341,36 +287,17 @@ export default function ProfilePage() {
                   aria-valuemax={100}
                   aria-valuenow={Math.round(storiesProgress * 100)}
                   tabIndex={0}
-                  onPointerDown={(e) => {
-                    progressRef.current?.setPointerCapture(e.pointerId);
-                    isDraggingRef.current = true;
-                    const bar = progressRef.current!;
-                    const vp = storiesRef.current!;
-                    const rect = bar.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const ratio = Math.max(0, Math.min(1, (x - (thumbPct * rect.width) / 2) / (rect.width - thumbPct * rect.width)));
-                    const max = vp.scrollWidth - vp.clientWidth;
-                    vp.scrollTo({ left: ratio * max});
-                  }}
-                  onPointerMove={(e) => {
-                    if (!isDraggingRef.current) return;
-                    const bar = progressRef.current!;
-                    const vp = storiesRef.current!;
-                    const rect = bar.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const ratio = Math.max(0, Math.min(1, (x - (thumbPct * rect.width) / 2) / (rect.width - thumbPct * rect.width)));
-                    const max = vp.scrollWidth - vp.clientWidth;
-                    vp.scrollTo({ left: ratio * max });
-                  }}
-                  onPointerUp={() => { isDraggingRef.current = false; }}
-                  onPointerCancel={() => { isDraggingRef.current = false; }}
+                  onPointerDown={onPointerDownPill}
+                  onPointerMove={onPointerMovePill}
+                  onPointerUp={onPointerUpPill}
+                  onPointerCancel={onPointerUpPill}
                   onKeyDown={(e) => {
                     const vp = storiesRef.current;
                     if (!vp) return;
                     const max = vp.scrollWidth - vp.clientWidth;
                     const step = vp.clientWidth * 0.1; // 10% step with arrows
-                    if (e.key === "ArrowRight") vp.scrollTo({ left: Math.min(vp.scrollLeft + step, max)});
-                    if (e.key === "ArrowLeft")  vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0)});
+                    if (e.key === "ArrowRight") vp.scrollTo({ left: Math.min(vp.scrollLeft + step, max) });
+                    if (e.key === "ArrowLeft")  vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0) });
                   }}
                 >
                   <div

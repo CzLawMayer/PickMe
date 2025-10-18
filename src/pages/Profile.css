@@ -13,7 +13,11 @@
   padding: clamp(12px, 2vw, 24px);   /* page margin */
   box-sizing: border-box;
 }
-.header { background-color: #000; }
+
+.header { background: transparent; }
+
+/* only the profile page gets a black header */
+.profile-app > .header { background-color: #000; }
 
 /* ===== Global grid (3 columns × 3 rows) ===== */
 .profile-grid {
@@ -944,3 +948,48 @@
 @media (min-width: 1024px) and (min-height: 760px) {
   .stories-strip { align-content: end !important; }
 }
+
+/* === Remove unwanted flickering focus lines (caret / outlines) === */
+
+/* 1. Remove focus outlines from everything except inputs/textareas */
+*:focus {
+  outline: none !important;
+  caret-color: transparent !important;
+}
+
+/* 2. Specifically remove the blue focus ring Chrome shows on buttons, sliders, etc. */
+button:focus,
+input[type="range"]:focus,
+[tabindex]:focus,
+a:focus,
+.story-cover:focus,
+.fav-cover:focus,
+.cur-cover:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 3. Disable text-selection caret on non-editable elements */
+.story-cover,
+.fav-cover,
+.cur-cover,
+.feature-card,
+.section,
+.header,
+.profile-grid {
+  user-select: none;
+}
+
+/* 4. Prevent accidental caret flashes in scrollable containers */
+.stories-viewport,
+.favorites-strip,
+.current-strip {
+  caret-color: transparent !important;
+}
+
+/* Optional (optional for accessibility): reintroduce visible outline only for keyboard nav */
+:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
+}
+
