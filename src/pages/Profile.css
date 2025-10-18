@@ -1,4 +1,4 @@
-/* ===== App frame: full height, static ===== */
+/* ===== App frame ===== */
 .profile-app {
   height: 100svh;
   overflow: hidden;
@@ -9,75 +9,62 @@
 .profile-page {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;                  /* no page scroll */
-  padding: clamp(12px, 2vw, 24px);   /* page margin */
+  overflow: hidden;
+  padding: clamp(12px, 2vw, 24px);
   box-sizing: border-box;
 }
 
+/* Only the profile page gets a black header */
 .header { background: transparent; }
-
-/* only the profile page gets a black header */
 .profile-app > .header { background-color: #000; }
 
 /* ===== Global grid (3 columns × 3 rows) ===== */
 .profile-grid {
   height: 100%;
   display: grid;
-  /* Middle track can be up to 36vw/360px, but shrinks to content (book+25% sides) */
   grid-template-columns: minmax(0, 1fr) fit-content(clamp(260px, 36vw, 360px)) minmax(0, 1fr);
-  grid-template-rows: auto 1fr 1fr;  /* Row1=top, Row2=middle, Row3=bottom */
+  grid-template-rows: auto 1fr auto !important; /* final layout */
   gap: clamp(16px, 2vw, 28px);
 }
 
 /* Place cells */
-.identity-cell { grid-column: 1; grid-row: 1; }
-.stories-cell  { grid-column: 1; grid-row: 2; }
-.favorites-cell{ grid-column: 1; grid-row: 3; }
-.feature-cell  { grid-column: 2; grid-row: 1 / 4; } /* span all rows */
-.library-cell  { grid-column: 3; grid-row: 1 / 3; } /* spans rows 1–2 */
-.current-cell  { grid-column: 3; grid-row: 3; }
+.identity-cell  { grid-column: 1; grid-row: 1; align-self: start; }
+.stories-cell   { grid-column: 1; grid-row: 2; align-self: stretch; }
+.favorites-cell { grid-column: 1; grid-row: 3; align-self: end; }
+
+.feature-cell   { grid-column: 2; grid-row: 1 / 4; align-self: stretch; }
+
+.library-cell   { grid-column: 3; grid-row: 1 / 3; align-self: stretch; }
+.current-cell   { grid-column: 3; grid-row: 3; align-self: end; }
 
 /* Generic cell wrapper */
 .cell { min-width: 0; min-height: 0; overflow: hidden; }
 
 /* ===== Titles ===== */
-.section { container-type: inline-size; } /* for responsive titles */
-.section-title {
-  margin: 0 0 10px;
-  font-size: clamp(0.9rem, 5cqw, 1.6rem);  /* matches @username curve */
-  line-height: 1.1;
-  font-weight: 600;
-}
+.section { container-type: inline-size; display: flex; flex-direction: column; min-height: 0; }
+.section-title { margin: 0 0 10px; font-size: clamp(0.9rem, 5cqw, 1.6rem); line-height: 1.1; font-weight: 600; }
 
-/* ===== Left: identity block ===== */
-.profile-card {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  min-width: 0; /* allow shrinking inside grid cell */
-}
-.profile-avatar {
-  width: 96px; height: 96px;
-  display: inline-flex; align-items: center; justify-content: center;
-}
+/* ===== Identity block ===== */
+.profile-card { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.profile-avatar { width: 96px; height: 96px; display: inline-flex; align-items: center; justify-content: center; }
 .profile-avatar svg { width: 96px; height: 96px; }
 
-/* Make identity a grid so we can left-pin children and use cqw units */
 .profile-id {
   display: grid;
   grid-auto-rows: max-content;
   flex: 1 1 auto;
   min-width: 0;
   container-type: inline-size;
-  justify-items: start;       /* left-align children */
+  justify-items: start;
   text-align: left;
-  color: #fff;                /* visible on dark backgrounds */
+  color: #fff;
 }
 .profile-id .profile-name {
   margin: 0 0 2px;
   font-weight: 800;
-  line-height: 1.05;
   font-size: clamp(1rem, 8cqw, 2.4rem);
+  line-height: 1.24;
+  padding-bottom: 0.18em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .profile-id .profile-handle {
@@ -88,16 +75,17 @@
   font-size: clamp(0.9rem, 5cqw, 1.6rem);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.profile-id .profile-handle { margin-top: -0.22em; } /* visual compensation */
 
-/* Single row of 4 tight color bars (no gaps), left-aligned, 75% width */
+/* Left-aligned 75% color bars */
 .profile-bars {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   height: 8px;
   gap: 0;
   width: 75%;
-  margin: 0;                   /* no auto-centering */
-  justify-self: start;         /* pin to left */
+  margin: 0;
+  justify-self: start;
   align-self: start;
 }
 .profile-bars .bar { width: 100%; height: 100%; }
@@ -106,280 +94,209 @@
 .bar-3 { background: #6c2ea8; }
 .bar-4 { background: #1e90ff; }
 
-/* ===== Section wrapper (title + content that stretches) ===== */
-.section { display: flex; flex-direction: column; min-height: 0; }
-.section .strip { flex: 1 1 auto; min-height: 0; }
-
-/* Black strips fill their grid row */
+/* ===== Black strips ===== */
 .strip { background: #000; border: none; }
+.section .strip { flex: 0 0 auto !important; } /* strips size to content */
 
 /* ===== Center feature card ===== */
 .feature-card {
-  background: #000;
-  border: none;
-  width: auto;                 /* let the middle track shrink to content */
-  justify-self: center;        /* keep centered in the middle column */
-  height: 100%;
-  display: flex;
-  align-items: center;         /* cross-axis center */
-  justify-content: center;     /* main-axis center */
-  padding: clamp(12px, 1.6vw, 16px);
-  box-sizing: border-box;
-  text-align: center;
-  overflow: visible;           /* allow star popover */
-}
-.feature-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(10px, 2vh, 14px);
-  min-width: 0;
-  max-height: 100%;
-}
-
-/* Book + metadata share width token; add 25% book width on each side */
-:root { --fit-w: min(clamp(130px, 24vh, 260px), 42vw); }
-.feature-card .feature-stack {
-  width: var(--fit-w);
-  max-width: 100%;
-  padding-left: calc(var(--fit-w) * 0.25);
-  padding-right: calc(var(--fit-w) * 0.25);
-  box-sizing: content-box;     /* padding becomes visual side space */
-  margin: 0 auto;
-}
-.feature-cover-placeholder {
-  width: var(--fit-w);
-  aspect-ratio: 12 / 17;
-  background: #1b1b1b;
-  border: none;
-}
-
-/* Metadata */
-.feature-info {
-  width: 100%;
-  max-width: var(--fit-w);
-  margin: 0 auto;
-  text-align: center;
-  overflow: hidden;
-  container-type: inline-size; /* enables cqw scaling below */
-}
-.feature-title {
-  margin: 0 0 10px;
-  font-weight: 900;
-  line-height: 1.1;
-  font-size: clamp(1.25rem, 6.2cqw, 2.2rem); /* bigger than @username */
-}
-
-/* subtle separators */
-.meta-hr {
-  border: 0; height: 1px;
-  background: rgba(255,255,255,0.12);
-  margin: clamp(6px, 1vh, 8px) 0;
-}
-
-/* Author row */
-.feature-author {
+  background: #000; border: none; width: auto; justify-self: center; height: 100%;
   display: flex; align-items: center; justify-content: center;
-  gap: 8px; min-height: 28px;
+  padding: clamp(12px, 1.6vw, 16px); box-sizing: border-box; text-align: center; overflow: visible;
 }
+.feature-stack { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vh, 14px); min-width: 0; max-height: 100%; }
+
+:root { --fit-w: min(clamp(130px, 24vh, 260px), 42vw); }
+.feature-card .feature-stack { width: var(--fit-w); max-width: 100%; padding-left: calc(var(--fit-w) * 0.25); padding-right: calc(var(--fit-w) * 0.25); box-sizing: content-box; margin: 0 auto; }
+.feature-cover-placeholder { width: var(--fit-w); aspect-ratio: 12 / 17; background: #1b1b1b; border: none; }
+
+.feature-info { width: 100%; max-width: var(--fit-w); margin: 0 auto; text-align: center; overflow: hidden; container-type: inline-size; }
+.feature-title { margin: 0 0 10px; font-weight: 900; line-height: 1.1; font-size: clamp(1.25rem, 6.2cqw, 2.2rem); }
+
+.meta-hr { border: 0; height: 1px; background: rgba(255,255,255,0.12); margin: clamp(6px, 1vh, 8px) 0; }
+
+.feature-author { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 28px; }
 .meta-avatar--sm { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; }
 .meta-avatar--sm svg { width: 26px; height: 26px; }
 .feature-author-name { font-weight: 600; font-size: clamp(0.95rem, 4.2cqw, 1.25rem); }
 
-/* Chapters (same size as author, single line) */
-.feature-info .meta-chapters {
-  font-size: clamp(0.95rem, 4.2cqw, 1.25rem);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
-}
+.feature-info .meta-chapters { font-size: clamp(0.95rem, 4.2cqw, 1.25rem); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+.align-left { text-align: left; margin: 0 auto; max-width: var(--fit-w); font-size: clamp(0.78rem, 1.35vh, 0.95rem); line-height: 1.25; }
 
-/* ===== Actions row — 3 equal columns, icon over count, centered ===== */
-.meta-actions {
-  width: 100%;
-  max-width: var(--fit-w);
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  align-items: center;
-  justify-content: normal;
-  padding-block: 6px;  /* breathing room */
-  margin: 0;
-  container-type: inline-size; /* cqw for icon/count scaling */
-  overflow: visible;           /* popover */
-}
-.meta-actions .meta-icon-btn {
-  display: flex;
-  flex-direction: column;      /* icon on top, number below */
-  align-items: center;         /* center horizontally */
-  justify-content: center;     /* center vertically within the cell */
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-/* big glyphs */
-.meta-actions .meta-icon-glyph {
-  font-size: clamp(52px, 12cqw, 96px);
-  line-height: 1;
-}
-/* SVG fallback if your glyph is an SVG element */
-.meta-actions .meta-icon-btn svg {
-  height: clamp(48px, 11cqw, 92px);
-  width: auto;
-}
-/* keep counts neat */
-.meta-actions .meta-icon-count {
-  white-space: nowrap;
-  text-align: center;
-  line-height: 1.1;
-  font-size: clamp(0.78rem, 3.2cqw, 1rem);
-  font-variant-numeric: tabular-nums;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Star popover positioning (relative to the star button) */
-.meta-actions .meta-icon-btn.star { position: relative; }
-.meta-actions .meta-icon-btn.star .star-popover {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  background: #111;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 8px 10px;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
-  min-width: 180px;
-}
-.meta-actions .meta-icon-btn.star .star-popover * { pointer-events: auto; }
-
-/* Left-aligned sub-blocks inside centered column */
-.align-left {
-  text-align: left;
-  margin: 0 auto;
-  max-width: var(--fit-w);
-  font-size: clamp(0.78rem, 1.35vh, 0.95rem);
-  line-height: 1.25;
-}
 .feature-info,
 .feature-title,
 .feature-author-name,
 .align-left,
-.align-left * {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  hyphens: auto;
-}
+.align-left * { overflow-wrap: anywhere; word-break: break-word; hyphens: auto; }
 
-/* ===== Genres as outline chips (no separators, left-aligned, wrapping) ===== */
-.feature-info .meta-tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;   /* each new row starts at the left */
-  align-items: center;
-  gap: 8px 10px;                 /* row / column gap */
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  text-align: left;
+/* Actions */
+.meta-actions {
+  width: 100%; max-width: var(--fit-w);
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+  align-items: center; justify-content: normal;
+  padding-block: 6px; margin: 0; container-type: inline-size; overflow: visible;
 }
+.meta-actions .meta-icon-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; min-width: 0; padding: 0; margin: 0; border: 0; background: transparent; box-shadow: none;
+}
+.meta-actions .meta-icon-glyph { font-size: clamp(52px, 12cqw, 96px); line-height: 1; }
+.meta-actions .meta-icon-btn svg { height: clamp(48px, 11cqw, 92px); width: auto; }
+.meta-actions .meta-icon-count { white-space: nowrap; text-align: center; line-height: 1.1; font-size: clamp(0.78rem, 3.2cqw, 1rem); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.meta-actions .meta-icon-btn.star { position: relative; }
+.meta-actions .meta-icon-btn.star .star-popover {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  z-index: 5; background: #111; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
+  padding: 8px 10px; box-shadow: 0 8px 22px rgba(0,0,0,0.35); min-width: 180px;
+}
+.meta-actions .meta-icon-btn.star .star-popover * { pointer-events: auto; }
+
+/* ===== Genres ===== */
+.feature-info .meta-tags { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 10px; padding: 0; margin: 0; list-style: none; text-align: center; }
 .feature-info .meta-tags li {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;             /* symmetric, keeps text centered in pill */
-  border-radius: 999px;          /* full pill */
-  line-height: 1;
-  white-space: nowrap;
-  font-weight: 600;
-  font-size: clamp(0.85rem, 3.2cqw, 1.05rem);
+  display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; line-height: 1;
+  white-space: nowrap; font-weight: 600; font-size: clamp(0.85rem, 3.2cqw, 1.05rem);
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
 .feature-info .meta-tags li:active { transform: translateY(1px); }
-/* Outline style */
-.feature-info .meta-tags.meta-tags--outline li {
-  color: #fff;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.22);
-  box-shadow: inset 0 0 0 0 rgba(255,255,255,0);
-}
-.feature-info .meta-tags.meta-tags--outline li:hover {
-  border-color: rgba(255,255,255,0.36);
-  background: rgba(255,255,255,0.10);
-}
-/* Ensure no old separator remnants */
+.feature-info .meta-tags.meta-tags--outline li { color: #fff; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.22); box-shadow: inset 0 0 0 0 rgba(255,255,255,0); }
+.feature-info .meta-tags.meta-tags--outline li:hover { border-color: rgba(255,255,255,0.36); background: rgba(255,255,255,0.10); }
 .feature-info .meta-tags li::before,
 .feature-info .meta-tags li::after { content: none !important; }
 
-/* ===== Right: library ===== */
+/* ===== Library (fills remainder on the right) ===== */
 .right-title { display: flex; align-items: baseline; gap: 6px; }
 .library-cell { display: flex; flex-direction: column; min-height: 0; }
 .shelf {
-  background: #4b2419;
-  padding: 20px;
-  border: 1px solid rgba(0,0,0,0.2);
-  border-radius: 0;
-  flex: 1 1 auto;             /* fill the rest of the (row1–2) area */
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  background: #4b2419; padding: 20px; border: 1px solid rgba(0,0,0,0.2); border-radius: 0;
+  flex: 1 1 auto; display: flex; flex-direction: column; gap: 20px; min-height: 0;
+}
+.shelf-row { background: #111; flex: 1; border-radius: 0; }
+
+/* ===== Favorites & Currently Reading (bottom-aligned) ===== */
+.favorites-cell.section,
+.current-cell.section { display: flex; flex-direction: column; min-height: 0; }
+
+.favorites-strip,
+.current-strip {
+  display: block !important;
+  padding: clamp(10px, 1.6vw, 16px) !important;
+  box-sizing: border-box;
+  background: #000;
+}
+.favorites-strip .favorites-grid,
+.current-strip  .current-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: clamp(8px, 1.6vw, 16px) !important;
+  justify-items: center !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.fav-cover,
+.cur-cover {
+  width: 100% !important; max-width: none !important; aspect-ratio: 12 / 17 !important; height: auto !important;
+  background: #1b1b1b; border: none;
+}
+
+/* ===== Stories (smooth scroll + custom pill; pill only when scrollable) ===== */
+.stories-cell.section { display: flex; flex-direction: column; min-height: 0; }
+.stories-cell .section-title { margin-bottom: 8px; }
+.stories-strip {
+  display: grid !important;
+  grid-template-rows: max-content max-content;
+  align-content: center;
+  justify-items: stretch;
+  gap: 8px;
+  padding: clamp(8px, 1.2vw, 12px);
+  background: #000;
+  box-sizing: border-box;
   min-height: 0;
 }
-.shelf-row {
-  background: #111;
-  flex: 1;
-  border-radius: 0;
+.stories-viewport {
+  overflow-x: auto !important; overflow-y: hidden !important;
+  scroll-behavior: auto !important; scroll-snap-type: none !important;
+  scrollbar-width: none; min-height: 0;
+}
+.stories-viewport::-webkit-scrollbar { display: none; }
+.stories-track { display: flex !important; gap: clamp(8px, 1.6vw, 16px) !important; align-items: center !important; }
+.story-cover {
+  flex: 0 0 calc((100% - (4 * clamp(8px, 1.6vw, 16px))) / 5) !important;
+  aspect-ratio: 12 / 17 !important; height: auto !important; background: #1b1b1b; border: none;
+}
+.stories-progress {
+  position: static !important; width: 100%; height: 8px; border-radius: 9999px;
+  background: transparent !important; margin: 2px 0 0 0; touch-action: none; cursor: pointer;
+}
+.stories-thumb {
+  position: relative; display: block; height: 100%; border-radius: 9999px;
+  background: #fff; box-shadow: 0 0 0 2px #000;
 }
 
-/* ===== Size tokens (library height) ===== */
-.profile-app { --shelf-h: clamp(360px, 52vh, 600px); }
-
-/* Width tweaks: keep center rail reasonable on small screens */
+/* ===== Responsive tweaks ===== */
 @media (max-width: 900px) {
   .profile-grid {
     grid-template-columns: minmax(0, 1fr) fit-content(clamp(220px, 42vw, 320px)) minmax(0, 1fr);
     gap: 12px;
   }
 }
-
-/* Small viewports: keep counts readable */
 @media (max-width: 560px), (max-height: 680px) {
   .meta-actions .meta-icon-glyph { font-size: clamp(26px, 8cqw, 38px); }
   .meta-actions .meta-icon-count { font-size: clamp(0.7rem, 3cqw, 0.9rem); }
 }
 
-/* 1) FORCE the colored bar to align LEFT under the username (75% width) */
-.identity-cell .profile-id {
-  display: grid;                /* ensure grid so self-alignment works */
-  justify-items: start;         /* children default left */
+/* Large-screen spacing tuning */
+@media (min-width: 1200px) and (min-height: 850px) {
+  .identity-cell { align-self: stretch; }
+  .profile-identity { display: flex; flex-direction: column; justify-content: center; padding-block: clamp(8px, 3vh, 36px); }
+  .profile-avatar, .profile-avatar svg { width: clamp(96px, 12vh, 148px); height: clamp(96px, 12vh, 148px); }
+  .profile-id { row-gap: clamp(4px, 1.4vh, 18px); }
+  .profile-id .profile-name { line-height: 1.2; }
+  .profile-id .profile-handle { line-height: 1.25; }
+  .stories-cell { align-self: stretch; }
+  .stories-strip { align-content: end !important; }
+  .favorites-strip, .current-strip { padding-block: clamp(8px, 1.4vh, 16px) !important; }
 }
-.identity-cell .profile-id .profile-bars {
-  width: 75%;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-  justify-self: start !important;
-  align-self: start !important;
+@media (min-width: 1024px) and (min-height: 760px) {
+  .stories-strip { align-content: end !important; }
 }
 
-/* 2) Give genre chips a faint hue while keeping the outline look */
+/* ===== Accessibility / focus tweaks ===== */
+*:focus { outline: none !important; caret-color: transparent !important; }
+button:focus,
+input[type="range"]:focus,
+[tabindex]:focus,
+a:focus,
+.story-cover:focus,
+.fav-cover:focus,
+.cur-cover:focus { outline: none !important; box-shadow: none !important; }
+
+.story-cover,
+.fav-cover,
+.cur-cover,
+.feature-card,
+.section,
+.header,
+.profile-grid { user-select: none; }
+
+.stories-viewport,
+.favorites-strip,
+.current-strip { caret-color: transparent !important; }
+
+:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 2px; }
+
+
+/* ===== Genre tag coloring (rotating soft hues) ===== */
 .feature-info .meta-tags.meta-tags--outline li {
-  /* base outline you liked */
   color: #fff;
   border: 1px solid rgba(255,255,255,0.22);
-  box-shadow: inset 0 0 0 0 rgba(255,255,255,0);
-  /* subtle tint */
   background: hsla(var(--chip-h, 0), 75%, 60%, 0.14);
   border-color: hsla(var(--chip-h, 0), 75%, 60%, 0.35);
+  transition: background 120ms ease, border-color 120ms ease;
 }
-/* pleasant rotating hues (very soft) */
+
+/* pleasant rotating hues (very soft tint) */
 .feature-info .meta-tags.meta-tags--outline li:nth-child(6n+1){ --chip-h: 210; } /* blue */
 .feature-info .meta-tags.meta-tags--outline li:nth-child(6n+2){ --chip-h: 12;  } /* orange */
 .feature-info .meta-tags.meta-tags--outline li:nth-child(6n+3){ --chip-h: 280; } /* purple */
@@ -387,609 +304,14 @@
 .feature-info .meta-tags.meta-tags--outline li:nth-child(6n+5){ --chip-h: 320; } /* magenta */
 .feature-info .meta-tags.meta-tags--outline li:nth-child(6n+6){ --chip-h: 40;  } /* amber */
 
-/* 3) Center the chapter count text */
-.feature-info .align-left .meta-chapters {
-  text-align: center;
-  margin: 0 auto;
-}
-
-/* Keep tag color on hover (no grayscale) */
 .feature-info .meta-tags.meta-tags--outline li:hover {
-  background: hsla(var(--chip-h, 0), 75%, 60%, 0.22) !important; /* slightly stronger tint */
+  background: hsla(var(--chip-h, 0), 75%, 60%, 0.22) !important;
   border-color: hsla(var(--chip-h, 0), 75%, 60%, 0.46) !important;
-  filter: none !important;          /* prevent any grayscale/brightness filters */
+  filter: none !important;
   -webkit-filter: none !important;
 }
 
-/* Center the genre chips (rows wrap, each row centered) */
-.feature-info .meta-tags {
-  justify-content: center;   /* was flex-start */
-  text-align: center;
-}
-
-/* prevent descenders from clipping on the user's name */
-.profile-id .profile-name {
-  line-height: 1.18;          /* was ~1.05; give ink some room */
-  padding-bottom: 2px;        /* tiny baseline buffer for g/j/y/q */
-  overflow: hidden;           /* keep horizontal ellipsis behavior */
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* belt-and-suspenders: ensure the grid row can accommodate the extra ink */
-.profile-id {
-  grid-auto-rows: max-content; /* already set, but keep here to be explicit */
-}
-
-/* --- Fix descender clipping on user's name (g/j/y/q) --- */
-.profile-id .profile-name {
-  line-height: 1.24;          /* more vertical room for descenders */
-  padding-bottom: 0.18em;      /* tiny buffer below baseline */
-  white-space: nowrap;
-  overflow: hidden;            /* keep ellipsis behavior */
-  text-overflow: ellipsis;
-}
-
-/* Pull the handle back up slightly so the overall spacing looks unchanged */
-.profile-id .profile-handle {
-  margin-top: -0.22em;         /* visually compensates for added room above */
-}
-
-/* Ensure strips have visible height */
-.favorites-strip,
-.current-strip {
-  min-height: clamp(120px, 22vh, 220px);
-}
-
-/* 5-up, evenly spaced grids INSIDE each strip */
-.favorites-strip .favorites-grid,
-.current-strip .current-grid {
-  height: 100%;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(70px, 1fr));
-  gap: clamp(8px, 1.6vw, 16px);
-  align-items: center;   /* vertical centering */
-  justify-items: center; /* center each cover in its column */
-  padding: clamp(8px, 1.2vw, 12px);
-  box-sizing: border-box;
-}
-
-/* Mini covers (same aspect as the center cover) */
-.fav-cover,
-.cur-cover {
-  width: 100%;
-  max-width: clamp(70px, 14vw, 130px);
-  aspect-ratio: 12 / 17;
-  background: #1b1b1b;
-  border: none;
-}
-
-/* ===== Stories: 10 items total; show 5 per view with slider ===== */
-.stories-strip {
-  --stories-gap: clamp(8px, 1.6vw, 16px);
-  display: grid;
-  grid-template-rows: 1fr auto;     /* row 1 = covers, row 2 = slider */
-  gap: 8px;
-  min-height: clamp(120px, 22vh, 220px);
-  padding: clamp(8px, 1.2vw, 12px);
-  box-sizing: border-box;
-}
-
-.stories-viewport {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;                /* Firefox hide */
-}
-.stories-viewport::-webkit-scrollbar { display: none; } /* WebKit hide */
-
-/* FLEX track: width grows naturally (10 items * 20% + gaps ≈ 2 pages) */
-.stories-track {
-  display: flex;
-  gap: var(--stories-gap);
-  align-items: center;
-}
-
-/* Each cover occupies exactly 1/5 of viewport width (minus gap compensation) */
-.story-cover {
-  flex: 0 0 calc((100% - (4 * var(--stories-gap))) / 5);
-  aspect-ratio: 12 / 17;
-  background: #1b1b1b;
-  border: none;
-  scroll-snap-align: center;
-}
-
-/* Slider styling */
-.stories-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  outline: none;
-}
-.stories-slider::-webkit-slider-thumb,
-.stories-slider::-moz-range-thumb {
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: #fff;
-  cursor: pointer;
-  box-shadow: 0 0 0 2px #000;
-}
-
-
-.stories-viewport { scroll-snap-type: x proximity; }
-.story-cover { scroll-snap-align: start; }
-
-/* Stories container (from your working version) */
-.stories-strip {
-  --stories-gap: clamp(8px, 1.6vw, 16px);
-  display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 8px;
-  min-height: clamp(120px, 22vh, 220px);
-  padding: clamp(8px, 1.2vw, 12px);
-  box-sizing: border-box;
-}
-.stories-viewport {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  /* choose one: softer snapping, or none */
-  scroll-snap-type: x proximity;  /* smoother than mandatory */
-  scrollbar-width: none;
-}
-.stories-viewport::-webkit-scrollbar { display: none; }
-.stories-track {
-  display: flex;
-  gap: var(--stories-gap);
-  align-items: center;
-}
-.story-cover {
-  flex: 0 0 calc((100% - (4 * var(--stories-gap))) / 5); /* exactly 5 visible */
-  aspect-ratio: 12 / 17;
-  background: #1b1b1b;
-  border: none;
-  scroll-snap-align: center;
-}
-
-/* === Custom pill slider (like your screenshot) === */
-.stories-pill {
-  position: relative;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  overflow: hidden;
-  cursor: pointer;
-  /* tiny inset to keep it off edges */
-  margin: 2px 2px 0 2px;
-}
-.stories-pill__thumb {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 999px;
-  background: #e5e5e5;              /* light gray “oval” */
-  /* width and left are set inline. We also define a CSS var for left calc */
-  transition: left 160ms ease, width 160ms ease, transform 80ms ease;
-  will-change: left, width;
-}
-.stories-pill:active .stories-pill__thumb {
-  transform: scaleY(0.92);
-}
-
-/* Pill progress container */
-.stories-progress {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  border-radius: 9999px;
-  background: rgba(255,255,255,0.14); /* subtle track like your screenshot */
-  outline: none;
-  touch-action: none;  /* smoother pointer drag on mobile */
-  cursor: pointer;
-}
-
-/* White oval thumb that grows/shrinks with visible area */
-.stories-thumb {
-  position: absolute;
-  top: 1px;
-  bottom: 1px;
-  left: 0;
-  border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 0 0 2px #000;  /* thin dark outline like the image */
-  pointer-events: none;        /* dragging is handled on container */
-}
-
-/* Optional: slightly taller on very small screens */
-@media (max-width: 520px) {
-  .stories-progress { height: 10px; }
-  .stories-thumb { top: 1px; bottom: 1px; }
-}
-
-/* Stories: NO snap at all, and no auto-smoothing from CSS */
-.stories-viewport {
-  scroll-snap-type: none !important;
-  scroll-behavior: auto !important;
-}
-.story-cover {
-  scroll-snap-align: none !important;
-}
-
-/* Clean pill slider — no grey track line */
-.stories-progress {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  border-radius: 9999px;
-  background: transparent;   /* removed grey line */
-  outline: none;
-  touch-action: none;
-  cursor: pointer;
-}
-
-/* Put Favorites & Currently Reading AT THE TOP, use full width */
-.favorites-strip,
-.current-strip {
-  display: grid !important;       /* become the positioning context */
-  grid-auto-rows: max-content;    /* rows size to content */
-  align-content: start !important;/* ⬅️ vertical placement = top */
-  justify-items: stretch;         /* children can fill width */
-}
-
-/* The 5-up grids fill the strip width and sit at the very top */
-.favorites-strip .favorites-grid,
-.current-strip  .current-grid {
-  align-self: start !important;   /* top edge of the strip */
-  justify-self: stretch !important;
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);  /* five even columns */
-  gap: clamp(8px, 1.6vw, 16px);
-  justify-items: center;          /* center each cover in its cell */
-  align-items: start;             /* covers align to top inside cells */
-  margin: 0;
-  padding: clamp(8px, 1.2vw, 12px); /* keep your inner padding */
-  box-sizing: border-box;
-}
-
-/* Covers still fill their cells (no width cap) */
-.fav-cover,
-.cur-cover {
-  width: 100%;
-  max-width: none;
-  aspect-ratio: 12 / 17;
-  height: auto;
-  background: #1b1b1b;
-  border: none;
-}
-
-/* ==== TIGHT, EVEN STRIPS (Stories / Favorites / Currently Reading) ==== */
-
-/* 0) Stop rows 2–3 from stretching; size exactly to content */
-.profile-grid {
-  grid-template-rows: auto max-content max-content !important;
-}
-
-/* 1) Strips = just a tight wrapper with even padding */
-.favorites-strip,
-.current-strip,
-.stories-strip {
-  display: block !important;
-  padding: clamp(10px, 1.6vw, 16px) !important;
-  box-sizing: border-box;
-  min-height: 0 !important;
-}
-
-/* Kill the “fill leftover space” behavior from section strips */
-.section .strip {
-  flex: 0 0 auto !important;
-}
-
-/* 2) Favorites & Currently Reading — 5-up, full width, centered covers */
-.favorites-strip .favorites-grid,
-.current-strip  .current-grid {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: clamp(8px, 1.6vw, 16px) !important;
-  justify-items: center !important;
-  align-items: center !important;
-  margin: 0 !important;
-  padding: 0 !important; /* padding comes from the strip */
-}
-
-.fav-cover,
-.cur-cover {
-  width: 100% !important;
-  max-width: none !important;
-  aspect-ratio: 12 / 17 !important;
-  height: auto !important;
-  background: #1b1b1b;
-  border: none;
-}
-
-/* 3) Stories — 10 items, show 5 per view, tight wrapper, smooth scroll */
-.stories-strip { position: relative; }
-
-.stories-viewport {
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scroll-behavior: auto !important;     /* JS handles smoothness */
-  scroll-snap-type: none !important;
-  scrollbar-width: none;
-}
-.stories-viewport::-webkit-scrollbar { display: none; }
-
-.stories-track {
-  display: flex !important;
-  gap: clamp(8px, 1.6vw, 16px) !important;
-  align-items: center !important;        /* vertically centered row of books */
-}
-
-.story-cover {
-  flex: 0 0 calc((100% - (4 * clamp(8px, 1.6vw, 16px))) / 5) !important; /* 5 visible */
-  aspect-ratio: 12 / 17 !important;
-  height: auto !important;
-  background: #1b1b1b;
-  border: none;
-  scroll-snap-align: none !important;
-}
-
-/* Custom pill slider sits inside the strip without adding extra height */
-.stories-progress {
-  position: absolute !important;
-  left: clamp(10px, 1.6vw, 16px);
-  right: clamp(10px, 1.6vw, 16px);
-  bottom: clamp(10px, 1.6vw, 16px);
-  height: 8px;
-  border-radius: 9999px;
-  background: transparent !important; /* no grey line behind */
-  outline: none;
-  touch-action: none;
-  cursor: pointer;
-  margin: 0 !important;
-}
-.stories-thumb {
-  position: absolute;
-  top: 1px; bottom: 1px; left: 0;
-  border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 0 0 2px #000;
-  pointer-events: none;
-}
-
-/* === Layout reset: 3-row page with bottom-aligned row 3 === */
-.profile-grid {
-  /* Top fits, middle stretches, bottom fits */
-  grid-template-rows: auto 1fr auto !important;
-}
-
-/* Left column cells */
-.identity-cell  { grid-column: 1; grid-row: 1; align-self: start; }
-.stories-cell   { grid-column: 1; grid-row: 2; align-self: stretch; }
-.favorites-cell { grid-column: 1; grid-row: 3; align-self: end; }
-
-/* Center stays spanning all rows */
-.feature-cell   { grid-column: 2; grid-row: 1 / 4; align-self: stretch; }
-
-/* Right column cells */
-.library-cell   { grid-column: 3; grid-row: 1 / 3; align-self: stretch; }
-.current-cell   { grid-column: 3; grid-row: 3; align-self: end; }
-
-/* === Make Library fill the available vertical space on the right === */
-.library-cell {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.library-cell .shelf {
-  flex: 1 1 auto;  /* stretches through row 2 */
-  min-height: 0;
-}
-
-/* === Keep Stories compact, centered in row 2, no overlap === */
-.stories-cell.section {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-/* Title on top, strip centers itself within the remaining space */
-.stories-cell .section-title { margin-bottom: 8px; }
-.stories-strip {
-  display: grid !important;
-  grid-template-rows: max-content max-content; /* covers row, then pill row */
-  align-content: center;   /* centers the covers+pill block vertically in row 2 */
-  justify-items: stretch;
-  gap: 8px;
-  padding: clamp(8px, 1.2vw, 12px);
-  background: #000;        /* keep the black box */
-  box-sizing: border-box;
-  min-height: 0;           /* no forced extra height */
-}
-
-/* Viewport stays scrollable and tall enough for the covers */
-.stories-viewport {
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scroll-behavior: auto !important;      /* JS handles smoothness */
-  scroll-snap-type: none !important;
-  scrollbar-width: none;
-  min-height: 0;
-}
-.stories-viewport::-webkit-scrollbar { display: none; }
-
-.stories-track {
-  display: flex !important;
-  gap: clamp(8px, 1.6vw, 16px) !important;
-  align-items: center !important;
-}
-
-/* Exactly 5 visible across; same size as before */
-.story-cover {
-  flex: 0 0 calc((100% - (4 * clamp(8px, 1.6vw, 16px))) / 5) !important;
-  aspect-ratio: 12 / 17 !important;
-  height: auto !important;
-  background: #1b1b1b;
-  border: none;
-}
-
-/* Stories pill lives in normal flow (prevents overlap with username) */
-.stories-progress {
-  position: static !important;
-  width: 100%;
-  height: 8px;
-  border-radius: 9999px;
-  background: transparent !important;  /* no grey line */
-  margin: 2px 0 0 0;                   /* small breathing space under covers */
-  touch-action: none;
-  cursor: pointer;
-}
-.stories-thumb {
-  position: relative;
-  display: block;
-  height: 100%;
-  border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 0 0 2px #000;
-}
-
-/* === Favorites & Currently Reading: sit at the bottom and use full width === */
-.favorites-cell.section,
-.current-cell.section {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.favorites-strip,
-.current-strip {
-  display: block !important;
-  padding: clamp(10px, 1.6vw, 16px) !important;
-  box-sizing: border-box;
-  background: #000;
-}
-
-.favorites-strip .favorites-grid,
-.current-strip  .current-grid {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: clamp(8px, 1.6vw, 16px) !important;
-  justify-items: center !important;
-  align-items: center !important;
-  margin: 0 !important;
-  padding: 0 !important; /* padding is on the strip */
-}
-
-.fav-cover,
-.cur-cover {
-  width: 100% !important;
-  max-width: none !important;
-  aspect-ratio: 12 / 17 !important;
-  height: auto !important;
-  background: #1b1b1b;
-  border: none;
-}
-
-/* ===== Large-screen spacing tuning ===== */
-@media (min-width: 1200px) and (min-height: 850px) {
-  /* 1) Let row 1 (identity) grow to eat spare height */
-  .identity-cell { align-self: stretch; }
-  .profile-identity {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;                /* nicely centered within the taller row */
-    padding-block: clamp(8px, 3vh, 36px);   /* add breathable vertical padding */
-  }
-
-  /* Bigger avatar on tall/wide screens */
-  .profile-avatar,
-  .profile-avatar svg {
-    width: clamp(96px, 12vh, 148px);
-    height: clamp(96px, 12vh, 148px);
-  }
-
-  /* More space between name/handle/bars without changing your auto-fit sizing */
-  .profile-id {
-    row-gap: clamp(4px, 1.4vh, 18px);
-  }
-  .profile-id .profile-name { line-height: 1.2; }
-  .profile-id .profile-handle { line-height: 1.25; }
-
-  /* 2) Pull Stories down toward Favorites (reduces big gap below) */
-  .stories-cell { align-self: stretch; }
-  .stories-strip {
-    align-content: end !important;         /* sit at the bottom of its grid row */
-    min-height: 0;                         /* don’t force extra height */
-  }
-
-  /* Keep covers their normal size while the row compresses/expands */
-  .stories-viewport { min-height: 0; }
-  .stories-track {
-    align-items: center !important;
-  }
-  .story-cover {
-    flex: 0 0 calc((100% - (4 * clamp(8px, 1.6vw, 16px))) / 5) !important;
-    aspect-ratio: 12 / 17 !important;
-    height: auto !important;
-  }
-
-  /* 3) Favorites & Currently Reading stay bottom-aligned (already), just ensure no extra padding inflation */
-  .favorites-strip,
-  .current-strip {
-    padding-block: clamp(8px, 1.4vh, 16px) !important;
-  }
-}
-
-/* Slightly earlier breakpoint: nudge Stories down even if only moderately large */
-@media (min-width: 1024px) and (min-height: 760px) {
-  .stories-strip { align-content: end !important; }
-}
-
-/* === Remove unwanted flickering focus lines (caret / outlines) === */
-
-/* 1. Remove focus outlines from everything except inputs/textareas */
-*:focus {
-  outline: none !important;
-  caret-color: transparent !important;
-}
-
-/* 2. Specifically remove the blue focus ring Chrome shows on buttons, sliders, etc. */
-button:focus,
-input[type="range"]:focus,
-[tabindex]:focus,
-a:focus,
-.story-cover:focus,
-.fav-cover:focus,
-.cur-cover:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* 3. Disable text-selection caret on non-editable elements */
-.story-cover,
-.fav-cover,
-.cur-cover,
-.feature-card,
-.section,
-.header,
-.profile-grid {
-  user-select: none;
-}
-
-/* 4. Prevent accidental caret flashes in scrollable containers */
-.stories-viewport,
-.favorites-strip,
-.current-strip {
-  caret-color: transparent !important;
-}
-
-/* Optional (optional for accessibility): reintroduce visible outline only for keyboard nav */
-:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.4);
-  outline-offset: 2px;
-}
-
+.profile-bars .bar-1 { background: #fc5f2e; } /* orange */
+.profile-bars .bar-2 { background: #d81b60; } /* pink */
+.profile-bars .bar-3 { background: #6a1b9a; } /* purple */
+.profile-bars .bar-4 { background: #1e88e5; } /* blue */

@@ -220,7 +220,7 @@ export default function ProfilePage() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    ggggggjjjjjjjjllloomwww
+                    Diego Ballesteros
                   </h2>
 
                   <div
@@ -236,7 +236,7 @@ export default function ProfilePage() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    @username
+                    @NamesBrooklyn
                   </div>
 
                   {/* Color bars: left-aligned and exactly 75% of row width */}
