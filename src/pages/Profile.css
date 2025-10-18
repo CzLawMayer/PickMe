@@ -315,3 +315,72 @@ a:focus,
 .profile-bars .bar-2 { background: #d81b60; } /* pink */
 .profile-bars .bar-3 { background: #6a1b9a; } /* purple */
 .profile-bars .bar-4 { background: #1e88e5; } /* blue */
+
+
+
+
+
+
+
+
+/* Fill each shelf row with individual, responsive spines */
+.shelf {
+  background: #4b2419;
+  padding: clamp(14px, 1.6vw, 20px);
+  border: 1px solid rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.6vw, 20px);
+  min-height: 0;
+}
+
+.shelf-row {
+  background: #111;
+  flex: 1 1 0;
+  display: flex;                                 /* equal-width spines */
+  gap: clamp(8px, 1vw, 14px);
+  padding: clamp(10px, 1.2vw, 16px);
+  min-height: 0;
+}
+
+.book-spine {
+  flex: 1 1 0;                                   /* stretch to fill row */
+  height: 100%;
+  border-radius: 2px;
+  background: #1e88e5;                           /* default */
+}
+
+/* Color cycle to mimic a varied bookshelf */
+.shelf-row .book-spine:nth-child(12n+1)  { background: #fc5f2e; } /* orange */
+.shelf-row .book-spine:nth-child(12n+2)  { background: #d81b60; } /* pink */
+.shelf-row .book-spine:nth-child(12n+3)  { background: #6a1b9a; } /* purple */
+.shelf-row .book-spine:nth-child(12n+4)  { background: #1e88e5; } /* blue */
+.shelf-row .book-spine:nth-child(12n+5)  { background: #00bcd4; } /* teal */
+.shelf-row .book-spine:nth-child(12n+6)  { background: #43a047; } /* green */
+.shelf-row .book-spine:nth-child(12n+7)  { background: #ffd54f; } /* yellow */
+.shelf-row .book-spine:nth-child(12n+8)  { background: #ff9800; } /* amber */
+.shelf-row .book-spine:nth-child(12n+9)  { background: #7b1fa2; } /* deep purple */
+.shelf-row .book-spine:nth-child(12n+10) { background: #ec407a; } /* pink 300 */
+.shelf-row .book-spine:nth-child(12n+11) { background: #ef5350; } /* red 400 */
+.shelf-row .book-spine:nth-child(12n+12) { background: #26c6da; } /* cyan 300 */
+
+/* Invert colors for the middle shelf (row 2) */
+/* Row 2: full reversed palette (purple ➜ orange) */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+1)  { background: #6a1b9a !important; } /* purple */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+2)  { background: #d81b60 !important; } /* pink */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+3)  { background: #7b1fa2 !important; } /* deep purple */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+4)  { background: #26c6da !important; } /* cyan */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+5)  { background: #1e88e5 !important; } /* blue */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+6)  { background: #00bcd4 !important; } /* teal */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+7)  { background: #43a047 !important; } /* green */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+8)  { background: #ffd54f !important; } /* yellow */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+9)  { background: #ff9800 !important; } /* amber */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+10) { background: #ef5350 !important; } /* red */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+11) { background: #ec407a !important; } /* pink 300 */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+12) { background: #fc5f2e !important; } /* orange */
+
+
+
+.shelf-row {
+  padding-bottom: 0 !important;
+}

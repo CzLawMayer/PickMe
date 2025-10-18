@@ -397,10 +397,64 @@ export default function ProfilePage() {
           {/* RIGHT — Rows 1–2: Library (title stuck to top, shelf fills rest) */}
           <section className="cell library-cell section">
             <h2 className="section-title right-title">Library</h2>
+
             <div className="shelf" role="grid" aria-label="Bookshelf">
-              <div className="shelf-row" role="row" />
-              <div className="shelf-row" role="row" />
-              <div className="shelf-row" role="row" />
+              {/* Row 1 */}
+              <div className="shelf-row" role="row">
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+              </div>
+
+              {/* Row 2 */}
+              <div className="shelf-row" role="row">
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+              </div>
+
+              {/* Row 3 */}
+              <div className="shelf-row" role="row">
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+                <div className="book-spine" />
+              </div>
             </div>
           </section>
 
