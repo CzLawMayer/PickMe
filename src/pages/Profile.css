@@ -556,3 +556,272 @@ a:focus,
   }
 }
 
+
+/* Heatmap should fill width and size its own height */
+.reading-heatmap svg { width: 100%; height: auto; display: block; }
+
+/* If the package shows legend/labels, hide to avoid overlap (optional) */
+.reading-heatmap .w-heatmap-legend,
+.reading-heatmap .w-heatmap-week,
+.reading-heatmap .w-heatmap-month { display: none !important; }
+
+/* Make the heatmap container a normal block (not the old 5-col grid) */
+.current-strip .current-grid {
+  display: block !important;
+  grid-template-columns: none !important;
+}
+
+/* Let the heatmap fill width and size its own height */
+.reading-heatmap svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Make the heatmap container a normal block (not the old 5-col grid) */
+.current-strip .current-grid {
+  display: block !important;
+  width: 100% !important;
+  grid-template-columns: none !important;
+}
+
+/* Let the heatmap fill the entire width of its container */
+.reading-heatmap { width: 100%; }
+.reading-heatmap svg { width: 100%; height: auto; display: block; }
+
+/* Make BOTH bottom cells use the full grid row height */
+.favorites-cell,
+.current-cell {
+  align-self: stretch !important;
+}
+
+/* Let the black boxes fill those cells */
+.favorites-strip,
+.current-strip {
+  height: 100% !important;
+  display: block !important;
+  box-sizing: border-box;
+}
+
+/* Keep the heatmap container from collapsing while still sizing naturally */
+.current-strip .current-grid {
+  height: 100% !important;
+  display: block !important; /* overrides the old 5-col grid */
+}
+
+/* 1) UNHIDE anything we previously hid */
+.reading-heatmap .w-heatmap-week,
+.reading-heatmap .w-heatmap-month,
+.reading-heatmap .w-heatmap-legend {
+  display: block !important;
+}
+
+/* 2) Make month + weekday labels white and fully opaque */
+.reading-heatmap .w-heatmap-week text,
+.reading-heatmap .w-heatmap-month text {
+  fill: #fff !important;
+  opacity: 1 !important;
+  font-weight: 600;
+}
+
+/* 3) Even, larger spacing for the BUILT-IN legend */
+.reading-heatmap .w-heatmap-legend {
+  display: flex !important;         /* normalize layout to flex */
+  align-items: center;
+  gap: 10px;                        /* <-- increase/decrease to taste */
+  margin-top: 8px;
+}
+.reading-heatmap .w-heatmap-legend > * {
+  margin: 0 !important;             /* reset any lib inline margins */
+}
+.reading-heatmap .w-heatmap-legend .w-heatmap-legend-item {
+  margin-right: 10px !important;    /* fallback for older versions */
+}
+.reading-heatmap .w-heatmap-legend .w-heatmap-legend-title {
+  color: rgba(255,255,255,0.9);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Make month & weekday labels BRIGHT white (override any fades) */
+.reading-heatmap .w-heatmap-week,
+.reading-heatmap .w-heatmap-month {
+  opacity: 1 !important;           /* if the group is faded */
+  filter: none !important;
+}
+
+.reading-heatmap .w-heatmap-week text,
+.reading-heatmap .w-heatmap-month text {
+  fill: #fff !important;           /* SVG text color */
+  fill-opacity: 1 !important;      /* some builds use this */
+  opacity: 1 !important;           /* override inline opacity */
+  color: #fff !important;          /* just in case */
+  font-weight: 700;                /* slightly bolder for legibility */
+  text-shadow: none;               /* ensure no blend tricks */
+  stroke: none !important;
+}
+
+.reading-heatmap { opacity: 1 !important; }
+
+/* Make month & weekday labels bright white (the lib uses currentColor) */
+.reading-heatmap svg.w-heatmap {
+  color: #fff !important;          /* <- this drives the text fill */
+}
+
+/* Optional: a touch crisper/bolder */
+.reading-heatmap svg.w-heatmap text {
+  font-weight: 700;
+  text-rendering: geometricPrecision;
+}
+
+/* Make the built-in legend spacing match your grid rhythm */
+.reading-heatmap .w-heatmap-legend {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;                        /* tweak to taste */
+  margin-top: 8px;
+}
+.reading-heatmap .w-heatmap-legend > * {
+  margin: 0 !important;             /* reset inline margins */
+}
+
+/* Hover tooltip for built-in legend swatches */
+.reading-heatmap .w-heatmap-legend [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 5;
+}
+
+.reading-heatmap .w-heatmap-legend [data-tip]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0,0,0,0.92);
+  opacity: 0;
+  transition: opacity 120ms ease;
+  z-index: 5;
+}
+
+.reading-heatmap .w-heatmap-legend [data-tip]:hover::after,
+.reading-heatmap .w-heatmap-legend [data-tip]:hover::before {
+  opacity: 1;
+}
+
+/* Tooltip bubble for legend swatches */
+.reading-heatmap .w-heatmap-legend [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 5;
+}
+
+.reading-heatmap .w-heatmap-legend [data-tip]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0,0,0,0.92);
+  opacity: 0;
+  transition: opacity 120ms ease;
+  z-index: 5;
+}
+
+.reading-heatmap .w-heatmap-legend [data-tip]:hover::after,
+.reading-heatmap .w-heatmap-legend [data-tip]:hover::before {
+  opacity: 1;
+}
+
+/* Center the whole stories block (title + strip) within its row */
+.stories-cell.section {
+  justify-content: center !important;  /* flex container centers children vertically */
+}
+
+/* Keep the strip’s internal layout centered too */
+.stories-strip {
+  align-content: center !important;    /* overrides earlier 'end' rules on large screens */
+}
+
+/* Optional: if you want the section to shrink to its content (not stretch),
+   uncomment the next line to center the whole section within the grid row. */
+/* .stories-cell { align-self: center !important; } */
+
+/* Bottom row cells: fill the row height, but don't squash contents */
+.favorites-cell,
+.current-cell {
+  align-self: stretch !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Black boxes: normal block layout, no forced 100% height or grid centering */
+.favorites-strip,
+.current-strip {
+  flex: 1 1 auto;
+  display: block !important;                 /* REVERT: not grid */
+  padding: clamp(8px, 1.2vw, 12px) !important; /* match Stories padding */
+  box-sizing: border-box;
+}
+
+/* Favorites grid: tidy, centered, but not stretching container height */
+.favorites-strip .favorites-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: clamp(8px, 1.6vw, 16px) !important;
+  align-items: center !important;
+  justify-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Heatmap container: plain block so the SVG can size itself */
+.current-strip .current-grid {
+  display: block !important;                 /* REVERT: not grid */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Heatmap sizing: fill width naturally (no forced height) */
+.reading-heatmap { width: 100%; display: block; }
+.reading-heatmap svg { width: 100%; height: auto; display: block; }
+
+/* Keep the section titles consistent with Stories */
+.favorites-cell .section-title,
+.current-cell .section-title {
+  margin: 0 0 8px !important;
+}
+

@@ -5,6 +5,7 @@ import LikeButton from "@/components/LikeButton";
 import StarButton from "@/components/StarButton";
 import SaveButton from "@/components/SaveButton";
 import { Link } from "react-router-dom";
+import ReadingHeatmap from "@/components/ReadingHeatmap";
 
 /* --- Tiny hook to auto-fit text to its line without reflowing layout --- */
 function useFitText(minPx = 12, maxPx = 48) {
@@ -463,11 +464,7 @@ export default function ProfilePage() {
             <h2 className="section-title">Currently Reading</h2>
             <div className="strip current-strip">
               <div className="current-grid">
-                <div className="cur-cover" aria-label="Currently reading placeholder" />
-                <div className="cur-cover" aria-label="Currently reading placeholder" />
-                <div className="cur-cover" aria-label="Currently reading placeholder" />
-                <div className="cur-cover" aria-label="Currently reading placeholder" />
-                <div className="cur-cover" aria-label="Currently reading placeholder" />
+                <ReadingHeatmap year={new Date().getFullYear()} />
               </div>
             </div>
           </section>
