@@ -384,3 +384,175 @@ a:focus,
 .shelf-row {
   padding-bottom: 0 !important;
 }
+
+
+/* 1) Remove only TOP/BOTTOM margin on the profile section */
+.profile-page {
+  margin-block: 0 !important;  /* margin-top & margin-bottom = 0 */
+}
+
+/* If your identity section has its own margins, zero just its vertical ones too */
+.identity-cell {
+  margin-block: 0 !important;
+}
+
+/* 2) Tighten the username + name stack */
+.profile-id {
+  display: grid;
+  grid-auto-rows: max-content;
+  row-gap: 2px; /* bring them closer */
+}
+
+/* Override any inline margins on these elements */
+.profile-id .profile-handle {
+  margin: 0 0 2px 0 !important;  /* smaller gap above name */
+  line-height: 1.05;
+}
+
+.profile-id .profile-name {
+  margin: 0 !important;          /* no extra space below */
+  line-height: 1.05;
+}
+
+/* Remove only top & bottom padding from profile-identity */
+.profile-identity {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Add more breathing room above the colored bars */
+.profile-bars {
+  margin-top: 10px !important;   /* increase this value to control spacing */
+}
+
+.profile-id {
+  row-gap: 2px; /* keep handle & name tight */
+}
+
+.profile-bars {
+  margin-top: 10px !important; /* creates clear separation below name */
+}
+
+/* Make the profile picture expand fully top-to-bottom */
+.profile-card {
+  align-items: stretch !important; /* make both avatar & info same height */
+}
+
+.profile-avatar {
+  height: 100% !important;          /* fill full vertical height of identity area */
+  aspect-ratio: 1 / 1 !important;   /* keep it square */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar svg {
+  height: 100% !important;          /* make SVG fill the avatar box */
+  width: auto !important;
+}
+
+/* Make the avatar visibly bigger (square) */
+.profile-avatar,
+.profile-avatar svg {
+  width: clamp(160px, 20vh, 320px) !important;
+  height: clamp(160px, 20vh, 320px) !important;
+}
+
+/* 1) Slightly smaller avatar (still square) */
+.profile-avatar,
+.profile-avatar svg {
+  width: clamp(150px, 18vh, 300px) !important;
+  height: clamp(150px, 18vh, 300px) !important;
+}
+
+/* 2) Center the right stack to the middle of the avatar */
+.profile-card {
+  align-items: center !important; /* centers both columns in the row */
+}
+
+.profile-id {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;        /* centers name+username+bars vertically */
+  gap: 4px;                       /* keep them nicely tight */
+}
+
+/* keep your existing spacing between name and the colored bar */
+.profile-bars { margin-top: 10px; }
+
+/* --- PRIORITIZE Stories & Favorites on small screens --- */
+@media (max-width: 900px), (max-height: 760px) {
+  /* 1) Make the avatar a bit smaller so the identity block shrinks first */
+  .profile-avatar,
+  .profile-avatar svg {
+    width: clamp(120px, 15vh, 220px) !important;
+    height: clamp(120px, 15vh, 220px) !important;
+  }
+
+  /* 2) Allow the identity block to cap its height and not push Stories/Favorites down */
+  .identity-cell { min-height: 0 !important; overflow: hidden !important; }
+  .profile-identity { max-height: 100% !important; }
+  .profile-card { height: auto !important; }
+  .profile-id { row-gap: 2px; }
+
+  /* 3) Ensure Stories/Favorites get the space (row 2 is already 1fr in your grid) */
+  .stories-cell { min-height: 0 !important; }
+  .stories-viewport { min-height: 0 !important; }
+}
+
+/* If you want the effect even earlier (very tight devices), add a stricter breakpoint */
+@media (max-width: 560px), (max-height: 680px) {
+  .profile-avatar,
+  .profile-avatar svg {
+    width: clamp(108px, 14vh, 200px) !important;
+    height: clamp(108px, 14vh, 200px) !important;
+  }
+}
+
+
+/* Give the shelf a subtle 3D context so lifts feel natural */
+.shelf-row {
+  perspective: 800px;
+}
+
+/* Base state */
+.book-spine {
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  transform: translateY(0) translateZ(0);
+  will-change: transform;
+}
+
+/* Hover / focus lift */
+.book-spine:hover,
+.book-spine:focus-visible {
+  transform: translateY(-6px) translateZ(0) scale(1.02);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.28),
+    0 2px 4px rgba(0,0,0,0.18);
+  filter: brightness(1.02);
+}
+
+/* Pressed/tap feedback */
+.book-spine:active {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow:
+    0 3px 8px rgba(0,0,0,0.24),
+    0 1px 2px rgba(0,0,0,0.16);
+}
+
+/* Keyboard accessibility: show a visible ring without shifting layout */
+.book-spine:focus-visible {
+  outline: none;
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.28),
+    0 2px 4px rgba(0,0,0,0.18),
+    0 0 0 2px rgba(255,255,255,0.6) inset;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .book-spine {
+    transition: none;
+  }
+}
+
