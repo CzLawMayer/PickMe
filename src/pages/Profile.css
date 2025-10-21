@@ -509,38 +509,46 @@ a:focus,
   }
 }
 
-
-/* Give the shelf a subtle 3D context so lifts feel natural */
-.shelf-row {
-  perspective: 800px;
+/* ============ SHELF / LIBRARY ============ */
+.shelf {
+  background: #4b2419;
+  padding: clamp(14px, 1.6vw, 20px);
+  border: 1px solid rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.6vw, 20px);
+  min-height: 0;
 }
-
-/* Base state */
+.shelf-row {
+  background: #111;
+  flex: 1 1 0;
+  display: flex;
+  gap: clamp(8px, 1vw, 14px);
+  padding: clamp(10px, 1.2vw, 16px);
+  min-height: 0;
+  perspective: 800px;         /* subtle 3D for hover lifts */
+  padding-bottom: 0 !important;
+}
 .book-spine {
+  flex: 1 1 0;
+  height: 100%;
+  border-radius: 2px;
+  background: #1e88e5;
   transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
   transform: translateY(0) translateZ(0);
   will-change: transform;
 }
-
 /* Hover / focus lift */
 .book-spine:hover,
 .book-spine:focus-visible {
   transform: translateY(-6px) translateZ(0) scale(1.02);
-  box-shadow:
-    0 6px 14px rgba(0,0,0,0.28),
-    0 2px 4px rgba(0,0,0,0.18);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.18);
   filter: brightness(1.02);
 }
-
-/* Pressed/tap feedback */
 .book-spine:active {
   transform: translateY(-2px) scale(1.01);
-  box-shadow:
-    0 3px 8px rgba(0,0,0,0.24),
-    0 1px 2px rgba(0,0,0,0.16);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.16);
 }
-
-/* Keyboard accessibility: show a visible ring without shifting layout */
 .book-spine:focus-visible {
   outline: none;
   box-shadow:
@@ -548,144 +556,193 @@ a:focus,
     0 2px 4px rgba(0,0,0,0.18),
     0 0 0 2px rgba(255,255,255,0.6) inset;
 }
-
-/* Respect users who prefer reduced motion */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .book-spine {
-    transition: none;
+  .book-spine { transition: none; }
+}
+/* Color cycle */
+.shelf-row .book-spine:nth-child(12n+1)  { background: #fc5f2e; }
+.shelf-row .book-spine:nth-child(12n+2)  { background: #d81b60; }
+.shelf-row .book-spine:nth-child(12n+3)  { background: #6a1b9a; }
+.shelf-row .book-spine:nth-child(12n+4)  { background: #1e88e5; }
+.shelf-row .book-spine:nth-child(12n+5)  { background: #00bcd4; }
+.shelf-row .book-spine:nth-child(12n+6)  { background: #43a047; }
+.shelf-row .book-spine:nth-child(12n+7)  { background: #ffd54f; }
+.shelf-row .book-spine:nth-child(12n+8)  { background: #ff9800; }
+.shelf-row .book-spine:nth-child(12n+9)  { background: #7b1fa2; }
+.shelf-row .book-spine:nth-child(12n+10) { background: #ec407a; }
+.shelf-row .book-spine:nth-child(12n+11) { background: #ef5350; }
+.shelf-row .book-spine:nth-child(12n+12) { background: #26c6da; }
+/* Row 2 reversed palette */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+1)  { background: #6a1b9a !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+2)  { background: #d81b60 !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+3)  { background: #7b1fa2 !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+4)  { background: #26c6da !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+5)  { background: #1e88e5 !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+6)  { background: #00bcd4 !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+7)  { background: #43a047 !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+8)  { background: #ffd54f !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+9)  { background: #ff9800 !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+10) { background: #ef5350 !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+11) { background: #ec407a !important; }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(12n+12) { background: #fc5f2e !important; }
+
+/* ============ PAGE & IDENTITY TIGHTENING ============ */
+.profile-page { margin-block: 0 !important; }
+.identity-cell { margin-block: 0 !important; }
+
+.profile-id {
+  display: grid;
+  grid-auto-rows: max-content;
+  row-gap: 2px;
+}
+.profile-id .profile-handle,
+.profile-id .profile-name {
+  margin: 0 !important;
+  line-height: 1.05;
+}
+
+/* Avatar sizing & centering the right stack */
+.profile-card { align-items: center !important; }
+.profile-avatar {
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  display: flex; align-items: center; justify-content: center;
+}
+.profile-avatar,
+.profile-avatar svg {
+  width: clamp(150px, 18vh, 300px) !important;
+  height: clamp(150px, 18vh, 300px) !important;
+}
+.profile-avatar svg { width: auto !important; height: 100% !important; }
+
+.profile-id {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.profile-bars { margin-top: 10px !important; }
+
+/* Small-screen priority */
+@media (max-width: 900px), (max-height: 760px) {
+  .profile-avatar,
+  .profile-avatar svg {
+    width: clamp(120px, 15vh, 220px) !important;
+    height: clamp(120px, 15vh, 220px) !important;
+  }
+  .identity-cell { min-height: 0 !important; overflow: hidden !important; }
+  .profile-identity { max-height: 100% !important; }
+  .profile-card { height: auto !important; }
+  .profile-id { row-gap: 2px; }
+  .stories-cell { min-height: 0 !important; }
+  .stories-viewport { min-height: 0 !important; }
+}
+@media (max-width: 560px), (max-height: 680px) {
+  .profile-avatar,
+  .profile-avatar svg {
+    width: clamp(108px, 14vh, 200px) !important;
+    height: clamp(108px, 14vh, 200px) !important;
   }
 }
 
+/* ============ STRIPS (STORIES / FAVORITES / CURRENT) ============ */
+/* One token for consistent borders */
+:root { --strip-pad: clamp(8px, 1.2vw, 12px); }
 
-/* Heatmap should fill width and size its own height */
-.reading-heatmap svg { width: 100%; height: auto; display: block; }
-
-/* If the package shows legend/labels, hide to avoid overlap (optional) */
-.reading-heatmap .w-heatmap-legend,
-.reading-heatmap .w-heatmap-week,
-.reading-heatmap .w-heatmap-month { display: none !important; }
-
-/* Make the heatmap container a normal block (not the old 5-col grid) */
-.current-strip .current-grid {
-  display: block !important;
-  grid-template-columns: none !important;
+/* Normalize strip padding & title spacing */
+.stories-strip,
+.favorites-cell.section .strip,
+.current-cell.section .strip {
+  padding: var(--strip-pad) !important;
+  box-sizing: border-box !important;
+}
+.stories-cell .section-title,
+.favorites-cell .section-title,
+.current-cell .section-title {
+  margin: 0 0 8px !important;
 }
 
-/* Let the heatmap fill width and size its own height */
-.reading-heatmap svg {
-  width: 100%;
-  height: auto;
-  display: block;
-}
+/* Make stories block vertically centered in its row */
+.stories-cell.section { justify-content: center !important; }
+.stories-strip { align-content: center !important; }
 
-/* Make the heatmap container a normal block (not the old 5-col grid) */
-.current-strip .current-grid {
-  display: block !important;
-  width: 100% !important;
-  grid-template-columns: none !important;
-}
-
-/* Let the heatmap fill the entire width of its container */
-.reading-heatmap { width: 100%; }
-.reading-heatmap svg { width: 100%; height: auto; display: block; }
-
-/* Make BOTH bottom cells use the full grid row height */
-.favorites-cell,
-.current-cell {
+/* Bottom row: cells fill the row; strips fill their cells and center content */
+.favorites-cell.section,
+.current-cell.section {
   align-self: stretch !important;
+  display: flex; flex-direction: column; min-height: 0;
+}
+.favorites-cell.section .strip,
+.current-cell.section .strip {
+  flex: 1 1 auto !important;
+  min-height: 0;
+  display: block;
+  background: #000;
 }
 
-/* Let the black boxes fill those cells */
-.favorites-strip,
-.current-strip {
-  height: 100% !important;
-  display: block !important;
-  box-sizing: border-box;
+/* Favorites grid (tidy, centered) */
+.favorites-strip .favorites-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: clamp(8px, 1.6vw, 16px) !important;
+  align-items: center !important;
+  justify-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.fav-cover,
+.cur-cover {
+  aspect-ratio: 12 / 17 !important;
+  width: 100% !important;
+  height: auto !important;
+  background: #1b1b1b;
+  border: none;
 }
 
-/* Keep the heatmap container from collapsing while still sizing naturally */
-.current-strip .current-grid {
-  height: 100% !important;
-  display: block !important; /* overrides the old 5-col grid */
+/* Large-screen strip padding equalization */
+@media (min-width: 1200px) && (min-height: 850px) {
+  .favorites-strip,
+  .current-strip {
+    padding-block: var(--strip-pad) !important;
+  }
 }
 
-/* 1) UNHIDE anything we previously hid */
+/* ============ HEATMAP (READING) ============ */
+.reading-heatmap { width: 100%; display: block; }
+.reading-heatmap svg { width: 100%; height: auto; display: block; }
+
+/* Bright labels & consistent legend spacing */
 .reading-heatmap .w-heatmap-week,
-.reading-heatmap .w-heatmap-month,
-.reading-heatmap .w-heatmap-legend {
-  display: block !important;
-}
-
-/* 2) Make month + weekday labels white and fully opaque */
+.reading-heatmap .w-heatmap-month { opacity: 1 !important; filter: none !important; }
 .reading-heatmap .w-heatmap-week text,
 .reading-heatmap .w-heatmap-month text {
   fill: #fff !important;
+  fill-opacity: 1 !important;
   opacity: 1 !important;
-  font-weight: 600;
+  color: #fff !important;
+  font-weight: 700;
+  text-shadow: none;
+  stroke: none !important;
 }
+.reading-heatmap svg.w-heatmap { color: #fff !important; }
 
-/* 3) Even, larger spacing for the BUILT-IN legend */
+/* Built-in legend layout + tooltips */
 .reading-heatmap .w-heatmap-legend {
-  display: flex !important;         /* normalize layout to flex */
+  display: flex !important;
   align-items: center;
-  gap: 10px;                        /* <-- increase/decrease to taste */
+  gap: 10px;
   margin-top: 8px;
 }
-.reading-heatmap .w-heatmap-legend > * {
-  margin: 0 !important;             /* reset any lib inline margins */
-}
-.reading-heatmap .w-heatmap-legend .w-heatmap-legend-item {
-  margin-right: 10px !important;    /* fallback for older versions */
-}
+.reading-heatmap .w-heatmap-legend > * { margin: 0 !important; }
+.reading-heatmap .w-heatmap-legend .w-heatmap-legend-item { margin-right: 10px !important; }
 .reading-heatmap .w-heatmap-legend .w-heatmap-legend-title {
   color: rgba(255,255,255,0.9);
   font-size: 12px;
   font-weight: 600;
 }
 
-/* Make month & weekday labels BRIGHT white (override any fades) */
-.reading-heatmap .w-heatmap-week,
-.reading-heatmap .w-heatmap-month {
-  opacity: 1 !important;           /* if the group is faded */
-  filter: none !important;
-}
-
-.reading-heatmap .w-heatmap-week text,
-.reading-heatmap .w-heatmap-month text {
-  fill: #fff !important;           /* SVG text color */
-  fill-opacity: 1 !important;      /* some builds use this */
-  opacity: 1 !important;           /* override inline opacity */
-  color: #fff !important;          /* just in case */
-  font-weight: 700;                /* slightly bolder for legibility */
-  text-shadow: none;               /* ensure no blend tricks */
-  stroke: none !important;
-}
-
-.reading-heatmap { opacity: 1 !important; }
-
-/* Make month & weekday labels bright white (the lib uses currentColor) */
-.reading-heatmap svg.w-heatmap {
-  color: #fff !important;          /* <- this drives the text fill */
-}
-
-/* Optional: a touch crisper/bolder */
-.reading-heatmap svg.w-heatmap text {
-  font-weight: 700;
-  text-rendering: geometricPrecision;
-}
-
-/* Make the built-in legend spacing match your grid rhythm */
-.reading-heatmap .w-heatmap-legend {
-  display: flex !important;
-  align-items: center;
-  gap: 10px;                        /* tweak to taste */
-  margin-top: 8px;
-}
-.reading-heatmap .w-heatmap-legend > * {
-  margin: 0 !important;             /* reset inline margins */
-}
-
-/* Hover tooltip for built-in legend swatches */
+/* Legend tooltip bubble (uses data-tip set by the component) */
 .reading-heatmap .w-heatmap-legend [data-tip]::after {
   content: attr(data-tip);
   position: absolute;
@@ -706,7 +763,6 @@ a:focus,
   transition: opacity 120ms ease, transform 120ms ease;
   z-index: 5;
 }
-
 .reading-heatmap .w-heatmap-legend [data-tip]::before {
   content: "";
   position: absolute;
@@ -719,85 +775,30 @@ a:focus,
   transition: opacity 120ms ease;
   z-index: 5;
 }
-
+.reading-heatmap .w-heatmap-legend [data-tip] { position: relative; cursor: help; }
 .reading-heatmap .w-heatmap-legend [data-tip]:hover::after,
-.reading-heatmap .w-heatmap-legend [data-tip]:hover::before {
-  opacity: 1;
+.reading-heatmap .w-heatmap-legend [data-tip]:hover::before { opacity: 1; }
+
+/* --- REVERT to last good behavior for bottom row + heatmap ---------------- */
+
+/* Strips should be simple blocks that size to content (no flex stretching) */
+.favorites-cell.section .strip,
+.current-cell.section .strip {
+  display: block !important;
+  height: auto !important;
+  padding: clamp(8px, 1.2vw, 12px) !important;
+  box-sizing: border-box !important;
+  background: #000 !important;
 }
 
-/* Tooltip bubble for legend swatches */
-.reading-heatmap .w-heatmap-legend [data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.92);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-  padding: 6px 8px;
-  border-radius: 8px;
-  white-space: nowrap;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 120ms ease, transform 120ms ease;
-  z-index: 5;
-}
-
-.reading-heatmap .w-heatmap-legend [data-tip]::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 4px);
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: rgba(0,0,0,0.92);
-  opacity: 0;
-  transition: opacity 120ms ease;
-  z-index: 5;
-}
-
-.reading-heatmap .w-heatmap-legend [data-tip]:hover::after,
-.reading-heatmap .w-heatmap-legend [data-tip]:hover::before {
-  opacity: 1;
-}
-
-/* Center the whole stories block (title + strip) within its row */
-.stories-cell.section {
-  justify-content: center !important;  /* flex container centers children vertically */
-}
-
-/* Keep the strip’s internal layout centered too */
-.stories-strip {
-  align-content: center !important;    /* overrides earlier 'end' rules on large screens */
-}
-
-/* Optional: if you want the section to shrink to its content (not stretch),
-   uncomment the next line to center the whole section within the grid row. */
-/* .stories-cell { align-self: center !important; } */
-
-/* Bottom row cells: fill the row height, but don't squash contents */
+/* Bottom cells align like before (no extra stretching) */
 .favorites-cell,
 .current-cell {
-  align-self: stretch !important;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+  align-self: end !important;   /* match your original grid placement */
+  min-height: 0 !important;
 }
 
-/* Black boxes: normal block layout, no forced 100% height or grid centering */
-.favorites-strip,
-.current-strip {
-  flex: 1 1 auto;
-  display: block !important;                 /* REVERT: not grid */
-  padding: clamp(8px, 1.2vw, 12px) !important; /* match Stories padding */
-  box-sizing: border-box;
-}
-
-/* Favorites grid: tidy, centered, but not stretching container height */
+/* Favorites: tidy 5-col grid, centered, won’t inflate height */
 .favorites-strip .favorites-grid {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
@@ -808,20 +809,226 @@ a:focus,
   padding: 0 !important;
 }
 
-/* Heatmap container: plain block so the SVG can size itself */
+/* Heatmap wrapper = plain block; let the SVG expand fully */
 .current-strip .current-grid {
-  display: block !important;                 /* REVERT: not grid */
+  display: block !important;
+  width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
-/* Heatmap sizing: fill width naturally (no forced height) */
-.reading-heatmap { width: 100%; display: block; }
-.reading-heatmap svg { width: 100%; height: auto; display: block; }
+.reading-heatmap { width: 100% !important; display: block !important; }
+.reading-heatmap svg { width: 100% !important; height: auto !important; display: block !important; }
 
-/* Keep the section titles consistent with Stories */
-.favorites-cell .section-title,
-.current-cell .section-title {
+/* Uncap SVG height on small screens (so it doesn't collapse to a few months) */
+@media (max-width: 900px), (max-height: 740px) {
+  .reading-heatmap svg { max-height: none !important; }
+}
+
+/* Keep built-in month/day labels & legend visible and bright */
+.reading-heatmap .w-heatmap-week,
+.reading-heatmap .w-heatmap-month,
+.reading-heatmap .w-heatmap-legend {
+  display: block !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.reading-heatmap .w-heatmap-week text,
+.reading-heatmap .w-heatmap-month text {
+  fill: #fff !important;
+  opacity: 1 !important;
+  font-weight: 700;
+}
+
+/* If any label gets clipped in its cell, allow this section to show overflow */
+.current-cell { overflow: visible !important; }
+
+
+/* === FAVORITES: snap to bottom-left with fixed 12px padding (all sizes) === */
+
+/* The cell itself sits at the bottom edge of row 3 */
+.favorites-cell {
+  align-self: end !important;        /* bottom of its grid row */
+  min-height: 0 !important;
+}
+
+/* Use a column flex container and push content to the bottom */
+.favorites-cell.section {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;  /* <- forces strip to the bottom */
+  min-height: 0 !important;
+}
+
+/* The black strip never stretches and has exact padding */
+.favorites-cell.section .strip,
+.favorites-strip {
+  flex: 0 0 auto !important;        /* don't grow vertically */
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 12px !important;          /* exact padding on all sides */
+  padding-block: 12px !important;
+  padding-inline: 12px !important;
+  background: #000 !important;
+  box-sizing: border-box !important;
+}
+
+/* Tidy 5-up covers without affecting height */
+.favorites-strip .favorites-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-items: center !important;
+  align-items: center !important;
+}
+.fav-cover {
+  width: 100% !important;
+  aspect-ratio: 12 / 17 !important;
+  height: auto !important;
+  background: #1b1b1b;
+  border: none;
+}
+
+/* Re-assert on small screens where earlier rules may override */
+@media (max-width: 900px), (max-height: 760px) {
+  .favorites-cell { align-self: end !important; }
+  .favorites-cell.section { justify-content: flex-end !important; }
+  .favorites-cell.section .strip,
+  .favorites-strip { padding: 12px !important; }
+}
+
+/* === STORIES: mirror Favorites behavior, fixed 12px padding, no stretch === */
+
+/* Keep Stories in row 2 (left column), but don't stretch its height */
+.stories-cell {
+  grid-row: 2 !important;           /* explicit row */
+  align-self: start !important;      /* sit at top of row 2, not stretch */
+  min-height: 0 !important;
+}
+
+/* Make the section a simple block container (like Favorites) */
+.stories-cell.section {
+  display: block !important;         /* kill flex that was causing stretch/clipping */
+}
+
+/* Title with consistent spacing; no collapsing margins */
+.stories-cell .section-title {
+  margin: 0 0 8px !important;        /* no top margin (prevents “burial”) */
+}
+
+/* The black strip: identical to Favorites — fixed padding, no vertical growth */
+.stories-strip {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 12px !important;
+  padding-block: 12px !important;
+  padding-inline: 12px !important;
+  background: #000 !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;         /* if any flex remains, don't grow */
+  overflow: visible !important;      /* prevent the “head/feet” being clipped */
+}
+
+/* Inside: horizontal scroller only (same as before) */
+.stories-viewport {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  min-height: 0 !important;
+}
+
+/* Covers layout unchanged; just keep gaps stable */
+.stories-track {
+  display: flex !important;
+  gap: 12px !important;
+}
+
+/* Re-assert on thin/wide viewports where earlier rules might fight this */
+@media (max-width: 900px), (max-height: 760px) {
+  .stories-cell { align-self: start !important; }
+  .stories-strip { padding: 12px !important; }
+}
+
+/* ==== Unify card sizing between Stories and Favorites ==== */
+:root {
+  --card-cols: 5;         /* number of covers per row */
+  --card-gap: 12px;       /* gap between covers (matches your fixed padding approach) */
+  /* width of each cover given container width, columns, and gaps */
+  --card-w: calc((100% - (var(--card-cols) - 1) * var(--card-gap)) / var(--card-cols));
+}
+
+/* ----- Favorites (grid) uses the same gap and implicit width ----- */
+.favorites-strip .favorites-grid {
+  gap: var(--card-gap) !important;
+  grid-template-columns: repeat(var(--card-cols), minmax(0, 1fr)) !important;
+}
+.fav-cover {
+  width: 100% !important;
+  aspect-ratio: 12 / 17 !important;
+}
+
+/* ----- Stories (flex track) matches the same gap and exact width ----- */
+.stories-track {
+  gap: var(--card-gap) !important;
+}
+.story-cover {
+  flex: 0 0 var(--card-w) !important;   /* exact same card width as Favorites */
+  max-width: var(--card-w) !important;
+  aspect-ratio: 12 / 17 !important;
+}
+
+/* Optional: if you want fewer columns on very narrow widths, keep them in sync */
+@media (max-width: 520px) {
+  :root { --card-cols: 3; }  /* both Stories and Favorites will drop to 3 cols */
+}
+
+/* === STORIES: vertically centered in row 2 (with safe fallback) === */
+
+/* Keep Stories as a compact block like Favorites */
+.stories-cell.section {
+  display: block !important;        /* no flex stretching */
+}
+
+/* Center the entire cell within row 2 */
+.stories-cell {
+  grid-row: 2 !important;           /* explicit row */
+  align-self: center !important;     /* ← vertical middle of row 2 */
+  justify-self: stretch !important;  /* fill width of the left column */
+  max-height: 100% !important;       /* never taller than the row */
+  overflow: visible !important;      /* no head/foot clipping */
+}
+
+/* Title spacing stays consistent; no top-margin collapse */
+.stories-cell .section-title {
   margin: 0 0 8px !important;
 }
 
+/* Strip behavior identical to Favorites: fixed padding, no growth */
+.stories-strip {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 12px !important;
+  padding-block: 12px !important;
+  padding-inline: 12px !important;
+  background: #000 !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+
+/* Horizontal scroller stays tidy */
+.stories-viewport {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  min-height: 0 !important;
+}
+
+/* Safety: on short viewports, anchor to top so nothing gets cropped */
+@media (max-height: 760px) {
+  .stories-cell { align-self: start !important; }
+}
