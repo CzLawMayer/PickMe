@@ -1032,3 +1032,158 @@ a:focus,
 @media (max-height: 760px) {
   .stories-cell { align-self: start !important; }
 }
+
+
+/* === CURRENTLY READING: bottom overlay stats (no layout impact) === */
+.current-strip {
+  position: relative !important;   /* create containing block for absolute overlay */
+  overflow: hidden !important;     /* keep overlay edges tidy if needed */
+}
+
+/* Overlay container sits on top of the heatmap, inside the black strip */
+.current-stats {
+  position: absolute !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+
+  z-index: 3;                      /* above heatmap & legend */
+  pointer-events: none;            /* doesn't steal scroll from heatmap */
+}
+
+/* Individual stat cards */
+.current-stat {
+  pointer-events: auto;            /* clickable if you add handlers later */
+  background: rgba(0, 0, 0, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);      /* subtle glass effect over heatmap */
+}
+
+.current-stat .stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin: 0 0 4px;
+  line-height: 1.1;
+  text-transform: none;
+}
+
+.current-stat .stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* Compact stack on narrow heights/widths without changing strip size */
+@media (max-width: 560px), (max-height: 680px) {
+  .current-stats {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+
+/* === CURRENT STATS: force single row by shrinking cards (no stacking) === */
+
+/* Keep full-width row pinned to bottom so children can shrink */
+.current-stats {
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+
+  display: flex !important;
+  flex-wrap: nowrap !important;     /* never wrap to a second line */
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+
+  overflow: hidden !important;      /* don't expand overlay; clip excess */
+  white-space: nowrap !important;   /* texts stay on one line */
+}
+
+/* Make each card flexibly shrink to stay on one line */
+.current-stat {
+  flex: 1 1 0px !important;         /* grow and SHRINK as needed */
+  min-width: 0 !important;          /* allow shrinking below intrinsic width */
+  max-width: none !important;       /* remove previous 160px cap */
+  height: 40px !important;          /* compact, fixed height */
+  padding: 4px 6px !important;      /* slightly smaller padding */
+}
+
+/* Keep text single-line and elide if it must compress */
+.current-stat .stat-label,
+.current-stat .stat-value {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.05 !important;
+  margin: 0 !important;
+}
+
+/* Responsive, shrinking typography so values never wrap */
+.current-stat .stat-label {
+  font-weight: 600;
+  font-size: clamp(9px, 1.2vw, 11px) !important;
+}
+.current-stat .stat-value {
+  font-weight: 800;
+  font-size: clamp(12px, 1.8vw, 14px) !important;
+}
+
+/* If it gets extremely narrow, keep them on one row by tightening spacing */
+@media (max-width: 420px), (max-height: 560px) {
+  .current-stats { gap: 6px !important; }
+  .current-stat  { height: 36px !important; padding: 3px 5px !important; }
+}
+
+/* === CURRENT STATS: big right-aligned value inside each card === */
+
+/* Layout: label on the left, big value on the right (single line) */
+.current-stat {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+
+  /* keep earlier shrinking behavior */
+  flex: 1 1 0px !important;
+  min-width: 0 !important;
+}
+
+.current-stat .stat-label {
+  flex: 1 1 auto !important;          /* take leftover space on the left */
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  line-height: 1.05 !important;
+}
+
+/* Big, right-aligned value that never wraps */
+.current-stat .stat-value {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  text-align: right !important;
+
+  /* size up, but allow shrinking on tiny widths */
+  font-size: clamp(16px, 2.4vw, 22px) !important;
+  letter-spacing: 0.2px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tighten on very small viewports without wrapping */
+@media (max-width: 420px), (max-height: 560px) {
+  .current-stat { gap: 6px !important; }
+  .current-stat .stat-value { font-size: clamp(14px, 2.8vw, 18px) !important; }
+}

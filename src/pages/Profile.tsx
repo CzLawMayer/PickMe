@@ -466,6 +466,22 @@ export default function ProfilePage() {
               <div className="current-grid">
                 <ReadingHeatmap year={new Date().getFullYear()} />
               </div>
+
+              {/* OVERLAY: does not affect layout size */}
+              <div className="current-stats" role="group" aria-label="Reading stats">
+                <div className="current-stat">
+                  <div className="stat-label">Books completed</div>
+                  <div className="stat-value">0</div>
+                </div>
+                <div className="current-stat">
+                  <div className="stat-label">Chapters read</div>
+                  <div className="stat-value">0</div>
+                </div>
+                <div className="current-stat">
+                  <div className="stat-label">Books saved</div>
+                  <div className="stat-value">0</div>
+                </div>
+              </div>
             </div>
           </section>
         </div>
