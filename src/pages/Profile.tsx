@@ -6,6 +6,8 @@ import StarButton from "@/components/StarButton";
 import SaveButton from "@/components/SaveButton";
 import { Link } from "react-router-dom";
 import ReadingHeatmap from "@/components/ReadingHeatmap";
+import { profile, storyBooks, favoriteBooks, libraryBooks } from "@/profileData";
+
 
 /* --- Tiny hook to auto-fit text to its line without reflowing layout --- */
 function useFitText(minPx = 12, maxPx = 48) {
@@ -200,15 +202,28 @@ export default function ProfilePage() {
             <div className="profile-identity">
               <div className="profile-card">
                 <div className="profile-avatar" aria-hidden={true}>
-                  <svg width="96" height="96" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
-                    <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-                    <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                    <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
+                  {profile.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt={profile.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "50%",
+                        display: "block",
+                      }}
+                    />
+                  ) : (
+                    <svg width="96" height="96" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
+                      <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                      <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                      <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )}
                 </div>
 
                 <div className="profile-id" style={{ display: "grid", alignContent: "start" }}>
-                  {/* These auto-fit to the available width/line via useFitText */}
                   <h2
                     className="profile-name"
                     ref={nameFit.ref as React.RefObject<HTMLHeadingElement>}
@@ -221,7 +236,7 @@ export default function ProfilePage() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    Diego Ballesteros
+                    {profile.name}
                   </h2>
 
                   <div
@@ -237,10 +252,9 @@ export default function ProfilePage() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    @NamesBrooklyn
+                    @{profile.username}
                   </div>
 
-                  {/* Color bars: left-aligned and exactly 75% of row width */}
                   <div
                     className="profile-bars"
                     style={{

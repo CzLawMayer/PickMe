@@ -1187,3 +1187,7 @@ a:focus,
   .current-stat { gap: 6px !important; }
   .current-stat .stat-value { font-size: clamp(14px, 2.8vw, 18px) !important; }
 }
+
+
+/* Center just the chapters line in the feature card */
+.feature-info .meta-chapters { text-align: center !important; }
