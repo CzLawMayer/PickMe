@@ -11,13 +11,14 @@ export const profile = {
   avatarUrl: "/public/avatars/Diego.jpg",
 
   stories: [
-    "bk-001","bk-020","bk-027","bk-036","bk-043",
-    "bk-012","bk-017","bk-030","bk-023","bk-010",
-    "bk-005","bk-015","bk-033","bk-022","bk-038",
-    "bk-009","bk-041","bk-025","bk-002","bk-045"
+    "bk-001", "bk-002", "bk-003", "bk-004", "bk-005",
+    "bk-006", "bk-007", "bk-008", "bk-009", "bk-010", "bk-011"
   ],
 
-  favorites: ["bk-001", "bk-020", "bk-027", "bk-036", "bk-043"],
+  favorites: [
+    "bk-045", "bk-008", "bk-011", "bk-009", "bk-001"
+  ],
+
 
   library: [
     "bk-001","bk-002","bk-003","bk-004","bk-005",

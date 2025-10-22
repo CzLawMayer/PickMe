@@ -86,6 +86,39 @@ export default function ProfilePage() {
   const [thumbPct, setThumbPct] = useState(1);                     // 0..1
   const [storiesCount, setStoriesCount] = useState(0);             // number of covers
 
+
+  const [activeBook, setActiveBook] = useState<any>(null);
+  const onHoverBook = (book: any) => setActiveBook(book);
+  const clearHover = () => setActiveBook(null);
+
+
+
+  // at top of component:
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const [titleLines, setTitleLines] = useState(2);
+
+  // measure on book/title change and resize
+  useLayoutEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    const compute = () => {
+      const cs = getComputedStyle(el);
+      const lineHeight = parseFloat(cs.lineHeight);
+      const lines = Math.max(1, Math.round(el.scrollHeight / lineHeight));
+      setTitleLines(Math.min(lines, 2)); // we clamp to 2 visually anyway
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    window.addEventListener("resize", compute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", compute);
+    };
+  }, [activeBook?.title]);
+
+
+
   // Recompute scrollability, thumb size, and progress
   const recomputeStories = () => {
     const vp = storiesRef.current;
@@ -135,6 +168,48 @@ export default function ProfilePage() {
     vp.addEventListener("scroll", onScroll, { passive: true });
     return () => vp.removeEventListener("scroll", onScroll);
   }, []);
+
+  // right under the existing useLayoutEffect hooks
+  useLayoutEffect(() => {
+    // when story count changes (e.g., 11), recompute after paint
+    const id = requestAnimationFrame(recomputeStories);
+    return () => cancelAnimationFrame(id);
+  }, [profile.stories.length]);
+
+  // optional: recompute again once covers have loaded
+  useLayoutEffect(() => {
+    const vp = storiesRef.current;
+    if (!vp) return;
+
+    const imgs = Array.from(vp.querySelectorAll<HTMLElement>(".story-cover"));
+    if (imgs.length === 0) return;
+
+    let pending = imgs.length;
+    const onDone = () => {
+      pending -= 1;
+      if (pending === 0) recomputeStories();
+    };
+
+    // create lightweight preloaders for bg images
+    const unload: HTMLImageElement[] = [];
+    imgs.forEach((el) => {
+      const bg = getComputedStyle(el).backgroundImage; // url("...") or "none"
+      const m = bg && bg.startsWith("url(") ? bg.match(/^url\(["']?(.*?)["']?\)$/) : null;
+      const src = m?.[1];
+      if (!src) return;
+      const img = new Image();
+      img.onload = onDone;
+      img.onerror = onDone;
+      img.src = src;
+      unload.push(img);
+    });
+
+    // if none had images, still recompute
+    if (unload.length === 0) recomputeStories();
+
+    return () => { /* nothing to cleanup for Image objects */ };
+  }, [profile.stories]);
+
 
   // Drag handling for the pill
   const onDragAt = (clientX: number) => {
@@ -281,12 +356,23 @@ export default function ProfilePage() {
           <section className="cell stories-cell section">
             <h2 className="section-title">Stories</h2>
 
-            <div className="strip stories-strip">
-              {/* Viewport that horizontally scrolls */}
+            <div className="strip stories-strip" onMouseLeave={clearHover}>
               <div className="stories-viewport" ref={storiesRef} aria-label="Stories">
                 <div className="stories-track">
-                  {[...Array(30)].map((_, i) => (
-                    <div key={i} className="story-cover" aria-label="Story placeholder" />
+                  {storyBooks().map((book) => (
+                    <div
+                      key={book.id}
+                      className="story-cover"
+                      title={book.title}
+                      aria-label={`Story: ${book.title}`}
+                      onMouseEnter={() => onHoverBook(book)}
+                      style={{
+                        backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        backgroundColor: "#1b1b1b",
+                      }}
+                    />
                   ))}
                 </div>
               </div>
@@ -310,17 +396,14 @@ export default function ProfilePage() {
                     const vp = storiesRef.current;
                     if (!vp) return;
                     const max = vp.scrollWidth - vp.clientWidth;
-                    const step = vp.clientWidth * 0.1; // 10% step with arrows
+                    const step = vp.clientWidth * 0.1;
                     if (e.key === "ArrowRight") vp.scrollTo({ left: Math.min(vp.scrollLeft + step, max) });
                     if (e.key === "ArrowLeft")  vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0) });
                   }}
                 >
                   <div
                     className="stories-thumb"
-                    style={{
-                      width: `${thumbPct * 100}%`,
-                      left: `${storiesProgress * (100 - thumbPct * 100)}%`,
-                    }}
+                    style={{ width: `${thumbPct * 100}%`, left: `${storiesProgress * (100 - thumbPct * 100)}%` }}
                   />
                 </div>
               )}
@@ -330,13 +413,23 @@ export default function ProfilePage() {
           {/* LEFT — Row 3: Top 5 Favorites (title + black box fills the row) */}
           <section className="cell favorites-cell section">
             <h2 className="section-title">Top 5 Favorites</h2>
-            <div className="strip favorites-strip">
+            <div className="strip favorites-strip" onMouseLeave={clearHover}>
               <div className="favorites-grid">
-                <div className="fav-cover" aria-label="Favorite book placeholder" />
-                <div className="fav-cover" aria-label="Favorite book placeholder" />
-                <div className="fav-cover" aria-label="Favorite book placeholder" />
-                <div className="fav-cover" aria-label="Favorite book placeholder" />
-                <div className="fav-cover" aria-label="Favorite book placeholder" />
+                {favoriteBooks().slice(0, 5).map((book) => (
+                  <div
+                    key={book.id}
+                    className="fav-cover"
+                    title={book.title}
+                    aria-label={`Favorite: ${book.title}`}
+                    onMouseEnter={() => onHoverBook(book)}
+                    style={{
+                      backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundColor: "#1b1b1b",
+                    }}
+                  />
+                ))}
               </div>
             </div>
           </section>
@@ -344,70 +437,100 @@ export default function ProfilePage() {
           {/* CENTER — spans all 3 rows */}
           <section className="cell feature-cell">
             <div className="feature-card">
-              <div className="feature-stack">
-                <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" />
-                <div className="feature-info">
-                  <h3 className="feature-title">Everything To Get More and Balls</h3>
-
-                  <hr className="meta-hr" />
-
-                  <div className="feature-author">
-                    <span className="meta-avatar--sm" aria-hidden={true}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
-                        <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-                        <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                        <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </span>
-                    <span className="feature-author-name">Author Name</span>
-                  </div>
-
-                  <hr className="meta-hr" />
-
-                  {/* Actions: pass class hooks so your CSS can center icon+count */}
-                  <div className="meta-actions">
-                    <LikeButton
-                      className="meta-icon-btn like"
-                      count={(liked ? 1 : 0) + 127}
-                      active={liked}
-                      onToggle={() => setLiked((v) => !v)}
+              {activeBook ? (
+                <div className="feature-stack">
+                  {/* Cover */}
+                  {activeBook.coverUrl ? (
+                    <div
+                      className="feature-cover-placeholder"
+                      aria-label={`${activeBook.title} cover`}
+                      style={{
+                        backgroundImage: `url(${activeBook.coverUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
                     />
-                    <StarButton
-                      className="meta-icon-btn star"
-                      rating={combinedRating}
-                      userRating={userRating}
-                      active={userRating > 0}
-                      onRate={(v: number) => setUserRating((prev) => (prev === v ? 0 : v))}
-                    />
-                    <SaveButton
-                      className="meta-icon-btn save"
-                      count={(saved ? 1 : 0) + 56}
-                      active={saved}
-                      onToggle={() => setSaved((v) => !v)}
-                    />
-                  </div>
+                  ) : (
+                    <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" />
+                  )}
 
-                  <hr className="meta-hr" />
+                  <div className="feature-info">
+                    {/* Title */}
+                    <div className={`feature-title-wrap ${titleLines === 1 ? "one-line" : ""}`}>
+                      <h3 ref={titleRef} className="feature-title">{activeBook.title}</h3>
+                    </div>
 
-                  <div className="align-left">
-                    <p className="meta-chapters"><span>5 / 20 Chapters</span></p>
-                  </div>
+                    <hr className="meta-hr" />
 
-                  <hr className="meta-hr" />
+                    {/* Author */}
+                    <div className="feature-author">
+                      <span className="meta-avatar--sm" aria-hidden={true}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
+                          <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                          <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                          <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <span className="feature-author-name">{activeBook.author}</span>
+                    </div>
 
-                  <div className="align-left">
-                    <ul className="meta-tags meta-tags--outline">
-                      <li>Fantasy</li>
-                      <li>Adventure</li>
-                      <li>Mystery</li>
-                      <li>Young Adult</li>
-                      <li>Magic</li>
-                    </ul>
+                    <hr className="meta-hr" />
+
+                    {/* Actions (likes / rating / saves) */}
+                    <div className="meta-actions">
+                      <LikeButton
+                        className="meta-icon-btn like"
+                        count={activeBook.likes ?? 0}
+                        active={liked}
+                        onToggle={() => setLiked((v) => !v)}
+                      />
+                      <StarButton
+                        className="meta-icon-btn star"
+                        rating={Number(activeBook.rating ?? 0)}
+                        userRating={userRating}
+                        active={userRating > 0}
+                        onRate={(v: number) => setUserRating((prev) => (prev === v ? 0 : v))}
+                      />
+                      <SaveButton
+                        className="meta-icon-btn save"
+                        count={activeBook.bookmarks ?? 0}
+                        active={saved}
+                        onToggle={() => setSaved((v) => !v)}
+                      />
+                    </div>
+
+                    <hr className="meta-hr" />
+
+                    {/* Chapters */}
+                    <div className="align-left">
+                      <p className="meta-chapters">
+                        <span>
+                          {(activeBook.currentChapter ?? 0)} / {(activeBook.totalChapters ?? 0)} Chapters
+                        </span>
+                      </p>
+                    </div>
+
+                    <hr className="meta-hr" />
+
+                    {/* Genres */}
+                    <div className="align-left">
+                      <div className="meta-tags-block">
+                        <ul className="meta-tags meta-tags--outline">
+                          {(activeBook?.tags ?? []).map((t) => <li key={t}>{t}</li>)}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                // Empty state: keep your clean black card with no content
+                <div className="feature-stack">
+                  <div className="feature-cover-placeholder" aria-hidden="true" style={{ background: "#000" }} />
+                </div>
+              )}
             </div>
           </section>
+
 
           {/* RIGHT — Rows 1–2: Library (title stuck to top, shelf fills rest) */}
           <section className="cell library-cell section">

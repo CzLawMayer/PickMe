@@ -1237,3 +1237,300 @@ a:focus,
     height: clamp(84px, 10vh, 120px);
   }
 }
+
+
+/* Make the center card lay out from the TOP so nothing floats vertically */
+.feature-card {
+  justify-content: flex-start !important; /* was centering before */
+}
+
+/* The info column uses natural rows but stays predictable */
+.feature-info {
+  display: grid;
+  grid-auto-rows: max-content;
+  row-gap: clamp(6px, 1vh, 10px);
+}
+
+/* ----- Genres: fixed-height “stage” that never changes total height ----- */
+:root {
+  --chip-row: 30px;      /* approx height of one wrapped row of chips */
+  --chip-gap-v: 8px;     /* vertical gap between rows */
+  --chip-lines: 3;       /* reserve up to 3 lines of chips */
+  --tags-block-h: calc(
+    var(--chip-lines) * var(--chip-row) + (var(--chip-lines) - 1) * var(--chip-gap-v)
+  );
+}
+
+/* Reserve the space; content inside starts at the TOP */
+.meta-tags-block {
+  height: var(--tags-block-h);
+  overflow: hidden;              /* extra lines are clipped (by design) */
+  display: block;
+}
+
+/* Ensure the chips wrap from the top-left, not centered vertically */
+.feature-info .meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;     /* <— key: top-align rows within fixed height */
+  align-items: flex-start;
+  gap: 8px 10px;                 /* your existing horizontal/vertical gaps */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Optional: on tighter screens, reserve fewer rows so layout stays tidy */
+@media (max-width: 560px), (max-height: 680px) {
+  :root {
+    --chip-row: 28px;
+    --chip-gap-v: 6px;
+    --chip-lines: 2;             /* reserve 2 lines on very small viewports */
+  }
+}
+
+/* === FEATURE: tighten vertical spacing (author, icons, chapters) === */
+
+/* Top-align the card (if you haven't already) */
+.feature-card { justify-content: flex-start !important; }
+
+/* Make the info column use tighter row gaps */
+.feature-info { row-gap: 6px !important; }
+
+/* Author row: no extra padding/margins */
+.feature-author {
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 6px !important;
+}
+
+/* Icons row: reduce vertical padding and inner gaps */
+.meta-actions {
+  padding-block: 2px !important;      /* was larger */
+}
+.meta-actions .meta-icon-btn { gap: 4px !important; }
+
+/* Chapter count: remove outside margins */
+.align-left { margin: 0 !important; }
+.feature-info .meta-chapters { margin: 0 !important; }
+
+/* Dividers: make them slimmer/tighter */
+.meta-hr { margin: 6px 0 !important; height: 1px !important; }
+
+/* Optional: slightly smaller author avatar to save a few px */
+.meta-avatar--sm,
+.meta-avatar--sm svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+:root {
+  --title-lines: 2;
+  --title-lh: 1.1; /* match .feature-title */
+}
+
+/* clamp to two lines visually (same as before) */
+.feature-title {
+  line-height: var(--title-lh);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--title-lines);
+  overflow: hidden;
+}
+
+/* reserve fixed space for 2 lines */
+.feature-title-wrap {
+  min-height: calc(var(--title-lines) * 1em * var(--title-lh));
+  max-height: calc(var(--title-lines) * 1em * var(--title-lh));
+  display: flex;
+  align-items: flex-start;   /* default: top-aligned */
+}
+
+/* if it’s exactly one line, center it vertically in the reserved space */
+.feature-title-wrap.one-line {
+  align-items: center;
+}
+
+/* default: left-aligned (2-line space) */
+.feature-title-wrap {
+  display: flex;
+  align-items: flex-start;     /* vertical (top) by default */
+  justify-content: flex-start; /* horizontal left by default */
+}
+
+/* one-line: center both vertically and horizontally */
+.feature-title-wrap.one-line {
+  align-items: center;
+  justify-content: center;
+}
+
+/* center the text itself for one-line case */
+.feature-title-wrap.one-line .feature-title {
+  text-align: center;
+}
+
+:root {
+  --title-lines: 2;   /* reserve up to 2 lines */
+  --title-lh: 1.1;    /* MUST match .feature-title line-height */
+}
+
+/* Fixed-height stage + perfect centering on both axes */
+.feature-title-wrap {
+  height: calc(var(--title-lines) * 1em * var(--title-lh));
+  display: grid;
+  align-items: center;     /* vertical centering */
+  justify-items: center;   /* horizontal centering */
+}
+
+/* If you still add .one-line, keep it harmless */
+.feature-title-wrap.one-line {
+  align-items: center;
+  justify-items: center;
+}
+
+/* Title clamped to 2 lines; centered text */
+.feature-title {
+  margin: 0;
+  line-height: var(--title-lh);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--title-lines);
+  overflow: hidden;
+
+  text-align: center;      /* center the text within its block */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Consistent gap below the title area */
+.feature-title-wrap + .meta-hr {
+  margin-top: 8px !important;
+}
+
+:root {
+  --title-lines: 2;        /* reserve up to 2 lines */
+  --title-lh: 1.12;        /* a touch more leading to avoid ascender cut */
+  --title-pad-top: 0.22em; /* ↑ add real cushion above */
+  --title-pad-bot: 0.22em; /* ↓ and below */
+  --title-fudge: 4px;      /* subpixel safety net */
+}
+
+/* Fixed-height “stage” that includes padding + a tiny fudge factor */
+.feature-title-wrap {
+  height: calc(
+    var(--title-lines) * 1em * var(--title-lh)
+    + var(--title-pad-top)
+    + var(--title-pad-bot)
+    + var(--title-fudge)
+  );
+  display: grid;
+  align-items: center;     /* vertical center */
+  justify-items: center;   /* horizontal center */
+  /* ensure old min/max-height rules don’t fight this */
+}
+
+/* Clamp + padding (padding is included in the reserved height above) */
+.feature-title {
+  box-sizing: border-box;
+  margin: 0;
+  padding-top: var(--title-pad-top);
+  padding-bottom: var(--title-pad-bot);
+  line-height: var(--title-lh);
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--title-lines);
+  overflow: hidden;
+
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Consistent gap under the title area */
+.feature-title-wrap + .meta-hr { margin-top: 8px !important; }
+
+/* === GENRES: taller chips, still precise rows === */
+:root {
+  --chip-h: 32px;       /* was 30px — taller row */
+  --chip-vgap: 8px;     /* vertical gap between rows */
+  --chip-lines: 3;      /* reserve up to 3 rows */
+  --tags-fudge: 4px;    /* tiny safety cushion */
+}
+
+/* Fixed-height stage for exactly 3 rows + gaps */
+.meta-tags-block {
+  height: calc(
+    var(--chip-lines) * var(--chip-h) +
+    (var(--chip-lines) - 1) * var(--chip-vgap) +
+    var(--tags-fudge)
+  );
+  overflow: hidden;
+}
+
+/* Wrap from the top, with explicit row/column gaps */
+.feature-info .meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  row-gap: var(--chip-vgap);
+  column-gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Lock each chip to the new taller row height */
+.feature-info .meta-tags li {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: var(--chip-h);     /* ← 36px row */
+  padding: 5px 12px;         /* slight vertical padding for feel */
+  border-width: 1px;
+  line-height: 1;            /* no extra line box creep */
+  margin: 0;
+}
+
+:root {
+  --chip-h: 36px;   /* equals TagClamp chipHeight */
+  --chip-vgap: 8px; /* equals TagClamp verticalGap */
+  --chip-lines: 3;
+  --tags-fudge: 4px;
+}
+
+.meta-tags-block {
+  height: calc(
+    var(--chip-lines) * var(--chip-h) +
+    (var(--chip-lines) - 1) * var(--chip-vgap) +
+    var(--tags-fudge)
+  );
+  overflow: hidden;
+}
+
+.feature-info .meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  row-gap: var(--chip-vgap);
+  column-gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature-info .meta-tags li {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: var(--chip-h);
+  padding: 4px 12px;
+  border-width: 1px;
+  line-height: 1;
+  margin: 0;
+}
