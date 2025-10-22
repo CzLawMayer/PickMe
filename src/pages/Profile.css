@@ -1191,3 +1191,49 @@ a:focus,
 
 /* Center just the chapters line in the feature card */
 .feature-info .meta-chapters { text-align: center !important; }
+
+/* share top offset with the center feature so the avatar never starts higher */
+:root { --feature-pad: clamp(12px, 1.6vw, 16px); }
+.feature-card { padding: var(--feature-pad) !important; }
+.identity-cell { padding-top: var(--feature-pad) !important; }
+
+/* make the identity row two equal-height columns (avatar height drives the row) */
+.profile-card {
+  display: flex;
+  align-items: stretch !important;   /* both columns take the same height */
+  gap: 18px;
+}
+
+/* explicit avatar size (tweak as you like) */
+.profile-avatar,
+.profile-avatar img,
+.profile-avatar svg {
+  width: clamp(96px, 12vh, 148px);
+  height: clamp(96px, 12vh, 148px);
+}
+
+/* center the right stack (name / handle / bars) vertically to the avatar */
+.profile-id {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;           /* ← vertical centering */
+  min-width: 0;                      /* keep truncation working */
+}
+
+/* keep your existing text truncation etc. */
+.profile-name,
+.profile-handle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* small-screen tweak: shrink avatar so centering still fits nicely */
+@media (max-width: 560px), (max-height: 680px) {
+  .profile-avatar,
+  .profile-avatar img,
+  .profile-avatar svg {
+    width: clamp(84px, 10vh, 120px);
+    height: clamp(84px, 10vh, 120px);
+  }
+}

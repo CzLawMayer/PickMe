@@ -6,7 +6,7 @@ export const getBooksByIds = (ids) =>
 
 export const profile = {
   id: "user-001",
-  name: "makipedia",
+  name: "Diego Ballesteros",
   username: "Balls",
   avatarUrl: "/public/avatars/Diego.jpg",
 
