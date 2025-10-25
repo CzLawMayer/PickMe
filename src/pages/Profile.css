@@ -1534,3 +1534,92 @@ a:focus,
   line-height: 1;
   margin: 0;
 }
+
+:root {
+  --spines-per-row: 15;
+  --spine-gap: clamp(8px, 1vw, 14px);
+}
+
+/* keep the existing gap tokenized */
+.shelf-row { gap: var(--spine-gap); }
+
+/* FIX: lock each spine to 1/15 of row width (minus gaps) */
+.shelf-row .book-spine {
+  flex: 0 0 calc((100% - (var(--spines-per-row) - 1) * var(--spine-gap)) / var(--spines-per-row));
+  max-width: calc((100% - (var(--spines-per-row) - 1) * var(--spine-gap)) / var(--spines-per-row));
+}
+
+/* placeholders occupy space but are visually empty */
+.book-spine--placeholder {
+  visibility: hidden;          /* keeps layout space; nothing visible */
+  pointer-events: none;
+}
+
+/* Selected state for covers (Stories/Favorites) */
+.story-cover.is-selected,
+.fav-cover.is-selected {
+  outline: 2px solid #1e88e5;   /* blue */
+  outline-offset: 2px;
+}
+
+/* Make selected library spine stay floated like :hover */
+.book-spine.is-selected {
+  transform: translateY(-6px) translateZ(0) scale(1.02);
+  filter: brightness(1.02);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .book-spine.is-selected { transform: none; box-shadow: none; filter: none; }
+}
+
+/* Kill actual outline for selected covers; we’ll use a ring instead */
+.story-cover.is-selected,
+.fav-cover.is-selected {
+  outline: none !important;
+  position: relative;           /* needed for z-index */
+  z-index: 2;                   /* lift above neighbors */
+  /* Two-layer ring: solid + soft glow */
+}
+
+/* If you already add hover shadows to covers, keep them — this stacks nicely */
+
+/* Selected ring that always shows immediately */
+.story-cover.is-selected,
+.fav-cover.is-selected {
+  outline: none !important;
+  position: relative;
+  z-index: 20; /* ensure it renders above siblings */
+}
+
+/* Base: covers can host the ring */
+.story-cover,
+.fav-cover {
+  position: relative;
+  z-index: 0;
+  transform: translateZ(0);
+}
+
+/* Selected: square, thicker ring (no rounding) */
+.story-cover.is-selected,
+.fav-cover.is-selected {
+  z-index: 20;
+}
+
+.story-cover.is-selected::after,
+.fav-cover.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: 0;                  /* draw inside the tile */
+  border: 3px solid #1e88e5; /* thicker blue ring */
+  border-radius: 0;          /* ← square corners */
+  pointer-events: none;
+}
+
+/* (Optional) tiny boost on high-DPI */
+@media (min-resolution: 2dppx) {
+  .story-cover.is-selected::after,
+  .fav-cover.is-selected::after {
+    border-width: 3.25px;
+  }
+}

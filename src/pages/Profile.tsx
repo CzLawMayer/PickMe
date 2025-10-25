@@ -7,6 +7,9 @@ import SaveButton from "@/components/SaveButton";
 import { Link } from "react-router-dom";
 import ReadingHeatmap from "@/components/ReadingHeatmap";
 import { profile, storyBooks, favoriteBooks, libraryBooks } from "@/profileData";
+import { flushSync } from "react-dom";
+import { useMemo } from "react";
+
 
 
 /* --- Tiny hook to auto-fit text to its line without reflowing layout --- */
@@ -88,8 +91,6 @@ export default function ProfilePage() {
 
 
   const [activeBook, setActiveBook] = useState<any>(null);
-  const onHoverBook = (book: any) => setActiveBook(book);
-  const clearHover = () => setActiveBook(null);
 
 
 
@@ -97,6 +98,107 @@ export default function ProfilePage() {
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const [titleLines, setTitleLines] = useState(2);
 
+
+  // Library -> center feature wiring (no visual changes to Library)
+  const shelfRef = useRef<HTMLDivElement | null>(null);
+
+  const handleLibraryHover = (evt: React.MouseEvent<HTMLDivElement>) => {
+    const el = (evt.target as Element)?.closest?.(".book-spine[data-index]") as HTMLElement | null;
+    if (!el) return;                           // ignore gaps/placeholders
+    const idx = Number(el.dataset.index);
+    if (Number.isNaN(idx)) return;
+    const books = libraryBooks();
+    const book = books[idx];
+    if (book) previewBook(book);               // <<< important
+  };
+
+  // KEYBOARD focus on a spine -> preview in center (no selection)
+  const handleLibraryFocus = (evt: React.FocusEvent<HTMLDivElement>) => {
+    const el = (evt.target as Element)?.closest?.(".book-spine[data-index]") as HTMLElement | null;
+    if (!el) return;
+    const idx = Number(el.dataset.index);
+    if (Number.isNaN(idx)) return;
+    const books = libraryBooks();
+    const book = books[idx];
+    if (book) previewBook(book);               // <<< important
+  };
+
+  const handleLibraryKey = (evt: React.KeyboardEvent<HTMLDivElement>) => {
+    const el = (evt.target as Element)?.closest?.(".book-spine") as HTMLElement | null;
+    if (!el) return;
+    if (evt.key === "Enter" || evt.key === " ") {
+      evt.preventDefault();
+      const idx = Number(el.dataset.index);
+      const books = libraryBooks();
+      if (!Number.isNaN(idx) && books[idx]) onHoverBook(books[idx]);
+    }
+  };
+
+  // KEEP your existing: const [activeBook, setActiveBook] = useState<any>(null);
+
+  type SelectionSource = "stories" | "favorites" | "library" | null;
+
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<SelectionSource>(null);
+
+  // Helper to find a book by id from any list
+  const getBookById = (id?: string | null) => {
+    if (!id) return null;
+    const sid = String(id);
+    return (
+      storyBooks().find(b => String(b.id) === sid) ??
+      favoriteBooks().find(b => String(b.id) === sid) ??
+      libraryBooks().find(b => String(b.id) === sid) ??
+      null
+    );
+  };
+
+  // HOVER = preview in center (does NOT change selection)
+  const previewBook = (book: any) => setActiveBook(book);
+
+  // CLICK = select + stick in center, remembering which section it came from
+  const selectBook = (book: any, source: Exclude<SelectionSource, null>) => {
+    setSelectedBookId(String(book.id));
+    setSelectedSource(source);
+    setActiveBook(book);
+  };
+
+  // On leaving a strip/shelf, restore the last selection (if any)
+  const clearHover = () => {
+    const selected = getBookById(selectedBookId);
+    setActiveBook(selected ?? null);
+  };
+
+
+
+
+  const handleLibraryClick = (evt: React.MouseEvent<HTMLDivElement>) => {
+    const el = (evt.target as Element)?.closest?.(".book-spine[data-index]") as HTMLElement | null;
+    if (!el) return;
+    const idx = Number(el.dataset.index);
+    const books = libraryBooks();
+    const book = Number.isNaN(idx) ? null : books[idx];
+    if (book) selectBook(book, "library");
+  };
+
+
+  // Stamp indices + a11y labels on mount (keeps visuals unchanged)
+  useLayoutEffect(() => {
+    const shelf = shelfRef.current;
+    if (!shelf) return;
+
+    const spines = Array.from(shelf.querySelectorAll<HTMLElement>(".book-spine"));
+    const books = libraryBooks();
+
+    spines.slice(0, 45).forEach((el, i) => {
+      el.dataset.index = String(i);
+      if (!el.hasAttribute("tabindex")) el.tabIndex = 0; // keyboard focusable
+      const b = books[i];
+      if (b) el.setAttribute("aria-label", `Book: ${b.title}${b.author ? ` by ${b.author}` : ""}`);
+    });
+  }, []);
+
+  
   // measure on book/title change and resize
   useLayoutEffect(() => {
     const el = titleRef.current;
@@ -141,6 +243,61 @@ export default function ProfilePage() {
     // position 0..1
     setStoriesProgress(max ? vp.scrollLeft / max : 0);
   };
+
+
+
+  const allStoryBooks = storyBooks();
+  const allFavBooks = favoriteBooks();
+  const allLibBooks = libraryBooks();
+  const allBooks = [...allStoryBooks, ...allFavBooks, ...allLibBooks];
+
+  // Derive stats if not present in profile.stats
+  const stats = useMemo(() => {
+    // 1) Prefer explicit values from profile.stats if provided
+    const explicit = profile?.stats ?? {};
+
+    // 2) Fallbacks computed from book data (best-effort)
+    //    Adjust these heuristics to match your data model.
+    const derivedBooksCompleted =
+      allBooks.filter((b: any) => {
+        // consider completed if explicit status OR user reached last chapter
+        const doneFlag = b.status === "completed" || b.completed === true;
+        const byChapters =
+          Number.isFinite(b?.currentChapter) &&
+          Number.isFinite(b?.totalChapters) &&
+          b.totalChapters > 0 &&
+          b.currentChapter >= b.totalChapters;
+        return doneFlag || byChapters;
+      }).length || 0;
+
+    const derivedChaptersRead = allBooks.reduce((sum: number, b: any) => {
+      // prefer a read count field; else fall back to currentChapter
+      const read =
+        Number.isFinite(b?.chaptersRead)
+          ? b.chaptersRead
+          : Number.isFinite(b?.currentChapter)
+          ? b.currentChapter
+          : 0;
+      return sum + (read as number);
+    }, 0);
+
+    const derivedBooksSaved =
+      allBooks.filter((b: any) => {
+        // treat any truthy `saved`/`bookmarked`/`isSaved` as saved
+        return b?.saved === true || b?.isSaved === true || (b?.bookmarksByUser ?? 0) > 0;
+      }).length || 0;
+
+    return {
+      booksCompleted:
+        Number.isFinite(explicit.booksCompleted) ? explicit.booksCompleted : derivedBooksCompleted,
+      chaptersRead:
+        Number.isFinite(explicit.chaptersRead) ? explicit.chaptersRead : derivedChaptersRead,
+      booksSaved:
+        Number.isFinite(explicit.booksSaved) ? explicit.booksSaved : derivedBooksSaved,
+    };
+    // Recompute if the inputs change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.stats, allBooks.length]);
 
   // mount + resize + element size change
   useLayoutEffect(() => {
@@ -353,6 +510,7 @@ export default function ProfilePage() {
           </section>
 
           {/* LEFT — Row 2: Stories (title + black box fills the row) */}
+          {/* LEFT — Row 2: Stories */}
           <section className="cell stories-cell section">
             <h2 className="section-title">Stories</h2>
 
@@ -362,10 +520,22 @@ export default function ProfilePage() {
                   {storyBooks().map((book) => (
                     <div
                       key={book.id}
-                      className="story-cover"
+                      className={
+                        "story-cover" +
+                        (selectedSource === "stories" && selectedBookId === String(book.id) ? " is-selected" : "")
+                      }
                       title={book.title}
                       aria-label={`Story: ${book.title}`}
-                      onMouseEnter={() => onHoverBook(book)}
+                      tabIndex={0}
+                      onMouseEnter={() => previewBook(book)}
+                      onPointerDown={() => flushSync(() => selectBook(book, "stories"))}
+                      onClick={() => selectBook(book, "stories")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          selectBook(book, "stories");
+                        }
+                      }}
                       style={{
                         backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
                         backgroundSize: "cover",
@@ -377,7 +547,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Custom pill slider — only if needed */}
+              {/* pill slider unchanged */}
               {canScrollStories && (
                 <div
                   className="stories-progress"
@@ -410,7 +580,8 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* LEFT — Row 3: Top 5 Favorites (title + black box fills the row) */}
+
+          {/* LEFT — Row 3: Top 5 Favorites */}
           <section className="cell favorites-cell section">
             <h2 className="section-title">Top 5 Favorites</h2>
             <div className="strip favorites-strip" onMouseLeave={clearHover}>
@@ -418,10 +589,22 @@ export default function ProfilePage() {
                 {favoriteBooks().slice(0, 5).map((book) => (
                   <div
                     key={book.id}
-                    className="fav-cover"
+                    className={
+                      "fav-cover" +
+                      (selectedSource === "favorites" && selectedBookId === String(book.id) ? " is-selected" : "")
+                    }
                     title={book.title}
                     aria-label={`Favorite: ${book.title}`}
-                    onMouseEnter={() => onHoverBook(book)}
+                    tabIndex={0}
+                    onMouseEnter={() => previewBook(book)}
+                    onPointerDown={() => flushSync(() => selectBook(book, "stories"))}
+                    onClick={() => selectBook(book, "favorites")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        selectBook(book, "favorites");
+                      }
+                    }}
                     style={{
                       backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
                       backgroundSize: "cover",
@@ -433,6 +616,7 @@ export default function ProfilePage() {
               </div>
             </div>
           </section>
+
 
           {/* CENTER — spans all 3 rows */}
           <section className="cell feature-cell">
@@ -533,68 +717,71 @@ export default function ProfilePage() {
 
 
           {/* RIGHT — Rows 1–2: Library (title stuck to top, shelf fills rest) */}
+          {/* RIGHT — Rows 1–2: Library (always ≥3 shelves; fixed 15 columns; placeholders for empties) */}
           <section className="cell library-cell section">
             <h2 className="section-title right-title">Library</h2>
 
-            <div className="shelf" role="grid" aria-label="Bookshelf">
-              {/* Row 1 */}
-              <div className="shelf-row" role="row">
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-              </div>
+            <div
+              className="shelf"
+              role="grid"
+              aria-label="Bookshelf"
+              ref={shelfRef}
+              onMouseOver={handleLibraryHover}   // should call previewBook(...)
+              onFocus={handleLibraryFocus}       // should call previewBook(...)
+              onKeyDown={handleLibraryKey}       // Enter/Space -> preview or select
+              onMouseLeave={clearHover}          // restore selection
+              onClick={handleLibraryClick}       // click -> select (stick)
+            >
+              {(() => {
+                const books = libraryBooks();   // your source of truth
+                const COLS = 15;                // spines per row
+                const MIN_ROWS = 3;             // always show at least 3 shelves
 
-              {/* Row 2 */}
-              <div className="shelf-row" role="row">
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-              </div>
+                const totalRows = Math.max(MIN_ROWS, Math.ceil(books.length / COLS));
 
-              {/* Row 3 */}
-              <div className="shelf-row" role="row">
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-                <div className="book-spine" />
-              </div>
+                return Array.from({ length: totalRows }, (_, rIdx) => {
+                  const start = rIdx * COLS;
+                  const row = books.slice(start, start + COLS);
+                  const placeholders = Math.max(0, COLS - row.length);
+
+                  return (
+                    <div className="shelf-row" role="row" key={`row-${rIdx}`}>
+                      {/* real books */}
+                      {row.map((book, i) => {
+                        const globalIdx = rIdx * COLS + i;
+                        return (
+                          <div
+                            key={book.id ?? `b-${globalIdx}`}
+                            role="gridcell"
+                            className={`book-spine${selectedBookId === String(book.id) ? " is-selected" : ""}`}
+                            title={book.title}
+                            aria-label={`Book: ${book.title}${book.author ? ` by ${book.author}` : ""}`}
+                            tabIndex={0}
+                            data-index={globalIdx}
+                          />
+                        );
+                      })}
+
+                      {/* invisible placeholders to preserve 15 columns */}
+                      {Array.from({ length: placeholders }).map((_, p) => (
+                        <div
+                          key={`ph-${rIdx}-${p}`}
+                          role="gridcell"
+                          className="book-spine book-spine--placeholder"
+                          aria-hidden="true"
+                        />
+                      ))}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </section>
+
+
+
+
+
 
           {/* RIGHT — Row 3: Currently Reading (title + black box fills the row) */}
           <section className="cell current-cell section">
@@ -608,15 +795,15 @@ export default function ProfilePage() {
               <div className="current-stats" role="group" aria-label="Reading stats">
                 <div className="current-stat">
                   <div className="stat-label">Books completed</div>
-                  <div className="stat-value">0</div>
+                  <div className="stat-value">{stats.booksCompleted}</div>
                 </div>
                 <div className="current-stat">
                   <div className="stat-label">Chapters read</div>
-                  <div className="stat-value">0</div>
+                  <div className="stat-value">{stats.chaptersRead}</div>
                 </div>
                 <div className="current-stat">
                   <div className="stat-label">Books saved</div>
-                  <div className="stat-value">0</div>
+                  <div className="stat-value">{stats.booksSaved}</div>
                 </div>
               </div>
             </div>

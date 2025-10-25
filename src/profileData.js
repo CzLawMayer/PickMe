@@ -35,7 +35,7 @@ export const profile = {
   stats: {
     booksCompleted: 12,
     chaptersRead: 318,
-    booksSaved: 45
+    booksSaved: 48
   }
 };
 
