@@ -1623,3 +1623,43 @@ a:focus,
     border-width: 3.25px;
   }
 }
+
+/* ==== Laptop-friendly Genres: 2 lines, thinner chips ==== */
+/* Targets common laptop viewports; tweak bounds if needed */
+@media (min-width: 1024px) and (max-width: 1600px) and (max-height: 900px) {
+  /* Reserve exactly 2 rows for the tags area */
+  :root {
+    --chip-lines: 1;     /* two lines only */
+    --chip-h: 22px;      /* slimmer chip height (was 32–36px) */
+    --chip-vgap: 6px;    /* slightly tighter vertical gap */
+    --tags-fudge: 2px;   /* tiny cushion to avoid clipping */
+  }
+
+  /* Ensure the stage height recomputes to the new 2-line spec */
+  .meta-tags-block {
+    height: calc(
+      var(--chip-lines) * var(--chip-h) +
+      (var(--chip-lines) - 1) * var(--chip-vgap) +
+      var(--tags-fudge)
+    ) !important;
+    overflow: hidden;
+  }
+
+  /* Make the chips a touch more compact without losing readability */
+  .feature-info .meta-tags {
+    row-gap: var(--chip-vgap) !important;
+    column-gap: 8px !important;
+    align-content: flex-start !important;  /* start from top */
+  }
+
+  .feature-info .meta-tags li {
+    height: var(--chip-h) !important;
+    padding: 4px 10px !important;          /* thinner padding */
+    font-size: clamp(0.8rem, 2.8cqw, 0.95rem) !important;
+    line-height: 1 !important;
+  }
+
+  /* Optional: tighten surrounding spacing to buy a little more room */
+  .meta-hr { margin: 6px 0 !important; }
+  .feature-info { row-gap: 6px !important; }
+}
