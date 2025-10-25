@@ -12,6 +12,7 @@ import { useMemo } from "react";
 
 
 
+
 /* --- Tiny hook to auto-fit text to its line without reflowing layout --- */
 function useFitText(minPx = 12, maxPx = 48) {
   const ref = useRef<HTMLElement | null>(null);
@@ -613,7 +614,7 @@ export default function ProfilePage() {
 
           {/* LEFT — Row 3: Top 5 Favorites */}
           <section className="cell favorites-cell section">
-            <h2 className="section-title">Top 5 Favorites</h2>
+            <h2 className="section-title">Favorites</h2>
             <div className="strip favorites-strip" onMouseLeave={clearHover}>
               <div className="favorites-grid">
                 {favoriteBooks().slice(0, 5).map((book) => (
@@ -655,15 +656,41 @@ export default function ProfilePage() {
                 <div className="feature-stack">
                   {/* Cover */}
                   {activeBook.coverUrl ? (
-                    <div
-                      className="feature-cover-placeholder"
-                      aria-label={`${activeBook.title} cover`}
-                      style={{
-                        backgroundImage: `url(${activeBook.coverUrl})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    />
+                    <div className="feature-cover-row">
+                      <Link
+                        to={`/?book=${encodeURIComponent(String(activeBook.id ?? ""))}`}
+                        className="feature-cover-link"
+                        aria-label={`Open "${activeBook.title}" on Home`}
+                        title={`Open "${activeBook.title}" on Home`}
+                      >
+                        {activeBook.coverUrl ? (
+                          <div
+                            className="feature-cover-placeholder"
+                            aria-label={`${activeBook.title} cover`}
+                            style={{
+                              backgroundImage: `url(${activeBook.coverUrl})`,
+                              backgroundSize: "cover",
+                              backgroundPosition: "center",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="feature-cover-placeholder"
+                            aria-label="Featured book cover placeholder"
+                          />
+                        )}
+                      </Link>
+
+                      {/* right-side chevron button (always visible) */}
+                      <Link
+                        to={`/?book=${encodeURIComponent(String(activeBook.id ?? ""))}`}
+                        className="feature-jump"
+                        aria-label={`Go to "${activeBook.title}" on Home`}
+                        title={`Go to "${activeBook.title}" on Home`}
+                      >
+                        ››
+                      </Link>
+                    </div>
                   ) : (
                     <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" />
                   )}
@@ -817,7 +844,7 @@ export default function ProfilePage() {
 
           {/* RIGHT — Row 3: Currently Reading (title + black box fills the row) */}
           <section className="cell current-cell section">
-            <h2 className="section-title">Currently Reading</h2>
+            <h2 className="section-title">Activity</h2>
             <div className="strip current-strip">
               <div className="current-grid">
                 <ReadingHeatmap year={new Date().getFullYear()} />

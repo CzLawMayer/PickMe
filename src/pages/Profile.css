@@ -1704,3 +1704,78 @@ a:focus,
 .brand-mark .brand-k    { color: var(--bar2) !important; }
 .brand-mark .brand-m    { color: var(--bar3) !important; }
 .brand-mark .brand-bang { color: var(--bar4) !important; }
+
+/* Container for cover + chevron */
+.feature-cover-row {
+  position: relative;
+  width: var(--fit-w);       /* matches your existing sizing token */
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Make the cover a proper clickable block */
+.feature-cover-link {
+  display: block;
+  line-height: 0;
+  cursor: pointer;
+}
+
+/* Chevron button to the right (like your screenshot) */
+.feature-jump {
+  position: absolute;
+  right: -10px;                     /* hangs slightly outside cover */
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+
+  font-size: clamp(22px, 5cqw, 34px);
+  line-height: 1;
+  padding: 4px 8px;
+
+  color: #fff;
+  background: rgba(0,0,0,0.65);
+}
+
+.feature-jump:hover {
+  background: rgba(0,0,0,0.85);
+  border-color: #fff;
+}
+
+.feature-jump:focus-visible {
+  outline: 2px solid #1e88e5;
+  outline-offset: 2px;
+}
+
+/* Keep chevron inside if the layout is tight */
+@media (max-width: 520px) {
+  .feature-jump { right: 6px; }
+}
+
+/* was: right: -10px; */
+.feature-jump {
+  right: -45px;
+}
+
+/* Stories covers */
+.stories-track .story-cover {
+  cursor: pointer;
+}
+
+/* Favorites covers */
+.favorites-grid .fav-cover {
+  cursor: pointer;
+}
+
+/* Library spines (but not empty placeholders) */
+.shelf .book-spine:not(.book-spine--placeholder) {
+  cursor: pointer;
+}
+
+/* (Optional) also show pointer for the feature panel’s links */
+.feature-cover-link,
+.feature-jump {
+  cursor: pointer;
+}

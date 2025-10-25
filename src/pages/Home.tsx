@@ -209,6 +209,20 @@ export default function Home() {
     return () => clearTimeout(t)
   }, [lineHeight])
 
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const id = sp.get("book");
+    const title = sp.get("title");
+    if (!books.length) return;
+
+    let idx = -1;
+    if (id) idx = books.findIndex(b => String(b.id) === String(id));
+    if (idx < 0 && title) {
+      const tnorm = title.toLowerCase();
+      idx = books.findIndex(b => (b.title || "").toLowerCase() === tnorm);
+    }
+    if (idx >= 0) setCurrent(idx);
+  }, [books, setCurrent]);
 
 
   // Close the reader menu any time we leave "open" view
