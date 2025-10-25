@@ -668,15 +668,14 @@ export default function ProfilePage() {
                     <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" />
                   )}
 
+                  {/* Info */}
                   <div className="feature-info">
-                    {/* Title */}
                     <div className={`feature-title-wrap ${titleLines === 1 ? "one-line" : ""}`}>
                       <h3 ref={titleRef} className="feature-title">{activeBook.title}</h3>
                     </div>
 
                     <hr className="meta-hr" />
 
-                    {/* Author */}
                     <div className="feature-author">
                       <span className="meta-avatar--sm" aria-hidden={true}>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
@@ -690,7 +689,6 @@ export default function ProfilePage() {
 
                     <hr className="meta-hr" />
 
-                    {/* Actions (likes / rating / saves) */}
                     <div className="meta-actions">
                       <LikeButton
                         className="meta-icon-btn like"
@@ -715,7 +713,6 @@ export default function ProfilePage() {
 
                     <hr className="meta-hr" />
 
-                    {/* Chapters */}
                     <div className="align-left">
                       <p className="meta-chapters">
                         <span>
@@ -726,7 +723,6 @@ export default function ProfilePage() {
 
                     <hr className="meta-hr" />
 
-                    {/* Genres */}
                     <div className="align-left">
                       <div className="meta-tags-block">
                         <ul className="meta-tags meta-tags--outline">
@@ -737,13 +733,19 @@ export default function ProfilePage() {
                   </div>
                 </div>
               ) : (
-                // Empty state: keep your clean black card with no content
+                // EMPTY STATE: centered PickMe! brand
                 <div className="feature-stack">
-                  <div className="feature-cover-placeholder" aria-hidden="true" style={{ background: "#000" }} />
+                  <div className="feature-empty-inline" aria-label="No book selected">
+                    <h3 className="brand-mark">
+                      <span className="brand-p">P</span>ic<span className="brand-k">k</span>
+                      <span className="brand-m">M</span>e<span className="brand-bang">!</span>
+                    </h3>
+                  </div>
                 </div>
               )}
             </div>
           </section>
+
 
 
           {/* RIGHT — Rows 1–2: Library (title stuck to top, shelf fills rest) */}
