@@ -299,6 +299,36 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.stats, allBooks.length]);
 
+
+
+
+  // Wheel-to-horizontal for Stories viewport
+  useLayoutEffect(() => {
+    const el = storiesRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      // If there's horizontal overflow, convert vertical wheel to horizontal
+      const hasOverflowX = el.scrollWidth > el.clientWidth;
+      if (!hasOverflowX) return;
+
+      // Only hijack when vertical movement dominates (normal mouse wheel)
+      const verticalDominates = Math.abs(e.deltaY) >= Math.abs(e.deltaX);
+
+      if (verticalDominates) {
+        e.preventDefault();                  // stop page from scrolling vertically
+        const speed = e.shiftKey ? 2 : 1;    // hold Shift to go faster
+        el.scrollLeft += e.deltaY * speed;   // natural direction
+      }
+      // Trackpads with native horizontal swipe will still work via deltaX
+    };
+
+    // Must be non-passive to allow preventDefault()
+    el.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => el.removeEventListener("wheel", onWheel as EventListener);
+  }, []);
+
   // mount + resize + element size change
   useLayoutEffect(() => {
     recomputeStories();
