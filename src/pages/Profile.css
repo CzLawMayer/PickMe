@@ -1766,3 +1766,12 @@ a:focus,
 .feature-jump {
   cursor: pointer;
 }
+
+.section-title .section-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.section-title .section-link:hover {
+  text-decoration: underline;
+}

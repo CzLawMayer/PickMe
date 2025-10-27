@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom"; // ✅ import Link
+import { Link } from "react-router-dom";
 
 type SideMenuProps = {
   open: boolean;
@@ -7,8 +7,7 @@ type SideMenuProps = {
 };
 
 export default function SideMenu({ open, onClose }: SideMenuProps) {
-  // Focus the first menu item when opened
-  const firstLinkRef = useRef<HTMLAnchorElement | null>(null); // ✅ anchor, not button
+  const firstLinkRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -48,28 +47,36 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
           <span className="menu-title">Menu</span>
         </div>
 
+        {/* Close menu after any item click */}
         <nav className="menu-list" onClick={onClose}>
-          {/* Profile (Link) */}
+          {/* Profile */}
           <Link
-            ref={firstLinkRef}               // ✅ focus target
-            to="/profile"
+            ref={firstLinkRef}
+            to="/profile"                // <— change to "/profile" if that's your route
             className="menu-item fill profile"
+            aria-label="Go to Profile"
           >
             <span className="menu-emoji">🧑</span>
             <span className="menu-text">Profile</span>
           </Link>
 
-          {/* Keep the rest as buttons for now (or swap to Links later) */}
-          <button className="menu-item fill library" type="button">
+          {/* Library (now a Link) */}
+          <Link
+            to="/library"
+            className="menu-item fill library"
+            aria-label="Go to Library"
+          >
             <span className="menu-emoji">📚</span>
             <span className="menu-text">Library</span>
-          </button>
+          </Link>
 
+          {/* Submit (still a button for now) */}
           <button className="menu-item fill submit" type="button">
             <span className="menu-emoji">✍️</span>
             <span className="menu-text">Submit</span>
           </button>
 
+          {/* Log Out (still a button for now) */}
           <button className="menu-item fill logout" type="button">
             <span className="menu-emoji">🚪</span>
             <span className="menu-text">Log Out</span>

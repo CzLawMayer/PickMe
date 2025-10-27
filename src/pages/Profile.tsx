@@ -778,7 +778,16 @@ export default function ProfilePage() {
           {/* RIGHT — Rows 1–2: Library (title stuck to top, shelf fills rest) */}
           {/* RIGHT — Rows 1–2: Library (always ≥3 shelves; fixed 15 columns; placeholders for empties) */}
           <section className="cell library-cell section">
-            <h2 className="section-title right-title">Library</h2>
+            <h2 className="section-title right-title">
+              <Link
+                to="/library"
+                className="section-link"
+                aria-label="Open Library page"
+                title="Open Library"
+              >
+                Library
+              </Link>
+            </h2>
 
             <div
               className="shelf"
