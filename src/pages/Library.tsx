@@ -16,9 +16,18 @@ import { userLibraryBooks } from "@/profileData";
 // tiny helper for the personal stars row (row 5)
 function UserRatingStars({ value }: { value: number }) {
   const stars = [1, 2, 3, 4, 5];
+
   return (
     <div
-      className="user-rating-stars"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        lineHeight: 1,
+        fontSize: "16px",
+        width: "100%",
+        justifyContent: "flex-start",
+      }}
       aria-label={`Your rating: ${value || 0} out of 5`}
     >
       {stars.map((n) => {
@@ -26,13 +35,9 @@ function UserRatingStars({ value }: { value: number }) {
         return (
           <span
             key={n}
-            className="material-symbols-outlined"
-            style={{
-              fontSize: "20px",
-              lineHeight: 1,
-              color: filled ? "#f2ac15" : "rgba(255,255,255,0.4)",
-              ["--ms-fill" as any]: filled ? 1 : 0,
-            }}
+            className={`material-symbols-outlined user-rating-star ${
+              filled ? "filled" : "empty"
+            }`}
             aria-hidden="true"
           >
             star
@@ -42,7 +47,6 @@ function UserRatingStars({ value }: { value: number }) {
     </div>
   );
 }
-
 export default function LibraryPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -224,14 +228,13 @@ export default function LibraryPage() {
                             width: "100%",
                             minWidth: 0,
                             overflow: "hidden",
-                            marginBottom: "12px", // breathing room before stars
+                            // remove marginBottom so stars sit closer again
+                            // marginBottom: "12px",
                           }}
                         >
                           {/* Like button */}
                           <LikeButton
-                            className={`meta-icon-btn like ${
-                              liked ? "is-active" : ""
-                            }`}
+                            className={`meta-icon-btn like ${liked ? "is-active" : ""}`}
                             glyphClass="meta-icon-glyph"
                             countClass="meta-icon-count"
                             active={liked}
@@ -266,9 +269,7 @@ export default function LibraryPage() {
 
                           {/* Save button */}
                           <SaveButton
-                            className={`meta-icon-btn save ${
-                              saved ? "is-active" : ""
-                            }`}
+                            className={`meta-icon-btn save ${saved ? "is-active" : ""}`}
                             glyphClass="meta-icon-glyph"
                             countClass="meta-icon-count"
                             active={saved}

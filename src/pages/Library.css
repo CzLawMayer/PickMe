@@ -658,3 +658,104 @@
   background: rgba(255,255,255,0.4);
 }
 
+/* === overrides from Alejandro's tweaks === */
+
+/* 1. Make book covers square (no rounding) */
+.library-app .lib-cover {
+  border-radius: 0 !important;
+}
+
+/* 2. Personal user stars row */
+.user-rating-star {
+  font-size: 20px;
+  line-height: 1;
+  /* kill text selection glow etc */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.user-rating-star.filled {
+  color: #f2ac15;           /* same yellow as active star elsewhere */
+  --ms-fill: 1;
+}
+
+.user-rating-star.empty {
+  color: #fff;              /* bright white for empty */
+  --ms-fill: 0;
+  opacity: 1;               /* force full brightness */
+}
+
+/* 3. Scrollbar styling for the scrollable books section */
+.lib-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lib-scroll::-webkit-scrollbar-track {
+  background: transparent;  /* keep background invisible */
+}
+
+.lib-scroll::-webkit-scrollbar-thumb {
+  background: #fff;         /* full white thumb */
+  border-radius: 3px;
+}
+
+/* Firefox scrollbar */
+.lib-scroll {
+  scrollbar-color: #fff transparent;  /* thumb white, track transparent */
+  scrollbar-width: thin;
+}
+
+/* === scrollbar: force pure white === */
+
+/* WebKit browsers (Chrome, Edge, Safari) */
+.lib-scroll::-webkit-scrollbar {
+  width: 8px;                /* a bit thicker so it looks solid white */
+  background: transparent;
+}
+
+.lib-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.4);  /* darker track so white pops */
+}
+
+.lib-scroll::-webkit-scrollbar-thumb {
+  background-color: #ffffff !important; /* pure white */
+  border-radius: 0;                      /* no blur rounding */
+  border: 0;                             /* remove gray border halo */
+  box-shadow: none !important;           /* kill inset shadows some browsers add */
+}
+
+/* Firefox */
+.lib-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff rgba(0, 0, 0, 0.4); 
+  /* thumb = white, track = darker */
+}
+
+/* === scrollbar: force visually solid white === */
+
+/* WebKit browsers (Chrome, Edge, etc.) */
+.lib-scroll::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+
+.lib-scroll::-webkit-scrollbar-track {
+  background-color: #ffffff !important;  /* pure white track */
+  border-radius: 0;
+  border: 0;
+  box-shadow: none !important;
+}
+
+.lib-scroll::-webkit-scrollbar-thumb {
+  background-color: #ffffff !important;  /* pure white thumb */
+  border-radius: 0;
+  border: 0;
+  box-shadow: none !important;
+}
+
+/* Firefox */
+.lib-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff #ffffff; 
+  /* thumb white, track white => whole bar reads white */
+}
