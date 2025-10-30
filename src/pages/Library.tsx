@@ -12,70 +12,95 @@ import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
 import { userLibraryBooks } from "@/profileData";
 
-// --- tiny helper for the personal stars (user rating) ---
+// tiny helper for the personal stars row on row 5
 function UserRatingStars({ value }: { value: number }) {
-  // value is user's own rating 0–5
   const stars = [1, 2, 3, 4, 5];
 
   return (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "flex-start",
-      gap: "4px",
-
-      // let the glyphs breathe vertically
-      lineHeight: 1.2,
-      minHeight: "20px",
-
-      width: "100%",
-      justifyContent: "flex-start",
-
-      fontFamily:
-        'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      fontWeight: 600,
-      fontSize: "18px",
-      color: "#fff",
-      marginTop: "6px",
-
-      // don't crop descenders
-      overflow: "visible",
-    }}
-    aria-label={`Your rating: ${value || 0} out of 5`}
-  >
-    {stars.map((n) => {
-      const filled = value >= n;
-      return (
-        <span
-          key={n}
-          style={{
-            lineHeight: 1.2,
-            color: filled ? "#f2ac15" : "#ffffff",
-            fontFamily:
-              'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          }}
-          aria-hidden="true"
-        >
-          {filled ? "★" : "☆"}
-        </span>
-      );
-    })}
-  </div>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        lineHeight: 1,
+        fontSize: "16px",
+        width: "100%",
+        justifyContent: "flex-start",
+        fontWeight: 600,
+        minHeight: "16px",
+        color: "inherit",
+      }}
+      aria-label={`Your rating: ${value || 0} out of 5`}
+    >
+      {stars.map((n) => {
+        const filled = value >= n;
+        return (
+          <span
+            key={n}
+            style={{
+              fontSize: "16px",
+              lineHeight: 1,
+              display: "block",
+              color: filled ? "#f2ac15" : "#ffffff",
+            }}
+            aria-hidden="true"
+          >
+            {filled ? "★" : "☆"}
+          </span>
+        );
+      })}
+    </div>
   );
 }
+
+
 
 export default function LibraryPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // user's full library with merged data (id, title, coverUrl, rating, userRating, etc.)
+  // full list of user's books
   const books = userLibraryBooks();
 
-  // pick an initial featured book so right panel isn't empty on load
-  const [hoveredBook, setHoveredBook] = useState<any | null>(
-    books[0] ?? null
-  );
+  // =========================
+  // FEATURE PANEL / SELECTION LOGIC
+  // =========================
+  //
+  // selectedBookId = the "locked" book (clicked)
+  // activeBook     = what's currently shown in the FeaturePanel
+  //  - hover sets activeBook to that hover target
+  //  - click sets BOTH selectedBookId + activeBook
+  //  - mouse leaving the grid resets activeBook back to the selectedBook
+  //
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [activeBook, setActiveBook] = useState<any | null>(null);
 
-  // per-book UI state (liked/saved + counts)
+  // helper to resolve an id to a book object
+  const getBookById = (id: string | null) => {
+    if (!id) return null;
+    return books.find((b) => String(b.id) === String(id)) || null;
+  };
+
+  // hover preview (doesn't change selection)
+  const previewBook = (book: any) => {
+    setActiveBook(book);
+  };
+
+  // click selection (sticks in panel + outline)
+  const selectBook = (book: any) => {
+    const idStr = String(book.id);
+    setSelectedBookId(idStr);
+    setActiveBook(book);
+  };
+
+  // when leaving the book grid, snap panel back to the last clicked book
+  const clearHover = () => {
+    const sel = getBookById(selectedBookId);
+    setActiveBook(sel || null);
+  };
+
+  // =========================
+  // PER-BOOK LIKE / SAVE STATE
+  // =========================
   type BookState = {
     liked: boolean;
     saved: boolean;
@@ -100,13 +125,11 @@ export default function LibraryPage() {
     initialStates
   );
 
-  // toggle like for a single book
   const toggleLike = (bookId: string | number) => {
     setBookStates((prev) => {
       const id = String(bookId);
       const st = prev[id];
       if (!st) return prev;
-
       const nextLiked = !st.liked;
       const nextLikeCount = nextLiked
         ? st.likeCount + 1
@@ -123,13 +146,11 @@ export default function LibraryPage() {
     });
   };
 
-  // toggle save for a single book
   const toggleSave = (bookId: string | number) => {
     setBookStates((prev) => {
       const id = String(bookId);
       const st = prev[id];
       if (!st) return prev;
-
       const nextSaved = !st.saved;
       const nextSaveCount = nextSaved
         ? st.saveCount + 1
@@ -146,9 +167,9 @@ export default function LibraryPage() {
     });
   };
 
-  // figure out like/save state for the book currently hovered (for FeaturePanel)
-  const hoveredState = hoveredBook
-    ? bookStates[String(hoveredBook.id)]
+  // state for whichever book is currently displayed in FeaturePanel
+  const activeState = activeBook
+    ? bookStates[String(activeBook.id)]
     : undefined;
 
   return (
@@ -183,9 +204,9 @@ export default function LibraryPage() {
 
       {/* ===== BODY LAYOUT ===== */}
       <main className="library-layout">
-        {/* LEFT SIDE: identity header (static) + scroll area below */}
+        {/* LEFT SIDE: hero (static) + scroll area */}
         <div className="library-left">
-          {/* --- Top identity / tabs header --- */}
+          {/* --- Top identity / tabs header (fixed above scroll) --- */}
           <section className="lib-hero" aria-label="Library header">
             <div className="identity-cell" style={{ minWidth: 0 }}>
               <ProfileIdentity compact />
@@ -207,8 +228,12 @@ export default function LibraryPage() {
             </nav>
           </section>
 
-          {/* --- Scrollable books area --- */}
-          <section className="lib-scroll" aria-label="Your books">
+          {/* --- Scrollable books grid --- */}
+          <section
+            className="lib-scroll"
+            aria-label="Your books"
+            onMouseLeave={clearHover}
+          >
             <div className="lib-row">
               {books.map((book) => {
                 const st = bookStates[String(book.id)];
@@ -223,19 +248,24 @@ export default function LibraryPage() {
                     : (book.rating ?? "0").toString()
                 );
 
+                // is this the "locked" (clicked) book?
+                const coverIsSelected =
+                  selectedBookId === String(book.id) ? " is-selected" : "";
+
                 return (
                   <div key={book.id} className="lib-col">
                     <div
                       className="lib-card"
                       aria-label={`Book card for ${book.title}`}
-                      onMouseEnter={() => setHoveredBook(book)}
-                      onFocus={() => setHoveredBook(book)} // keyboard focus fallback
+                      onMouseEnter={() => previewBook(book)} // preview on hover
+                      onFocus={() => previewBook(book)} // keyboard focus
+                      onClick={() => selectBook(book)} // stick on click
                     >
                       {/* COVER */}
                       <div
-                        className="lib-cover"
+                        className={`lib-cover${coverIsSelected}`}
                         aria-label={`${book.title} cover`}
-                        onMouseEnter={() => setHoveredBook(book)}
+                        onMouseEnter={() => previewBook(book)}
                       >
                         {book.coverUrl ? (
                           <img
@@ -246,7 +276,7 @@ export default function LibraryPage() {
                               height: "100%",
                               objectFit: "cover",
                               display: "block",
-                              borderRadius: 0, // square corners
+                              borderRadius: 0,
                             }}
                           />
                         ) : null}
@@ -256,7 +286,15 @@ export default function LibraryPage() {
                       <div
                         className="lib-details"
                         aria-label="Book details"
-                        onMouseEnter={() => setHoveredBook(book)}
+                        onMouseEnter={() => previewBook(book)}
+                        style={{
+                          // force it to size naturally and not crop the last row
+                          overflow: "visible",
+                          height: "auto",
+                          minHeight: "0",
+                          display: "grid",
+                          gridTemplateRows: "auto auto auto auto auto",
+                        }}
                       >
                         {/* Row 1: title */}
                         <div
@@ -302,8 +340,7 @@ export default function LibraryPage() {
                           {book.author || "—"}
                         </div>
 
-                        {/* Row 4: buttons + avg rating + save
-                            PLUS user's own 5-star rating right under */}
+                        {/* Row 4: like / avg rating / save */}
                         <div
                           className="lib-row lib-row-actions is-inline"
                           role="group"
@@ -311,80 +348,59 @@ export default function LibraryPage() {
                           style={{
                             width: "100%",
                             minWidth: 0,
-                            // IMPORTANT: allow stars to render fully
-                            overflow: "visible",
-
+                            overflow: "hidden",
                             marginTop: "10px",
-                            marginBottom: "10px",
-
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "flex-start",
+                            marginBottom: "4px",
                           }}
-                          onMouseEnter={() => setHoveredBook(book)}
+                          onMouseEnter={() => previewBook(book)}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "flex-start",
-                              gap: "8px",
-                              flexWrap: "nowrap",
-                              width: "100%",
-                            }}
+                          {/* Like */}
+                          <LikeButton
+                            className={`meta-icon-btn like ${likeActive ? "is-active" : ""}`}
+                            glyphClass="meta-icon-glyph"
+                            countClass="meta-icon-count"
+                            active={likeActive}
+                            count={likeCount}
+                            onToggle={() => toggleLike(book.id)}
+                            aria-label={likeActive ? "Unlike" : "Like"}
+                          />
+
+                          {/* Average rating (global) */}
+                          <button
+                            type="button"
+                            className={`meta-icon-btn star ${
+                              (book.userRating ?? 0) > 0 ? "is-active" : ""
+                            }`}
+                            aria-pressed={(book.userRating ?? 0) > 0}
+                            title="Average rating"
                           >
-                            {/* Like */}
-                            <LikeButton
-                              className={`meta-icon-btn like ${
-                                likeActive ? "is-active" : ""
-                              }`}
-                              glyphClass="meta-icon-glyph"
-                              countClass="meta-icon-count"
-                              active={likeActive}
-                              count={likeCount}
-                              onToggle={() => toggleLike(book.id)}
-                              aria-label={likeActive ? "Unlike" : "Like"}
-                            />
+                            <span className="material-symbols-outlined meta-icon-glyph">
+                              star
+                            </span>
+                            <span className="meta-icon-count">
+                              {Number.isFinite(avgRatingNum)
+                                ? `${avgRatingNum.toFixed(1)}/5`
+                                : "—"}
+                            </span>
+                          </button>
 
-                            {/* Average rating (global) */}
-                            <button
-                              type="button"
-                              className={`meta-icon-btn star ${
-                                (book.userRating ?? 0) > 0 ? "is-active" : ""
-                              }`}
-                              aria-pressed={(book.userRating ?? 0) > 0}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px",
-                              }}
-                              title="Average rating"
-                            >
-                              <span className="material-symbols-outlined meta-icon-glyph">
-                                star
-                              </span>
-                              <span className="meta-icon-count">
-                                {Number.isFinite(avgRatingNum)
-                                  ? `${avgRatingNum.toFixed(1)}/5`
-                                  : "—"}
-                              </span>
-                            </button>
+                          {/* Save */}
+                          <SaveButton
+                            className={`meta-icon-btn save ${saveActive ? "is-active" : ""}`}
+                            glyphClass="meta-icon-glyph"
+                            countClass="meta-icon-count"
+                            active={saveActive}
+                            count={saveCount}
+                            onToggle={() => toggleSave(book.id)}
+                            aria-label={saveActive ? "Unsave" : "Save"}
+                          />
+                        </div>
 
-                            {/* Save */}
-                            <SaveButton
-                              className={`meta-icon-btn save ${
-                                saveActive ? "is-active" : ""
-                              }`}
-                              glyphClass="meta-icon-glyph"
-                              countClass="meta-icon-count"
-                              active={saveActive}
-                              count={saveCount}
-                              onToggle={() => toggleSave(book.id)}
-                              aria-label={saveActive ? "Unsave" : "Save"}
-                            />
-                          </div>
-
-                          {/* User's personal rating stars (now directly below the buttons) */}
+                        {/* Row 5: user's own stars */}
+                        <div
+                          className="lib-line user-stars-row"
+                          onMouseEnter={() => previewBook(book)}
+                        >
                           <UserRatingStars value={book.userRating ?? 0} />
                         </div>
                       </div>
@@ -404,25 +420,25 @@ export default function LibraryPage() {
         {/* RIGHT SIDE: Feature panel */}
         <aside className="library-feature" aria-label="Featured">
           <FeaturePanel
-            book={hoveredBook || undefined}
-            liked={hoveredState?.liked ?? false}
-            saved={hoveredState?.saved ?? false}
-            userRating={hoveredBook?.userRating ?? 0}
+            book={activeBook || undefined} // null -> PickMe!
+            liked={activeState?.liked ?? false}
+            saved={activeState?.saved ?? false}
+            userRating={activeBook?.userRating ?? 0}
             onToggleLike={() => {
-              if (hoveredBook) toggleLike(hoveredBook.id);
+              if (activeBook) toggleLike(activeBook.id);
             }}
             onToggleSave={() => {
-              if (hoveredBook) toggleSave(hoveredBook.id);
+              if (activeBook) toggleSave(activeBook.id);
             }}
             onRate={(val) => {
-              // future: update per-book userRating here if you add rating-from-panel
-              console.log("rate", hoveredBook?.id, val);
+              // future: update per-book userRating map here
+              console.log("rate", activeBook?.id, val);
             }}
           />
         </aside>
       </main>
 
-      {/* Side menu overlay */}
+      {/* Side menu overlay panel */}
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   );

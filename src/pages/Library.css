@@ -824,3 +824,342 @@ body,
 .lib-scroll {
   scrollbar-width: thin;
 }
+
+/* reuse selection glow/outline from profile's shelves */
+.lib-card.is-selected {
+  outline: 2px solid var(--accent-blue, #3af); /* whatever you're using */
+  outline-offset: 0;
+}
+
+/* highlight only the clicked book's cover in Library view */
+.lib-cover.is-selected {
+  outline: 2px solid var(--accent-blue, #3af);
+  outline-offset: 0;
+}
+
+/* make sure the cover box itself doesn't collapse around the img */
+.lib-cover {
+  position: relative;
+  width: 100%;
+  /* ensure consistent height for the outline area */
+  background-color: #111;
+  overflow: hidden;
+  display: block;
+}
+.lib-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lib-cover {
+  position: relative;
+  width: 100%;
+  /* keep your existing sizing here:
+     either fixed height, or aspect-ratio, etc. */
+  background-color: #111;
+  overflow: hidden;
+  display: block;
+}
+.lib-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Blue highlight frame on the *whole* cover box */
+.lib-cover.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: 0; /* top:0 right:0 bottom:0 left:0 */
+  border: 2px solid var(--accent-blue, #3af);
+  pointer-events: none; /* don't block hover/click */
+}
+
+/* Ensure user rating stars use a normal text font, not Material Symbols */
+.user-stars, .user-stars * {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+}
+
+/* === FIX stars clipping in Library cards === */
+.lib-card .lib-details {
+  /* let the details box grow to fit ALL rows, including the stars */
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+
+  /* make sure grid doesn't clamp rows */
+  display: grid;
+  grid-template-rows: auto auto auto auto auto;
+  align-content: start;
+}
+
+/* tighten the like/rating/save row so it doesn't eat vertical space */
+.lib-card .lib-row-actions.is-inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+
+  margin-top: 8px !important;
+  margin-bottom: 4px !important;
+
+  line-height: 1 !important;
+  padding: 0 !important;
+  min-height: 20px !important;
+}
+
+/* make the action buttons themselves not inflate the row */
+.lib-card .meta-icon-btn {
+  padding: 0 4px !important;
+  line-height: 1 !important;
+  min-height: 20px !important;
+}
+
+/* make sure the star row itself is allowed to be seen */
+.lib-card .lib-line:last-child {
+  overflow: visible !important;
+  min-height: 24px !important;
+  line-height: 1 !important;
+  padding-bottom: 8px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+}
+
+/* === FIX stars clipping / spacing in Library cards === */
+.lib-card .lib-details {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+
+  display: grid;
+  grid-template-rows: auto auto auto auto auto;
+  align-content: start;
+}
+
+/* tighten the like/rating/save row so it behaves like a single text line */
+.lib-card .lib-row-actions.is-inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+
+  /* pull the stars row closer by removing bottom gap */
+  margin-top: 8px !important;
+  margin-bottom: 2px !important;
+
+  line-height: 1 !important;
+  padding: 0 !important;
+
+  /* hard cap height similar to a single text line */
+  min-height: 20px !important;
+  height: 20px !important;
+}
+
+/* make the action buttons themselves not inflate the row */
+.lib-card .meta-icon-btn {
+  padding: 0 4px !important;
+  line-height: 1 !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 13px !important; /* keeps counts small */
+}
+
+/* icon glyph inside those buttons (like the star material icon) */
+.lib-card .meta-icon-glyph,
+.lib-card .meta-icon-count {
+  line-height: 1 !important;
+  font-size: 13px !important;
+}
+
+/* now style the stars row so it sits right under the buttons row,
+   same visual height, and not pushed to the card bottom */
+.lib-card .lib-line.user-stars-row {
+  /* position */
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+
+  /* give it same "row height" as buttons */
+  min-height: 20px !important;
+  height: 20px !important;
+  line-height: 1 !important;
+
+  /* layout */
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+
+  /* IMPORTANT: allow the star glyphs to fully show */
+  overflow: visible !important;
+}
+
+/* the stars themselves */
+.lib-card .user-stars-row .user-stars-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  line-height: 1 !important;
+  font-size: 16px !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+.lib-card .user-stars-row .user-stars-wrap span {
+  display: block !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  color: #f2ac15 !important; /* will be overridden inline for empty stars */
+}
+
+/* tighten the like/rating/save row even more */
+.lib-card .lib-row-actions.is-inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+
+  margin-top: 8px !important;
+  margin-bottom: 2px !important;
+
+  line-height: 1 !important;
+  padding: 0 !important;
+
+  /* smaller row height */
+  min-height: 16px !important;
+  height: 16px !important;
+}
+
+/* shrink the individual meta buttons */
+.lib-card .meta-icon-btn {
+  padding: 0 3px !important;
+  line-height: 1 !important;
+
+  min-height: 16px !important;
+  height: 16px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+
+  font-size: 11px !important; /* smaller count text */
+}
+
+/* shrink the glyph + number inside */
+.lib-card .meta-icon-glyph,
+.lib-card .meta-icon-count {
+  line-height: 1 !important;
+  font-size: 11px !important;
+}
+
+/* also force material-symbols-outlined inside these buttons to match the smaller scale */
+.lib-card .meta-icon-btn .material-symbols-outlined {
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+/* stars row should feel about the same "weight" line-height-wise */
+.lib-card .lib-line.user-stars-row {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+
+  min-height: 16px !important;
+  height: 16px !important;
+  line-height: 1 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+
+  overflow: visible !important;
+}
+
+/* star strip itself */
+.lib-card .user-stars-row .user-stars-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  line-height: 1 !important;
+
+  min-height: 16px !important;
+  height: 16px !important;
+
+  font-size: 14px !important; /* visual star size */
+  font-weight: 600 !important;
+  color: #fff !important;
+}
+
+.lib-card .user-stars-row .user-stars-wrap span {
+  display: block !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  color: #f2ac15 !important; /* unfilled stars get overridden inline */
+}
+
+/* tighten the like/rating/save row vertically */
+.lib-card .lib-row-actions.is-inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+
+  margin-top: 6px !important;
+  margin-bottom: 0px !important;  /* was 2px, now no gap */
+
+  line-height: 1 !important;
+  padding: 0 !important;
+
+  min-height: 16px !important;
+  height: 16px !important;
+}
+
+/* stars row directly under the buttons */
+.lib-card .lib-line.user-stars-row {
+  margin-top: 2px !important;      /* bring it right up under the buttons */
+  margin-bottom: 0 !important;
+
+  min-height: 16px !important;
+  height: 16px !important;
+  line-height: 1 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+
+  overflow: visible !important;
+}
+
+/* actions row (like / avg rating / save) */
+.lib-card .lib-row-actions.is-inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+
+  margin-top: 6px !important;
+  margin-bottom: 0 !important;   /* no space below the buttons */
+
+  line-height: 1 !important;
+  padding: 0 !important;
+
+  min-height: 16px !important;
+  height: 16px !important;
+}
+
+/* stars row under the buttons, pulled upward */
+.lib-card .lib-line.user-stars-row {
+  /* pull it up closer */
+  margin-top: -2px !important;    /* was 2px, now slightly overlapping upward */
+  margin-bottom: 0 !important;
+
+  min-height: 16px !important;
+  height: 16px !important;
+  line-height: 1 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+
+  overflow: visible !important;
+}
+
