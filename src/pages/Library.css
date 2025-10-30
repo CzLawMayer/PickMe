@@ -336,3 +336,325 @@
 /* =========================
    End
    ========================= */
+
+/* === Add this (or merge with your existing shared icon styles) === */
+
+/* Every inline meta action button (like, star, save) */
+.meta-icon-btn {
+  position: relative;          /* THIS is the key fix */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  outline: none;
+}
+
+/* icon itself inside the button */
+.meta-icon-glyph {
+  font-size: 1.78em;
+  line-height: 1;
+}
+
+/* number next to the icon */
+.meta-icon-count {
+  font-size: 1.14em;
+  line-height: 1;
+  margin-left: 2px;
+}
+
+/* active color states (same as other pages) */
+.meta-icon-btn.is-active.like .meta-icon-glyph { --ms-fill: 1; color: #d81b60; }
+.meta-icon-btn.is-active.star .meta-icon-glyph { --ms-fill: 1; color: #f2ac15; }
+.meta-icon-btn.is-active.save .meta-icon-glyph { --ms-fill: 1; color: #6a1b9a; }
+
+.meta-icon-btn:active .meta-icon-glyph {
+  transform: scale(0.95);
+}
+
+.meta-icon-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* popover styling (unchanged from working pages) */
+.star-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.45);
+  z-index: 10;
+  min-width: 160px;
+}
+
+.star-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.star-item {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 6px;
+  transition: transform 100ms ease;
+}
+
+.star-item:hover {
+  transform: scale(1.1);
+}
+
+.star-hint {
+  text-align: center;
+  font-size: 12px;
+  opacity: .85;
+  margin-top: 6px;
+}
+
+/* floating version of the popover when used in Library */
+.star-popover-floating {
+  position: fixed;          /* take it out of layout completely */
+  transform: translate(-50%, -8px);
+  z-index: 2000;
+  min-width: 160px;
+  /* we intentionally do NOT set background/border/etc here,
+     we inherit those from .star-popover so it looks identical */
+}
+
+/* The original .star-popover still defines:
+   background, border, border-radius, padding, box-shadow, etc.
+   We keep that.
+   This helper ONLY handles viewport positioning.
+*/
+.star-popover-floating {
+  position: fixed;            /* float above layout */
+  transform: translateX(-50%);/* center horizontally on the star */
+  z-index: 2000;              /* above card */
+  min-width: 160px;
+}
+
+/* Floating version of the popover for Library.
+   We keep all visuals from .star-popover, we ONLY change positioning.
+*/
+.star-popover-floating {
+  position: fixed;
+  z-index: 2000;
+  min-width: 160px;
+  /* no bottom / no left / no transform here – we set those inline in style={} */
+}
+
+/* Force the floating rating bubble to render as a full padded box above the star button */
+.star-popover-floating {
+  position: fixed;                  /* keep it out of layout so it won't squeeze the card */
+  z-index: 2000;
+
+  /* full bubble visuals (override anything older) */
+  background: rgba(20, 20, 20, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45) !important;
+
+  padding: 8px 10px !important;
+  min-width: 160px !important;
+  max-width: 220px;
+  display: inline-block !important;
+
+  /* make sure the box actually wraps its children vertically */
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* stars row inside the popover */
+.star-popover-floating .star-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 6px 0;        /* give space above the hint */
+}
+
+/* each clickable star */
+.star-popover-floating .star-item {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 6px;
+  transition: transform 100ms ease;
+}
+.star-popover-floating .star-item:hover {
+  transform: scale(1.1);
+}
+
+/* the little text under the stars ("Choose rating", "4/5", etc.) */
+.star-popover-floating .star-hint {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.85;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* keep the yellow fill for active stars */
+.star-popover-floating .material-symbols-outlined {
+  font-size: 28px;
+  color: #f2ac15;
+}
+.star-popover-floating .material-symbols-outlined[style*="--ms-fill: 0"] {
+  /* if we passed --ms-fill:0 inline, show default color instead of yellow */
+  color: inherit;
+}
+
+/* === tighten library rows (no side padding / no outline) === */
+.library-app .lib-line {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* make sure icon row also hugs edges and has no outline */
+.lib-row-actions.is-inline {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* kill focus outline / glow on meta buttons in the rows */
+.meta-icon-btn {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+.meta-icon-btn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Row 1: book title (bigger + bold) */
+.library-app .lib-details > .lib-line:nth-child(1) {
+  font-size: 1rem;              /* bump size */
+  font-weight: 700;             /* bold */
+  line-height: 1.2;
+  color: #fff;                  /* keep pure white for title */
+}
+
+/* Row 3: author (dimmer white) */
+.library-app .lib-details > .lib-line:nth-child(3) {
+  color: rgba(255,255,255,0.6); /* softer white */
+  font-weight: 400;
+}
+
+/* Pull author (row 3) closer to year (row 2) */
+.library-app .lib-details > .lib-line:nth-child(3) {
+  margin-top: -12px; /* tighten year ↔ author */
+}
+
+/* Pull personal stars (row 5) closer to the buttons row (row 4) */
+.library-app .lib-details > .lib-line:nth-child(5) {
+  margin-top: -25px; /* tighten buttons ↔ stars */
+}
+
+/* Make book title bigger, bold, and allow wrapping to 2 lines */
+.library-app .lib-details > .lib-line:nth-child(1) {
+  font-size: 1.25em;       /* bigger than before */
+  font-weight: 700;        /* bold */
+  line-height: 1.2;
+
+  white-space: normal;     /* allow wrapping */
+  overflow: visible;       /* don't clip */
+  text-overflow: clip;     /* no ellipsis */
+
+  display: -webkit-box;          /* allow multi-line clamp */
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;         /* max 2 lines */
+  max-height: calc(1.2em * 2);   /* keeps card height sane */
+}
+
+/* Add extra space after the title row before the year row */
+.library-app .lib-details > .lib-line:nth-child(1) {
+  margin-bottom: 12px; /* new spacing under title */
+}
+
+/* Year row pulls up a bit tighter toward the title, not toward author */
+.library-app .lib-details > .lib-line:nth-child(2) {
+  margin-top: 0;
+}
+
+/* Allow the author row (row 3) to wrap to 2 lines if needed */
+.library-app .lib-details > .lib-line:nth-child(3) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+
+  line-height: 1.2;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;          /* max 2 lines like title */
+  max-height: calc(1.2em * 2);    /* keep card height sane */
+}
+
+/* ---------- Scroll behavior for the books grid ---------- */
+
+/* The whole 2-column layout is already min-height: calc(100svh - header),
+   so the left column has a fixed vertical budget. We prevent the left column
+   from overflowing, and let only .library-scroll handle overflow. */
+.library-left {
+  min-height: calc(100svh - var(--app-header-h));
+  overflow: hidden;          /* hide any spill from children */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* This is the scrollable region (books + below).
+   It fills the remaining height under the hero. */
+.library-scroll {
+  flex: 1 1 auto;
+  min-height: 0;             /* VERY important: allows flex child to scroll */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Optional: make the scrollbar appear right beside the FeaturePanel column
+   (which it will naturally, since .library-scroll fills the left column).
+   You can style it a bit to be slimmer. */
+.library-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.library-scroll::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+}
+.library-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.28);
+  border-radius: 3px;
+}
+.library-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.4);
+}
+
