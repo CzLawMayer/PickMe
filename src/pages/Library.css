@@ -759,3 +759,68 @@
   scrollbar-color: #ffffff #ffffff; 
   /* thumb white, track white => whole bar reads white */
 }
+
+/* 1. Lock the overall page scroll */
+html,
+body,
+.library-app {
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* 2. Make the main 2-column layout fill the viewport minus header,
+   and allow internal flex children to shrink */
+.library-layout {
+  min-height: calc(100svh - var(--app-header-h));
+  max-height: calc(100svh - var(--app-header-h));
+  overflow: hidden;            /* <- prevent layout column from scrolling */
+}
+
+/* left column (hero + scrollable books) */
+.library-left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;               /* <- REQUIRED so child can overflow */
+  max-height: 100%;
+  overflow: hidden;            /* <- stop left column itself from scrolling */
+}
+
+/* 3. Make only the books section scroll */
+.lib-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+
+  /* scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: #fff transparent;
+}
+
+.lib-scroll::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+
+.lib-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lib-scroll::-webkit-scrollbar-thumb {
+  background: #fff;
+  border-radius: 3px;
+}
+
+/* remove scrollbar arrows/buttons in WebKit (Chrome, Edge, Safari) */
+.lib-scroll::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* on Firefox, force no buttons by keeping thin style */
+.lib-scroll {
+  scrollbar-width: thin;
+}

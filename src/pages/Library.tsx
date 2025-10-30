@@ -13,10 +13,9 @@ import SaveButton from "@/components/SaveButton";
 
 import { userLibraryBooks } from "@/profileData";
 
-// tiny helper for the personal stars row (row 5)
+// tiny helper for the personal stars row on row 5
 function UserRatingStars({ value }: { value: number }) {
   const stars = [1, 2, 3, 4, 5];
-
   return (
     <div
       style={{
@@ -25,6 +24,7 @@ function UserRatingStars({ value }: { value: number }) {
         gap: "4px",
         lineHeight: 1,
         fontSize: "16px",
+        color: "#777",
         width: "100%",
         justifyContent: "flex-start",
       }}
@@ -35,9 +35,13 @@ function UserRatingStars({ value }: { value: number }) {
         return (
           <span
             key={n}
-            className={`material-symbols-outlined user-rating-star ${
-              filled ? "filled" : "empty"
-            }`}
+            className="material-symbols-outlined"
+            style={{
+              fontSize: "20px",
+              lineHeight: 1,
+              color: filled ? "#f2ac15" : "#fff",
+              ["--ms-fill" as any]: filled ? 1 : 0,
+            }}
             aria-hidden="true"
           >
             star
@@ -47,30 +51,84 @@ function UserRatingStars({ value }: { value: number }) {
     </div>
   );
 }
+
 export default function LibraryPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // all user's books, merged with personal rating
-  const books = userLibraryBooks(); // [{...book, userRating}]
+  // full list of user's books, merged with userRating etc.
+  const books = userLibraryBooks();
 
-  // demo like/save just to show counts
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [likeCount, setLikeCount] = useState(123);
-  const [saveCount, setSaveCount] = useState(45);
+  // --- per-book state maps ----------------------------------
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    books.forEach((b) => {
+      m[b.id] = false; // could preload true/false if you track that
+    });
+    return m;
+  });
 
-  const onToggleLike = () => {
-    setLiked((v) => !v);
-    setLikeCount((c) => (liked ? Math.max(0, c - 1) : c + 1));
-  };
-  const onToggleSave = () => {
-    setSaved((v) => !v);
-    setSaveCount((c) => (saved ? Math.max(0, c - 1) : c + 1));
-  };
+  const [savedMap, setSavedMap] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    books.forEach((b) => {
+      m[b.id] = false;
+    });
+    return m;
+  });
+
+  const [likeCountMap, setLikeCountMap] = useState<Record<string, number>>(
+    () => {
+      const m: Record<string, number> = {};
+      books.forEach((b) => {
+        m[b.id] = typeof b.likes === "number" ? b.likes : 0;
+      });
+      return m;
+    }
+  );
+
+  const [saveCountMap, setSaveCountMap] = useState<Record<string, number>>(
+    () => {
+      const m: Record<string, number> = {};
+      books.forEach((b) => {
+        m[b.id] = typeof b.bookmarks === "number" ? b.bookmarks : 0;
+      });
+      return m;
+    }
+  );
+
+  // --- handlers that update just one book -------------------
+  function toggleLike(bookId: string) {
+    setLikedMap((prev) => {
+      const nextLiked = !prev[bookId];
+
+      setLikeCountMap((prevCounts) => ({
+        ...prevCounts,
+        [bookId]: nextLiked
+          ? prevCounts[bookId] + 1
+          : Math.max(0, prevCounts[bookId] - 1),
+      }));
+
+      return { ...prev, [bookId]: nextLiked };
+    });
+  }
+
+  function toggleSave(bookId: string) {
+    setSavedMap((prev) => {
+      const nextSaved = !prev[bookId];
+
+      setSaveCountMap((prevCounts) => ({
+        ...prevCounts,
+        [bookId]: nextSaved
+          ? prevCounts[bookId] + 1
+          : Math.max(0, prevCounts[bookId] - 1),
+      }));
+
+      return { ...prev, [bookId]: nextSaved };
+    });
+  }
 
   return (
     <div className="library-app">
-      {/* Global header stays fixed at the very top of the page layout */}
+      {/* ===== HEADER (unchanged visually) ===== */}
       <header className="header">
         <h1 className="logo">
           <Link to="/" className="logo-link" aria-label="Go to home">
@@ -98,36 +156,12 @@ export default function LibraryPage() {
         </div>
       </header>
 
-      {/* 2-column main area. We'll lock its height so the inside can scroll */}
-      <main
-        className="library-layout"
-        style={{
-          // make the whole main area exactly fill viewport under header
-          height: "calc(100svh - var(--app-header-h))",
-          minHeight: "calc(100svh - var(--app-header-h))",
-          maxHeight: "calc(100svh - var(--app-header-h))",
-        }}
-      >
-        {/* LEFT COLUMN */}
-        <div
-          className="library-left"
-          style={{
-            // turn left side into a vertical flexbox:
-            display: "flex",
-            flexDirection: "column",
-
-            // VERY IMPORTANT: allow inner flex children to actually shrink/scroll
-            minHeight: 0,
-          }}
-        >
-          {/* This stays pinned at the top of the left pane (not scrolling) */}
-          <section
-            className="lib-hero"
-            aria-label="Library header"
-            style={{
-              flex: "0 0 auto",
-            }}
-          >
+      {/* ===== BODY LAYOUT ===== */}
+      <main className="library-layout">
+        {/* LEFT SIDE: hero (static) + scroll area */}
+        <div className="library-left">
+          {/* --- Top identity / tabs header (static, stays fixed above scroll) --- */}
+          <section className="lib-hero" aria-label="Library header">
             <div className="identity-cell" style={{ minWidth: 0 }}>
               <ProfileIdentity compact />
             </div>
@@ -148,28 +182,21 @@ export default function LibraryPage() {
             </nav>
           </section>
 
-          {/* SCROLL AREA:
-             This is the only thing that scrolls now.
-             It fills the remaining height under lib-hero.
-          */}
-          <div
-            className="library-scroll"
-            style={{
-              flex: "1 1 auto",
-              minHeight: 0, // critical so overflow works
-              overflowY: "auto",
-              overflowX: "hidden",
-            }}
-          >
-            {/* Book grid */}
-            <section className="lib-row" aria-label="Your books">
+          {/* --- Scrollable books area --- */}
+          <section className="lib-scroll" aria-label="Your books">
+            <div className="lib-row">
               {books.map((book) => {
-                // normalize numeric rating from book.rating
+                // normalize avg rating from booksData
                 const avgRatingNum = parseFloat(
                   typeof book.rating === "string"
                     ? book.rating
                     : (book.rating ?? "0").toString()
                 );
+
+                const liked = likedMap[book.id] ?? false;
+                const saved = savedMap[book.id] ?? false;
+                const likeCount = likeCountMap[book.id] ?? 0;
+                const saveCount = saveCountMap[book.id] ?? 0;
 
                 return (
                   <div key={book.id} className="lib-col">
@@ -177,7 +204,7 @@ export default function LibraryPage() {
                       className="lib-card"
                       aria-label={`Book card for ${book.title}`}
                     >
-                      {/* Cover */}
+                      {/* Cover (left column in the card) */}
                       <div
                         className="lib-cover"
                         aria-label={`${book.title} cover`}
@@ -196,24 +223,24 @@ export default function LibraryPage() {
                         ) : null}
                       </div>
 
-                      {/* 5-row detail block */}
+                      {/* Right side of the card: 5 detail rows */}
                       <div className="lib-details" aria-label="Book details">
-                        {/* Row 1: title (big, wraps) */}
+                        {/* Row 1: title */}
                         <div
-                          className="lib-line book-title-line"
+                          className="lib-line book-title"
                           title={book.title}
                         >
                           {book.title || "—"}
                         </div>
 
                         {/* Row 2: year */}
-                        <div className="lib-line book-year-line">
+                        <div className="lib-line book-year">
                           {book.year ? book.year : "—"}
                         </div>
 
-                        {/* Row 3: author (dim white, wraps) */}
+                        {/* Row 3: author */}
                         <div
-                          className="lib-line book-author-line"
+                          className="lib-line book-author"
                           title={book.author}
                         >
                           {book.author || "—"}
@@ -228,22 +255,23 @@ export default function LibraryPage() {
                             width: "100%",
                             minWidth: 0,
                             overflow: "hidden",
-                            // remove marginBottom so stars sit closer again
-                            // marginBottom: "12px",
+                            marginBottom: "8px", // also gives space above stars
                           }}
                         >
                           {/* Like button */}
                           <LikeButton
-                            className={`meta-icon-btn like ${liked ? "is-active" : ""}`}
+                            className={`meta-icon-btn like ${
+                              liked ? "is-active" : ""
+                            }`}
                             glyphClass="meta-icon-glyph"
                             countClass="meta-icon-count"
                             active={liked}
                             count={likeCount}
-                            onToggle={onToggleLike}
+                            onToggle={() => toggleLike(book.id)}
                             aria-label={liked ? "Unlike" : "Like"}
                           />
 
-                          {/* Average rating display */}
+                          {/* Average rating display (NOT interactive now) */}
                           <button
                             type="button"
                             className={`meta-icon-btn star ${
@@ -269,23 +297,20 @@ export default function LibraryPage() {
 
                           {/* Save button */}
                           <SaveButton
-                            className={`meta-icon-btn save ${saved ? "is-active" : ""}`}
+                            className={`meta-icon-btn save ${
+                              saved ? "is-active" : ""
+                            }`}
                             glyphClass="meta-icon-glyph"
                             countClass="meta-icon-count"
                             active={saved}
                             count={saveCount}
-                            onToggle={onToggleSave}
+                            onToggle={() => toggleSave(book.id)}
                             aria-label={saved ? "Unsave" : "Save"}
                           />
                         </div>
 
-                        {/* Row 5: user's own stars */}
-                        <div
-                          className="lib-line"
-                          style={{
-                            overflow: "visible",
-                          }}
-                        >
+                        {/* Row 5: user's own rating stars */}
+                        <div className="lib-line user-stars-row">
                           <UserRatingStars value={book.userRating ?? 0} />
                         </div>
                       </div>
@@ -294,36 +319,21 @@ export default function LibraryPage() {
                 );
               })}
 
-              {/* filler cols for grid balance */}
+              {/* filler cols to keep the last grid row balanced visually */}
               <div className="lib-col" />
               <div className="lib-col" />
               <div className="lib-col" />
-            </section>
-
-            {/* optional bottom content below grid */}
-            <section className="lib-content" aria-label="Library content">
-              {/* future content goes here */}
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
 
-        {/* RIGHT COLUMN (Feature panel). This does NOT scroll with the books.
-            It sits next to the left column for the full height. */}
-        <aside
-          className="library-feature"
-          aria-label="Featured"
-          style={{
-            // make sure it stretches the same fixed height as main
-            height: "100%",
-            minHeight: 0,
-            overflow: "hidden",
-          }}
-        >
+        {/* RIGHT SIDE: Feature panel (static / not scrolling) */}
+        <aside className="library-feature" aria-label="Featured">
           <FeaturePanel />
         </aside>
       </main>
 
-      {/* Slide-out menu */}
+      {/* Side menu overlay panel */}
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   );
