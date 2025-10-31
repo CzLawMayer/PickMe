@@ -1212,3 +1212,48 @@ body,
   margin: 0 auto;            /* redundant with flex, but harmless */
   max-width: 100%;
 }
+
+/* Library-only alignment for icon + count */
+.library-app .lib-row-actions {
+  display: flex;
+  align-items: center;
+}
+
+.library-app .meta-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.library-app .meta-icon-btn .meta-icon-glyph,
+.library-app .meta-icon-btn .material-symbols-outlined {
+  display: block;
+  line-height: 1;
+  font-size: 18px;
+}
+
+/* Responsive nudge:
+   - Large screens: up to +1.5px (down a bit)
+   - ~1280px: 0px
+   - Smaller laptops: down to -0.5px (up a hair)
+*/
+.library-app .meta-icon-btn .meta-icon-count {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  font-size: 12px;
+  --count-nudge: clamp(-0.5px, (100vw - 1280px) / 160, 1.5px);
+  transform: translateY(var(--count-nudge));
+}
+
+/* Fallback if transform is ignored */
+@supports not (transform: translateY(1px)) {
+  .library-app .meta-icon-btn .meta-icon-count {
+    position: relative;
+    top: var(--count-nudge, 0px);
+  }
+}
