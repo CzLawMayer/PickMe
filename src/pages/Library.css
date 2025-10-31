@@ -1163,3 +1163,52 @@ body,
   overflow: visible !important;
 }
 
+
+
+/* Make the arrow hug its content and sit left of the book */
+.feature-jump {
+  position: absolute;
+  right: calc(100% + 25px);   /* place just outside the left edge of the cover */
+  top: 50%;
+  transform: translateY(-50%);
+
+  display: inline-flex;      /* shrink-wrap to glyph */
+  align-items: center;
+  justify-content: center;
+
+  width: auto;
+  height: auto;
+  min-width: 0;
+  padding: 0 !important;
+  margin: 0;
+
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Kill any pseudo-element backgrounds from a global style */
+.feature-jump::before,
+.feature-jump::after {
+  content: none !important;
+}
+
+/* Center the cover within the feature panel */
+.feature-cover-row {
+  display: flex;
+  justify-content: center;   /* horizontal centering */
+  align-items: center;       /* vertical centering (for safety) */
+}
+
+/* Keep the cover’s box tight so centering is precise */
+.feature-cover-link {
+  display: inline-block;
+}
+
+/* (If your placeholder is a block that can stretch, cap it so it centers nicely) */
+.feature-cover-placeholder {
+  margin: 0 auto;            /* redundant with flex, but harmless */
+  max-width: 100%;
+}

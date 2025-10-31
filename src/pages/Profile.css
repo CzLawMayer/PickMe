@@ -1775,3 +1775,24 @@ a:focus,
 .section-title .section-link:hover {
   text-decoration: underline;
 }
+
+/* Scope to profile only */
+.profile-app .feature-cover-row {
+  position: relative;
+}
+
+.profile-app .feature-jump {
+  position: absolute;
+  right: -35px;        /* your previous offset */
+  left: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

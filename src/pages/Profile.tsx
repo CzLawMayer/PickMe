@@ -785,7 +785,7 @@ export default function ProfilePage() {
                 aria-label="Open Library page"
                 title="Open Library"
               >
-                Library
+                Library ››
               </Link>
             </h2>
 
