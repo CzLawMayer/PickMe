@@ -1606,3 +1606,37 @@ aside.library-feature .feature-card *{
 }
 
 
+/* Restore feature arrows visibility */
+aside.library-feature,
+aside.library-feature .feature-card,
+aside.library-feature .feature-card .feature-cover-row {
+  overflow: visible !important;           /* was hidden → clips arrows */
+}
+
+.feature-cover-row {
+  position: relative;                      /* anchor absolute arrows */
+}
+
+/* Base arrow button */
+.feature-jump {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;                              /* draw above cover */
+  pointer-events: auto;                    /* clickable */
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  line-height: 1;
+}
+
+/* If you use BEM-ish modifiers, keep both; otherwise keep whichever you have */
+.feature-jump--left  { left:  -28px; }
+.feature-jump--right { right: -28px; }
+
+/* Make sure the glyph shows and is readable */
+.feature-jump .material-symbols-outlined {
+  font-size: 28px;
+  color: #fff;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
+}

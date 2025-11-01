@@ -1797,3 +1797,66 @@ a:focus,
   justify-content: center;
 }
 
+/* --- Profile page: restore feature arrows --- */
+.profile-app aside.profile-feature,
+.profile-app aside.profile-feature .feature-card,
+.profile-app aside.profile-feature .feature-cover-row {
+  overflow: visible !important;     /* unclip arrows */
+}
+
+.profile-app aside.profile-feature .feature-card {
+  position: relative;               /* stacking context for arrows */
+}
+
+/* Anchor + surface the arrows (reuse same classes as Library) */
+.profile-app .feature-cover-row { position: relative; }
+.profile-app .feature-jump {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  line-height: 1;
+  pointer-events: auto;
+}
+.profile-app .feature-jump--left  { left:  -28px; }
+.profile-app .feature-jump--right { right: -28px; }
+
+.profile-app .feature-jump .material-symbols-outlined {
+  font-size: 28px;
+  color: #fff;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
+}
+
+.profile-app .profile-right { overflow: visible !important; }
+
+/* --- Fix: let the Profile feature arrows render outside the cover --- */
+.profile-app .cell.feature-cell {           /* the grid cell */
+  overflow: visible !important;
+  position: relative;                       /* create a stacking context */
+  z-index: 2;
+}
+
+.profile-app .feature-card,                 /* inner wrappers must also allow overflow */
+.profile-app .feature-cover-row {
+  overflow: visible !important;
+  position: relative;
+}
+
+.profile-app .feature-jump {                /* anchor and surface the chevron */
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: -45px;                             /* your desired overhang */
+  z-index: 5;
+  background: rgba(0,0,0,0.65) !important;  /* force visible chip (was overridden to transparent) */
+  color: #fff;
+  padding: 4px 8px;
+  line-height: 1;
+  border: 0;
+  pointer-events: auto;
+  text-decoration: none;
+  border-radius: 8px;
+}
