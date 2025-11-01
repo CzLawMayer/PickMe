@@ -1212,3 +1212,47 @@ body,
   margin: 0 auto;            /* redundant with flex, but harmless */
   max-width: 100%;
 }
+
+/* === LIBRARY CARDS: rock-solid alignment for icon + count === */
+
+/* The row itself */
+.library-app .lib-card .lib-row-actions.is-inline {
+  display: flex !important;
+  align-items: baseline !important;   /* center, not baseline */
+  gap: 6px !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+  margin-top: 6px !important;
+  margin-bottom: 0 !important;
+
+  /* freeze a stable scale so DPI/zoom/container queries don't shift baselines */
+  font-size: 13px !important;       /* row scale for counts */
+}
+
+/* Each button: keep everything centered */
+.library-app .lib-card .meta-icon-btn {
+  display: inline-flex !important;
+  align-items: center !important;   /* center the two pieces */
+  gap: 1px !important;
+  padding: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Icon (Material Symbols or custom glyph) */
+.library-app .lib-card .meta-icon-btn .material-symbols-outlined,
+.library-app .lib-card .meta-icon-btn .meta-icon-glyph {
+  display: block !important;        /* remove inline text baseline quirks */
+  font-size: 14px !important;       /* lock icon size */
+  line-height: 1 !important;
+}
+
+/* Number to the right of the icon */
+.library-app .lib-card .meta-icon-btn .meta-icon-count {
+  display: block !important;        /* same as icon */
+  font-size: 13px !important;       /* matches row font-size */
+  line-height: 1 !important;
+  margin-left: 2px !important;
+  transform: none !important;       /* in case earlier rules nudged it */
+}
