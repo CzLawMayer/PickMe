@@ -118,6 +118,11 @@ export default function LibraryPage() {
   const sortBtnRef = useRef<HTMLButtonElement | null>(null);
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
 
+  const applySort = (k: SortKey) => {
+    setSortKey(k);
+    setSortOpen(false);
+  };
+
   // keep stable original order as “recently added”
   const booksWithIndex = useMemo(
     () => books.map((b, i) => ({ ...b, __index: i })),
@@ -153,19 +158,38 @@ export default function LibraryPage() {
     return arr;
   }, [booksWithIndex, sortKey]);
 
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchBtnRef = useRef<HTMLButtonElement | null>(null);
+  const searchMenuRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
   // close on outside click / Esc
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (!sortOpen) return;
+      // close search if click is outside
       if (
-        sortMenuRef.current?.contains(t) ||
-        sortBtnRef.current?.contains(t)
-      ) return;
-      setSortOpen(false);
+        searchOpen &&
+        !searchMenuRef.current?.contains(t) &&
+        !searchBtnRef.current?.contains(t)
+      ) {
+        setSearchOpen(false);
+      }
+      // close sort if click is outside
+      if (
+        sortOpen &&
+        !sortMenuRef.current?.contains(t) &&
+        !sortBtnRef.current?.contains(t)
+      ) {
+        setSortOpen(false);
+      }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSortOpen(false);
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+        setSortOpen(false);
+      }
     };
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onEsc);
@@ -173,19 +197,31 @@ export default function LibraryPage() {
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onEsc);
     };
-  }, [sortOpen]);
-
-  const applySort = (k: SortKey) => {
-    setSortKey(k);
-    setSortOpen(false);
-  };
+  }, [searchOpen, sortOpen]);
 
 
+  useEffect(() => {
+    if (searchOpen) {
+      // small delay to ensure it exists in DOM
+      setTimeout(() => searchInputRef.current?.focus(), 0);
+    }
+  }, [searchOpen]);
 
 
 
 
 
+// Already have: const sortedBooks = useMemo(...)
+
+  const displayedBooks = useMemo(() => {
+    if (!searchQuery.trim()) return sortedBooks;
+    const q = searchQuery.trim().toLowerCase();
+    return sortedBooks.filter(b => {
+      const t = (b.title ?? "").toLowerCase();
+      const a = (b.author ?? "").toLowerCase();
+      return t.includes(q) || a.includes(q);
+    });
+  }, [sortedBooks, searchQuery]);
 
 
 
@@ -323,6 +359,22 @@ export default function LibraryPage() {
             </nav>
 
             <div className="lib-hero-cta">
+
+              {/* SEARCH ICON BUTTON */}
+              <button
+                type="button"
+                ref={searchBtnRef}
+                className="lib-cta lib-cta--icon lib-search-btn"
+                aria-haspopup="dialog"
+                aria-expanded={searchOpen}
+                aria-label="Search library"
+                onClick={() => setSearchOpen(v => !v)}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  search
+                </span>
+              </button>
+
               <button
                 type="button"
                 ref={sortBtnRef}
@@ -335,7 +387,39 @@ export default function LibraryPage() {
                 <span className="material-symbols-outlined" aria-hidden="true">filter_list</span>
               </button>
 
+              {/* SEARCH MENU POPOVER */}
+              {searchOpen && (
+                <div className="lib-search-menu">
+                  <div className="lib-search-field has-clear">
+                    <input
+                      ref={searchInputRef}
+                      className="lib-search-input"
+                      type="text"
+                      placeholder="Search by title or author…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      autoFocus
+                    />
 
+                    {/* Clear (×) inside the input */}
+                    <button
+                      type="button"
+                      className="lib-search-clear--inside"
+                      aria-label="Clear search"
+                      // prevent the global outside-click handler from firing
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearchQuery("");
+                        // keep the popover open and return focus to the input
+                        searchInputRef.current?.focus();
+                      }}
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  </div>
+                </div>
+              )}
               {sortOpen && (
                 <div
                   ref={sortMenuRef}
@@ -374,7 +458,7 @@ export default function LibraryPage() {
             onMouseLeave={clearHover}
           >
             <div className="lib-row">
-              {sortedBooks.map((book) => {
+              {displayedBooks.map((book) => {
                 const st = bookStates[String(book.id)];
                 const likeActive = st?.liked ?? false;
                 const saveActive = st?.saved ?? false;

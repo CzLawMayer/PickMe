@@ -1369,3 +1369,239 @@ aside.library-feature .feature-card *{
   }
   .lib-tabs::-webkit-scrollbar { display: none; }
 }
+
+/* The CTA wrapper already exists; ensure it can anchor menus */
+.lib-hero-cta { position: relative; display: flex; gap: 8px; }
+
+/* Icon-only buttons (you already have .lib-cta .lib-cta--icon); keep consistent */
+.lib-cta--icon {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+}
+.lib-cta--icon .material-symbols-outlined {
+  font-size: 28px;   /* same as your filter icon after tweaks */
+  line-height: 1;
+  display: inline-block;
+}
+
+
+/* Show the blinking caret in the search input */
+.lib-search-input {
+  caret-color: #ffffff !important; /* pick any color you like */
+}
+
+/* Optional: a subtle focus style just for the search input */
+.lib-search-input:focus {
+  border-color: rgba(255,255,255,0.28);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+  outline: none;
+}
+
+
+
+
+
+
+
+/* The CTA wrapper already exists; ensure it can anchor menus */
+.lib-hero-cta { position: relative; display: flex; gap: 8px; }
+
+/* Icon-only buttons (you already have .lib-cta .lib-cta--icon); keep consistent */
+.lib-cta--icon {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+}
+.lib-cta--icon .material-symbols-outlined {
+  font-size: 28px;   /* same as your filter icon after tweaks */
+  line-height: 1;
+  display: inline-block;
+}
+
+/* Search popover — mirrors .lib-filter-menu look & placement */
+.lib-search-menu,
+.lib-filter-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1200;
+  background: rgba(20,20,20,0.96);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.5);
+  min-width: 220px;
+}
+
+/* Search input */
+.lib-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0f0f0f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 8px;
+  padding: 10px 36px 10px 12px; /* room for clear button */
+  font: inherit;
+  outline: none;
+}
+.lib-search-input::placeholder { color: rgba(255,255,255,0.6); }
+
+/* Clear (×) button inside the field, aligned right */
+.lib-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 14px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+  color: rgba(255,255,255,0.85);
+}
+.lib-search-clear .material-symbols-outlined { font-size: 18px; }
+
+/* Ensure no focus ring/flicker caret on icon buttons */
+.lib-cta--icon:focus { outline: none; box-shadow: none; }
+
+
+
+
+
+/* === Slightly bigger filter icon (only the glyph, no background) === */
+.lib-filter-btn .material-symbols-outlined {
+  font-size: 30px;            /* was ~24px */
+  line-height: 1;
+  vertical-align: middle;
+  transform: translateY(-2px); /* tiny optical align */
+}
+
+/* Keep a comfy click target without adding a box */
+.lib-cta.lib-cta--icon.lib-filter-btn {
+  padding: 6px;               /* invisible hit area */
+}
+
+
+/* =========================
+   Modern search popover styling
+   ========================= */
+
+/* Container: subtle glass, soft border */
+.lib-search-menu {
+  position: absolute; /* keep whatever you used before; can be fixed if needed */
+  z-index: 2000;
+  background: rgba(18, 18, 18, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Search field wrapper so we can place a leading icon */
+.lib-search-field {
+  position: relative;
+}
+
+/* The input: glass pill, smooth focus ring, animated width */
+.lib-search-input {
+  width: clamp(240px, 32vw, 300px);
+  height: 42px;
+  padding: 0 14px 0 18px; /* space for icon */
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 14px;
+  line-height: 42px;
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, width 140ms ease;
+  caret-color: #ffffff; /* ensure caret shows here */
+}
+
+/* Focus state: subtle lift and ring */
+.lib-search-input:focus {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+/* Placeholder: softer white */
+.lib-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Leading search icon inside the field */
+.lib-search-field::before {
+  content: "search";
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Mobile: let it breathe */
+@media (max-width: 640px) {
+  .lib-search-input {
+    width: min(86vw, 460px);
+  }
+}
+
+
+.lib-search-field { position: relative; }
+
+/* give input equal padding; text is indented for the left search icon */
+.lib-search-field {
+  --pad: 14px; --icon-w: 20px; --icon-gap: 8px;
+}
+.lib-search-input {
+  padding: 0 var(--pad);
+  text-indent: calc(var(--icon-w) + var(--icon-gap));
+}
+
+/* extra right room so the × doesn’t overlap text */
+.lib-search-field.has-clear .lib-search-input {
+  padding-right: calc(var(--pad) + 20px + 6px); /* pad + close icon + gap */
+}
+
+/* place the × at the far right inside the input */
+.lib-search-clear--inside {
+  position: absolute;
+  right: var(--pad);
+  top: 50%;
+  transform: translateY(-50%);
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1;
+}
+.lib-search-clear--inside .material-symbols-outlined {
+  font-size: 18px;
+  color: rgba(255,255,255,0.85);
+  pointer-events: none;
+}
+
