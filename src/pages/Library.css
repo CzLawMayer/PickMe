@@ -1222,7 +1222,7 @@ body,
   gap: 6px !important;
   line-height: 1 !important;
   padding: 0 !important;
-  margin-top: 6px !important;
+  margin-top: 0px !important;
   margin-bottom: 0 !important;
 
   /* freeze a stable scale so DPI/zoom/container queries don't shift baselines */
@@ -1232,7 +1232,7 @@ body,
 /* Each button: keep everything centered */
 .library-app .lib-card .meta-icon-btn {
   display: inline-flex !important;
-  align-items: center !important;   /* center the two pieces */
+  align-items: start !important;   /* center the two pieces */
   gap: 1px !important;
   padding: 0 !important;
   height: auto !important;
