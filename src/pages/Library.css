@@ -108,17 +108,6 @@
 .lib-tab.is-active,
 .lib-tab[aria-current="page"] { background: #ff4081; border-color: transparent; color: #fff; }
 
-/* Main content padding */
-.lib-content { padding: 16px var(--pad-x); }
-
-/* Right rail (FeaturePanel) */
-.library-feature { background: #000; display: flex; align-items: stretch; justify-content: center; padding: 0; }
-.library-feature .feature-card { width: 100%; height: 100%; max-width: none; background: #000; box-shadow: none; }
-
-/* SideMenu layering */
-.menu-overlay { z-index: 950; }
-.side-menu    { z-index: 960; }
-
 /* --- Responsive hero tweaks --- */
 @media (max-width: 820px) {
   .lib-hero { grid-template-columns: 1fr !important; row-gap: 12px; }
@@ -150,8 +139,7 @@
 @media (max-width: 820px) { .library-app .lib-row { gap: 12px; } }
 .library-app .lib-col { min-width: 0; }
 
-/* Card: cover + 5 lines (grid) */
-/* IMPORTANT: overflow hidden so the card/book NEVER grows. */
+/* Card: cover + 5 lines (grid) — fixed height */
 .library-app .lib-card {
   container-type: inline-size;
   container-name: libcol;
@@ -166,7 +154,7 @@
   gap: 12px;
   height: var(--card-h);
   min-width: 0;
-  overflow: hidden; /* keep size fixed */
+  overflow: hidden;
 }
 
 /* Cover (2:3 ratio, stretches to card height) */
@@ -174,13 +162,35 @@
   width: 100%; height: 100%;
   background: #2a2a2a; border-radius: 4px; overflow: hidden;
 }
+.lib-cover {
+  position: relative;
+  width: 100%;
+  background-color: #111;
+  overflow: hidden;
+  display: block;
+}
+.lib-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lib-cover.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--accent-blue, #3af);
+  pointer-events: none;
+}
 
-/* Details: 5 equal rows (also fixed) */
+/* Details: 5 equal rows (fixed) */
 .library-app .lib-details {
   display: grid; grid-template-rows: repeat(5, 1fr);
   gap: var(--row-gap); height: 100%; min-width: 0;
-  overflow: hidden; /* prevent stretch */
+  overflow: hidden;
 }
+
+/* Generic line block (trimmed; later we zero inside details) */
 .library-app .lib-line {
   display: flex; align-items: center;
   padding: 8px 10px;
@@ -200,14 +210,11 @@
 .lib-row-actions.is-inline {
   display: flex; align-items: center; justify-content: flex-start;
   gap: 8px !important;
-  min-height: 44px;
-  padding: 0 !important;
-  flex-wrap: nowrap !important;
   min-width: 0;
-  overflow: visible;   /* popover can overlap rows */
-  font-size: 16px;     /* row scale (em) */
+  overflow: visible;
+  font-size: 16px;
+  padding: 0 !important;
 }
-
 .lib-row-actions.is-inline .meta-icon-btn {
   display: inline-flex !important;
   align-items: center !important;
@@ -223,22 +230,17 @@
   width: auto !important;
   flex: 0 0 auto !important;
 }
-
 .lib-row-actions.is-inline .meta-icon-glyph { font-size: 1.78em !important; line-height: 1; }
 .lib-row-actions.is-inline .meta-icon-count { font-size: 1.14em !important; line-height: 1; margin-left: 2px !important; }
-
-/* Active colors */
 .meta-icon-btn.is-active.like .meta-icon-glyph { --ms-fill: 1; color: #d81b60; }
 .meta-icon-btn.is-active.save .meta-icon-glyph { --ms-fill: 1; color: #6a1b9a; }
 .meta-icon-btn.is-active.star .meta-icon-glyph { --ms-fill: 1; color: #f2ac15; }
-
 .lib-row-actions.is-inline .meta-icon-btn:hover .meta-icon-glyph { filter: drop-shadow(0 0 .4px rgba(255,255,255,.35)); }
 .lib-row-actions.is-inline .meta-icon-btn:active .meta-icon-glyph { transform: translateY(1px) scale(.98); }
 
 @media (max-width: 520px) {
   .lib-row-actions.is-inline { flex-wrap: wrap; row-gap: 10px; }
 }
-
 @container libcol (max-width: 660px) {
   .lib-row-actions.is-inline { font-size: clamp(12px, 2.2cqw, 16px); gap: 6px !important; }
   .lib-row-actions.is-inline .meta-icon-btn { gap: 3px !important; }
@@ -252,23 +254,18 @@
 }
 
 /* =========================
-   STAR POPOVER — body-level portal
-   (never affects layout; never clipped)
+   STAR POPOVER (floating)
    ========================= */
-
-/* Full-screen, click-through overlay. You only click the surface. */
 .pm-star-portal {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 1600; /* above cards/rails */
+  z-index: 1600;
 }
-
-/* The actual bubble; positioned by inline top/left from the component. */
 .pm-star-surface {
-  position: fixed;                 /* OUTSIDE layout flow */
-  top: var(--pm-top, 0px);         /* set via inline style */
-  left: var(--pm-left, 0px);       /* set via inline style */
+  position: fixed;
+  top: var(--pm-top, 0px);
+  left: var(--pm-left, 0px);
   transform: translate(-50%, -10px);
   pointer-events: auto;
   background: rgba(20, 20, 20, 0.96);
@@ -278,43 +275,53 @@
   box-shadow: 0 10px 28px rgba(0,0,0,.5);
   min-width: 180px;
 }
-
-/* Stars row + hover preview */
-.pm-star-row {
-  display: inline-flex;
-  gap: 6px;
+.star-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.45);
+  z-index: 10;
+  min-width: 160px;
+}
+.star-popover-floating {
+  position: fixed;
+  z-index: 2000;
+  background: rgba(20, 20, 20, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45) !important;
+  padding: 8px 10px !important;
+  min-width: 160px !important;
+  max-width: 220px;
+  display: inline-block !important;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.star-row {
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  user-select: none;
+  gap: 6px;
 }
-.pm-star-row[data-hover="1"] .pm-star:nth-child(-n+1),
-.pm-star-row[data-hover="2"] .pm-star:nth-child(-n+2),
-.pm-star-row[data-hover="3"] .pm-star:nth-child(-n+3),
-.pm-star-row[data-hover="4"] .pm-star:nth-child(-n+4),
-.pm-star-row[data-hover="5"] .pm-star:nth-child(-n+5) { color: #ffd36a; }
-
-/* Star buttons */
-.pm-star {
+.star-item {
   appearance: none;
   background: transparent;
-  border: 0;
+  border: none;
+  padding: 4px;
   cursor: pointer;
-  padding: 0 2px;
   line-height: 1;
-  font-size: inherit;
-  color: #8c8c8c;
-  transition: transform 120ms ease, color 120ms ease;
+  border-radius: 6px;
+  transition: transform 100ms ease;
 }
-.pm-star:hover { transform: translateY(-1px); }
-.pm-star.is-on { color: #f2ac15; }
-
-.pm-star-hint {
-  margin-top: 6px;
-  font-size: 12px;
-  opacity: .85;
-  text-align: center;
-}
+.star-item:hover { transform: scale(1.1); }
+.star-hint { text-align: center; font-size: 12px; opacity: .85; margin-top: 6px; }
+.star-popover-floating .material-symbols-outlined { font-size: 28px; color: #f2ac15; }
+.star-popover-floating .material-symbols-outlined[style*="--ms-fill: 0"] { color: inherit; }
 
 /* (Optional) legacy .lib-actions */
 .library-app .lib-actions {
@@ -334,14 +341,10 @@
 @media (max-width: 700px) { .library-app .lib-actions { font-size: clamp(10px, 2.4vw, 13px) !important; } }
 
 /* =========================
-   End
+   Global meta-icon button base
    ========================= */
-
-/* === Add this (or merge with your existing shared icon styles) === */
-
-/* Every inline meta action button (like, star, save) */
 .meta-icon-btn {
-  position: relative;          /* THIS is the key fix */
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -357,435 +360,34 @@
   user-select: none;
   outline: none;
 }
+.meta-icon-glyph { font-size: 1.78em; line-height: 1; }
+.meta-icon-count { font-size: 1.14em; line-height: 1; margin-left: 2px; }
+.meta-icon-btn:active .meta-icon-glyph { transform: scale(0.95); }
+.meta-icon-btn:focus { outline: none; box-shadow: none; }
 
-/* icon itself inside the button */
-.meta-icon-glyph {
-  font-size: 1.78em;
-  line-height: 1;
-}
+/* =========================
+   Scroll behavior for the books grid
+   ========================= */
 
-/* number next to the icon */
-.meta-icon-count {
-  font-size: 1.14em;
-  line-height: 1;
-  margin-left: 2px;
-}
+/* Lock outer scroll; only left column's grid scrolls inside .lib-scroll */
+html, body, .library-app { height: 100svh; overflow: hidden; }
 
-/* active color states (same as other pages) */
-.meta-icon-btn.is-active.like .meta-icon-glyph { --ms-fill: 1; color: #d81b60; }
-.meta-icon-btn.is-active.star .meta-icon-glyph { --ms-fill: 1; color: #f2ac15; }
-.meta-icon-btn.is-active.save .meta-icon-glyph { --ms-fill: 1; color: #6a1b9a; }
-
-.meta-icon-btn:active .meta-icon-glyph {
-  transform: scale(0.95);
-}
-
-.meta-icon-btn:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-/* popover styling (unchanged from working pages) */
-.star-popover {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translate(-50%, -8px);
-  background: rgba(20, 20, 20, 0.95);
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 10px;
-  padding: 8px 10px;
-  box-shadow: 0 8px 22px rgba(0,0,0,.45);
-  z-index: 10;
-  min-width: 160px;
-}
-
-.star-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.star-item {
-  appearance: none;
-  background: transparent;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  line-height: 1;
-  border-radius: 6px;
-  transition: transform 100ms ease;
-}
-
-.star-item:hover {
-  transform: scale(1.1);
-}
-
-.star-hint {
-  text-align: center;
-  font-size: 12px;
-  opacity: .85;
-  margin-top: 6px;
-}
-
-/* floating version of the popover when used in Library */
-.star-popover-floating {
-  position: fixed;          /* take it out of layout completely */
-  transform: translate(-50%, -8px);
-  z-index: 2000;
-  min-width: 160px;
-  /* we intentionally do NOT set background/border/etc here,
-     we inherit those from .star-popover so it looks identical */
-}
-
-/* The original .star-popover still defines:
-   background, border, border-radius, padding, box-shadow, etc.
-   We keep that.
-   This helper ONLY handles viewport positioning.
-*/
-.star-popover-floating {
-  position: fixed;            /* float above layout */
-  transform: translateX(-50%);/* center horizontally on the star */
-  z-index: 2000;              /* above card */
-  min-width: 160px;
-}
-
-/* Floating version of the popover for Library.
-   We keep all visuals from .star-popover, we ONLY change positioning.
-*/
-.star-popover-floating {
-  position: fixed;
-  z-index: 2000;
-  min-width: 160px;
-  /* no bottom / no left / no transform here – we set those inline in style={} */
-}
-
-/* Force the floating rating bubble to render as a full padded box above the star button */
-.star-popover-floating {
-  position: fixed;                  /* keep it out of layout so it won't squeeze the card */
-  z-index: 2000;
-
-  /* full bubble visuals (override anything older) */
-  background: rgba(20, 20, 20, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45) !important;
-
-  padding: 8px 10px !important;
-  min-width: 160px !important;
-  max-width: 220px;
-  display: inline-block !important;
-
-  /* make sure the box actually wraps its children vertically */
-  box-sizing: border-box;
-  overflow: visible;
-}
-
-/* stars row inside the popover */
-.star-popover-floating .star-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin: 0 0 6px 0;        /* give space above the hint */
-}
-
-/* each clickable star */
-.star-popover-floating .star-item {
-  appearance: none;
-  background: transparent;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  line-height: 1;
-  border-radius: 6px;
-  transition: transform 100ms ease;
-}
-.star-popover-floating .star-item:hover {
-  transform: scale(1.1);
-}
-
-/* the little text under the stars ("Choose rating", "4/5", etc.) */
-.star-popover-floating .star-hint {
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.85;
-  line-height: 1.3;
-  white-space: nowrap;
-}
-
-/* keep the yellow fill for active stars */
-.star-popover-floating .material-symbols-outlined {
-  font-size: 28px;
-  color: #f2ac15;
-}
-.star-popover-floating .material-symbols-outlined[style*="--ms-fill: 0"] {
-  /* if we passed --ms-fill:0 inline, show default color instead of yellow */
-  color: inherit;
-}
-
-/* === tighten library rows (no side padding / no outline) === */
-.library-app .lib-line {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-}
-
-/* make sure icon row also hugs edges and has no outline */
-.lib-row-actions.is-inline {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-}
-
-/* kill focus outline / glow on meta buttons in the rows */
-.meta-icon-btn {
-  outline: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  border: 0 !important;
-}
-.meta-icon-btn:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Row 1: book title (bigger + bold) */
-.library-app .lib-details > .lib-line:nth-child(1) {
-  font-size: 1rem;              /* bump size */
-  font-weight: 700;             /* bold */
-  line-height: 1.2;
-  color: #fff;                  /* keep pure white for title */
-}
-
-/* Row 3: author (dimmer white) */
-.library-app .lib-details > .lib-line:nth-child(3) {
-  color: rgba(255,255,255,0.6); /* softer white */
-  font-weight: 400;
-}
-
-/* Pull author (row 3) closer to year (row 2) */
-.library-app .lib-details > .lib-line:nth-child(3) {
-  margin-top: -12px; /* tighten year ↔ author */
-}
-
-/* Pull personal stars (row 5) closer to the buttons row (row 4) */
-.library-app .lib-details > .lib-line:nth-child(5) {
-  margin-top: -25px; /* tighten buttons ↔ stars */
-}
-
-/* Make book title bigger, bold, and allow wrapping to 2 lines */
-.library-app .lib-details > .lib-line:nth-child(1) {
-  font-size: 1.25em;       /* bigger than before */
-  font-weight: 700;        /* bold */
-  line-height: 1.2;
-
-  white-space: normal;     /* allow wrapping */
-  overflow: visible;       /* don't clip */
-  text-overflow: clip;     /* no ellipsis */
-
-  display: -webkit-box;          /* allow multi-line clamp */
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;         /* max 2 lines */
-  max-height: calc(1.2em * 2);   /* keeps card height sane */
-}
-
-/* Add extra space after the title row before the year row */
-.library-app .lib-details > .lib-line:nth-child(1) {
-  margin-bottom: 12px; /* new spacing under title */
-}
-
-/* Year row pulls up a bit tighter toward the title, not toward author */
-.library-app .lib-details > .lib-line:nth-child(2) {
-  margin-top: 0;
-}
-
-/* Allow the author row (row 3) to wrap to 2 lines if needed */
-.library-app .lib-details > .lib-line:nth-child(3) {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-
-  line-height: 1.2;
-
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;          /* max 2 lines like title */
-  max-height: calc(1.2em * 2);    /* keep card height sane */
-}
-
-/* ---------- Scroll behavior for the books grid ---------- */
-
-/* The whole 2-column layout is already min-height: calc(100svh - header),
-   so the left column has a fixed vertical budget. We prevent the left column
-   from overflowing, and let only .library-scroll handle overflow. */
-.library-left {
-  min-height: calc(100svh - var(--app-header-h));
-  overflow: hidden;          /* hide any spill from children */
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/* This is the scrollable region (books + below).
-   It fills the remaining height under the hero. */
-.library-scroll {
-  flex: 1 1 auto;
-  min-height: 0;             /* VERY important: allows flex child to scroll */
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* Optional: make the scrollbar appear right beside the FeaturePanel column
-   (which it will naturally, since .library-scroll fills the left column).
-   You can style it a bit to be slimmer. */
-.library-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-.library-scroll::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.05);
-}
-.library-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.28);
-  border-radius: 3px;
-}
-.library-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.4);
-}
-
-/* === overrides from Alejandro's tweaks === */
-
-/* 1. Make book covers square (no rounding) */
-.library-app .lib-cover {
-  border-radius: 0 !important;
-}
-
-/* 2. Personal user stars row */
-.user-rating-star {
-  font-size: 20px;
-  line-height: 1;
-  /* kill text selection glow etc */
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.user-rating-star.filled {
-  color: #f2ac15;           /* same yellow as active star elsewhere */
-  --ms-fill: 1;
-}
-
-.user-rating-star.empty {
-  color: #fff;              /* bright white for empty */
-  --ms-fill: 0;
-  opacity: 1;               /* force full brightness */
-}
-
-/* 3. Scrollbar styling for the scrollable books section */
-.lib-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.lib-scroll::-webkit-scrollbar-track {
-  background: transparent;  /* keep background invisible */
-}
-
-.lib-scroll::-webkit-scrollbar-thumb {
-  background: #fff;         /* full white thumb */
-  border-radius: 3px;
-}
-
-/* Firefox scrollbar */
-.lib-scroll {
-  scrollbar-color: #fff transparent;  /* thumb white, track transparent */
-  scrollbar-width: thin;
-}
-
-/* === scrollbar: force pure white === */
-
-/* WebKit browsers (Chrome, Edge, Safari) */
-.lib-scroll::-webkit-scrollbar {
-  width: 8px;                /* a bit thicker so it looks solid white */
-  background: transparent;
-}
-
-.lib-scroll::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.4);  /* darker track so white pops */
-}
-
-.lib-scroll::-webkit-scrollbar-thumb {
-  background-color: #ffffff !important; /* pure white */
-  border-radius: 0;                      /* no blur rounding */
-  border: 0;                             /* remove gray border halo */
-  box-shadow: none !important;           /* kill inset shadows some browsers add */
-}
-
-/* Firefox */
-.lib-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #ffffff rgba(0, 0, 0, 0.4); 
-  /* thumb = white, track = darker */
-}
-
-/* === scrollbar: force visually solid white === */
-
-/* WebKit browsers (Chrome, Edge, etc.) */
-.lib-scroll::-webkit-scrollbar {
-  width: 8px;
-  background: transparent;
-}
-
-.lib-scroll::-webkit-scrollbar-track {
-  background-color: #ffffff !important;  /* pure white track */
-  border-radius: 0;
-  border: 0;
-  box-shadow: none !important;
-}
-
-.lib-scroll::-webkit-scrollbar-thumb {
-  background-color: #ffffff !important;  /* pure white thumb */
-  border-radius: 0;
-  border: 0;
-  box-shadow: none !important;
-}
-
-/* Firefox */
-.lib-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #ffffff #ffffff; 
-  /* thumb white, track white => whole bar reads white */
-}
-
-/* 1. Lock the overall page scroll */
-html,
-body,
-.library-app {
-  height: 100svh;
-  overflow: hidden;
-}
-
-/* 2. Make the main 2-column layout fill the viewport minus header,
-   and allow internal flex children to shrink */
 .library-layout {
   min-height: calc(100svh - var(--app-header-h));
   max-height: calc(100svh - var(--app-header-h));
-  overflow: hidden;            /* <- prevent layout column from scrolling */
+  overflow: hidden;
 }
 
 /* left column (hero + scrollable books) */
 .library-left {
   display: flex;
   flex-direction: column;
-  min-height: 0;               /* <- REQUIRED so child can overflow */
+  min-height: 0;
   max-height: 100%;
-  overflow: hidden;            /* <- stop left column itself from scrolling */
+  overflow: hidden;
 }
 
-/* 3. Make only the books section scroll */
+/* Only the books section scrolls */
 .lib-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -798,461 +400,179 @@ body,
   scrollbar-width: thin;
   scrollbar-color: #fff transparent;
 }
-
-.lib-scroll::-webkit-scrollbar {
-  width: 6px;
-  background: transparent;
-}
-
-.lib-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.lib-scroll::-webkit-scrollbar-thumb {
-  background: #fff;
-  border-radius: 3px;
-}
-
-/* remove scrollbar arrows/buttons in WebKit (Chrome, Edge, Safari) */
-.lib-scroll::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-/* on Firefox, force no buttons by keeping thin style */
-.lib-scroll {
-  scrollbar-width: thin;
-}
-
-/* reuse selection glow/outline from profile's shelves */
-.lib-card.is-selected {
-  outline: 2px solid var(--accent-blue, #3af); /* whatever you're using */
-  outline-offset: 0;
-}
-
-/* highlight only the clicked book's cover in Library view */
-.lib-cover.is-selected {
-  outline: 2px solid var(--accent-blue, #3af);
-  outline-offset: 0;
-}
-
-/* make sure the cover box itself doesn't collapse around the img */
-.lib-cover {
-  position: relative;
-  width: 100%;
-  /* ensure consistent height for the outline area */
-  background-color: #111;
-  overflow: hidden;
-  display: block;
-}
-.lib-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.lib-cover {
-  position: relative;
-  width: 100%;
-  /* keep your existing sizing here:
-     either fixed height, or aspect-ratio, etc. */
-  background-color: #111;
-  overflow: hidden;
-  display: block;
-}
-.lib-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* Blue highlight frame on the *whole* cover box */
-.lib-cover.is-selected::after {
-  content: "";
-  position: absolute;
-  inset: 0; /* top:0 right:0 bottom:0 left:0 */
-  border: 2px solid var(--accent-blue, #3af);
-  pointer-events: none; /* don't block hover/click */
-}
-
-/* Ensure user rating stars use a normal text font, not Material Symbols */
-.user-stars, .user-stars * {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
-}
-
-/* === FIX stars clipping in Library cards === */
-.lib-card .lib-details {
-  /* let the details box grow to fit ALL rows, including the stars */
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: visible !important;
-
-  /* make sure grid doesn't clamp rows */
-  display: grid;
-  grid-template-rows: auto auto auto auto auto;
-  align-content: start;
-}
-
-/* tighten the like/rating/save row so it doesn't eat vertical space */
-.lib-card .lib-row-actions.is-inline {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-
-  margin-top: 8px !important;
-  margin-bottom: 4px !important;
-
-  line-height: 1 !important;
-  padding: 0 !important;
-  min-height: 20px !important;
-}
-
-/* make the action buttons themselves not inflate the row */
-.lib-card .meta-icon-btn {
-  padding: 0 4px !important;
-  line-height: 1 !important;
-  min-height: 20px !important;
-}
-
-/* make sure the star row itself is allowed to be seen */
-.lib-card .lib-line:last-child {
-  overflow: visible !important;
-  min-height: 24px !important;
-  line-height: 1 !important;
-  padding-bottom: 8px !important;
-  display: flex !important;
-  align-items: flex-start !important;
-}
-
-/* === FIX stars clipping / spacing in Library cards === */
-.lib-card .lib-details {
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: visible !important;
-
-  display: grid;
-  grid-template-rows: auto auto auto auto auto;
-  align-content: start;
-}
-
-/* tighten the like/rating/save row so it behaves like a single text line */
-.lib-card .lib-row-actions.is-inline {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-
-  /* pull the stars row closer by removing bottom gap */
-  margin-top: 8px !important;
-  margin-bottom: 2px !important;
-
-  line-height: 1 !important;
-  padding: 0 !important;
-
-  /* hard cap height similar to a single text line */
-  min-height: 20px !important;
-  height: 20px !important;
-}
-
-/* make the action buttons themselves not inflate the row */
-.lib-card .meta-icon-btn {
-  padding: 0 4px !important;
-  line-height: 1 !important;
-  min-height: 20px !important;
-  height: 20px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  font-size: 13px !important; /* keeps counts small */
-}
-
-/* icon glyph inside those buttons (like the star material icon) */
-.lib-card .meta-icon-glyph,
-.lib-card .meta-icon-count {
-  line-height: 1 !important;
-  font-size: 13px !important;
-}
-
-/* now style the stars row so it sits right under the buttons row,
-   same visual height, and not pushed to the card bottom */
-.lib-card .lib-line.user-stars-row {
-  /* position */
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-
-  /* give it same "row height" as buttons */
-  min-height: 20px !important;
-  height: 20px !important;
-  line-height: 1 !important;
-
-  /* layout */
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 !important;
-
-  /* IMPORTANT: allow the star glyphs to fully show */
-  overflow: visible !important;
-}
-
-/* the stars themselves */
-.lib-card .user-stars-row .user-stars-wrap {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  line-height: 1 !important;
-  font-size: 16px !important;
-  min-height: 20px !important;
-  height: 20px !important;
-  color: #fff !important;
-  font-weight: 600 !important;
-}
-.lib-card .user-stars-row .user-stars-wrap span {
-  display: block !important;
-  font-size: 16px !important;
-  line-height: 1 !important;
-  color: #f2ac15 !important; /* will be overridden inline for empty stars */
-}
-
-/* tighten the like/rating/save row even more */
-.lib-card .lib-row-actions.is-inline {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-
-  margin-top: 8px !important;
-  margin-bottom: 2px !important;
-
-  line-height: 1 !important;
-  padding: 0 !important;
-
-  /* smaller row height */
-  min-height: 16px !important;
-  height: 16px !important;
-}
-
-/* shrink the individual meta buttons */
-.lib-card .meta-icon-btn {
-  padding: 0 3px !important;
-  line-height: 1 !important;
-
-  min-height: 16px !important;
-  height: 16px !important;
-
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 3px !important;
-
-  font-size: 11px !important; /* smaller count text */
-}
-
-/* shrink the glyph + number inside */
-.lib-card .meta-icon-glyph,
-.lib-card .meta-icon-count {
-  line-height: 1 !important;
-  font-size: 11px !important;
-}
-
-/* also force material-symbols-outlined inside these buttons to match the smaller scale */
-.lib-card .meta-icon-btn .material-symbols-outlined {
-  font-size: 14px !important;
-  line-height: 1 !important;
-}
-
-/* stars row should feel about the same "weight" line-height-wise */
-.lib-card .lib-line.user-stars-row {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-
-  min-height: 16px !important;
-  height: 16px !important;
-  line-height: 1 !important;
-
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 !important;
-
-  overflow: visible !important;
-}
-
-/* star strip itself */
-.lib-card .user-stars-row .user-stars-wrap {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  line-height: 1 !important;
-
-  min-height: 16px !important;
-  height: 16px !important;
-
-  font-size: 14px !important; /* visual star size */
-  font-weight: 600 !important;
-  color: #fff !important;
-}
-
-.lib-card .user-stars-row .user-stars-wrap span {
-  display: block !important;
-  font-size: 14px !important;
-  line-height: 1 !important;
-  color: #f2ac15 !important; /* unfilled stars get overridden inline */
-}
-
-/* tighten the like/rating/save row vertically */
-.lib-card .lib-row-actions.is-inline {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-
-  margin-top: 6px !important;
-  margin-bottom: 0px !important;  /* was 2px, now no gap */
-
-  line-height: 1 !important;
-  padding: 0 !important;
-
-  min-height: 16px !important;
-  height: 16px !important;
-}
-
-/* stars row directly under the buttons */
-.lib-card .lib-line.user-stars-row {
-  margin-top: 2px !important;      /* bring it right up under the buttons */
-  margin-bottom: 0 !important;
-
-  min-height: 16px !important;
-  height: 16px !important;
-  line-height: 1 !important;
-
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 !important;
-
-  overflow: visible !important;
-}
-
-/* actions row (like / avg rating / save) */
-.lib-card .lib-row-actions.is-inline {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-
-  margin-top: 6px !important;
-  margin-bottom: 0 !important;   /* no space below the buttons */
-
-  line-height: 1 !important;
-  padding: 0 !important;
-
-  min-height: 16px !important;
-  height: 16px !important;
-}
-
-/* stars row under the buttons, pulled upward */
-.lib-card .lib-line.user-stars-row {
-  /* pull it up closer */
-  margin-top: -2px !important;    /* was 2px, now slightly overlapping upward */
-  margin-bottom: 0 !important;
-
-  min-height: 16px !important;
-  height: 16px !important;
-  line-height: 1 !important;
-
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 !important;
-
-  overflow: visible !important;
-}
-
-
-
-/* Make the arrow hug its content and sit left of the book */
+.lib-scroll::-webkit-scrollbar { width: 6px; background: transparent; }
+.lib-scroll::-webkit-scrollbar-track { background: transparent; }
+.lib-scroll::-webkit-scrollbar-thumb { background: #fff; border-radius: 3px; }
+.lib-scroll::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+/* Selection outlines */
+.lib-card.is-selected { outline: 2px solid var(--accent-blue, #3af); outline-offset: 0; }
+
+/* =========================
+   Feature panel cover alignment
+   ========================= */
 .feature-jump {
   position: absolute;
-  right: calc(100% + 25px);   /* place just outside the left edge of the cover */
+  right: calc(100% + 25px);
   top: 50%;
   transform: translateY(-50%);
-
-  display: inline-flex;      /* shrink-wrap to glyph */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-
   width: auto;
   height: auto;
   min-width: 0;
   padding: 0 !important;
   margin: 0;
-
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
   line-height: 1;
   white-space: nowrap;
 }
-
-/* Kill any pseudo-element backgrounds from a global style */
 .feature-jump::before,
-.feature-jump::after {
-  content: none !important;
-}
+.feature-jump::after { content: none !important; }
 
-/* Center the cover within the feature panel */
-.feature-cover-row {
-  display: flex;
-  justify-content: center;   /* horizontal centering */
-  align-items: center;       /* vertical centering (for safety) */
-}
+.feature-cover-row { display: flex; justify-content: center; align-items: center; }
+.feature-cover-link { display: inline-block; }
+.feature-cover-placeholder { margin: 0 auto; max-width: 100%; }
 
-/* Keep the cover’s box tight so centering is precise */
-.feature-cover-link {
-  display: inline-block;
-}
-
-/* (If your placeholder is a block that can stretch, cap it so it centers nicely) */
-.feature-cover-placeholder {
-  margin: 0 auto;            /* redundant with flex, but harmless */
-  max-width: 100%;
-}
-
-/* === LIBRARY CARDS: rock-solid alignment for icon + count === */
-
-/* The row itself */
+/* =========================
+   LIBRARY CARDS: tight alignment for icon + count
+   (final overrides — highest priority)
+   ========================= */
 .library-app .lib-card .lib-row-actions.is-inline {
   display: flex !important;
-  align-items: baseline !important;   /* center, not baseline */
+  align-items: baseline !important;
   gap: 6px !important;
   line-height: 1 !important;
   padding: 0 !important;
-  margin-top: 0px !important;
+  margin-top: 0 !important;
   margin-bottom: 0 !important;
-
-  /* freeze a stable scale so DPI/zoom/container queries don't shift baselines */
-  font-size: 13px !important;       /* row scale for counts */
+  font-size: 13px !important;
 }
-
-/* Each button: keep everything centered */
 .library-app .lib-card .meta-icon-btn {
   display: inline-flex !important;
-  align-items: start !important;   /* center the two pieces */
+  align-items: start !important;
   gap: 1px !important;
   padding: 0 !important;
   height: auto !important;
   min-height: 0 !important;
   line-height: 1 !important;
 }
-
-/* Icon (Material Symbols or custom glyph) */
 .library-app .lib-card .meta-icon-btn .material-symbols-outlined,
 .library-app .lib-card .meta-icon-btn .meta-icon-glyph {
-  display: block !important;        /* remove inline text baseline quirks */
-  font-size: 14px !important;       /* lock icon size */
+  display: block !important;
+  font-size: 14px !important;
   line-height: 1 !important;
 }
-
-/* Number to the right of the icon */
 .library-app .lib-card .meta-icon-btn .meta-icon-count {
-  display: block !important;        /* same as icon */
-  font-size: 13px !important;       /* matches row font-size */
+  display: block !important;
+  font-size: 13px !important;
   line-height: 1 !important;
   margin-left: 2px !important;
-  transform: none !important;       /* in case earlier rules nudged it */
+  transform: none !important;
 }
+
+/* === Library card titles: hard clamp to 2 lines with ellipsis === */
+.library-app .lib-details > .lib-line.lib-title-line {
+  white-space: normal !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  line-clamp: 2 !important;
+  max-height: none !important;
+}
+
+/* Make the Save icon a touch bigger without shifting layout */
+.library-app .lib-card .meta-icon-btn.save .meta-icon-glyph {
+  transform: scale(1.12);
+  transform-origin: center;
+}
+
+/* Zero out padding/margins inside the right-side info (year/author included) */
+.library-app .lib-card .lib-details .lib-line {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+/* Explicitly kill the year/author margins (overrides inline margin-top on year) */
+.library-app .lib-card .lib-details .lib-year-line,
+.library-app .lib-card .lib-details .lib-author-line {
+  padding: 0 !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+}
+/* Remove any earlier title/author/stars row tweaks that added margins */
+.library-app .lib-details > .lib-line:nth-child(1),
+.library-app .lib-details > .lib-line:nth-child(3),
+.library-app .lib-details > .lib-line:nth-child(5) { margin: 0 !important; }
+
+/* Slightly increase font size for the year and author name */
+.library-app .lib-card .lib-details .lib-year-line {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+}
+.library-app .lib-card .lib-details .lib-author-line {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Stars / actions tight spacing (final) */
+.lib-card .lib-details { height: auto !important; min-height: 0 !important; overflow: visible !important; display: grid; grid-template-rows: auto auto auto auto auto; align-content: start; }
+.lib-card .lib-row-actions.is-inline {
+  gap: 6px !important;
+  margin-top: 6px !important;
+  margin-bottom: 0 !important;
+  min-height: 16px !important;
+  height: 16px !important;
+}
+.lib-card .meta-icon-btn {
+  padding: 0 3px !important;
+  min-height: 16px !important;
+  height: 16px !important;
+  gap: 3px !important;
+  font-size: 11px !important;
+}
+.lib-card .meta-icon-glyph,
+.lib-card .meta-icon-count { font-size: 11px !important; line-height: 1 !important; }
+.lib-card .meta-icon-btn .material-symbols-outlined { font-size: 14px !important; line-height: 1 !important; }
+.lib-card .lib-line.user-stars-row {
+  margin-top: -2px !important;
+  margin-bottom: 0 !important;
+  min-height: 16px !important;
+  height: 16px !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+.lib-card .user-stars-row .user-stars-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  line-height: 1 !important;
+  min-height: 16px !important;
+  height: 16px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+}
+.lib-card .user-stars-row .user-stars-wrap span {
+  display: block !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  color: #f2ac15 !important;
+}
+
+/* Misc tweaks */
+.library-app .lib-cover { border-radius: 0 !important; } /* square covers */
+.user-stars, .user-stars * { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important; }
