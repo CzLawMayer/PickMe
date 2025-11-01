@@ -1132,3 +1132,240 @@ aside.library-feature .feature-card *{
     transform: none;
   }
 }
+
+
+/* === Library: add a 6th row for genre under stars === */
+
+/* Tell the card's equal-row math there are 6 rows now */
+.library-app .lib-card { --rows: 6; }
+
+/* Make details explicitly define 6 rows (keeps your layout stable) */
+.lib-card .lib-details {
+  display: grid !important;
+  grid-template-rows: auto auto auto auto auto auto !important; /* title, year, author, actions, stars, genre */
+  align-content: start !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important; /* keep the card tidy */
+}
+
+/* Genre row sits right under the stars; compact, no extra chrome */
+.library-app .lib-card .lib-genre-row {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  min-height: 18px !important;   /* tiny line */
+  line-height: 1 !important;
+  overflow: hidden !important;
+}
+
+/* Single genre pill — matches FeaturePanel pill vibe, but compact */
+.library-app .lib-card .genre-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #fff;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* If there is no tag, the row collapses (no extra space) */
+.library-app .lib-card .lib-genre-row:empty {
+  display: none !important;
+}
+
+.library-app .lib-card .genre-pill {
+  transition: transform 120ms ease, filter 120ms ease;
+}
+.library-app .lib-card .genre-pill:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+/* Inline avatar : stars layout */
+.library-app .user-rating-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+/* 16px circular avatar to match the tight row height */
+.library-app .user-rating-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-block;
+  flex: 0 0 16px;
+  background: #2a2a2a;
+}
+
+.library-app .user-rating-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.library-app .user-rating-sep {
+  opacity: 0.75;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Use this if you want a fixed width for each tab */
+.library-app {
+  --tab-fixed-w: 132px; /* tweak as you like */
+}
+.lib-tabs {
+  display: flex;
+  gap: clamp(10px, 1.6vw, 16px);
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  flex-wrap: nowrap;
+}
+.lib-tabs .lib-tab {
+  flex: 0 0 var(--tab-fixed-w); /* identical width */
+  width: var(--tab-fixed-w);
+  text-align: center;
+}
+
+/* OLD – this forces every star to yellow and overrides inline color */
+.lib-card .user-stars-row .user-stars-wrap span {
+  color: #f2ac15 !important;
+}
+
+/* Make sure stars don’t inherit Material Symbols */
+.user-stars-wrap,
+.user-stars-wrap .user-star {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+  line-height: 1 !important;
+}
+
+/* Beat the old yellow rule with higher specificity + !important */
+.lib-card .user-stars-row .user-stars-wrap .star-filled { color: #f2ac15 !important; }
+.lib-card .user-stars-row .user-stars-wrap .star-empty  { color: #ffffff !important; text-shadow: none !important; }
+
+/* Genre pill: subtle shine sweep on hover */
+.genre-pill {
+  position: relative;
+  overflow: hidden;            /* clip the sheen inside the pill */
+  transition: filter 200ms ease;
+}
+
+.genre-pill:hover {
+  filter: brightness(1.08);    /* tiny lift without moving */
+}
+
+/* the sheen */
+.genre-pill::after {
+  content: "";
+  position: absolute;
+  inset: -40% -120% -40% -120%;      /* big enough to sweep across */
+  background: linear-gradient(
+    75deg,
+    transparent 0%,
+    rgba(255,255,255,0.10) 35%,
+    rgba(255,255,255,0.35) 50%,
+    rgba(255,255,255,0.10) 65%,
+    transparent 100%
+  );
+  transform: translateX(-60%) rotate(8deg);
+  pointer-events: none;              /* clicks pass through */
+  opacity: 0;
+}
+
+/* run the sweep on hover */
+.genre-pill:hover::after {
+  animation: pill-shine 700ms ease-out forwards;
+  opacity: 1;
+}
+
+@keyframes pill-shine {
+  from { transform: translateX(-60%) rotate(8deg); }
+  to   { transform: translateX(60%)  rotate(8deg); }
+}
+
+/* accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .genre-pill:hover::after { animation: none; opacity: 0.15; }
+}
+
+/* --- Genre pill: no hover "pop", keep shine only --- */
+.genre-pill,
+.genre-pill:hover,
+.genre-pill:focus {
+  transform: none !important;
+  box-shadow: none !important;
+  margin-top: 0 !important;
+}
+
+/* If any earlier rules nudge it upward on hover, neutralize them */
+.genre-pill:hover {
+  /* Keep just the subtle brightness; remove motion */
+  filter: brightness(1.08);
+}
+
+/* Keep the 3-col layout but protect the identity column from collapsing */
+.lib-hero {
+  display: grid !important;
+  grid-template-columns: minmax(360px, max-content) 1fr max-content !important;
+  align-items: center;
+  column-gap: clamp(8px, 2vw, 24px);
+}
+
+/* Identity column must NOT be allowed to shrink to 0 */
+.identity-cell {
+  min-width: 360px !important;    /* or 380–420px if you prefer */
+  overflow: visible !important;
+}
+
+/* Make sure the card itself can show all lines */
+.profile-card {
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: visible !important;
+}
+
+/* Keep tabs single-row and elastic in the middle track */
+.lib-tabs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: clamp(8px, 2vw, 16px);
+  padding: 0;
+  margin: 0;
+  min-width: 0;               /* allow flex to shrink inside the grid track */
+  overflow: hidden;           /* avoid wrapping */
+}
+
+/* Let tab padding compress slightly when tight on space */
+.lib-tab { padding-inline: clamp(8px, 2.2vw, 22px); }
+
+/* On very narrow screens, allow horizontal scrolling rather than wrapping */
+@media (max-width: 720px) {
+  .lib-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .lib-tabs::-webkit-scrollbar { display: none; }
+}

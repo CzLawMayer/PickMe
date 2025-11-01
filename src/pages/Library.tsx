@@ -5,6 +5,8 @@ import { Link, NavLink } from "react-router-dom";
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
 import ProfileIdentity from "@/components/ProfileIdentity";
+import { profile } from "@/profileData";
+
 
 import "./Library.css";
 
@@ -37,12 +39,8 @@ function UserRatingStars({ value }: { value: number }) {
         return (
           <span
             key={n}
-            style={{
-              fontSize: "16px",
-              lineHeight: 1,
-              display: "block",
-              color: filled ? "#f2ac15" : "#ffffff",
-            }}
+            className={filled ? "user-star star-filled" : "user-star star-empty"}
+            style={{ fontSize: "16px", lineHeight: 1, display: "block" }}
             aria-hidden="true"
           >
             {filled ? "★" : "☆"}
@@ -99,7 +97,18 @@ export default function LibraryPage() {
   };
 
 
-
+  function colorFromString(seed: string) {
+    // simple hash → 0..359
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+      h = (h * 31 + seed.charCodeAt(i)) % 360;
+    }
+    // pleasant saturation/lightness; tweak if you want
+    const bg = `hsl(${h} 70% 50% / 0.16)`;  // translucent background
+    const border = `hsl(${h} 70% 50% / 0.38)`; // visible border
+    const text = `hsl(${h} 85% 92%)`; // soft tinted white for fun; switch to "#fff" if you prefer pure white
+    return { bg, border, text };
+}
 
 
   type SortKey = "recent" | "title" | "author" | "rating" | "likes" | "saves";
@@ -531,8 +540,49 @@ export default function LibraryPage() {
                           className="lib-line user-stars-row"
                           onMouseEnter={() => previewBook(book)}
                         >
-                          <UserRatingStars value={book.userRating ?? 0} />
+                          <div className="user-rating-inline">
+                            <span className="user-rating-avatar" aria-hidden="true">
+                              <img
+                                src={
+                                  (profile as any)?.avatarUrl ||
+                                  (profile as any)?.photo ||
+                                  (profile as any)?.avatar ||
+                                  ""
+                                }
+                                alt=""
+                              />
+                            </span>
+                            <span className="user-stars-wrap" aria-label={`Your rating for ${book.title}`}>
+                              <UserRatingStars value={book.userRating ?? 0} />
+                            </span>
+                          </div>
                         </div>
+
+
+                        {/* Row 6: genre tag (first tag) */}
+                        <div
+                          className="lib-line lib-genre-row"
+                          onMouseEnter={() => previewBook(book)}
+                        >
+                          {Array.isArray(book.tags) && book.tags.length > 0 ? (() => {
+                            const tag = book.tags[0];
+                            const c = colorFromString(tag);
+                            return (
+                              <span
+                                className="genre-pill"
+                                title={tag}
+                                style={{
+                                  backgroundColor: c.bg,
+                                  borderColor: c.border,
+                                  color: c.text,
+                                }}
+                              >
+                                {tag}
+                              </span>
+                            );
+                          })() : null}
+                        </div>
+
                       </div>
                     </div>
                   </div>
