@@ -576,3 +576,231 @@ html, body, .library-app { height: 100svh; overflow: hidden; }
 /* Misc tweaks */
 .library-app .lib-cover { border-radius: 0 !important; } /* square covers */
 .user-stars, .user-stars * { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important; }
+
+/* === Library hero: make the 4 bars a bit wider === */
+.library-app .lib-hero .profile-bars {
+  width: 80% !important; /* was ~75% inline; bump this to make each bar wider */
+}
+
+/* (optional) nudge a bit more or less by tweaking this value:
+   82% (subtle), 88% (moderate), 94% (wide) */
+
+
+
+
+
+
+
+
+
+/* === Hero row: add a 3rd column for the CTA on the far right === */
+.lib-hero {
+  grid-template-columns: minmax(420px, auto) 1fr auto !important; /* identity | tabs | CTA */
+}
+
+/* keep the CTA anchored to the right edge */
+.lib-hero-cta {
+  justify-self: end;
+  align-self: center;
+}
+
+/* simple pill button matching tab aesthetics */
+.lib-cta {
+  height: var(--tab-h);
+  padding-inline: clamp(14px, calc(var(--tab-h) * 0.5), 28px);
+  border-radius: var(--tab-radius);
+  font-weight: 800;
+  font-size: clamp(14px, calc(var(--tab-h) * 0.34), 18px);
+  line-height: 1;
+  background: #ff4081;
+  color: #fff;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+.lib-cta:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.lib-cta:active { transform: translateY(0); }
+
+/* responsive: stack into a new row on narrow screens */
+@media (max-width: 820px) {
+  .lib-hero {
+    grid-template-columns: 1fr !important;
+    row-gap: 10px;
+  }
+  .lib-hero-cta { justify-self: start; }
+}
+
+
+
+/* === Sort dropdown (hero CTA) === */
+.lib-hero {
+  grid-template-columns: minmax(420px, auto) 1fr auto !important;
+  position: relative; /* anchor for menu if needed */
+}
+
+.lib-hero-cta {
+  position: relative;
+  justify-self: end;
+  align-self: center;
+}
+
+/* button looks like your tabs */
+.lib-cta.lib-cta--filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lib-cta-caret {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* floating menu */
+.lib-filter-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: rgba(20,20,20,0.98);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 12px;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.45);
+  padding: 6px;
+  z-index: 1200;
+  backdrop-filter: saturate(1.2) blur(4px);
+}
+
+.lib-filter-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  text-align: left;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.lib-filter-item:hover,
+.lib-filter-item:focus {
+  background: rgba(255,255,255,0.08);
+  outline: none;
+}
+
+/* narrow screens: stack hero, keep menu readable */
+@media (max-width: 820px) {
+  .lib-hero-cta { justify-self: start; }
+  .lib-filter-menu { right: auto; left: 0; }
+}
+
+
+/* icon left of label */
+.lib-cta--filter {
+  color: #e3e3e3; /* your requested icon/text color */
+}
+
+.lib-cta-icon {
+  font-size: 1.2em;
+  line-height: 1;
+  display: inline-block;
+}
+
+/* Icon-only CTA button */
+.lib-cta--icon{
+  display:inline-grid;
+  place-items:center;
+  width:40px; height:40px;        /* match your header icon box if you like */
+  padding:0;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:10px;
+  background:#111;
+  color:#e3e3e3;
+  cursor:pointer;
+}
+.lib-cta--icon .material-symbols-outlined{
+  font-size:22px; line-height:1;
+}
+.lib-cta--icon:hover{ filter:brightness(1.1); }
+.lib-cta--icon:active{ transform:translateY(1px); }
+
+/* (Optional) keep your existing dropdown positioning; if you need a nudge: */
+.lib-sort-menu{
+  /* example anchor to the button’s right/under — adjust only if needed */
+  position:absolute;
+  top:100%;
+  right:0;
+  margin-top:8px;
+}
+
+/* Icon-only CTA — no bg, no border, bigger glyph */
+.lib-cta--icon{
+  display:inline-grid;
+  place-items:center;
+  padding:0;
+  margin-right:0px;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:#e3e3e3;
+  cursor:pointer;
+  outline:none !important;
+}
+.lib-cta--icon .material-symbols-outlined{
+  font-size:45px;   /* bigger icon */
+  line-height:1;
+}
+
+/* Optional: subtle affordance without box */
+.lib-cta--icon:hover   { filter:brightness(1.15); }
+.lib-cta--icon:active  { transform:translateY(1px); filter:brightness(1.0); }
+
+/* Make the grid column truly tight, no implicit gap */
+.library-layout{
+  grid-template-columns: 1fr 340px;
+  gap: 0; /* ensure no grid gap */
+}
+
+/* Fill the right column exactly; no centering, no extra width */
+aside.library-feature{
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;   /* <- fill, don't center */
+  padding: 0 !important;
+  margin: 0 !important;
+  min-width: 0;               /* prevent overflow push */
+  overflow: hidden;           /* avoid horizontal jiggle */
+}
+
+/* Feature card must expand to the column width */
+aside.library-feature .feature-card{
+  flex: 1 1 auto;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100%;
+  margin: 0 !important;
+  box-sizing: border-box;
+  background: #000;           /* keep your right rail solid */
+  box-shadow: none;
+}
+
+/* Safety: nothing inside should force extra width */
+aside.library-feature .feature-card *{
+  max-width: 100%;
+}
+
+/* If anything inside tries to stick out (like the jump chevron), keep layout stable */
+.feature-cover-row{ overflow: hidden; }
+
+.lib-tabs {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+

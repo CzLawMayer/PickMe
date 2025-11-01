@@ -1,6 +1,6 @@
 // src/pages/Library.tsx
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, NavLink } from "react-router-dom";
 
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
@@ -97,6 +97,92 @@ export default function LibraryPage() {
     const sel = getBookById(selectedBookId);
     setActiveBook(sel || null);
   };
+
+
+
+
+
+  type SortKey = "recent" | "title" | "author" | "rating" | "likes" | "saves";
+
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("recent");
+  const sortBtnRef = useRef<HTMLButtonElement | null>(null);
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // keep stable original order as “recently added”
+  const booksWithIndex = useMemo(
+    () => books.map((b, i) => ({ ...b, __index: i })),
+    [books]
+  );
+
+  const sortedBooks = useMemo(() => {
+    const arr = [...booksWithIndex];
+
+    const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+    const str = (v: unknown) => (typeof v === "string" ? v : "");
+
+    switch (sortKey) {
+      case "title":
+        arr.sort((a, b) => str(a.title).localeCompare(str(b.title)));
+        break;
+      case "author":
+        arr.sort((a, b) => str(a.author).localeCompare(str(b.author)));
+        break;
+      case "rating":
+        arr.sort((a, b) => num(b.rating) - num(a.rating));
+        break;
+      case "likes":
+        arr.sort((a, b) => num(b.likes) - num(a.likes));
+        break;
+      case "saves":
+        arr.sort((a, b) => num(b.bookmarks) - num(a.bookmarks));
+        break;
+      case "recent":
+      default:
+        arr.sort((a, b) => a.__index - b.__index); // original order
+    }
+    return arr;
+  }, [booksWithIndex, sortKey]);
+
+  // close on outside click / Esc
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!sortOpen) return;
+      if (
+        sortMenuRef.current?.contains(t) ||
+        sortBtnRef.current?.contains(t)
+      ) return;
+      setSortOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSortOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [sortOpen]);
+
+  const applySort = (k: SortKey) => {
+    setSortKey(k);
+    setSortOpen(false);
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // =========================
   // PER-BOOK LIKE / SAVE STATE
@@ -213,19 +299,63 @@ export default function LibraryPage() {
             </div>
 
             <nav className="lib-tabs" aria-label="Library sections">
-              <Link to="/profile" className="lib-tab">
+              <NavLink to="/profile" className="lib-tab">
                 Profile
-              </Link>
-              <Link to="/library" className="lib-tab" aria-current="page">
+              </NavLink>
+              <NavLink to="/library" end className="lib-tab">
                 Library
-              </Link>
-              <Link to="/read" className="lib-tab">
+              </NavLink>
+              <NavLink to="/read" className="lib-tab">
                 Read
-              </Link>
-              <Link to="/reviews" className="lib-tab">
+              </NavLink>
+              <NavLink to="/reviews" className="lib-tab">
                 Reviews
-              </Link>
+              </NavLink>
             </nav>
+
+            <div className="lib-hero-cta">
+              <button
+                type="button"
+                ref={sortBtnRef}
+                className="lib-cta lib-cta--icon lib-filter-btn"
+                aria-haspopup="menu"
+                aria-expanded={sortOpen}
+                aria-label="Sort library"
+                onClick={() => setSortOpen(v => !v)}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">filter_list</span>
+              </button>
+
+
+              {sortOpen && (
+                <div
+                  ref={sortMenuRef}
+                  className="lib-filter-menu"
+                  role="menu"
+                  aria-label="Sort books"
+                >
+                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("recent")}>
+                    Recently added
+                  </button>
+                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("title")}>
+                    Title (A–Z)
+                  </button>
+                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("author")}>
+                    Author (A–Z)
+                  </button>
+                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("rating")}>
+                    Rating (high → low)
+                  </button>
+                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("likes")}>
+                    Likes (high → low)
+                  </button>
+                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("saves")}>
+                    Saves (high → low)
+                  </button>
+                </div>
+              )}
+            </div>
+
           </section>
 
           {/* --- Scrollable books grid --- */}
@@ -235,7 +365,7 @@ export default function LibraryPage() {
             onMouseLeave={clearHover}
           >
             <div className="lib-row">
-              {books.map((book) => {
+              {sortedBooks.map((book) => {
                 const st = bookStates[String(book.id)];
                 const likeActive = st?.liked ?? false;
                 const saveActive = st?.saved ?? false;
