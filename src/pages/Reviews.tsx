@@ -220,7 +220,7 @@ export default function ReviewsPage() {
   const activeState = activeBook ? bookStates[String(activeBook.id)] : undefined;
 
   return (
-    <div className="library-app">
+    <div className="library-app reviews-page">
       {/* ===== HEADER ===== */}
       <header className="header">
         <h1 className="logo">
