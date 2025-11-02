@@ -1860,3 +1860,86 @@ a:focus,
   text-decoration: none;
   border-radius: 8px;
 }
+
+/* --- Make the review card clickable (cursor) --- */
+.lib-card.lib-card--review { cursor: pointer; }
+
+/* --- Cover is full-width rectangle (you already set this earlier) --- */
+.lib-card.lib-card--review .lib-cover {
+  width: 100% !important;
+  aspect-ratio: 3 / 4;
+  border-radius: 0 !important;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+.lib-card.lib-card--review .lib-cover img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+  transition: filter 180ms ease, opacity 180ms ease;
+}
+
+/* --- Overlay container (initially hidden) --- */
+.lib-card.lib-card--review .review-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.86);
+  color: #fff;
+  display: grid;
+  place-items: end;           /* bottom-right-ish; we’ll pad in inner */
+  opacity: 0;
+  transition: opacity 180ms ease;
+  padding: 0;                 /* handled by inner */
+}
+
+/* Inner content block with padding and layout */
+.lib-card.lib-card--review .review-overlay-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Title & body */
+.lib-card.lib-card--review .review-title {
+  font-size: clamp(14px, 1.5vw, 18px);
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;      /* clamp to 2 lines */
+  -webkit-box-orient: vertical;
+}
+.lib-card.lib-card--review .review-snippet {
+  font-size: clamp(12px, 1.2vw, 14px);
+  line-height: 1.35;
+  opacity: 0.9;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;      /* show a few lines on hover */
+  -webkit-box-orient: vertical;
+}
+
+/* --- Reveal on hover and keyboard focus --- */
+.lib-card.lib-card--review:hover .review-overlay,
+.lib-card.lib-card--review:focus-within .review-overlay {
+  opacity: 1;
+}
+.lib-card.lib-card--review:hover .lib-cover img,
+.lib-card.lib-card--review:focus-within .lib-cover img {
+  filter: brightness(0);      /* cover goes black, overlay text readable */
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .lib-card.lib-card--review .review-overlay,
+  .lib-card.lib-card--review .lib-cover img {
+    transition: none;
+  }
+}

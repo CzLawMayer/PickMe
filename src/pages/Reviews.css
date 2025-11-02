@@ -1,0 +1,804 @@
+/* src/pages/Reviews.css */
+@import "./Library.css";
+
+/* Keep tab 4 (Reviews) purple on the /reviews page */
+.lib-tabs .lib-tab:nth-child(4)[aria-current="page"] {
+  background: var(--bar4) !important;  /* matches your tab-4 hover color */
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+
+
+/* Make review cards stack: big cover (full width) + info below */
+.lib-card.lib-card--review {
+  display: block !important;
+  height: auto !important;
+  min-width: 0 !important;
+  grid-template-columns: none !important; /* kill side-by-side layout */
+  overflow: visible !important;
+
+  /* neutralize Library.css row math */
+  --rows: initial;
+  --row-gap: 10px;
+}
+
+/* super-wide cover: use the whole column width */
+.lib-card.lib-card--review .lib-cover {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 3 / 4;             /* tweak ratio as you like */
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: #111;
+}
+.lib-card.lib-card--review .lib-cover img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* info BELOW the cover, as a regular vertical stack */
+.lib-card.lib-card--review .lib-details.review-details {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* keep details clean and compact */
+.lib-card.lib-card--review .lib-details.review-details .lib-line {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* nicer sizing for this layout */
+.lib-card.lib-card--review .lib-title-line {
+  font-size: clamp(16px, 1.6vw, 20px) !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+}
+
+.lib-card.lib-card--review .lib-year-line {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  opacity: 0.9 !important;
+}
+
+.lib-card.lib-card--review .lib-author-line {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+  color: rgba(255,255,255,0.8) !important;
+}
+
+/* actions spacing under title/author */
+.lib-card.lib-card--review .lib-row-actions.is-inline {
+  margin-top: 6px !important;
+  gap: 8px !important;
+}
+
+/* user stars / genre rows stay compact */
+.lib-card.lib-card--review .user-stars-row {
+  margin-top: 0 !important;
+}
+.lib-card.lib-card--review .lib-genre-row {
+  margin-top: 2px !important;
+}
+
+/* keep the blue selection outline behavior */
+.lib-card.lib-card--review .lib-cover.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--accent-blue, #3af);
+  pointer-events: none;
+}
+
+/* super-wide cover: use the whole column width */
+.lib-card.lib-card--review .lib-cover {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 3 / 4;             /* tweak ratio as you like */
+  border-radius: 0 !important;     /* <-- no rounded edges */
+  overflow: hidden !important;
+  background: #111;
+}
+
+.lib-card.lib-card--review .lib-cover img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 0 !important;     /* <-- remove rounding on the image too */
+}
+
+.review-snippet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.review-line {
+  font-size: 14px;
+  line-height: 1.35;
+  opacity: 0.95;
+}
+
+/* Space between the two review lines */
+.review-snippet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;            /* adds space between lines */
+}
+
+
+.review-line + .review-line {
+  margin-top: 8px;
+}
+
+
+/* Remove any markers/dots in the review overlay */
+.review-overlay .review-snippet,
+.review-overlay .review-line {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.review-overlay .review-line::before {
+  content: none !important; /* overrides any global bullet pseudo-element */
+}
+
+/* Keep the nice spacing */
+.review-snippet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+
+/* --- Put review overlay content at the TOP of the card --- */
+.lib-card.lib-card--review .review-overlay {
+  display: flex;
+  align-items: flex-start;   /* top of the card */
+  justify-content: flex-start;
+  padding-top: 12px;         /* breathing room from the top edge */
+  padding-bottom: 24px;      /* keep some bottom room for aesthetics */
+}
+
+.lib-card.lib-card--review .review-overlay-inner {
+  position: relative;        /* no absolute bottom pinning */
+  top: 0;
+  margin-top: 0;
+}
+
+/* Optional: tighten spacing since it’s now at the top */
+.lib-card.lib-card--review .review-title {
+  margin: 0 0 8px 0;
+}
+
+.lib-card.lib-card--review .review-snippet {
+  gap: 8px;                  /* space between lines */
+}
+
+/* Place overlay content at the top (from before) */
+.lib-card.lib-card--review .review-overlay {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 12px;
+  padding-bottom: 24px;
+}
+
+/* Avatar + stars row inside overlay */
+.lib-card.lib-card--review .review-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.lib-card.lib-card--review .user-rating-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.lib-card.lib-card--review .user-rating-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Divider between meta and review text */
+.lib-card.lib-card--review .review-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.28);
+  margin: 8px 0 8px;
+}
+
+/* Hide the bottom “your stars” row for review cards (we moved it into the overlay) */
+.lib-card.lib-card--review .user-stars-row {
+  display: none;
+}
+
+/* Spacing for review lines already handled earlier; keep non-bulleted lines */
+.lib-card.lib-card--review .review-snippet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;                 /* space between lines */
+}
+.lib-card.lib-card--review .review-snippet .review-line {
+  margin: 0;
+  padding: 0;
+  list-style: none;         /* no bullets */
+}
+
+
+/* Ensure the cover is a positioned container and overlay sits on top */
+.lib-card.lib-card--review .lib-cover {
+  position: relative;
+  overflow: hidden;
+}
+
+.lib-card.lib-card--review .lib-cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Overlay fills the cover and is shown on hover/selected */
+.lib-card.lib-card--review .review-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  opacity: 0;
+  transition: opacity 160ms ease;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 12px 12px 24px;
+}
+
+.lib-card.lib-card--review .lib-cover:hover .review-overlay,
+.lib-card.lib-card--review .lib-cover.is-selected .review-overlay {
+  opacity: 1;
+}
+
+.lib-card.lib-card--review .review-overlay-inner {
+  width: 100%;
+}
+
+/* Title at top */
+.lib-card.lib-card--review .review-title {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.2;
+  margin: 0 0 6px 0;
+  color: #fff;
+  text-wrap: balance;
+}
+
+/* Avatar + stars row in overlay */
+.lib-card.lib-card--review .review-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.lib-card.lib-card--review .user-rating-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.lib-card.lib-card--review .user-rating-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Divider */
+.lib-card.lib-card--review .review-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.28);
+  margin: 8px 0;
+}
+
+/* Review lines (no bullets, spacing) */
+.lib-card.lib-card--review .review-snippet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #f5f5f5;
+}
+
+.lib-card.lib-card--review .review-snippet .review-line {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Belt-and-suspenders: ensure bottom stars (if any) never show on review cards */
+.lib-card.lib-card--review .lib-details .user-stars-row {
+  display: none !important;
+}
+
+/* Make all text inside the overlay white by default */
+.lib-card.lib-card--review .review-overlay {
+  color: #fff;
+}
+
+/* Belt & suspenders: force the star glyphs to white */
+.lib-card.lib-card--review .review-meta .user-stars-wrap .user-star {
+  color: #fff !important;
+}
+
+.lib-card.lib-card--review .review-meta .user-stars-wrap .user-star {
+  font-size: 18px; /* optional, tweak if you like */
+  line-height: 1;
+}
+
+
+
+/* Safety override in case something else still hits it */
+.review-overlay .user-rating-avatar img {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* 1) Only dim the background cover image, never the overlay content */
+.lib-card:hover .lib-cover > img:first-child {
+  filter: brightness(0.3) !important;
+}
+.lib-card:hover .lib-cover { filter: none !important; }
+
+/* 2) Keep avatar bright */
+.review-overlay .user-rating-avatar img {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* 3) Make filled stars yellow, empty stars muted — with high specificity */
+.review-overlay .user-stars-wrap .user-star.star-filled {
+  color: #ffd54a !important; /* yellow */
+}
+.review-overlay .user-stars-wrap .user-star.star-empty {
+  color: rgba(255,255,255,0.35) !important;
+}
+
+/* 4) Ensure the overlay itself isn't applying blend/filters that dull colors */
+.review-overlay {
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  color: #fff; /* default text color */
+}
+.review-overlay .review-title,
+.review-overlay .review-meta,
+.review-overlay .review-snippet {
+  position: relative;
+  z-index: 2;
+}
+
+.lib-card .review-overlay .user-stars-wrap .user-star.star-filled { color:#ffd54a !important; }
+
+/* ---------- Overlay state logic ---------- */
+
+/* Base: hidden overlay */
+.lib-card .lib-cover .review-overlay {
+  opacity: 0;
+  pointer-events: none;               /* overlay doesn't block clicks when hidden */
+  transition: opacity .18s ease, background-color .18s ease;
+  background: rgba(0, 0, 0, 0);
+}
+
+/* Hover ANY card => pitch black overlay */
+.lib-card:hover .lib-cover .review-overlay {
+  opacity: 1 !important;
+  background: rgba(0, 0, 0, 1) !important;
+  pointer-events: auto;
+}
+
+/* Selected (no hover) => dim overlay */
+.lib-cover.is-selected .review-overlay {
+  opacity: 1 !important;
+  background: rgba(0, 0, 0, 0.6) !important; /* dim */
+  pointer-events: auto;
+}
+
+/* Selected + hover => pitch black (hover wins) */
+.lib-card:hover .lib-cover.is-selected .review-overlay {
+  background: rgba(0, 0, 0, 1) !important;
+}
+
+/* Make sure the cover image itself never dims; the overlay does the work */
+.lib-card .lib-cover > img:first-child {
+  filter: none !important;
+}
+
+/* Keep overlay content bright and on top */
+.review-overlay {
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  color: #fff;
+}
+.review-overlay .review-title,
+.review-overlay .review-meta,
+.review-overlay .review-snippet {
+  position: relative;
+  z-index: 2;
+}
+
+/* (Optional) keep your avatar/stars color rules */
+.review-overlay .user-rating-avatar img {
+  filter: none !important;
+  opacity: 1 !important;
+}
+.review-overlay .user-stars-wrap .user-star.star-filled { color: #ffd54a !important; }
+.review-overlay .user-stars-wrap .user-star.star-empty  { color: rgba(255,255,255,.35) !important; }
+
+/* Make the dimmed selected state darker */
+.lib-cover.is-selected .review-overlay {
+  background: rgba(0, 0, 0, 0.8) !important; /* was 0.6 */
+}
+
+/* (optional) keep hover fully black, unchanged */
+.lib-card:hover .lib-cover.is-selected .review-overlay {
+  background: rgba(0, 0, 0, 1) !important;
+}
+
+/* Pull title and meta closer */
+.lib-card .review-overlay .review-title {
+  margin-bottom: 2px;         /* was larger by default */
+  line-height: 1.12;          /* a touch tighter */
+}
+
+/* Tighter cluster for avatar + stars */
+.lib-card .review-overlay .review-meta {
+  margin-top: 0;              /* remove extra gap above */
+  gap: 6px;                   /* was 8px */
+}
+
+/* Nudge stars a bit closer to the avatar */
+.lib-card .review-overlay .user-stars-wrap {
+  margin-left: 4px;           /* subtle nudge */
+}
+
+/* Keep the divider close to the meta block, but not cramped */
+.lib-card .review-overlay .review-divider {
+  margin: 8px 0 10px;         /* a little tighter above */
+}
+
+/* Optional: slightly reduce inner padding so everything sits closer together */
+.lib-card .review-overlay-inner {
+  padding: 14px;              /* if you had larger padding before */
+}
+
+/* Ensure the cover is the positioning context */
+.lib-cover {
+  position: relative;
+  overflow: hidden; /* clip the overlay */
+}
+
+/* Full overlay */
+.review-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none; /* let hover state be controlled by the card */
+}
+
+/* Inner container: column layout to pin header and scroll body */
+.review-overlay-inner {
+  pointer-events: auto;           /* allow scroll inside */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 14px 14px 12px;
+  box-sizing: border-box;
+  color: #fff;
+  /* keep your existing background/opacity rules below */
+}
+
+/* Your existing black/dim logic — keep as you had it, just darker dim */
+.lib-card:hover .review-overlay-inner {
+  background: rgba(0, 0, 0, 1);
+}
+.lib-card.is-selected:not(:hover) .review-overlay-inner {
+  background: rgba(0, 0, 0, 0.90); /* a touch darker dim */
+}
+
+/* Header (fixed) */
+.review-header {
+  flex: 0 0 auto;
+}
+
+/* Title, avatar, stars — keep your sizing you liked; small tighten */
+.review-title {
+  font-size: 18px;     /* whatever final size you settled on */
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 6px 0;
+}
+
+.review-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px 0;
+}
+.review-meta .user-rating-avatar {
+  width: 28px;   /* matches your latest preference */
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.review-meta .user-rating-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;                 /* ensure not dimmed */
+  filter: none;               /* ensure not dimmed */
+}
+.review-meta .user-stars-wrap .user-star.star-filled {
+  color: #ffd54a;             /* yellow filled stars */
+}
+
+/* Divider */
+.review-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.35);
+  margin: 6px 0 8px 0;
+}
+
+/* Scrollable body */
+.review-scroll {
+  flex: 1 1 auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px; /* room for scrollbar without wrapping */
+}
+
+/* Optional: subtle custom scrollbar */
+.review-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.review-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.35);
+  border-radius: 3px;
+}
+.review-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Review lines */
+.review-line {
+  margin: 0 0 8px 0; /* space between lines */
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+/* Make the cover a clipping context */
+.lib-card .lib-cover {
+  position: relative;
+  overflow: hidden;       /* hide any edges */
+}
+
+/* Ensure the image fills the frame with no gaps */
+.lib-card .lib-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;         /* remove inline-gap ghosts */
+}
+
+/* Full-bleed overlay */
+.lib-card .review-overlay {
+  position: absolute;
+  inset: 0;               /* cover 100% */
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  opacity: 0;
+  background: rgba(0, 0, 0, 0); /* background lives here (not on inner) */
+  transition: opacity .2s ease, background .2s ease;
+  pointer-events: none;   /* no accidental blocking of clicks */
+}
+
+/* Keep inner purely for layout/text, no background here */
+.lib-card .review-overlay-inner {
+  width: 100%;
+  padding: 16px 14px;
+}
+
+/* HOVER: fully black */
+.lib-card:hover .review-overlay {
+  opacity: 1;
+  background: rgba(0, 0, 0, 1);
+}
+
+/* SELECTED but NOT hovered: dimmer black */
+.lib-cover.is-selected:not(:hover) .review-overlay {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.92);  /* darker than before */
+}
+
+/* Optional: when selected & hovered, keep it pitch black (redundant but explicit) */
+.lib-cover.is-selected:hover .review-overlay {
+  opacity: 1;
+  background: rgba(0, 0, 0, 1);
+}
+
+/* 1) Make cover the clipping/stacking context */
+.lib-card .lib-cover {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Image fills, no gaps */
+.lib-card .lib-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 2) Darkening lives on the cover itself */
+.lib-card .lib-cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;            /* default: no darkening */
+  transition: opacity .2s ease;
+  pointer-events: none;  /* don't block clicks */
+  z-index: 1;            /* sits above image, below overlay text */
+}
+
+/* 3) Overlay text sits above darkener, but has NO background */
+.lib-card .review-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;            /* above ::before */
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  pointer-events: none;  /* so clicks go to card */
+  opacity: 1;            /* text always visible when overlay is shown */
+  background: transparent !important;  /* <- key: no separate black layer */
+}
+
+.lib-card .review-overlay-inner {
+  width: 100%;
+  padding: 16px 14px;
+}
+
+/* 4) State rules — unified darkening */
+/* Hover: pitch black */
+.lib-card:hover .lib-cover::before {
+  opacity: 1;
+}
+
+/* Selected (not hovered): dim */
+.lib-card .lib-cover.is-selected::before {
+  opacity: 0.85;
+}
+
+/* Selected + hover: pitch black */
+.lib-card:hover .lib-cover.is-selected::before {
+  opacity: 1;
+}
+
+.lib-card .review-overlay,
+.lib-card .review-overlay-inner {
+  background: transparent !important;
+}
+
+/* Slightly more space between title and the avatar+stars row */
+.lib-card .review-overlay-inner .review-title {
+  margin: 0 0 8px 0;   /* adjust to 4–8px to taste */
+}
+
+/* Larger, bolder title in review overlay */
+.lib-card .review-overlay-inner .review-title {
+  font-size: clamp(20px, 2.6vw, 20px);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 0 8px 0; /* gives a bit more room before avatar+stars */
+  letter-spacing: 0.15px;
+}
+
+/* Slim, subtle scrollbar just inside the review text area */
+.lib-card .review-overlay .review-snippet {
+  /* ensures the scrollbar doesn't overlap text */
+  padding-right: 8px;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.35) transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+.lib-card .review-overlay .review-snippet::-webkit-scrollbar {
+  width: 6px;              /* slim! */
+}
+
+.lib-card .review-overlay .review-snippet::-webkit-scrollbar-track {
+  background: transparent; /* no visible track */
+}
+
+.lib-card .review-overlay .review-snippet::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.35);
+  border-radius: 8px;
+}
+
+.lib-card .review-overlay .review-snippet::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.55);
+}
+
+
+
+.lib-card.lib-card--review .review-overlay .review-snippet .review-line {
+  font-size: 15.5px !important;
+  line-height: 1.42 !important;
+}
+
+/* =========================
+   FINAL OVERRIDE — REVIEW TEXT SIZE & SPACING
+   ========================= */
+
+/* Bump the paragraph container in case something else sets size on it */
+.library-app .lib-card.lib-card--review .lib-cover .review-overlay .review-overlay-inner .review-snippet {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+
+/* And explicitly hit each review line */
+.library-app .lib-card.lib-card--review .lib-cover .review-overlay .review-overlay-inner .review-snippet .review-line {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  margin: 0 0 10px 0 !important;  /* a touch more paragraph spacing */
+}
+
+/* Laptop tuning: slightly smaller review text */
+@media (max-width: 1440px) {
+  .library-app .lib-card.lib-card--review .lib-cover .review-overlay .review-overlay-inner .review-snippet,
+  .library-app .lib-card.lib-card--review .lib-cover .review-overlay .review-overlay-inner .review-snippet .review-line {
+    font-size: 15px !important;
+    line-height: 1.45 !important;
+  }
+}
+
+/* 13–14" laptops (1366–1280 wide) */
+@media (max-width: 1280px) {
+  .library-app .lib-card.lib-card--review .lib-cover .review-overlay .review-overlay-inner .review-snippet,
+  .library-app .lib-card.lib-card--review .lib-cover .review-overlay .review-overlay-inner .review-snippet .review-line {
+    font-size: 14.5px !important;
+    line-height: 1.44 !important;
+  }
+}
