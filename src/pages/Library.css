@@ -1631,3 +1631,20 @@ aside.library-feature .feature-card .feature-cover-row {
   color: #fff;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
 }
+
+
+/* Make each book card show a pointer on hover/click */
+.library-app .lib-card {
+  cursor: pointer !important;
+}
+.library-app .lib-card * {
+  cursor: inherit; /* keep pointer across inner elements */
+}
+
+
+/* Keep tab 3 (Read) purple on the /read page */
+.lib-tabs .lib-tab:nth-child(3)[aria-current="page"] {
+  background: var(--bar3) !important;  /* #6a1b9a */
+  border-color: transparent !important;
+  color: #fff !important;
+}

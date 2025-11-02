@@ -88,6 +88,27 @@ export const profile = {
     { id: "bk-045", userRating: 4 }
   ],
 
+  userRead: [
+    { id: "bk-003", userRating: 5 },
+    { id: "bk-005", userRating: 4 },
+    { id: "bk-008", userRating: 5 },
+    { id: "bk-011", userRating: 4 },
+    { id: "bk-014", userRating: 3 },
+    { id: "bk-017", userRating: 5 },
+    { id: "bk-020", userRating: 5 },
+    { id: "bk-023", userRating: 5 },
+    { id: "bk-026", userRating: 3 },
+    { id: "bk-028", userRating: 4 },
+    { id: "bk-030", userRating: 4 },
+    { id: "bk-033", userRating: 4 },
+    { id: "bk-036", userRating: 5 },
+    { id: "bk-040", userRating: 4 },
+    { id: "bk-043", userRating: 5 }
+  ],
+
+
+
+
   stats: {
     booksCompleted: 12,
     chaptersRead: 318,
@@ -109,6 +130,19 @@ export const userLibraryBooks = () => {
       return {
         ...book,
         userRating: userRating ?? 0
+      };
+    })
+    .filter(Boolean);
+};
+
+export const userReadBooks = () => {
+  return profile.userRead
+    .map(({ id, userRating }) => {
+      const book = sampleBooks.find((b) => b.id === id);
+      if (!book) return null;
+      return {
+        ...book,
+        userRating: userRating ?? 0,
       };
     })
     .filter(Boolean);
