@@ -1120,18 +1120,9 @@ aside.library-feature .feature-card *{
   cursor: pointer !important;
 }
 
-/* Nudge only the 4-button nav left by ~20px without affecting layout */
-.library-app .lib-hero .lib-tabs {
-  transform: translateX(-30px);
-  will-change: transform;
-}
 
-/* Optional: disable the nudge on small screens */
-@media (max-width: 820px) {
-  .library-app .lib-hero .lib-tabs {
-    transform: none;
-  }
-}
+
+
 
 
 /* === Library: add a 6th row for genre under stars === */
