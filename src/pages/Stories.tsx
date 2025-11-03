@@ -1,18 +1,15 @@
-// src/pages/Library.tsx
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
 import ProfileIdentity from "@/components/ProfileIdentity";
-import { profile } from "@/profileData";
-
+import { profile, userStoriesBooks } from "@/profileData";
 
 import "./Library.css";
 
 import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
-import { userLibraryBooks } from "@/profileData";
 
 // tiny helper for the personal stars row on row 5
 function UserRatingStars({ value }: { value: number }) {
@@ -51,65 +48,49 @@ function UserRatingStars({ value }: { value: number }) {
   );
 }
 
-
-
-export default function LibraryPage() {
+export default function StoriesPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // full list of user's books
-  const books = userLibraryBooks();
+  // full list of user's stories (exact 1:1 structure with userLibraryBooks)
+  const books = userStoriesBooks();
 
   // =========================
-  // FEATURE PANEL / SELECTION LOGIC
+  // FEATURE PANEL / SELECTION LOGIC (same as Library)
   // =========================
-  //
-  // selectedBookId = the "locked" book (clicked)
-  // activeBook     = what's currently shown in the FeaturePanel
-  //  - hover sets activeBook to that hover target
-  //  - click sets BOTH selectedBookId + activeBook
-  //  - mouse leaving the grid resets activeBook back to the selectedBook
-  //
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [activeBook, setActiveBook] = useState<any | null>(null);
 
-  // helper to resolve an id to a book object
   const getBookById = (id: string | null) => {
     if (!id) return null;
     return books.find((b) => String(b.id) === String(id)) || null;
   };
 
-  // hover preview (doesn't change selection)
   const previewBook = (book: any) => {
     setActiveBook(book);
   };
 
-  // click selection (sticks in panel + outline)
   const selectBook = (book: any) => {
     const idStr = String(book.id);
     setSelectedBookId(idStr);
     setActiveBook(book);
   };
 
-  // when leaving the book grid, snap panel back to the last clicked book
   const clearHover = () => {
     const sel = getBookById(selectedBookId);
     setActiveBook(sel || null);
   };
 
-
+  // genre pill color helper (same as Library)
   function colorFromString(seed: string) {
-    // simple hash → 0..359
     let h = 0;
     for (let i = 0; i < seed.length; i++) {
       h = (h * 31 + seed.charCodeAt(i)) % 360;
     }
-    // pleasant saturation/lightness; tweak if you want
-    const bg = `hsl(${h} 70% 50% / 0.16)`;  // translucent background
-    const border = `hsl(${h} 70% 50% / 0.38)`; // visible border
-    const text = `hsl(${h} 85% 92%)`; // soft tinted white for fun; switch to "#fff" if you prefer pure white
+    const bg = `hsl(${h} 70% 50% / 0.16)`;
+    const border = `hsl(${h} 70% 50% / 0.38)`;
+    const text = `hsl(${h} 85% 92%)`;
     return { bg, border, text };
-}
-
+  }
 
   type SortKey = "recent" | "title" | "author" | "rating" | "likes" | "saves";
 
@@ -153,7 +134,7 @@ export default function LibraryPage() {
         break;
       case "recent":
       default:
-        arr.sort((a, b) => a.__index - b.__index); // original order
+        arr.sort((a, b) => a.__index - b.__index);
     }
     return arr;
   }, [booksWithIndex, sortKey]);
@@ -164,11 +145,10 @@ export default function LibraryPage() {
   const searchMenuRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // close on outside click / Esc
+  // close on outside click / Esc (for both search and sort)
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node;
-      // close search if click is outside
       if (
         searchOpen &&
         !searchMenuRef.current?.contains(t) &&
@@ -176,7 +156,6 @@ export default function LibraryPage() {
       ) {
         setSearchOpen(false);
       }
-      // close sort if click is outside
       if (
         sortOpen &&
         !sortMenuRef.current?.contains(t) &&
@@ -199,38 +178,24 @@ export default function LibraryPage() {
     };
   }, [searchOpen, sortOpen]);
 
-
   useEffect(() => {
     if (searchOpen) {
-      // small delay to ensure it exists in DOM
       setTimeout(() => searchInputRef.current?.focus(), 0);
     }
   }, [searchOpen]);
 
-
-
-
-
-// Already have: const sortedBooks = useMemo(...)
-
   const displayedBooks = useMemo(() => {
     if (!searchQuery.trim()) return sortedBooks;
     const q = searchQuery.trim().toLowerCase();
-    return sortedBooks.filter(b => {
+    return sortedBooks.filter((b) => {
       const t = (b.title ?? "").toLowerCase();
       const a = (b.author ?? "").toLowerCase();
       return t.includes(q) || a.includes(q);
     });
   }, [sortedBooks, searchQuery]);
 
-
-
-
-
-
-
   // =========================
-  // PER-BOOK LIKE / SAVE STATE
+  // PER-BOOK LIKE / SAVE STATE (same as Library)
   // =========================
   type BookState = {
     liked: boolean;
@@ -298,14 +263,13 @@ export default function LibraryPage() {
     });
   };
 
-  // state for whichever book is currently displayed in FeaturePanel
   const activeState = activeBook
     ? bookStates[String(activeBook.id)]
     : undefined;
 
   return (
     <div className="library-app">
-      {/* ===== HEADER ===== */}
+      {/* ===== HEADER (top banner + menu) ===== */}
       <header className="header">
         <h1 className="logo">
           <Link to="/" className="logo-link" aria-label="Go to home">
@@ -335,14 +299,15 @@ export default function LibraryPage() {
 
       {/* ===== BODY LAYOUT ===== */}
       <main className="library-layout">
-        {/* LEFT SIDE: hero (static) + scroll area */}
+        {/* LEFT SIDE: hero + scroll area */}
         <div className="library-left">
-          {/* --- Top identity / tabs header (fixed above scroll) --- */}
+          {/* --- Hero (identity + tabs + CTA/search/sort) --- */}
           <section className="lib-hero" aria-label="Library header">
             <div className="identity-cell" style={{ minWidth: 0 }}>
               <ProfileIdentity compact />
             </div>
 
+            {/* Tab order exactly as you set everywhere */}
             <nav className="lib-tabs" aria-label="Library sections">
               <NavLink to="/library" className="lib-tab">
                 Library
@@ -359,7 +324,6 @@ export default function LibraryPage() {
             </nav>
 
             <div className="lib-hero-cta">
-
               {/* SEARCH ICON BUTTON */}
               <button
                 type="button"
@@ -367,29 +331,32 @@ export default function LibraryPage() {
                 className="lib-cta lib-cta--icon lib-search-btn"
                 aria-haspopup="dialog"
                 aria-expanded={searchOpen}
-                aria-label="Search library"
-                onClick={() => setSearchOpen(v => !v)}
+                aria-label="Search stories"
+                onClick={() => setSearchOpen((v) => !v)}
               >
                 <span className="material-symbols-outlined" aria-hidden="true">
                   search
                 </span>
               </button>
 
+              {/* FILTER / SORT BUTTON */}
               <button
                 type="button"
                 ref={sortBtnRef}
                 className="lib-cta lib-cta--icon lib-filter-btn"
                 aria-haspopup="menu"
                 aria-expanded={sortOpen}
-                aria-label="Sort library"
-                onClick={() => setSortOpen(v => !v)}
+                aria-label="Sort stories"
+                onClick={() => setSortOpen((v) => !v)}
               >
-                <span className="material-symbols-outlined" aria-hidden="true">filter_list</span>
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  filter_list
+                </span>
               </button>
 
               {/* SEARCH MENU POPOVER */}
               {searchOpen && (
-                <div className="lib-search-menu">
+                <div className="lib-search-menu" ref={searchMenuRef}>
                   <div className="lib-search-field has-clear">
                     <input
                       ref={searchInputRef}
@@ -400,32 +367,32 @@ export default function LibraryPage() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoFocus
                     />
-
-                    {/* Clear (×) inside the input */}
                     <button
                       type="button"
                       className="lib-search-clear--inside"
                       aria-label="Clear search"
-                      // prevent the global outside-click handler from firing
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSearchQuery("");
-                        // keep the popover open and return focus to the input
                         searchInputRef.current?.focus();
                       }}
                     >
-                      <span className="material-symbols-outlined" aria-hidden="true">close</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">
+                        close
+                      </span>
                     </button>
                   </div>
                 </div>
               )}
+
+              {/* SORT MENU POPOVER */}
               {sortOpen && (
                 <div
                   ref={sortMenuRef}
                   className="lib-filter-menu"
                   role="menu"
-                  aria-label="Sort books"
+                  aria-label="Sort stories"
                 >
                   <button role="menuitem" className="lib-filter-item" onClick={() => applySort("recent")}>
                     Recently added
@@ -448,13 +415,12 @@ export default function LibraryPage() {
                 </div>
               )}
             </div>
-
           </section>
 
-          {/* --- Scrollable books grid --- */}
+          {/* --- Scrollable grid (identical DOM) --- */}
           <section
             className="lib-scroll"
-            aria-label="Your books"
+            aria-label="Your stories"
             onMouseLeave={clearHover}
           >
             <div className="lib-row">
@@ -471,7 +437,6 @@ export default function LibraryPage() {
                     : (book.rating ?? "0").toString()
                 );
 
-                // is this the "locked" (clicked) book?
                 const coverIsSelected =
                   selectedBookId === String(book.id) ? " is-selected" : "";
 
@@ -479,10 +444,10 @@ export default function LibraryPage() {
                   <div key={book.id} className="lib-col">
                     <div
                       className="lib-card"
-                      aria-label={`Book card for ${book.title}`}
-                      onMouseEnter={() => previewBook(book)} // preview on hover
-                      onFocus={() => previewBook(book)} // keyboard focus
-                      onClick={() => selectBook(book)} // stick on click
+                      aria-label={`Story card for ${book.title}`}
+                      onMouseEnter={() => previewBook(book)}
+                      onFocus={() => previewBook(book)}
+                      onClick={() => selectBook(book)}
                     >
                       {/* COVER */}
                       <div
@@ -508,10 +473,9 @@ export default function LibraryPage() {
                       {/* DETAILS */}
                       <div
                         className="lib-details"
-                        aria-label="Book details"
+                        aria-label="Story details"
                         onMouseEnter={() => previewBook(book)}
                         style={{
-                          // force it to size naturally and not crop the last row
                           overflow: "visible",
                           height: "auto",
                           minHeight: "0",
@@ -519,7 +483,7 @@ export default function LibraryPage() {
                           gridTemplateRows: "auto auto auto auto auto",
                         }}
                       >
-                        {/* Row 1: title */}
+                        {/* 1) title */}
                         <div
                           className="lib-line lib-title-line"
                           title={book.title}
@@ -535,7 +499,7 @@ export default function LibraryPage() {
                           {book.title || "—"}
                         </div>
 
-                        {/* Row 2: year */}
+                        {/* 2) year */}
                         <div
                           className="lib-line lib-year-line"
                           style={{
@@ -547,7 +511,7 @@ export default function LibraryPage() {
                           {book.year ? book.year : "—"}
                         </div>
 
-                        {/* Row 3: author */}
+                        {/* 3) author */}
                         <div
                           className="lib-line lib-author-line"
                           title={book.author}
@@ -563,7 +527,7 @@ export default function LibraryPage() {
                           {book.author || "—"}
                         </div>
 
-                        {/* Row 4: like / avg rating / save */}
+                        {/* 4) actions */}
                         <div
                           className="lib-row lib-row-actions is-inline"
                           role="group"
@@ -577,7 +541,6 @@ export default function LibraryPage() {
                           }}
                           onMouseEnter={() => previewBook(book)}
                         >
-                          {/* Like */}
                           <LikeButton
                             className={`meta-icon-btn like ${likeActive ? "is-active" : ""}`}
                             glyphClass="meta-icon-glyph"
@@ -588,7 +551,6 @@ export default function LibraryPage() {
                             aria-label={likeActive ? "Unlike" : "Like"}
                           />
 
-                          {/* Average rating (global) */}
                           <button
                             type="button"
                             className={`meta-icon-btn star ${
@@ -607,7 +569,6 @@ export default function LibraryPage() {
                             </span>
                           </button>
 
-                          {/* Save */}
                           <SaveButton
                             className={`meta-icon-btn save ${saveActive ? "is-active" : ""}`}
                             glyphClass="meta-icon-glyph"
@@ -619,7 +580,7 @@ export default function LibraryPage() {
                           />
                         </div>
 
-                        {/* Row 5: user's own stars */}
+                        {/* 5) user's own stars */}
                         <div
                           className="lib-line user-stars-row"
                           onMouseEnter={() => previewBook(book)}
@@ -636,44 +597,46 @@ export default function LibraryPage() {
                                 alt=""
                               />
                             </span>
-                            <span className="user-stars-wrap" aria-label={`Your rating for ${book.title}`}>
+                            <span
+                              className="user-stars-wrap"
+                              aria-label={`Your rating for ${book.title}`}
+                            >
                               <UserRatingStars value={book.userRating ?? 0} />
                             </span>
                           </div>
                         </div>
 
-
-                        {/* Row 6: genre tag (first tag) */}
+                        {/* 6) first tag as genre pill */}
                         <div
                           className="lib-line lib-genre-row"
                           onMouseEnter={() => previewBook(book)}
                         >
-                          {Array.isArray(book.tags) && book.tags.length > 0 ? (() => {
-                            const tag = book.tags[0];
-                            const c = colorFromString(tag);
-                            return (
-                              <span
-                                className="genre-pill"
-                                title={tag}
-                                style={{
-                                  backgroundColor: c.bg,
-                                  borderColor: c.border,
-                                  color: c.text,
-                                }}
-                              >
-                                {tag}
-                              </span>
-                            );
-                          })() : null}
+                          {Array.isArray(book.tags) && book.tags.length > 0
+                            ? (() => {
+                                const tag = book.tags[0];
+                                const c = colorFromString(tag);
+                                return (
+                                  <span
+                                    className="genre-pill"
+                                    title={tag}
+                                    style={{
+                                      backgroundColor: c.bg,
+                                      borderColor: c.border,
+                                      color: c.text,
+                                    }}
+                                  >
+                                    {tag}
+                                  </span>
+                                );
+                              })()
+                            : null}
                         </div>
-
                       </div>
                     </div>
                   </div>
                 );
               })}
-
-              {/* filler cols to balance last row visually */}
+              {/* filler cols for last row balance */}
               <div className="lib-col" />
               <div className="lib-col" />
               <div className="lib-col" />
@@ -684,7 +647,7 @@ export default function LibraryPage() {
         {/* RIGHT SIDE: Feature panel */}
         <aside className="library-feature" aria-label="Featured">
           <FeaturePanel
-            book={activeBook || undefined} // null -> PickMe!
+            book={activeBook || undefined}
             liked={activeState?.liked ?? false}
             saved={activeState?.saved ?? false}
             userRating={activeBook?.userRating ?? 0}
@@ -695,7 +658,7 @@ export default function LibraryPage() {
               if (activeBook) toggleSave(activeBook.id);
             }}
             onRate={(val) => {
-              // future: update per-book userRating map here
+              // future: update per-story userRating map here
               console.log("rate", activeBook?.id, val);
             }}
           />

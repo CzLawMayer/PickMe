@@ -106,6 +106,9 @@ export const profile = {
     { id: "bk-043", userRating: 5 }
   ],
 
+  userStories: [
+    { id: "bk-001", userRating: 5 } // same shape as userRead
+  ],
 
 // --- Add inside `export const profile = { ... }` ---
   userReviews: [
@@ -250,6 +253,19 @@ export const userReviewBooks = () => {
         userRating: userRating ?? 0,
         reviews: reviewsArr,          // keep full list
         review: reviewsArr[0] || ""   // <- add this line
+      };
+    })
+    .filter(Boolean);
+};
+
+export const userStoriesBooks = () => {
+  return profile.userStories
+    .map(({ id, userRating }) => {
+      const book = sampleBooks.find((b) => b.id === id);
+      if (!book) return null;
+      return {
+        ...book,
+        userRating: userRating ?? 0,
       };
     })
     .filter(Boolean);

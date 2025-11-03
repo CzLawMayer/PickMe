@@ -1,0 +1,8 @@
+@import "./Library.css";
+
+/* Keep tab 2 (Library) colored on the /stories page */
+.stories-page .lib-tabs .lib-tab:nth-child(2)[aria-current="page"] {
+  background: var(--bar2) !important;   /* same purple you use for Library tab */
+  border-color: transparent !important;
+  color: #fff !important;
+}

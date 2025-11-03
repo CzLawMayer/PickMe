@@ -255,8 +255,8 @@ export default function ReviewsPage() {
             </div>
 
             <nav className="lib-tabs" aria-label="Library sections">
-              <NavLink to="/profile" className="lib-tab">Profile</NavLink>
               <NavLink to="/library" className="lib-tab">Library</NavLink>
+              <NavLink to="/stories" className="lib-tab">Stories</NavLink>
               <NavLink to="/read" end className="lib-tab">Read</NavLink>
               <NavLink to="/reviews" end className="lib-tab is-active">Reviews</NavLink>
             </nav>

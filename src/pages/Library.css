@@ -1648,3 +1648,11 @@ aside.library-feature .feature-card .feature-cover-row {
   border-color: transparent !important;
   color: #fff !important;
 }
+
+/* Profile tab (first tab) — orange ONLY when on /library (active) */
+.lib-tabs .lib-tab:first-child[aria-current="page"] {
+  background-color: #fc5f2e;
+  border-color: #fc5f2e;
+  color: #fff;
+}
+
