@@ -1,0 +1,539 @@
+/* Shared layout */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+
+  /* Match Library tokens exactly */
+  height: var(--app-header-h, 64px);
+  padding: 0 var(--pad-x, 28px);
+}
+
+/* Variant: dark on non-Home pages */
+.app-header--dark { background: #000; }
+
+/* Variant: transparent on Home */
+.app-header--transparent { background: transparent; }
+
+/* Logo sizing (same visual weight as Library) */
+.app-header .logo {
+  margin: 0;
+  /* Library’s hero uses big type; keep consistent but responsive */
+  font-size: clamp(28px, 2.6vw, 36px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+.app-header .logo-link { color: #fff; text-decoration: none; }
+
+/* Right-side icon group spacing (match Library) */
+.app-header .header-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Library uses tight 12px gaps */
+}
+
+/* Icon boxes and glyph sizes pulled from Library tokens */
+.app-header .icon {
+  width: var(--icon-box, 40px);
+  height: var(--icon-box, 40px);
+  display: grid;
+  place-items: center;
+
+  font-size: var(--icon-size, 22px);
+  line-height: 1;
+
+  /* naked icons as requested */
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Keep hover/focus clean (no backgrounds/outlines) */
+.app-header .icon:hover,
+.app-header .icon:focus,
+.app-header .icon:focus-visible {
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Keep the menu icon consistent */
+.app-header .icon.icon-menu { font-size: var(--icon-size, 22px); }
+
+.app-header {
+  /* add box-sizing & ensure the grid behaves like Library’s */
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto; /* left grows, right hugs edge */
+  align-items: center;
+
+  height: var(--app-header-h, 64px);
+  padding: 0 var(--pad-x, 28px);
+}
+
+.app-header .header-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  /* NEW: push the icon group to the far right edge */
+  justify-self: end;
+  /* guard against any global margins */
+  margin: 0;
+}
+
+.app-header .icon {
+  /* ensure no stray margins around individual icons */
+  margin: 0;
+  width: var(--icon-box, 40px);
+  height: var(--icon-box, 40px);
+  display: grid;
+  place-items: center;
+  font-size: var(--icon-size, 22px);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+}
+
+/* Ensure the right group sits to the far edge */
+.app-header .header-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: end;
+}
+
+/* Reuse your icon sizing */
+.header-icon-btn {
+  width: var(--icon-box, 40px);
+  height: var(--icon-box, 40px);
+  display: grid;
+  place-items: center;
+  font-size: var(--icon-size, 22px);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Inline + icon geometry (matches StaggeredMenu.css) */
+.header-icon-btn .sm-icon { width: 14px; height: 14px; position: relative; }
+.header-icon-btn .sm-icon-line {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 100%; height: 2px;
+  transform: translate(-50%, -50%);
+  background: currentColor; border-radius: 2px;
+}
+.header-icon-btn .sm-icon-line.sm-icon-line-v { width: 2px; height: 100%; }
+
+/* Turn the inline button black when the menu is open (we set data-sm-open on <html> in StaggeredMenu) */
+:root[data-sm-open="true"] .app-header .sm-inline-toggle {
+  color: #000;
+}
+
+/* Place Search & Write to the LEFT of the StaggeredMenu (+) */
+.app-header .header-icons {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  /* Sit to the LEFT of the toggle hitbox:
+     pad-x + toggle width + a small gap */
+  right: calc(var(--pad-x, 28px) + var(--sm-toggle-hit, 56px) + 12px);
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 60; /* above prelayers/panel header */
+}
+
+/* Your existing icon button visuals (reuse your tokens) */
+.header-icon-btn {
+  width: var(--icon-box, 40px);
+  height: var(--icon-box, 40px);
+  display: grid;
+  place-items: center;
+  font-size: var(--icon-size, 22px);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Optional: keep hover/focus clean */
+.header-icon-btn:hover,
+.header-icon-btn:focus,
+.header-icon-btn:focus-visible {
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Make AppHeader a positioning context */
+.app-header {
+  position: sticky; /* you already had this */
+  /* add: */
+  position: sticky;
+}
+
+/* Align the StaggeredMenu header bar WITHIN the AppHeader row */
+.app-header .staggered-menu-header {
+  position: absolute;                    /* sit inside the header row */
+  top: 0;
+  right: var(--pad-x, 28px);             /* same right padding as header */
+  height: var(--app-header-h, 64px);     /* same height as header */
+  padding: 0;                            /* remove the 2em padding */
+  display: flex;
+  align-items: center;                   /* vertically center the + */
+  background: transparent;
+  pointer-events: none;                  /* keep wrapper non-interactive */
+  z-index: 60;
+}
+.app-header .staggered-menu-header > * {
+  pointer-events: auto;                  /* keep the button clickable */
+}
+
+/* Normalize the toggle’s box so it aligns visually with header icons */
+.app-header .staggered-menu-header .sm-toggle {
+  --sm-toggle-hit: 56px;                 /* shared width for layout math */
+  min-width: var(--sm-toggle-hit);
+  height: var(--icon-box, 40px);         /* match your icon boxes */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0 !important;            /* cancel any earlier spacing hacks */
+}
+
+/* Keep your Search/Write group immediately to the LEFT of the + */
+.app-header .header-icons {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: calc(var(--pad-x, 28px) + var(--sm-toggle-hit, 56px) + 12px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 60;
+}
+
+/* Button visuals (unchanged) */
+.header-icon-btn {
+  width: var(--icon-box, 40px);
+  height: var(--icon-box, 40px);
+  display: grid;
+  place-items: center;
+  font-size: var(--icon-size, 22px);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+}
+.header-icon-btn:hover,
+.header-icon-btn:focus,
+.header-icon-btn:focus-visible {
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Keep your open-state color behavior for the + */
+:root[data-sm-open="true"] .staggered-menu-header .sm-toggle { color: #000; }
+
+/* --- Give the + menu toggle the same breathing room as the logo --- */
+.app-header .staggered-menu-header .sm-toggle {
+  padding-right: 25px !important;  /* small shift inward */
+}
+
+/* Reserve some space on the far right for the menu (+) hitbox */
+:root {
+  /* 48px button + ~15px padding you liked ≈ 63px — round to 64 */
+  --menu-reserve: 64px;
+}
+
+/* Keep header-icons perfectly aligned with the header and just LEFT of the menu */
+.app-header { position: relative; }
+
+.app-header .header-icons {
+  position: absolute;
+  top: 0;
+  right: calc(var(--pad-x, 28px) + var(--menu-reserve));
+  height: var(--app-header-h, 64px);
+
+  display: flex;
+  align-items: center;
+  gap: 6px;               /* your tighter spacing */
+  margin: 0;
+  transform: none;        /* kill any translateY tricks */
+}
+
+/* Bigger Search & Write buttons (not the +) */
+.app-header .header-icons .header-icon-btn {
+  width: 52px;
+  height: 52px;
+  font-size: 28px; /* fallback */
+}
+
+.app-header .header-icons .header-icon-btn .material-symbols-outlined {
+  font-size: 28px; /* icon glyph size */
+  line-height: 1;
+}
+
+/* Enlarge just the word "Menu" in the StaggeredMenu toggle, not the + */
+.app-header .staggered-menu-header .sm-toggle-textWrap {
+  font-size: 20px;     /* bump label size */
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+/* Keep the + the same size explicitly */
+.app-header .staggered-menu-header .sm-icon {
+  width: 14px;
+  height: 14px;
+}
+.app-header .staggered-menu-header .sm-icon .sm-icon-line {
+  height: 2px; /* horizontal line */
+}
+.app-header .staggered-menu-header .sm-icon .sm-icon-line.sm-icon-line-v {
+  width: 2px;  /* vertical line */
+  height: 100%;
+}
+
+/* Extra space between the + menu and the Search/Write group */
+:root {
+  /* previously ~64px reserved for the +; this adds extra gutter */
+  --menu-reserve: 64px;
+  --menu-gutter: 18px; /* ⬅️ increase/decrease to taste */
+}
+
+.app-header .header-icons {
+  right: calc(var(--pad-x, 28px) + var(--menu-reserve) + var(--menu-gutter));
+}
+
+/* Kill the text-caret & selection inside the header controls */
+.app-header .logo-link,
+.app-header .header-icon-btn,
+.app-header .header-icon-btn .material-symbols-outlined,
+.app-header .staggered-menu-header .sm-toggle,
+.app-header .staggered-menu-header .sm-toggle * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  caret-color: transparent;   /* hide the blinking caret */
+  cursor: pointer;            /* avoid I-beam cursor */
+}
+
+/* Don't show a text selection highlight if someone drags over the header */
+.app-header ::selection {
+  background: transparent;
+  color: inherit;
+}
+
+/* Keep keyboard focus visible (accessibility) but make it clean */
+.app-header .header-icon-btn:focus { outline: none; }
+.app-header .header-icon-btn:focus-visible {
+  outline: 2px solid #ffffffaa;
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+.app-header .staggered-menu-header .sm-toggle:focus { outline: none; }
+.app-header .staggered-menu-header .sm-toggle:focus-visible {
+  outline: 2px solid #ffffffaa;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* Ensure the “Menu” text itself never invites a caret */
+.app-header .staggered-menu-header .sm-toggle-textWrap,
+.app-header .staggered-menu-header .sm-toggle-textInner,
+.app-header .staggered-menu-header .sm-toggle-line {
+  user-select: none;
+  caret-color: transparent;
+  pointer-events: none; /* text spans ignore events; button handles clicks */
+}
+
+/* Icons shouldn't eat events or show text-cursor behaviors */
+.app-header .material-symbols-outlined {
+  pointer-events: none;
+}
+
+/* Keep the StaggeredMenu header as an overlay that doesn't affect layout */
+.app-header .staggered-menu-wrapper.fixed-wrapper {
+  position: fixed;         /* full-screen overlay lives above the app */
+  inset: 0;
+  pointer-events: none;    /* inert by default; panel/toggle re-enable */
+  z-index: 60;
+}
+
+/* Anchor the toggle over the header's right padding area without shifting layout */
+.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-header {
+  position: fixed !important;         /* ← was absolute; fixed won't push siblings */
+  top: 0 !important;
+  right: var(--pad-x, 28px) !important;
+  left: auto !important;
+  width: auto !important;
+  height: var(--app-header-h, 64px) !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  background: transparent !important;
+  pointer-events: none !important;    /* let clicks pass through except toggle */
+}
+
+/* Only the +/Menu toggle is interactive */
+.app-header .staggered-menu-header .sm-toggle {
+  pointer-events: auto !important;
+}
+
+/* Remove the (now invisible) logo hitbox so it can't block the site logo */
+.app-header .staggered-menu-header .sm-logo {
+  display: none !important;
+}
+
+/* Keep header icons in normal flow; just reserve a bit of room on the right */
+.app-header .header-icons {
+  position: relative;
+  right: auto;
+  margin-right: 72px; /* space for the +/Menu toggle; tweak if needed */
+}
+
+/* Make sure the overlayed menu toggle sits exactly at the header's right pad */
+.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-header {
+  right: var(--pad-x, 28px) !important;
+  padding: 0 !important;     /* no extra padding that could shift it */
+}
+
+/* Ensure the toggle itself has no stray spacing */
+.app-header .staggered-menu-header .sm-toggle {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* More gap between the +/Menu and the Search/Write group */
+:root { --menu-gap: 96px; } /* try 96–120px to taste */
+
+.app-header .header-icons {
+  margin-right: var(--menu-gap); /* was ~72px */
+}
+
+/* Re-enable interactivity when the menu is open */
+.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] {
+  pointer-events: auto !important;     /* wrapper clickable again */
+  z-index: 100 !important;             /* on top of header/page */
+}
+
+/* The interactive bits inside the overlay must also take events */
+.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .staggered-menu-panel,
+.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .staggered-menu-header,
+.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .sm-panel-inner,
+.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .sm-panel-item,
+.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .sm-socials {
+  pointer-events: auto !important;
+}
+
+/* Make sure the panel is above the prelayers and header icons */
+.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-panel {
+  z-index: 101 !important;
+}
+
+/* Keep the prelayers decorative (no hover/click) */
+.app-header .staggered-menu-wrapper.fixed-wrapper .sm-prelayers {
+  pointer-events: none !important;
+}
+
+/* When closed, the panel should not be focusable/hoverable */
+.staggered-menu-panel[aria-hidden="true"] {
+  visibility: hidden;
+}
+
+/* (Optional) ensure hover effects work once events are enabled */
+.staggered-menu-panel .sm-panel-item:hover .sm-panel-itemLabel {
+  color: var(--sm-accent, #5227ff);
+}
+
+/* Float ONLY the +/Menu toggle above everything */
+.app-header .staggered-menu-header .sm-toggle {
+  position: fixed;                         /* escape parent stacking */
+  top: 0;
+  right: var(--pad-x, 28px);               /* same inset as header */
+  height: var(--app-header-h, 64px);
+  display: flex;
+  align-items: center;
+  z-index: 9999;                           /* above panel/prelayers */
+  pointer-events: auto !important;         /* stay clickable */
+}
+
+/* keep the rest of the menu header inert so it doesn't steal clicks */
+.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-header {
+  pointer-events: none !important;
+}
+
+/* 0) Undo any earlier "inert" header override */
+.app-header .staggered-menu-header {
+  pointer-events: auto !important; /* allow the header/toggle to receive clicks */
+}
+
+/* 1) Put ONLY the +/Menu toggle above everything, without moving other layers */
+.app-header .staggered-menu-header .sm-toggle {
+  position: fixed;                      /* escape any parent stacking traps */
+  top: 0;
+  right: var(--pad-x, 28px);            /* same inset as your header */
+  height: var(--app-header-h, 64px);
+  display: flex;
+  align-items: center;
+  z-index: 2147483647 !important;       /* truly on top */
+}
+
+/* 2) Keep the overlay interactive when open, but never let backgrounds steal clicks */
+.staggered-menu-wrapper.fixed-wrapper[data-open] { pointer-events: auto !important; }
+.staggered-menu-wrapper.fixed-wrapper .sm-prelayers { pointer-events: none !important; }
+
+/* 3) The panel stays interactive (hover/click) but below the toggle */
+.staggered-menu-wrapper.fixed-wrapper .staggered-menu-panel {
+  z-index: 1000;                        /* under the toggle's huge z-index */
+}
+
+/* 4) (Optional) ensure hover color still works */
+.staggered-menu-panel .sm-panel-item:hover .sm-panel-itemLabel {
+  color: var(--sm-accent, #5227ff);
+}
+
+/* The portal-mounted header: sits over the header area, never affects layout */
+.sm-portal-toggle {
+  position: fixed;
+  top: 0;
+  right: var(--pad-x, 28px);
+  height: var(--app-header-h, 64px);
+  display: flex;
+  align-items: center;
+  background: transparent;
+  z-index: 2147483647;     /* above everything */
+  pointer-events: none;    /* wrapper inert */
+}
+
+/* Only the toggle receives clicks */
+.sm-portal-toggle .sm-toggle {
+  pointer-events: auto;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide the logo box entirely so it never blocks clicks */
+.sm-portal-toggle .sm-logo { display: none; }
+
+/* Keep the + lines using currentColor (already true in your CSS) */
+.sm-portal-toggle .sm-icon .sm-icon-line { background: currentColor; }

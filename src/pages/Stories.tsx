@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
@@ -7,6 +7,7 @@ import ProfileIdentity from "@/components/ProfileIdentity";
 import { profile, userStoriesBooks } from "@/profileData";
 
 import "./Library.css";
+import AppHeader from "@/components/AppHeader";
 
 import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
@@ -270,32 +271,12 @@ export default function StoriesPage() {
   return (
     <div className="library-app">
       {/* ===== HEADER (top banner + menu) ===== */}
-      <header className="header">
-        <h1 className="logo">
-          <Link to="/" className="logo-link" aria-label="Go to home">
-            Pick<span>M</span>e!
-          </Link>
-        </h1>
-
-        <div className="header-icons">
-          <button type="button" className="icon" aria-label="write">
-            ✏️
-          </button>
-          <button type="button" className="icon" aria-label="search">
-            🔍
-          </button>
-          <button
-            type="button"
-            className="icon icon-menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-haspopup="dialog"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            {menuOpen ? "X" : "☰"}
-          </button>
-        </div>
-      </header>
+    <AppHeader
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((o) => !o)}
+        onClickWrite={() => { /* optional: open compose */ }}
+        onClickSearch={() => { /* optional: open search */ }}
+    />
 
       {/* ===== BODY LAYOUT ===== */}
       <main className="library-layout">

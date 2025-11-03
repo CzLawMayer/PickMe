@@ -1,6 +1,6 @@
 // src/pages/Reviews.tsx
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
@@ -10,6 +10,7 @@ import SaveButton from "@/components/SaveButton";
 
 import { profile, userReviewBooks } from "@/profileData";
 import "./Reviews.css";
+import AppHeader from "@/components/AppHeader";
 
 type ReviewBook = {
   id: string | number;
@@ -222,28 +223,13 @@ export default function ReviewsPage() {
   return (
     <div className="library-app reviews-page">
       {/* ===== HEADER ===== */}
-      <header className="header">
-        <h1 className="logo">
-          <Link to="/" className="logo-link" aria-label="Go to home">
-            Pick<span>M</span>e!
-          </Link>
-        </h1>
+      <AppHeader
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((o) => !o)}
+        onClickWrite={() => { /* optional: open compose */ }}
+        onClickSearch={() => { /* optional: open search */ }}
+      />
 
-        <div className="header-icons">
-          <button type="button" className="icon" aria-label="write">✏️</button>
-          <button type="button" className="icon" aria-label="search">🔍</button>
-          <button
-            type="button"
-            className="icon icon-menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-haspopup="dialog"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            {menuOpen ? "X" : "☰"}
-          </button>
-        </div>
-      </header>
 
       {/* ===== BODY ===== */}
       <main className="library-layout">

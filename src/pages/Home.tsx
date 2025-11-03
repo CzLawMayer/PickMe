@@ -10,6 +10,7 @@ import SideMenu from "@/components/SideMenu"
 
 import { Link } from "react-router-dom";
 
+import AppHeader from "@/components/AppHeader";
 
 
 // ---------- Types ----------
@@ -1188,26 +1189,12 @@ export default function Home() {
   return (
     <div className="app">
       {/* Top bar */}
-      <header className="header">
-        <h1 className="logo">
-          Pick<span>M</span>e!
-        </h1>
-        <div className="header-icons">
-          <div className="icon" aria-label="write">✏️</div>
-          <div className="icon" aria-label="search">🔍</div>
-          <button
-            type="button"
-            className="icon icon-menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-haspopup="dialog"
-            aria-controls="side-menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            {menuOpen ? "X" : "☰"}
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((o) => !o)}
+        onClickWrite={() => { /* optional: open compose */ }}
+        onClickSearch={() => { /* optional: open search */ }}
+      />
 
       {/* Stage */}
       <main

@@ -10,6 +10,7 @@ import { profile, storyBooks, favoriteBooks, libraryBooks } from "@/profileData"
 import { flushSync } from "react-dom";
 import { useMemo } from "react";
 
+import AppHeader from "@/components/AppHeader";
 
 
 
@@ -434,27 +435,13 @@ export default function ProfilePage() {
   return (
     <div className="profile-app">
       {/* Top bar (same as Home) */}
-      <header className="header">
-        <h1 className="logo">
-          <Link to="/" className="logo-link" aria-label="Go to home">
-            Pick<span>M</span>e!
-          </Link>
-        </h1>
-        <div className="header-icons">
-          <button type="button" className="icon" aria-label="write">✏️</button>
-          <button type="button" className="icon" aria-label="search">🔍</button>
-          <button
-            type="button"
-            className="icon icon-menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-haspopup="dialog"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            {menuOpen ? "X" : "☰"}
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((o) => !o)}
+        onClickWrite={() => { /* optional: open compose */ }}
+        onClickSearch={() => { /* optional: open search */ }}
+      />
+
 
       <main className="profile-page">
         {/* Global 3×3 grid: rows = [top | middle | bottom], cols = [L | C | R] */}

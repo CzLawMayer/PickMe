@@ -1,6 +1,6 @@
 // src/pages/Read.tsx
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
@@ -8,6 +8,7 @@ import ProfileIdentity from "@/components/ProfileIdentity";
 import { profile, userReadBooks } from "@/profileData";
 
 import "./Library.css";
+import AppHeader from "@/components/AppHeader";
 
 import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
@@ -260,37 +261,13 @@ export default function ReadPage() {
   return (
     <div className="library-app">
       {/* ===== HEADER ===== */}
-      <header className="header">
-        <h1 className="logo">
-          <Link to="/" className="logo-link" aria-label="Go to home">
-            Pick<span>M</span>e!
-          </Link>
-        </h1>
+      <AppHeader
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((o) => !o)}
+        onClickWrite={() => { /* optional: open compose */ }}
+        onClickSearch={() => { /* optional: open search */ }}
+      />
 
-        <div className="header-icons">
-          <button type="button" className="icon" aria-label="write">
-            ✏️
-          </button>
-          <button
-            type="button"
-            className="icon"
-            aria-label="search"
-            onClick={() => setSearchOpen((v) => !v)}
-          >
-            🔍
-          </button>
-          <button
-            type="button"
-            className="icon icon-menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-haspopup="dialog"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            {menuOpen ? "X" : "☰"}
-          </button>
-        </div>
-      </header>
 
       {/* ===== BODY LAYOUT ===== */}
       <main className="library-layout">
