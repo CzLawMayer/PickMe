@@ -1,5 +1,5 @@
 // src/components/FeaturePanel.tsx
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import LikeButton from "@/components/LikeButton";
@@ -13,34 +13,25 @@ export type Bookish = {
   author?: string;
   coverUrl?: string | null;
   likes?: number;
-  rating?: number | string; // allow string like "4.2"
-  bookmarks?: number; // total saves
+  rating?: number | string;
+  bookmarks?: number;
   currentChapter?: number;
   totalChapters?: number;
   tags?: string[];
   userRating?: number;
 };
 
-/** Props to control the panel’s behavior and actions */
 export interface FeaturePanelProps {
-  /** The book to display. If null/undefined, shows empty state brand. */
   book?: Bookish | null;
-
-  /** UI state toggles (from parent) */
   liked?: boolean;
   saved?: boolean;
-  userRating?: number; // the user’s own rating, 0–5
-
-  /** Action callbacks (optional) */
+  userRating?: number;
   onToggleLike?: () => void;
   onToggleSave?: () => void;
   onRate?: (value: number) => void;
-
-  /** Optional: custom empty-state brand (defaults to PickMe!) */
   emptyBrand?: React.ReactNode;
 }
 
-/** Center / side feature panel used on Profile and Library pages */
 const FeaturePanel: React.FC<FeaturePanelProps> = ({
   book,
   liked = false,
@@ -51,7 +42,7 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
   onRate,
   emptyBrand,
 }) => {
-  // Measure title lines to toggle the centering class (one-line vs two-line)
+  // ===== Title line measurement (unchanged) =====
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const [titleLines, setTitleLines] = useState(2);
 
@@ -74,7 +65,41 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     };
   }, [book?.title]);
 
-  // Empty-state brand (fallback)
+  // ===== NEW: gradient rotation with readable overlay =====
+  // Base colors you gave:
+  const C1 = "#fc5f2e";
+  const C2 = "#d81b60";
+  const C3 = "#6a1b9a";
+  const C4 = "#1e88e5";
+
+  // Four tasteful, minimal gradients using those colors
+  const gradientPalette = [
+    `linear-gradient(135deg, ${C1} 0%, ${C2} 70%)`,
+    `linear-gradient(135deg, ${C2} 0%, ${C3} 70%)`,
+    `linear-gradient(135deg, ${C3} 0%, ${C4} 70%)`,
+    `linear-gradient(135deg, ${C4} 0%, ${C1} 90%)`,
+  ] as const;
+
+  // We place a subtle dark overlay *above* the gradient for readability
+  const overlay = `linear-gradient(0deg, rgba(0,0,0,0.42), rgba(0,0,0,0.42))`;
+
+  const gradIdxRef = useRef(0);
+  const prevBookIdRef = useRef<string | number | null>(null);
+  const [panelBgImage, setPanelBgImage] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!book) return; // idle → keep default black (no gradient)
+    const currId = book.id;
+    if (currId !== prevBookIdRef.current) {
+      const nextGrad = gradientPalette[gradIdxRef.current];
+      // Multiple backgrounds: overlay first, gradient second
+      setPanelBgImage(`${overlay}, ${nextGrad}`);
+      gradIdxRef.current = (gradIdxRef.current + 1) % gradientPalette.length;
+      prevBookIdRef.current = currId;
+    }
+  }, [book]);
+
+  // ===== Empty-state brand (unchanged) =====
   const Brand =
     emptyBrand ?? (
       <h3 className="brand-mark">
@@ -93,9 +118,15 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     : 0;
 
   if (!book) {
-    // EMPTY (PickMe!)
+    // EMPTY (PickMe!) — stays black (no backgroundImage set)
     return (
-      <div className="feature-card">
+      <div
+        className="feature-card"
+        style={{
+          // keep a nice subtle transition for when the first book appears
+          transition: "background-image 220ms ease, background 220ms ease",
+        }}
+      >
         <div className="feature-stack">
           <div className="feature-empty-inline" aria-label="No book selected">
             {Brand}
@@ -105,14 +136,22 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     );
   }
 
-  // We DO have a book:
+  // We DO have a book: apply the rotating gradient (with overlay)
   return (
-    <div className="feature-card">
+    <div
+      className="feature-card"
+      style={{
+        backgroundColor: "#000", // fallback
+        backgroundImage: panelBgImage,
+        transition: "background-image 220ms ease, background 220ms ease",
+        // small inner border for definition on bright gradients
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+      }}
+    >
       <div className="feature-stack">
-        {/* Cover row with link + jump arrow (same vibe as ProfilePage) */}
+        {/* Cover row with link + jump arrow (unchanged) */}
         {book.coverUrl ? (
           <div className="feature-cover-row">
-            {/* main clickable cover */}
             <Link
               to={`/?book=${encodeURIComponent(String(book.id ?? ""))}`}
               className="feature-cover-link"
@@ -129,8 +168,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
                 }}
               />
             </Link>
-
-            {/* side chevron jump */}
             <Link
               to={`/?book=${encodeURIComponent(String(book.id ?? ""))}`}
               className="feature-jump"
@@ -150,12 +187,7 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
 
         {/* Info block */}
         <div className="feature-info">
-          {/* Title (clamped to 2 lines, centered if single line) */}
-          <div
-            className={`feature-title-wrap ${
-              titleLines === 1 ? "one-line" : ""
-            }`}
-          >
+          <div className={`feature-title-wrap ${titleLines === 1 ? "one-line" : ""}`}>
             <h3 ref={titleRef} className="feature-title">
               {book.title}
             </h3>
@@ -163,32 +195,13 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
 
           <hr className="meta-hr" />
 
-          {/* Author */}
           {(book.author ?? "").trim() !== "" && (
             <>
               <div className="feature-author">
                 <span className="meta-avatar--sm" aria-hidden={true}>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden={true}
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="9"
-                      stroke="white"
-                      strokeWidth="2"
-                    />
-                    <circle
-                      cx="12"
-                      cy="9"
-                      r="3"
-                      stroke="white"
-                      strokeWidth="2"
-                    />
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
+                    <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                    <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
                     <path
                       d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
                       stroke="white"
@@ -204,7 +217,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
             </>
           )}
 
-          {/* Actions */}
           <div className="meta-actions">
             <LikeButton
               className="meta-icon-btn like"
@@ -212,7 +224,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
               count={book.likes ?? 0}
               onToggle={onToggleLike}
             />
-
             <StarButton
               className="meta-icon-btn star"
               rating={Number.isFinite(avgRatingNum) ? avgRatingNum : 0}
@@ -220,7 +231,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
               active={userRating > 0}
               onRate={(v: number) => onRate?.(v)}
             />
-
             <SaveButton
               className="meta-icon-btn save"
               active={Boolean(saved)}
@@ -231,15 +241,13 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
 
           <hr className="meta-hr" />
 
-          {/* Chapters */}
           {(Number.isFinite(book.currentChapter) ||
             Number.isFinite(book.totalChapters)) && (
             <>
               <div className="align-left">
                 <p className="meta-chapters">
                   <span>
-                    {(book.currentChapter ?? 0)} /{" "}
-                    {(book.totalChapters ?? 0)} Chapters
+                    {(book.currentChapter ?? 0)} / {(book.totalChapters ?? 0)} Chapters
                   </span>
                 </p>
               </div>
@@ -248,7 +256,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
             </>
           )}
 
-          {/* Tags */}
           <div className="align-left">
             <div className="meta-tags-block">
               <ul className="meta-tags meta-tags--outline">
