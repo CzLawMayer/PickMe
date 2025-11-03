@@ -1,5 +1,6 @@
 // src/components/ProfileIdentity.tsx
 import React, { useLayoutEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { profile as defaultProfile } from "@/profileData";
 
 type UserProfile = {
@@ -32,7 +33,7 @@ function useFitText(minPx = 12, maxPx = 48) {
       // Binary search largest size that fits on one line
       for (let i = 0; i < 18; i++) {
         const mid = Math.floor((lo + hi) / 2);
-        el.style.fontSize = `${mid}px`;
+        (el as HTMLElement).style.fontSize = `${mid}px`;
         const fitsWidth = el.scrollWidth <= el.clientWidth;
         const isOneLine =
           el.scrollHeight <= el.clientHeight || el.getClientRects().length <= 1;
@@ -40,7 +41,7 @@ function useFitText(minPx = 12, maxPx = 48) {
         else hi = mid - 1;
       }
       const finalSize = Math.max(minPx, hi);
-      el.style.fontSize = `${finalSize}px`;
+      (el as HTMLElement).style.fontSize = `${finalSize}px`;
       setSize(finalSize);
     };
 
@@ -64,7 +65,13 @@ export default function ProfileIdentity({ profile, compact }: Props) {
   return (
     <div className="profile-identity">
       <div className="profile-card">
-        <div className="profile-avatar" aria-hidden={true}>
+        {/* Avatar -> /profile */}
+        <Link
+          to="/profile"
+          className="profile-avatar"
+          aria-label="Go to profile"
+          style={{ display: "block", cursor: "pointer" }}
+        >
           {p.avatarUrl ? (
             <img
               src={p.avatarUrl}
@@ -84,41 +91,55 @@ export default function ProfileIdentity({ profile, compact }: Props) {
               <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
             </svg>
           )}
-        </div>
+        </Link>
 
         <div className="profile-id" style={{ display: "grid", alignContent: "start" }}>
-          <h2
-            className="profile-name"
-            ref={nameFit.ref as React.RefObject<HTMLHeadingElement>}
-            style={{
-              margin: "0 0 2px",
-              fontWeight: 800,
-              lineHeight: 1.05,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-            title={p.name}
+          {/* Name -> /profile */}
+          <Link
+            to="/profile"
+            aria-label={`Open profile of ${p.name}`}
+            style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
           >
-            {p.name}
-          </h2>
+            <h2
+              className="profile-name"
+              ref={nameFit.ref as React.RefObject<HTMLHeadingElement>}
+              style={{
+                margin: "0 0 2px",
+                fontWeight: 800,
+                lineHeight: 1.05,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+              title={p.name}
+            >
+              {p.name}
+            </h2>
+          </Link>
 
-          <div
-            className="profile-handle"
-            ref={handleFit.ref as React.RefObject<HTMLDivElement>}
-            style={{
-              margin: "0 0 8px",
-              opacity: 0.8,
-              fontWeight: 600,
-              lineHeight: 1.1,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-            title={`@${p.username}`}
+          {/* @username -> /profile */}
+          <Link
+            to="/profile"
+            aria-label={`Open profile of @${p.username}`}
+            style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
           >
-            @{p.username}
-          </div>
+            <div
+              className="profile-handle"
+              ref={handleFit.ref as React.RefObject<HTMLDivElement>}
+              style={{
+                margin: "0 0 8px",
+                opacity: 0.8,
+                fontWeight: 600,
+                lineHeight: 1.1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+              title={`@${p.username}`}
+            >
+              @{p.username}
+            </div>
+          </Link>
 
           <div
             className="profile-bars"
