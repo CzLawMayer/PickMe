@@ -28,6 +28,8 @@ export default function SearchPage() {
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("recent");
 
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -149,84 +151,76 @@ export default function SearchPage() {
         <div className="library-left">
           {/* HERO */}
           <section className="lib-hero" aria-label="Search header">
-            <div className="search-identity-slot">
-              <div className="lib-search-field has-clear">
-                <input
-                  className="lib-search-input"
-                  type="text"
-                  placeholder="Search books…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label="Search books"
-                  autoFocus
-                />
-                {query && (
-                  <button
-                    type="button"
-                    className="lib-search-clear--inside"
-                    aria-label="Clear search"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setQuery("");
-                    }}
-                  >
-                    <span className="material-symbols-outlined" aria-hidden="true">close</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <nav className="lib-tabs" aria-label="Search types">
-              <button
-                type="button"
-                className={`lib-tab ${activeKind === "books" ? "is-active" : ""}`}
-                onClick={() => setActiveKind("books")}
-                aria-current={activeKind === "books" ? "page" : undefined}
-              >
-                Books
-              </button>
-              <button
-                type="button"
-                className={`lib-tab ${activeKind === "users" ? "is-active" : ""}`}
-                onClick={() => setActiveKind("users")}
-                aria-current={activeKind === "users" ? "page" : undefined}
-              >
-                Users
-              </button>
-              <button
-                type="button"
-                className={`lib-tab ${activeKind === "genres" ? "is-active" : ""}`}
-                onClick={() => setActiveKind("genres")}
-                aria-current={activeKind === "genres" ? "page" : undefined}
-              >
-                Genres
-              </button>
-            </nav>
-
-            <div className="lib-hero-cta">
-              <button
-                type="button"
-                ref={sortBtnRef}
-                className="lib-cta lib-cta--icon lib-filter-btn"
-                aria-haspopup="menu"
-                aria-expanded={sortOpen}
-                aria-label="Sort results"
-                onClick={() => setSortOpen((v) => !v)}
-              >
-                <span className="material-symbols-outlined" aria-hidden="true">filter_list</span>
-              </button>
-
-              {sortOpen && (
-                <div ref={sortMenuRef} className="lib-filter-menu" role="menu" aria-label="Sort books">
-                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("recent")}>Recently added</button>
-                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("title")}>Title (A–Z)</button>
-                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("author")}>Author (A–Z)</button>
-                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("rating")}>Rating (high → low)</button>
-                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("likes")}>Likes (high → low)</button>
-                  <button role="menuitem" className="lib-filter-item" onClick={() => applySort("saves")}>Saves (high → low)</button>
+            <div className="lib-hero-grid">
+                {/* Left: search takes remaining space */}
+                <div className="search-identity-slot">
+                    <div className="search-underline" onClick={() => inputRef.current?.focus()}>
+                    <span className="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+                    <input
+                        ref={inputRef}
+                        className="search-input-underline"
+                        type="text"
+                        placeholder="Search…"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        aria-label="Search"
+                    />
+                    </div>
                 </div>
-              )}
+
+                {/* Center: the three buttons dead-center */}
+                <nav className="lib-tabs" aria-label="Search types">
+                    <button
+                    type="button"
+                    className={`lib-tab ${activeKind === "books" ? "is-active" : ""}`}
+                    onClick={() => setActiveKind("books")}
+                    aria-current={activeKind === "books" ? "page" : undefined}
+                    >
+                    Books
+                    </button>
+                    <button
+                    type="button"
+                    className={`lib-tab ${activeKind === "users" ? "is-active" : ""}`}
+                    onClick={() => setActiveKind("users")}
+                    aria-current={activeKind === "users" ? "page" : undefined}
+                    >
+                    Users
+                    </button>
+                    <button
+                    type="button"
+                    className={`lib-tab ${activeKind === "genres" ? "is-active" : ""}`}
+                    onClick={() => setActiveKind("genres")}
+                    aria-current={activeKind === "genres" ? "page" : undefined}
+                    >
+                    Genres
+                    </button>
+                </nav>
+
+                {/* Right: Filter stays where it is */}
+                <div className="lib-hero-cta">
+                    <button
+                    type="button"
+                    ref={sortBtnRef}
+                    className="lib-cta lib-cta--icon lib-filter-btn"
+                    aria-haspopup="menu"
+                    aria-expanded={sortOpen}
+                    aria-label="Sort results"
+                    onClick={() => setSortOpen((v) => !v)}
+                    >
+                    <span className="material-symbols-outlined" aria-hidden="true">filter_list</span>
+                    </button>
+
+                    {sortOpen && (
+                    <div ref={sortMenuRef} className="lib-filter-menu" role="menu" aria-label="Sort books">
+                        <button role="menuitem" className="lib-filter-item" onClick={() => applySort("recent")}>Recently added</button>
+                        <button role="menuitem" className="lib-filter-item" onClick={() => applySort("title")}>Title (A–Z)</button>
+                        <button role="menuitem" className="lib-filter-item" onClick={() => applySort("author")}>Author (A–Z)</button>
+                        <button role="menuitem" className="lib-filter-item" onClick={() => applySort("rating")}>Rating (high → low)</button>
+                        <button role="menuitem" className="lib-filter-item" onClick={() => applySort("likes")}>Likes (high → low)</button>
+                        <button role="menuitem" className="lib-filter-item" onClick={() => applySort("saves")}>Saves (high → low)</button>
+                    </div>
+                    )}
+                </div>
             </div>
           </section>
 

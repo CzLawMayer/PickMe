@@ -23,10 +23,7 @@
   align-items: center;
 }
 
-/* Let the search input stretch nicely */
-.search-identity-slot .lib-search-field {
-  width: clamp(260px, 38vw, 560px);
-}
+
 
 /* 4 columns on Search (desktop) */
 .search-page .search-books-grid {
@@ -230,3 +227,388 @@
 }
 
 
+/* Minimal underline search */
+.search-page .search-underline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.search-page .search-underline .search-icon {
+  font-size: 22px;
+  line-height: 1;
+  color: #fff;
+  opacity: 0.95;
+  user-select: none;
+}
+
+.search-page .search-input-underline {
+  flex: 1 1 auto;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid rgba(255,255,255,0.9) !important;
+  color: #fff !important;
+  padding: 6px 0 8px 0 !important;
+  outline: none !important;
+  font-size: 16px;
+}
+
+.search-page .search-input-underline::placeholder {
+  color: rgba(255,255,255,0.6);
+}
+
+.search-page .search-input-underline:focus {
+  border-bottom-color: #fff !important;
+}
+
+
+
+.search-page .search-input-underline {
+  flex: 1 1 auto;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid rgba(255,255,255,0.9) !important;
+  color: #fff !important;
+  padding: 6px 0 8px 0 !important;
+  outline: none !important;
+  font-size: 16px;
+  caret-color: #fff;            /* <-- ensures the blinking cursor is visible */
+}
+
+.search-page .search-underline .search-icon {
+  font-size: 32px;              /* was 22px */
+  line-height: 1;
+  color: #fff;
+  opacity: 1;                   /* make it fully opaque */
+  margin-right: 4px;
+  user-select: none;
+}
+
+/* --- Force a visible caret + focus for the underline input --- */
+.search-page input.search-input-underline {
+  /* make sure it's a normal, focusable input */
+  display: inline-block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+
+  /* text + caret */
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important; /* Safari/WebKit */
+  caret-color: #fff !important;
+
+  /* our minimal look */
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid rgba(255,255,255,0.9) !important;
+  padding: 6px 0 8px 0 !important;
+  outline: none !important;
+  font-size: 16px !important;
+}
+
+/* ensure nothing kills focus visuals on inputs globally for Search page */
+.search-page input.search-input-underline:focus,
+.search-page input.search-input-underline:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-bottom-color: #fff !important;
+}
+
+/* if any transform/filter on parents is messing with the caret, neutralize for this row */
+.search-page .search-underline,
+.search-page .search-underline * {
+  transform: none !important;
+  filter: none !important;
+}
+
+/* keep the bigger icon */
+.search-page .search-underline .search-icon {
+  font-size: 32px !important;
+  line-height: 1 !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  margin-right: 6px !important;
+  user-select: none !important;
+}
+
+/* Full-width, three-column hero:
+   [ flexible search | centered tabs | tight filter ] */
+.search-page .lib-hero-grid {
+  display: grid;
+  width: 100%;                           /* force full width */
+  grid-template-columns: minmax(0,1fr) auto min-content; /* left flexes */
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+}
+
+/* Center the tabs perfectly */
+.search-page .lib-hero-grid .lib-tabs {
+  justify-self: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+/* Left column may grow without clipping */
+.search-page .lib-hero-grid .search-identity-slot {
+  min-width: 0;                          /* crucial so the input can expand */
+}
+
+/* Make the underline search fill the whole left column */
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: 100%;
+}
+
+/* Keep the filter pinned right */
+.search-page .lib-hero-grid .lib-hero-cta {
+  justify-self: end;
+}
+
+/* Responsive stacking */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid {
+    grid-template-columns: minmax(0,1fr) min-content;
+    grid-template-areas:
+      "search  filter"
+      "tabs    tabs";
+    row-gap: 12px;
+  }
+  .search-page .lib-hero-grid .search-identity-slot { grid-area: search; }
+  .search-page .lib-hero-grid .lib-tabs { grid-area: tabs; justify-self: center; }
+  .search-page .lib-hero-grid .lib-hero-cta { grid-area: filter; justify-self: end; }
+}
+
+/* Let the input actually use the space */
+.search-page .search-input-underline {
+  width: 100%;
+}
+
+/* ====== Force the hero to span the entire available width ====== */
+.search-page .lib-hero {
+  width: 100vw !important;           /* take full viewport width */
+  max-width: 100vw !important;
+  margin-left: calc(50% - 50vw);     /* cancel any page horizontal padding */
+  box-sizing: border-box;
+}
+
+/* Allow the hero grid to stretch inside it */
+.search-page .lib-hero-grid {
+  width: 100% !important;
+  max-width: 100%;
+  justify-content: space-between;
+}
+
+/* Keep left flexible, middle centered, right tight */
+.search-page .lib-hero-grid {
+  grid-template-columns: 1fr auto min-content;
+}
+
+/* Stretch the search underline fully within its cell */
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Make the hero span the full row and let the left column actually grow */
+.search-page .library-left {
+  max-width: none !important;     /* kill any max-width clamp */
+}
+
+.search-page .lib-hero {
+  width: 100% !important;         /* no viewport hack needed */
+  max-width: none !important;
+  margin-left: 0 !important;
+  padding-left: var(--pad-x, 28px);
+  padding-right: var(--pad-x, 28px);
+}
+
+/* Three-column grid: left fills all remaining space */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto min-content !important;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Crucial: allow the left cell to expand and the control to fill it */
+.search-page .lib-hero-grid .search-identity-slot {
+  min-width: 0 !important;        /* prevents intrinsic shrink */
+}
+
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: 100% !important;         /* fill the whole left column */
+  flex: 1 1 100% !important;      /* in case another rule makes it shrink */
+  min-width: 0 !important;
+}
+
+/* The input itself must be full width too */
+.search-page .search-input-underline {
+  width: 100% !important;
+}
+
+/* Keep center buttons truly centered and filter pinned right */
+.search-page .lib-hero-grid .lib-tabs { justify-self: center; }
+.search-page .lib-hero-grid .lib-hero-cta { justify-self: end; }
+
+/* If any container above imposes width, neutralize just for Search */
+.search-page .library-layout,
+.search-page .library-left > * {
+  max-width: none !important;
+}
+
+/* --- Make the hero a single lane on Search so our inner grid can own the width --- */
+.search-page .lib-hero {
+  display: block !important;                 /* kill the base grid split */
+  grid-template-columns: none !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* If any parent still treats lib-hero as a grid, force children to span full width */
+.search-page .lib-hero > * {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+
+/* Our three-zone row: [ expanding search | centered tabs | tight filter ] */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) auto min-content !important;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100% !important;
+}
+
+/* Let the left cell actually grow */
+.search-page .lib-hero-grid .search-identity-slot { min-width: 0 !important; }
+.search-page .lib-hero-grid .search-identity-slot .search-underline { width: 100% !important; }
+
+/* Keep center perfectly centered and filter pinned right */
+.search-page .lib-hero-grid .lib-tabs { justify-self: center !important; }
+.search-page .lib-hero-grid .lib-hero-cta { justify-self: end !important; }
+
+/* Center layout: [flex left | exact-center tabs | tight right] */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: 1fr auto min-content !important; /* left flex, center auto, right min */
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100% !important;
+}
+
+/* Center the three buttons exactly */
+.search-page .lib-hero-grid .lib-tabs {
+  justify-self: center !important;   /* dead center */
+  display: inline-flex;
+  gap: 8px;
+}
+
+/* Filter stays pinned to the far right */
+.search-page .lib-hero-grid .lib-hero-cta {
+  justify-self: end !important;      /* keep it on the right edge */
+}
+
+/* Search sits on the LEFT but hugs the buttons (not full-width) */
+.search-page .lib-hero-grid .search-identity-slot {
+  min-width: 0 !important;
+  justify-self: end !important;      /* nudge it toward center */
+}
+
+/* Give the search an intrinsic cap so it doesn't sprawl */
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: min(42vw, 560px) !important;  /* shrink-to-fit, max cap */
+  max-width: 560px !important;
+}
+
+/* Input fills that local width */
+.search-page .search-input-underline { width: 100% !important; }
+
+/* Give the hero row a positioning context */
+.search-page .lib-hero { position: relative; }
+.search-page .lib-hero-grid {
+  position: relative;                /* anchor for absolute centering */
+  display: grid !important;
+  grid-template-columns: 1fr min-content; /* left flexes, right is tight */
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  min-height: 64px;                  /* room for the centered tabs */
+}
+
+/* LEFT: search hugs center, doesn't sprawl */
+.search-page .lib-hero-grid .search-identity-slot {
+  justify-self: start;
+  min-width: 0;
+}
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: min(42vw, 560px) !important;    /* cap so tabs can sit centered */
+  max-width: 560px !important;
+}
+
+/* RIGHT: filter stays pinned to the far edge */
+.search-page .lib-hero-grid .lib-hero-cta {
+  justify-self: end;
+}
+
+/* DEAD-CENTER the three buttons regardless of left/right widths */
+.search-page .lib-hero-grid .lib-tabs {                      /* above search/filter if they overlap */
+  display: inline-flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+/* Optional: make sure the centered group doesn't get pushed by margins */
+.search-page .lib-hero-grid .lib-tabs > .lib-tab { margin: 0; }
+
+/* True centered layout: [ search | TABS(center) | filter ] */
+.search-page .lib-hero { position: relative; }
+
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr;   /* left/right share remaining space */
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100%;
+  min-height: 64px;
+}
+
+/* Middle: tabs naturally in the center (no absolute needed) */
+.search-page .lib-hero-grid .lib-tabs {
+  justify-self: center;                  /* center inside the auto column */
+  display: inline-flex;
+  gap: 8px;
+}
+
+/* Left: search hugs the center from the left side */
+.search-page .lib-hero-grid .search-identity-slot {
+  grid-column: 1;
+  justify-self: end;                     /* push towards center */
+  min-width: 0;
+}
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: min(42vw, 560px);               /* reasonable cap */
+  max-width: 560px;
+}
+
+/* Right: filter pinned to the far right */
+.search-page .lib-hero-grid .lib-hero-cta {
+  grid-column: 3;
+  justify-self: end;                     /* right edge */
+}
+
+/* Responsive stacking (optional) */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid {
+    grid-template-columns: 1fr min-content;
+    grid-template-areas:
+      "search  filter"
+      "tabs    tabs";
+    row-gap: 12px;
+  }
+  .search-page .lib-hero-grid .search-identity-slot { grid-area: search; justify-self: start; }
+  .search-page .lib-hero-grid .lib-hero-cta         { grid-area: filter; justify-self: end; }
+  .search-page .lib-hero-grid .lib-tabs             { grid-area: tabs; justify-self: center; }
+}
