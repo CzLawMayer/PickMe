@@ -84,187 +84,173 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
   const busyRef = useRef(false);
 
   /* Set initial positions & collect pre-layers */
+  // Keep prelayers offscreen whenever we're closed (initial mount too)
   useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      const panel = panelRef.current;
-      const preContainer = preLayersRef.current;
-      const plusH = plusHRef.current;
-      const plusV = plusVRef.current;
-      const icon = iconRef.current;
-      const textInner = textInnerRef.current;
+    const pre = preLayersRef.current;
+    if (!pre) return;
 
-      if (!panel) return;
+    const layers = Array.from(
+      pre.querySelectorAll(".sm-prelayer")
+    ) as HTMLElement[];
 
-      // collect pre-layers
-      let preLayers: HTMLElement[] = [];
-      if (preContainer) {
-        preLayers = Array.from(
-          preContainer.querySelectorAll(".sm-prelayer")
-        ) as HTMLElement[];
-      }
-      preLayerElsRef.current = preLayers;
+    preLayerElsRef.current = layers;
 
-      const offscreen = position === "left" ? -100 : 100;
-      gsap.set([panel, ...preLayers], { xPercent: offscreen });
+    // distance in the slide direction
+    const dir = position === "left" ? -1 : 1;
+    const distance = pre.offsetWidth * dir;
 
-      // + icon pieces (safe if missing)
-      if (plusH) gsap.set(plusH, { transformOrigin: "50% 50%", rotate: 0 });
-      if (plusV) gsap.set(plusV, { transformOrigin: "50% 50%", rotate: 0 });
-      if (icon) gsap.set(icon, { rotate: 0, transformOrigin: "50% 50%" });
+    // Only seed when closed; when open the timelines own positions.
+    if (!openRef.current && layers.length) {
+      gsap.set(layers, { x: distance });
+    }
+  }, [position, colors]);
 
-      if (textInner) gsap.set(textInner, { yPercent: 0 });
-
-      if (toggleBtnRef.current) {
-        gsap.set(toggleBtnRef.current, { color: menuButtonColor });
-      }
-    });
-    return () => ctx.revert();
-  }, [menuButtonColor, position]);
-
+  useEffect(() => {
+    const onResize = () => {
+      const pre = preLayersRef.current;
+      if (!pre) return;
+      const layers = Array.from(pre.querySelectorAll(".sm-prelayer")) as HTMLElement[];
+      const dir = position === "left" ? -1 : 1;
+      const distance = pre.offsetWidth * dir;
+      if (!openRef.current) gsap.set(layers, { x: distance });
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [position]);
+  
   /* Build open animation timeline */
   const buildOpenTimeline = useCallback(() => {
     const panel = panelRef.current;
-    const layers = preLayerElsRef.current;
-    if (!panel) return null;
+    const preContainer = preLayersRef.current;
+    if (!panel || !preContainer) return null;
 
+    // live layers
+    const layers = Array.from(
+      preContainer.querySelectorAll(".sm-prelayer")
+    ) as HTMLElement[];
+    preLayerElsRef.current = layers;
+
+    // direction + distance
+    const dir = position === "left" ? -1 : 1;
+    const distance = preContainer.offsetWidth * dir;
+
+    // make sure layers are seeded offscreen before animating in
+    gsap.set(layers, { x: distance });
+
+    // kill any in-flight motion
     openTlRef.current?.kill();
     closeTweenRef.current?.kill();
-    closeTweenRef.current = null;
     itemEntranceTweenRef.current?.kill();
 
+    const itemEls = Array.from(panel.querySelectorAll(".sm-panel-itemLabel")) as HTMLElement[];
+    const numberEls = Array.from(panel.querySelectorAll(".sm-panel-list[data-numbering] .sm-panel-item")) as HTMLElement[];
+    const socialTitle = panel.querySelector(".sm-socials-title") as HTMLElement | null;
+    const socialLinks = Array.from(panel.querySelectorAll(".sm-socials-link")) as HTMLElement[];
+
+    const tl = gsap.timeline({ paused: true });
+
+    // seed content states (not positions)
+    tl.add(() => {
+      if (itemEls.length) gsap.set(itemEls, { yPercent: 140, rotate: 10 });
+      if (numberEls.length) gsap.set(numberEls, { ["--sm-num-opacity" as any]: 0 });
+      if (socialTitle) gsap.set(socialTitle, { opacity: 0 });
+      if (socialLinks.length) gsap.set(socialLinks, { y: 25, opacity: 0 });
+    }, 0);
+
+    // prelayers in
+    layers.forEach((el, i) => {
+      tl.fromTo(
+        el,
+        { x: distance },
+        { x: 0, duration: 0.5, ease: "power4.out" },
+        i * 0.07 + 0.02
+      );
+    });
+
+    // panel in
+    const lastTime = layers.length ? (layers.length - 1) * 0.07 + 0.02 : 0;
+    const panelInsertTime = lastTime + (layers.length ? 0.08 : 0);
+    tl.fromTo(panel, { x: distance }, { x: 0, duration: 0.65, ease: "power4.out" }, panelInsertTime);
+
+    // items in
+    if (itemEls.length) {
+      const itemsStart = panelInsertTime + 0.65 * 0.15;
+      tl.to(itemEls, {
+        yPercent: 0,
+        rotate: 0,
+        duration: 1,
+        ease: "power4.out",
+        stagger: { each: 0.1, from: "start" },
+      }, itemsStart);
+
+      if (numberEls.length) {
+        tl.to(numberEls, {
+          ["--sm-num-opacity" as any]: 1,
+          duration: 0.6,
+          ease: "power2.out",
+          stagger: { each: 0.08, from: "start" },
+        }, itemsStart + 0.1);
+      }
+    }
+
+    // socials in
+    if (socialTitle || socialLinks.length) {
+      const socialsStart = panelInsertTime + 0.65 * 0.4;
+      if (socialTitle) tl.to(socialTitle, { opacity: 1, duration: 0.5, ease: "power2.out" }, socialsStart);
+      if (socialLinks.length) {
+        tl.to(socialLinks, {
+          y: 0,
+          opacity: 1,
+          duration: 0.55,
+          ease: "power3.out",
+          stagger: { each: 0.08, from: "start" },
+          onComplete: () => gsap.set(socialLinks, { clearProps: "opacity" }),
+        }, socialsStart + 0.04);
+      }
+    }
+
+    openTlRef.current = tl;
+    return tl;
+  }, [position, colors]);
+
+
+
+
+
+  const buildCloseTimeline = useCallback(() => {
+    const panel = panelRef.current;
+    const preContainer = preLayersRef.current;
+    if (!panel || !preContainer) return null;
+
+    // live-collect layers every time
+    const layers = Array.from(
+      preContainer.querySelectorAll(".sm-prelayer")
+    ) as HTMLElement[];
+    preLayerElsRef.current = layers;
+
+    // kill any in-flight motion
+    openTlRef.current?.kill();
+    closeTweenRef.current?.kill();
+    itemEntranceTweenRef.current?.kill();
+
+    // direction & pixel distance (uniform for everyone)
+    const dir = position === "left" ? -1 : 1;
+    const distance = preContainer.offsetWidth * dir; // same px for all layers
+
+    // tuck content a bit first
     const itemEls = Array.from(
       panel.querySelectorAll(".sm-panel-itemLabel")
     ) as HTMLElement[];
     const numberEls = Array.from(
       panel.querySelectorAll(".sm-panel-list[data-numbering] .sm-panel-item")
     ) as HTMLElement[];
-    const socialTitle = panel.querySelector(
-      ".sm-socials-title"
-    ) as HTMLElement | null;
+    const socialTitle = panel.querySelector(".sm-socials-title") as HTMLElement | null;
     const socialLinks = Array.from(
       panel.querySelectorAll(".sm-socials-link")
     ) as HTMLElement[];
 
-    const layerStates = layers.map((el) => ({
-      el,
-      start: Number(gsap.getProperty(el, "xPercent")),
-    }));
-    const panelStart = Number(gsap.getProperty(panel, "xPercent"));
-
-    if (itemEls.length) gsap.set(itemEls, { yPercent: 140, rotate: 10 });
-    if (numberEls.length) gsap.set(numberEls, { ["--sm-num-opacity" as any]: 0 });
-    if (socialTitle) gsap.set(socialTitle, { opacity: 0 });
-    if (socialLinks.length) gsap.set(socialLinks, { y: 25, opacity: 0 });
-
     const tl = gsap.timeline({ paused: true });
 
-    // layered reveal
-    layerStates.forEach((ls, i) => {
-      tl.fromTo(
-        ls.el,
-        { xPercent: ls.start },
-        { xPercent: 0, duration: 0.5, ease: "power4.out" },
-        i * 0.07
-      );
-    });
-
-    const lastTime = layerStates.length ? (layerStates.length - 1) * 0.07 : 0;
-    const panelInsertTime = lastTime + (layerStates.length ? 0.08 : 0);
-    const panelDuration = 0.65;
-
-    tl.fromTo(
-      panel,
-      { xPercent: panelStart },
-      { xPercent: 0, duration: panelDuration, ease: "power4.out" },
-      panelInsertTime
-    );
-
-    // menu items in
-    if (itemEls.length) {
-      const itemsStart = panelInsertTime + panelDuration * 0.15;
-      tl.to(
-        itemEls,
-        {
-          yPercent: 0,
-          rotate: 0,
-          duration: 1,
-          ease: "power4.out",
-          stagger: { each: 0.1, from: "start" },
-        },
-        itemsStart
-      );
-      if (numberEls.length) {
-        tl.to(
-          numberEls,
-          {
-            duration: 0.6,
-            ease: "power2.out",
-            ["--sm-num-opacity" as any]: 1,
-            stagger: { each: 0.08, from: "start" },
-          },
-          itemsStart + 0.1
-        );
-      }
-    }
-
-    // socials
-    if (socialTitle || socialLinks.length) {
-      const socialsStart = panelInsertTime + panelDuration * 0.4;
-      if (socialTitle)
-        tl.to(
-          socialTitle,
-          { opacity: 1, duration: 0.5, ease: "power2.out" },
-          socialsStart
-        );
-      if (socialLinks.length) {
-        tl.to(
-          socialLinks,
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.55,
-            ease: "power3.out",
-            stagger: { each: 0.08, from: "start" },
-            onComplete: () => gsap.set(socialLinks, { clearProps: "opacity" }),
-          },
-          socialsStart + 0.04
-        );
-      }
-    }
-
-    openTlRef.current = tl;
-    return tl;
-  }, [position]);
-
-
-  const buildCloseTimeline = useCallback(() => {
-    const panel = panelRef.current;
-    const layers = preLayerElsRef.current;
-    if (!panel) return null;
-
-    // Kill any in-flight motion
-    openTlRef.current?.kill();
-    closeTweenRef.current?.kill();
-    itemEntranceTweenRef.current?.kill();
-
-    const offscreen = position === "left" ? -100 : 100;
-
-    // Ensure a consistent starting point for the close sequence:
-    //  - panel is currently at 0 (visible)
-    //  - layers are briefly OFFscreen so they can "introduce" themselves again
-    gsap.set(layers, { xPercent: offscreen });
-
-    // If you want the menu items to tuck away first, do that quickly
-    const itemEls = Array.from(panel.querySelectorAll(".sm-panel-itemLabel")) as HTMLElement[];
-    const numberEls = Array.from(
-      panel.querySelectorAll(".sm-panel-list[data-numbering] .sm-panel-item")
-    ) as HTMLElement[];
-    const socialTitle = panel.querySelector(".sm-socials-title") as HTMLElement | null;
-    const socialLinks = Array.from(panel.querySelectorAll(".sm-socials-link")) as HTMLElement[];
-
-    const tl = gsap.timeline({ paused: true });
-
-    // 0) Tuck content
     if (itemEls.length)
       tl.to(itemEls, {
         yPercent: 140,
@@ -292,38 +278,58 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
         stagger: { each: 0.04, from: "end" },
       }, 0.02);
 
-    // 1) Slide the WHITE PANEL away first
+    // ensure we're starting from resting (no surprise jumps)
+    tl.add(() => {
+      gsap.set([panel, ...layers], { clearProps: "xPercent", x: 0 });
+    }, 0);
+
+    // 1) Slide the white panel away
     const panelOutAt = 0.06;
     tl.to(panel, {
-      xPercent: offscreen,
-      duration: 0.42,
+      x: distance,
+      duration: 0.45,
       ease: "power3.in",
     }, panelOutAt);
 
-    // 2) Briefly "introduce" the colored layers (slide IN to 0) after panel starts leaving
-    const layersInAt = panelOutAt + 0.08;
-    layers.forEach((el, i) => {
-      tl.fromTo(el,
-        { xPercent: offscreen },
-        { xPercent: 0, duration: 0.28, ease: "power3.out" },
-        layersInAt + i * 0.06
-      );
-    });
-
-    // 3) Then slide those layers back OFFscreen (echo of the open reveal)
-    const layersOutAt = layersInAt + 0.14; // small dwell
-    // Animate in reverse order so you see the back-most leave last (feels layered)
-    const rev = [...layers].reverse();
-    rev.forEach((el, i) => {
-      tl.to(el, {
-        xPercent: offscreen,
-        duration: 0.32,
-        ease: "power3.in",
-      }, layersOutAt + i * 0.06);
-    });
+    // 2) Stagger layers out in a clean “fold” (uniform px distance)
+    //    reverse() so the rearmost leaves last (feels layered)
+    const layersOutAt = panelOutAt + 0.08;
+    tl.to([...layers].reverse(), {
+      x: distance,
+      duration: 0.5,
+      ease: "power4.in",
+      stagger: { each: 0.07, from: "start" },
+    }, layersOutAt);
 
     return tl;
   }, [position]);
+
+
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const preContainer = preLayersRef.current;
+      const icon = iconRef.current;
+      const plusH = plusHRef.current;
+      const plusV = plusVRef.current;
+      const textInner = textInnerRef.current;
+
+      // refresh prelayers ref on mount/update
+      const preLayers = preContainer
+        ? (Array.from(preContainer.querySelectorAll(".sm-prelayer")) as HTMLElement[])
+        : [];
+      preLayerElsRef.current = preLayers;
+
+      // reset visuals (no transforms here)
+      if (plusH) gsap.set(plusH, { transformOrigin: "50% 50%", rotate: 0 });
+      if (plusV) gsap.set(plusV, { transformOrigin: "50% 50%", rotate: 0 });
+      if (icon) gsap.set(icon, { rotate: 0, transformOrigin: "50% 50%" });
+      if (textInner) gsap.set(textInner, { yPercent: 0 });
+
+      if (toggleBtnRef.current) gsap.set(toggleBtnRef.current, { color: menuButtonColor });
+    });
+    return () => ctx.revert();
+  }, [menuButtonColor, position, colors]);
+
 
 
 

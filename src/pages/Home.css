@@ -1147,7 +1147,7 @@ body {
 /* Paint the container itself when flipped so back is always gray, even if a face gets hidden */
 .book .book-inner {
   background: transparent !important;
-  border-radius: 6px;
+  border-radius: 0px;
 }
 .book .book-inner.is-flipped {
   background: #2d2d2d !important; /* same gray as covers/spread */

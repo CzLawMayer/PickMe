@@ -448,3 +448,29 @@
 .sm-portal-toggle .sm-toggle-textWrap { font-size: 20px; font-weight: 600; letter-spacing: .3px; line-height: 1; }
 .sm-portal-toggle .sm-icon { width: 14px; height: 14px; } /* keep + small */
 
+/* ===== Per-item hover accents (loop every 4) ===== */
+.staggered-menu-wrapper {
+  --bar1: #fc5f2e;
+  --bar2: #d81b60;
+  --bar3: #6a1b9a;
+  --bar4: #1e88e5;
+}
+
+/* Default: items stay black */
+.sm-panel-list .sm-panel-item { color: #000; }
+.sm-panel-itemLabel { color: inherit; }
+
+/* Assign each item its own accent (repeats every 4) */
+.sm-panel-list .sm-panel-itemWrap:nth-child(4n + 1) .sm-panel-item { --sm-accent: var(--bar1); }
+.sm-panel-list .sm-panel-itemWrap:nth-child(4n + 2) .sm-panel-item { --sm-accent: var(--bar2); }
+.sm-panel-list .sm-panel-itemWrap:nth-child(4n + 3) .sm-panel-item { --sm-accent: var(--bar3); }
+.sm-panel-list .sm-panel-itemWrap:nth-child(4n + 4) .sm-panel-item { --sm-accent: var(--bar4); }
+
+/* On hover/focus only, use that accent */
+.sm-panel-item:hover,
+.sm-panel-item:focus-visible {
+  color: var(--sm-accent);
+}
+
+/* (optional) underline on hover for accessibility */
+.sm-panel-item:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
