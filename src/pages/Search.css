@@ -1,25 +1,232 @@
-.search-page { padding: clamp(16px, 2vw, 24px); }
-.search-header { margin-bottom: 16px; }
-.search-bar { margin-bottom: 16px; }
-.search-bar input {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: inherit;
-  outline: none;
+/* Scoped tweaks for Search page built on top of Reviews/Library layout */
+.search-page .lib-tabs .lib-tab {
+  cursor: pointer;
 }
-.result-card {
-  display: block;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.08);
-  text-decoration: none;
-  color: inherit;
-  margin-bottom: 10px;
+
+/* Highlight the active tab; reuse your bar colors but keep it neutral */
+.search-page .lib-tabs .lib-tab.is-active {
+  background: var(--bar2, #3949ab);
+  color: #fff;
+  border-color: transparent;
 }
-.result-card:hover { border-color: rgba(255,255,255,.18); }
-.result-title { font-weight: 600; }
-.result-meta { opacity: .7; font-size: .9em; }
-.muted { opacity: .7; }
+
+/* Remove the right-side feature column on this page */
+.library-layout.library-layout--full {
+  grid-template-columns: 1fr !important; /* just the left/content */
+}
+
+/* Slot where the identity widget lived: now it's a search field */
+.search-identity-slot {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+}
+
+/* Let the search input stretch nicely */
+.search-identity-slot .lib-search-field {
+  width: clamp(260px, 38vw, 560px);
+}
+
+/* 4 columns on Search (desktop) */
+.search-page .search-books-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap, clamp(16px, 2vw, 28px));
+}
+
+/* Keep single-column layout wrapper (no feature panel) */
+.library-layout.library-layout--full {
+  grid-template-columns: 1fr !important;
+}
+
+/* Use the review-style card look (cover full width, details below) */
+.search-page .lib-card.lib-card--review {
+  display: block !important;
+  height: auto !important;
+  min-width: 0 !important;
+  grid-template-columns: none !important;
+  overflow: visible !important;
+}
+
+/* Big cover taking full column width */
+.search-page .lib-card.lib-card--review .lib-cover {
+  position: relative;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 3 / 4;
+  overflow: hidden !important;
+  background: #111;
+}
+.search-page .lib-card.lib-card--review .lib-cover img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* Details stack below the cover */
+.search-page .lib-card.lib-card--review .lib-details.review-details {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Tidy type sizes (same as Reviews) */
+.search-page .lib-card.lib-card--review .lib-title-line {
+  font-size: clamp(16px, 1.6vw, 20px) !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+}
+.search-page .lib-card.lib-card--review .lib-year-line {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  opacity: 0.9 !important;
+}
+.search-page .lib-card.lib-card--review .lib-author-line {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+  color: rgba(255,255,255,0.8) !important;
+}
+.search-page .lib-card.lib-card--review .lib-row-actions.is-inline {
+  margin-top: 6px !important;
+  gap: 8px !important;
+}
+
+/* Make sure any review overlay styles from Reviews are disabled here */
+.search-page .lib-card.lib-card--review .review-overlay,
+.search-page .lib-card.lib-card--review .review-overlay-inner,
+.search-page .lib-card.lib-card--review .lib-cover::before {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+/* Responsive: drop to 3 / 2 columns as needed */
+@media (max-width: 1280px) {
+  .search-page .search-books-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 820px) {
+  .search-page .search-books-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .search-page .search-books-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Remove any darkening/fade on Search ---------- */
+.search-page .lib-card .lib-cover::before,
+.search-page .lib-card .lib-cover .review-overlay,
+.search-page .lib-card .lib-cover .review-overlay-inner {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+/* Some global css may still try to dim the <img> on hover — undo it here */
+.search-page .lib-card .lib-cover > img:first-child {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Ensure the cover can animate smoothly */
+.search-page .lib-card .lib-cover {
+  transition: transform 180ms ease, box-shadow 180ms ease, outline-color 180ms ease;
+  will-change: transform;
+  outline: 0 solid transparent; /* used for focus ring below */
+}
+
+
+
+
+
+
+/* Kill outlines/borders on Search page cards & their interactive children */
+.search-page .lib-card:focus,
+.search-page .lib-card:focus-visible,
+.search-page .lib-card:active,
+.search-page .lib-card *:focus,
+.search-page .lib-card *:focus-visible,
+.search-page .lib-card *:active,
+.search-page a:focus,
+.search-page a:focus-visible,
+.search-page button:focus,
+.search-page button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Some global styles use :focus-within to draw a ring — neutralize it */
+.search-page .lib-card:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* If your theme draws a selection border on the cover via ::after */
+.search-page .lib-card .lib-cover.is-selected::after,
+.search-page .lib-card:focus-within .lib-cover::after,
+.search-page .lib-card .lib-cover:focus::after,
+.search-page .lib-card .lib-cover:focus-visible::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Anchor & button tap highlight (mobile) */
+.search-page a,
+.search-page button,
+.search-page .meta-icon-btn {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* If any border color is being set on focus, neutralize it */
+.search-page .lib-card,
+.search-page .lib-card .lib-cover,
+.search-page .lib-card .meta-icon-btn {
+  border-color: transparent !important;
+}
+
+
+
+
+/* No outlines/rings on icon buttons */
+.search-page .meta-icon-btn:focus,
+.search-page .meta-icon-btn:focus-visible,
+.search-page .meta-icon-btn:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* Pop only when the COVER itself is hovered */
+@media (hover: hover) and (pointer: fine) {
+  .search-page .lib-card .lib-cover:hover {
+    transform: translateY(-2px) scale(1.015);
+    box-shadow: 0 8px 26px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.25);
+  }
+}
+
+/* Ensure the cover keeps receiving pointer events */
+.search-page .lib-card .lib-cover {
+  pointer-events: auto;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+
