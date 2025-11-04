@@ -382,6 +382,28 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
     animateText(target);
   }, [onMenuOpen, onMenuClose, playOpen, playClose, animateIcon, animateColor, animateText]);
 
+  /* === define closeMenu AFTER the callbacks it depends on === */
+  const closeMenu = useCallback(() => {
+    if (!openRef.current) return;
+    openRef.current = false;
+    setOpen(false);
+    onMenuClose?.();
+    playClose();
+    document.documentElement.removeAttribute("data-sm-open");
+    animateIcon(false);
+    animateColor(false);
+    animateText(false);
+  }, [onMenuClose, playClose, animateIcon, animateColor, animateText]);
+
+  // Optional: ESC to close (defined AFTER closeMenu)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMenu();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closeMenu]);
+
   // global events
   useEffect(() => {
     const onToggle = () => toggleMenu();
@@ -427,12 +449,22 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
           })()}
         </div>
 
+        {open && (
+          <div
+            className="sm-scrim"
+            aria-hidden="true"
+            onClick={closeMenu}
+          />
+        )}
+
         <aside
           id="staggered-menu-panel"
           ref={panelRef}
           className="staggered-menu-panel"
           aria-hidden={!open}
+          onClick={(e) => e.stopPropagation()}
         >
+          {/* prevent outside-close when clicking inside */}
           <div className="sm-panel-inner">
             <ul
               className="sm-panel-list"

@@ -537,3 +537,95 @@
 
 /* Keep the + lines using currentColor (already true in your CSS) */
 .sm-portal-toggle .sm-icon .sm-icon-line { background: currentColor; }
+
+/* === FINAL HARSH OVERRIDES — place at the very end === */
+:root {
+  --app-header-h: 64px;
+  --pad-x: 28px;
+  --sm-toggle-hit: 56px;  /* clickable width for the +/Menu */
+  --menu-gutter: 12px;     /* gap between icons and the +/Menu */
+}
+
+/* Pin the portal header to the far right and neutralize earlier .staggered-menu-header rules */
+.staggered-menu-header.sm-portal-toggle {
+  position: fixed !important;
+  top: 0 !important;
+  left: auto !important;                /* cancel earlier left:0 */
+  right: var(--pad-x, 28px) !important; /* anchor to header padding */
+  width: auto !important;               /* cancel width:100% */
+  height: var(--app-header-h, 64px) !important;
+  padding: 0 !important;                /* cancel 2em padding */
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important; /* no space-between */
+  background: transparent !important;
+  z-index: 2147483647 !important;       /* above everything */
+  pointer-events: none !important;      /* only the button clickable */
+}
+
+/* Only the toggle receives clicks + keep its size tidy */
+.staggered-menu-header.sm-portal-toggle .sm-toggle {
+  pointer-events: auto !important;
+  min-width: var(--sm-toggle-hit);
+  height: var(--app-header-h, 64px);
+  margin: 0 !important;
+  padding: 0 8px !important;
+}
+
+/* Hide the (empty) logo box so it never pushes the toggle left */
+.staggered-menu-header.sm-portal-toggle .sm-logo {
+  display: none !important;
+}
+
+/* Keep + geometry small; let label scale */
+.staggered-menu-header.sm-portal-toggle .sm-toggle-textWrap {
+  font-size: 20px; font-weight: 600; letter-spacing: .3px; line-height: 1;
+}
+.staggered-menu-header.sm-portal-toggle .sm-icon { width: 14px; height: 14px; position: relative; }
+.staggered-menu-header.sm-portal-toggle .sm-icon-line {
+  position: absolute; left: 50%; top: 50%;
+  width: 100%; height: 2px; transform: translate(-50%, -50%);
+  background: currentColor; border-radius: 2px;
+}
+.staggered-menu-header.sm-portal-toggle .sm-icon-line.sm-icon-line-v { width: 2px; height: 100%; }
+
+/* Color: closed=white, open=black (driven by data-sm-open on <html>) */
+.staggered-menu-header.sm-portal-toggle .sm-toggle { color: #fff; }
+:root[data-sm-open="true"] .staggered-menu-header.sm-portal-toggle .sm-toggle { color: #000; }
+
+/* Place Search/Write just LEFT of the +/Menu toggle */
+.app-header .header-icons {
+  position: absolute !important;
+  top: 0 !important;
+  right: calc(var(--pad-x, 28px) + var(--sm-toggle-hit) + var(--menu-gutter)) !important;
+  height: var(--app-header-h, 64px) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  z-index: 60 !important;
+}
+
+/* Push Search/Write further left from the +/Menu */
+:root { --menu-gutter: 30px; }  /* try 24–36px to taste */
+
+
+
+/* Tighten spacing between Search and Write */
+.app-header .header-icons {
+  gap: 2px !important; /* was 12px */
+}
+
+/* Full-viewport click-catcher that closes the menu when you click outside */
+.sm-scrim {
+  position: fixed;
+  inset: 0;
+  background: transparent;       /* or try rgba(0,0,0,.14) if you want a dim */
+  z-index: 8;                    /* below the panel (10), above prelayers (5) */
+  pointer-events: auto;          /* must catch clicks */
+}
+
+/* Ensure the panel stays above the scrim */
+.staggered-menu-panel { z-index: 10; }
+/* You already have .sm-prelayers at z-index: 5 */
