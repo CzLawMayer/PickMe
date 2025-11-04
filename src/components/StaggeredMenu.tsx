@@ -236,6 +236,98 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
     return tl;
   }, [position]);
 
+
+  const buildCloseTimeline = useCallback(() => {
+    const panel = panelRef.current;
+    const layers = preLayerElsRef.current;
+    if (!panel) return null;
+
+    // Kill any in-flight motion
+    openTlRef.current?.kill();
+    closeTweenRef.current?.kill();
+    itemEntranceTweenRef.current?.kill();
+
+    const offscreen = position === "left" ? -100 : 100;
+
+    // Ensure a consistent starting point for the close sequence:
+    //  - panel is currently at 0 (visible)
+    //  - layers are briefly OFFscreen so they can "introduce" themselves again
+    gsap.set(layers, { xPercent: offscreen });
+
+    // If you want the menu items to tuck away first, do that quickly
+    const itemEls = Array.from(panel.querySelectorAll(".sm-panel-itemLabel")) as HTMLElement[];
+    const numberEls = Array.from(
+      panel.querySelectorAll(".sm-panel-list[data-numbering] .sm-panel-item")
+    ) as HTMLElement[];
+    const socialTitle = panel.querySelector(".sm-socials-title") as HTMLElement | null;
+    const socialLinks = Array.from(panel.querySelectorAll(".sm-socials-link")) as HTMLElement[];
+
+    const tl = gsap.timeline({ paused: true });
+
+    // 0) Tuck content
+    if (itemEls.length)
+      tl.to(itemEls, {
+        yPercent: 140,
+        rotate: 10,
+        duration: 0.35,
+        ease: "power3.in",
+        stagger: { each: 0.04, from: "end" },
+      }, 0);
+
+    if (numberEls.length)
+      tl.to(numberEls, {
+        ["--sm-num-opacity" as any]: 0,
+        duration: 0.25,
+        ease: "power2.in",
+        stagger: { each: 0.04, from: "end" },
+      }, 0.02);
+
+    if (socialTitle) tl.to(socialTitle, { opacity: 0, duration: 0.2, ease: "power2.in" }, 0);
+    if (socialLinks.length)
+      tl.to(socialLinks, {
+        y: 25,
+        opacity: 0,
+        duration: 0.25,
+        ease: "power2.in",
+        stagger: { each: 0.04, from: "end" },
+      }, 0.02);
+
+    // 1) Slide the WHITE PANEL away first
+    const panelOutAt = 0.06;
+    tl.to(panel, {
+      xPercent: offscreen,
+      duration: 0.42,
+      ease: "power3.in",
+    }, panelOutAt);
+
+    // 2) Briefly "introduce" the colored layers (slide IN to 0) after panel starts leaving
+    const layersInAt = panelOutAt + 0.08;
+    layers.forEach((el, i) => {
+      tl.fromTo(el,
+        { xPercent: offscreen },
+        { xPercent: 0, duration: 0.28, ease: "power3.out" },
+        layersInAt + i * 0.06
+      );
+    });
+
+    // 3) Then slide those layers back OFFscreen (echo of the open reveal)
+    const layersOutAt = layersInAt + 0.14; // small dwell
+    // Animate in reverse order so you see the back-most leave last (feels layered)
+    const rev = [...layers].reverse();
+    rev.forEach((el, i) => {
+      tl.to(el, {
+        xPercent: offscreen,
+        duration: 0.32,
+        ease: "power3.in",
+      }, layersOutAt + i * 0.06);
+    });
+
+    return tl;
+  }, [position]);
+
+
+
+
   const playOpen = useCallback(() => {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -250,46 +342,32 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
     }
   }, [buildOpenTimeline]);
 
-  const playClose = useCallback(() => {
-    openTlRef.current?.kill();
-    openTlRef.current = null;
-    itemEntranceTweenRef.current?.kill();
+  const playClose = useCallback((after?: () => void) => {
+    const tl = buildCloseTimeline();
+    if (!tl) { after?.(); return; }
 
-    const panel = panelRef.current;
-    const layers = preLayerElsRef.current;
-    if (!panel) return;
-
-    const all: HTMLElement[] = [...layers, panel];
-    closeTweenRef.current?.kill();
-    const offscreen = position === "left" ? -100 : 100;
-
-    closeTweenRef.current = gsap.to(all, {
-      xPercent: offscreen,
-      duration: 0.32,
-      ease: "power3.in",
-      overwrite: "auto",
-      onComplete: () => {
-        const itemEls = Array.from(
-          panel.querySelectorAll(".sm-panel-itemLabel")
-        ) as HTMLElement[];
+    // When done, reset “resting” states so next open anim is clean
+    tl.eventCallback("onComplete", () => {
+      const panel = panelRef.current;
+      if (panel) {
+        const itemEls = Array.from(panel.querySelectorAll(".sm-panel-itemLabel")) as HTMLElement[];
         if (itemEls.length) gsap.set(itemEls, { yPercent: 140, rotate: 10 });
-        const numberEls = Array.from(
-          panel.querySelectorAll(".sm-panel-list[data-numbering] .sm-panel-item")
-        ) as HTMLElement[];
-        if (numberEls.length)
-          gsap.set(numberEls, { ["--sm-num-opacity" as any]: 0 });
-        const socialTitle = panel.querySelector(
-          ".sm-socials-title"
-        ) as HTMLElement | null;
-        const socialLinks = Array.from(
-          panel.querySelectorAll(".sm-socials-link")
-        ) as HTMLElement[];
+        const numberEls = Array.from(panel.querySelectorAll(".sm-panel-list[data-numbering] .sm-panel-item")) as HTMLElement[];
+        if (numberEls.length) gsap.set(numberEls, { ["--sm-num-opacity" as any]: 0 });
+        const socialTitle = panel.querySelector(".sm-socials-title") as HTMLElement | null;
+        const socialLinks = Array.from(panel.querySelectorAll(".sm-socials-link")) as HTMLElement[];
         if (socialTitle) gsap.set(socialTitle, { opacity: 0 });
         if (socialLinks.length) gsap.set(socialLinks, { y: 25, opacity: 0 });
-        busyRef.current = false;
-      },
+      }
+      busyRef.current = false;
+      after?.();
     });
-  }, [position]);
+
+    busyRef.current = true;
+    tl.play(0);
+  }, [buildCloseTimeline]);
+
+
 
   const animateIcon = useCallback((opening: boolean) => {
     const icon = iconRef.current;
@@ -365,18 +443,22 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
   const toggleMenu = useCallback(() => {
     const target = !openRef.current;
     openRef.current = target;
-    setOpen(target);
 
     if (target) {
+      setOpen(true);                // open immediately
       onMenuOpen?.();
       playOpen();
       document.documentElement.setAttribute("data-sm-open", "true");
     } else {
+      // DO NOT setOpen(false) yet — keep panel visible during the slide-out
       onMenuClose?.();
-      playClose();
-      document.documentElement.removeAttribute("data-sm-open");
+      playClose(() => {
+        setOpen(false);             // hide only after animation ends
+        document.documentElement.removeAttribute("data-sm-open");
+      });
     }
 
+    // keep these icon/text/color animations as-is
     animateIcon(target);
     animateColor(target);
     animateText(target);
@@ -386,10 +468,13 @@ const StaggeredMenu: React.FC<StaggeredMenuProps> = (props) => {
   const closeMenu = useCallback(() => {
     if (!openRef.current) return;
     openRef.current = false;
-    setOpen(false);
+
     onMenuClose?.();
-    playClose();
-    document.documentElement.removeAttribute("data-sm-open");
+    playClose(() => {
+      setOpen(false);               // flip after slide completes
+      document.documentElement.removeAttribute("data-sm-open");
+    });
+
     animateIcon(false);
     animateColor(false);
     animateText(false);

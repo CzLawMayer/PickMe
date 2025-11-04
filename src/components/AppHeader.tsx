@@ -50,17 +50,17 @@ export default function AppHeader({ onClickWrite, onClickSearch }: Props) {
 
       {/* Global StaggeredMenu with its own internal (+) toggle */}
         <StaggeredMenu
-            isFixed
-            position="right"
-            items={menuItems}
-            socialItems={socialItems}
-            displaySocials
-            displayItemNumbering
-            colors={["#1e1e22", "#35353c"]}
-            accentColor="#fc5f2e"
-            menuButtonColor="#fff"
-            openMenuButtonColor="#000"
-            changeMenuColorOnOpen
+          isFixed
+          position="right"
+          items={menuItems}
+          socialItems={socialItems}
+          displaySocials
+          displayItemNumbering
+          colors={["#fc5f2e", "#d81b60", "#ff0000ff", "#1e88e5"]} // add more if you like
+          accentColor="#1e88e5"
+          menuButtonColor="#fff"
+          openMenuButtonColor="#000"
+          changeMenuColorOnOpen
         />
     </header>
   );
