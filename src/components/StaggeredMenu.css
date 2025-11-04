@@ -474,3 +474,39 @@
 
 /* (optional) underline on hover for accessibility */
 .sm-panel-item:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+/* The whole menu system shouldn't block the page when closed */
+.staggered-menu-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 40;          /* below your header if needed */
+  pointer-events: none; /* <-- pass clicks through by default */
+}
+
+/* Only when open should it catch pointer events */
+.staggered-menu-wrapper[data-open] {
+  pointer-events: auto;
+}
+
+/* The scrim and the white panel should be clickable when open */
+.staggered-menu-wrapper .sm-scrim,
+.staggered-menu-wrapper .staggered-menu-panel {
+  pointer-events: auto;
+}
+
+/* Prelayer color slides are purely visual — never block clicks */
+.staggered-menu-wrapper .sm-prelayers,
+.staggered-menu-wrapper .sm-prelayer {
+  pointer-events: none;
+}
+
+/* If you portal the (+) toggle, keep it above other stuff */
+.sm-portal-toggle {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  pointer-events: none;            /* container is pass-through */
+}
+.sm-portal-toggle .sm-toggle {
+  pointer-events: auto;            /* but the button is clickable */
+}

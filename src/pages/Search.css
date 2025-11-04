@@ -1,0 +1,25 @@
+.search-page { padding: clamp(16px, 2vw, 24px); }
+.search-header { margin-bottom: 16px; }
+.search-bar { margin-bottom: 16px; }
+.search-bar input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: inherit;
+  outline: none;
+}
+.result-card {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 10px;
+}
+.result-card:hover { border-color: rgba(255,255,255,.18); }
+.result-title { font-weight: 600; }
+.result-meta { opacity: .7; font-size: .9em; }
+.muted { opacity: .7; }
