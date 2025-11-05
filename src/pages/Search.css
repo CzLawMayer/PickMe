@@ -612,3 +612,1542 @@
   .search-page .lib-hero-grid .lib-hero-cta         { grid-area: filter; justify-self: end; }
   .search-page .lib-hero-grid .lib-tabs             { grid-area: tabs; justify-self: center; }
 }
+
+/* ========= Search hero: left | center | right ========= */
+.search-page .lib-hero {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  padding-left: var(--pad-x, 28px);
+  padding-right: var(--pad-x, 28px);
+}
+
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important; /* left flex, center intrinsic, right flex */
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100%;
+}
+
+/* LEFT: search stays to the far left and can grow, but with a sane cap */
+.search-page .lib-hero-grid .search-identity-slot {
+  grid-column: 1;
+  justify-self: start;
+  min-width: 0; /* allow input to shrink on small screens */
+}
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: min(42vw, 560px); /* grows, but won’t eat the center */
+  max-width: 560px;
+}
+
+/* CENTER: the three buttons perfectly centered */
+.search-page .lib-hero-grid .lib-tabs {
+  grid-column: 2;
+  justify-self: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+/* RIGHT: filter pinned to the right edge */
+.search-page .lib-hero-grid .lib-hero-cta {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* Make the input actually use its local width */
+.search-page .search-input-underline { width: 100%; }
+
+/* Responsive: stack neatly under ~720px */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid {
+    grid-template-columns: 1fr min-content;
+    grid-template-areas:
+      "search  filter"
+      "tabs    tabs";
+    row-gap: 12px;
+  }
+  .search-page .lib-hero-grid .search-identity-slot { grid-area: search; justify-self: start; }
+  .search-page .lib-hero-grid .lib-hero-cta         { grid-area: filter; justify-self: end; }
+  .search-page .lib-hero-grid .lib-tabs             { grid-area: tabs;   justify-self: center; }
+  .search-page .lib-hero-grid .search-identity-slot .search-underline {
+    width: 100%; max-width: none; /* let it breathe on mobile */
+  }
+}
+
+/* --- FORCE TABS TO ONE HORIZONTAL ROW --- */
+.search-page .lib-hero-grid .lib-tabs {
+  display: inline-flex !important;   /* intrinsic width, not full row */
+  flex-wrap: nowrap !important;      /* no wrapping */
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: max-content !important;     /* shrink to the buttons */
+  max-width: none !important;
+}
+
+/* Each button stays inline and doesn't expand */
+.search-page .lib-hero-grid .lib-tabs .lib-tab {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;    /* keep label on one line */
+  min-width: 0 !important;
+  width: auto !important;
+  margin: 0 !important;              /* kill stray margins */
+}
+
+/* ——— Left | Center | Right with search flush-left ——— */
+.search-page .lib-hero {
+  padding-left: var(--pad-x, 28px);
+  padding-right: var(--pad-x, 28px);
+}
+
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important; /* left and right fill, tabs intrinsic */
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100%;
+}
+
+/* LEFT: make the cell fill, then pin the control to the left edge */
+.search-page .lib-hero-grid .search-identity-slot {
+  grid-column: 1;
+  justify-self: stretch !important;  /* take the whole left column */
+  min-width: 0;
+}
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  width: 100% !important;           /* use the left column’s full width */
+  max-width: 560px !important;      /* but cap it so it doesn’t crowd center */
+  margin-left: 0 !important;
+  margin-right: auto !important;    /* anchor to far left */
+}
+
+/* CENTER: keep the three buttons perfectly centered in one row */
+.search-page .lib-hero-grid .lib-tabs {
+  grid-column: 2;
+  justify-self: center !important;
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px;
+  width: max-content !important;
+}
+.search-page .lib-hero-grid .lib-tabs .lib-tab {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+}
+
+/* RIGHT: filter hard-pinned to the right edge */
+.search-page .lib-hero-grid .lib-hero-cta {
+  grid-column: 3;
+  justify-self: end !important;
+}
+
+/* Mobile stack */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid {
+    grid-template-columns: 1fr min-content;
+    grid-template-areas:
+      "search  filter"
+      "tabs    tabs";
+    row-gap: 12px;
+  }
+  .search-page .lib-hero-grid .search-identity-slot { grid-area: search; }
+  .search-page .lib-hero-grid .lib-hero-cta         { grid-area: filter; }
+  .search-page .lib-hero-grid .lib-tabs             { grid-area: tabs; justify-self: center; }
+  .search-page .lib-hero-grid .search-identity-slot .search-underline {
+    max-width: none !important; /* full-width on small screens */
+  }
+}
+
+
+/* ===== Ensure the grid vertically centers inside the banner ===== */
+.search-page .lib-hero {
+  /* give the banner a real height envelope */
+  --hero-h: clamp(64px, 8vw, 88px);
+  min-height: var(--hero-h) !important;
+
+  /* flex-center the single child (the grid) vertically */
+  display: flex !important;
+  align-items: center !important;
+
+  /* keep your side paddings */
+  padding-left: var(--pad-x, 28px) !important;
+  padding-right: var(--pad-x, 28px) !important;
+}
+
+/* Make the grid occupy the full banner height & width */
+.search-page .lib-hero > .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;          /* fill the hero’s box */
+  margin: 0 !important;              /* neutralize stray margins */
+}
+
+/* Keep each cluster centered within its own cell */
+.search-page .lib-hero-grid .search-identity-slot,
+.search-page .lib-hero-grid .lib-tabs,
+.search-page .lib-hero-grid .lib-hero-cta {
+  align-self: center !important;
+}
+
+/* (Your layout rules from before stay the same) */
+.search-page .lib-hero-grid .search-identity-slot { grid-column: 1; justify-self: start !important; min-width: 0; }
+.search-page .lib-hero-grid .lib-tabs             { grid-column: 2; justify-self: center !important; display: inline-flex !important; flex-wrap: nowrap !important; gap: 8px; width: max-content !important; }
+.search-page .lib-hero-grid .lib-hero-cta         { grid-column: 3; justify-self: end !important; }
+
+/* Make the left cell fill the grid column */
+.search-page .lib-hero-grid .search-identity-slot {
+  grid-column: 1;
+  justify-self: stretch !important;     /* take the whole left column */
+  min-width: 0 !important;
+}
+
+/* Let the underline use that whole space with a sensible clamp */
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  display: flex !important;
+  width: 100% !important;               /* fill the left column */
+  max-width: none !important;           /* remove old caps */
+}
+
+/* Input should actually draw the long line */
+.search-page .search-input-underline {
+  width: 100% !important;               /* span the underline container */
+  box-sizing: border-box !important;
+}
+
+/* Optional: if you want a visual cap that’s longer than before but not infinite */
+@media (min-width: 900px) {
+  .search-page .lib-hero-grid .search-identity-slot .search-underline {
+    width: clamp(360px, 48vw, 720px) !important;  /* tweak to taste */
+  }
+}
+
+/* ===== Hero layout: [ search | filter | (spacer) | tabs-right ] ===== */
+.search-page .lib-hero {
+  /* keep your padding + vertical centering */
+  --hero-h: clamp(64px, 8vw, 88px);
+  min-height: var(--hero-h) !important;
+  display: flex !important;
+  align-items: center !important;
+  padding-left: var(--pad-x, 28px) !important;
+  padding-right: var(--pad-x, 28px) !important;
+}
+
+/* 4 columns: search | filter | flexible spacer | tabs (right) */
+.search-page .lib-hero > .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: auto min-content 1fr auto !important;
+  align-items: center !important;
+  gap: clamp(12px, 2vw, 24px);
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+}
+
+/* LEFT: search (column 1), allow a sensible width without crowding */
+.search-page .lib-hero-grid .search-identity-slot {
+  grid-column: 1 !important;
+  justify-self: start !important;
+  min-width: 0 !important;
+}
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  display: flex !important;
+  align-items: center !important;
+  width: clamp(260px, 42vw, 560px) !important; /* tweak if needed */
+  max-width: 100% !important;
+}
+
+/* LEFT-NEXT: filter (column 2), hugs the search */
+.search-page .lib-hero-grid .lib-hero-cta {
+  grid-column: 2 !important;
+  justify-self: start !important;
+}
+
+/* RIGHT: tabs all the way to the right (column 4) */
+.search-page .lib-hero-grid .lib-tabs {
+  grid-column: 4 !important;
+  justify-self: end !important;
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: max-content !important;
+}
+.search-page .lib-hero-grid .lib-tabs .lib-tab {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+}
+
+/* Make sure inputs/icons don't shift vertical centering */
+.search-page .search-input-underline { width: 100% !important; line-height: 1.2 !important; }
+.search-page .search-underline .search-icon,
+.search-page .lib-hero .material-symbols-outlined { line-height: 1 !important; display: inline-flex !important; align-items: center !important; }
+
+/* Mobile: search + filter on top row (left), tabs right below and still right-aligned */
+@media (max-width: 720px) {
+  .search-page .lib-hero > .lib-hero-grid {
+    grid-template-columns: 1fr min-content !important;
+    grid-template-areas:
+      "search  filter"
+      ".       tabs";
+    row-gap: 12px;
+  }
+  .search-page .lib-hero-grid .search-identity-slot { grid-area: search !important; }
+  .search-page .lib-hero-grid .lib-hero-cta         { grid-area: filter !important; justify-self: end !important; }
+  .search-page .lib-hero-grid .lib-tabs             { grid-area: tabs !important; justify-self: end !important; }
+  .search-page .lib-hero-grid .search-identity-slot .search-underline {
+    width: 100% !important; max-width: none !important;
+  }
+}
+
+/* ===== Keep the filter INSIDE the top banner ===== */
+
+/* Banner: vertically center its only child */
+.search-page .lib-hero {
+  --hero-h: clamp(64px, 8vw, 88px);
+  position: relative !important;
+  min-height: var(--hero-h) !important;
+  display: flex !important;
+  align-items: center !important;
+  padding-left: var(--pad-x, 28px) !important;
+  padding-right: var(--pad-x, 28px) !important;
+  overflow: visible !important;
+}
+
+/* Grid fills the banner box */
+.search-page .lib-hero > .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: auto min-content 1fr auto !important; /* search | filter | spacer | tabs */
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+}
+
+/* LEFT: search */
+.search-page .lib-hero-grid .search-identity-slot {
+  grid-column: 1 !important;
+  justify-self: start !important;
+  min-width: 0 !important;
+}
+.search-page .lib-hero-grid .search-identity-slot .search-underline {
+  display: flex !important;
+  align-items: center !important;
+  width: clamp(260px, 42vw, 560px) !important;
+  max-width: 100% !important;
+}
+
+/* IMPORTANT: reset any rogue positioning on the filter */
+.search-page .lib-hero-grid .lib-hero-cta {
+  grid-column: 2 !important;
+  justify-self: start !important;
+
+  position: static !important;   /* cancel absolute/fixed from older styles */
+  float: none !important;        /* cancel floats */
+  margin: 0 !important;          /* kill negative/stray margins */
+  transform: none !important;    /* no accidental transforms */
+  top: auto !important; right: auto !important; bottom: auto !important; left: auto !important;
+}
+
+/* RIGHT: tabs all the way right */
+.search-page .lib-hero-grid .lib-tabs {
+  grid-column: 4 !important;
+  justify-self: end !important;
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: max-content !important;
+}
+.search-page .lib-hero-grid .lib-tabs .lib-tab {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+}
+
+/* Keep controls vertically centered (icons/inputs can shift baseline) */
+.search-page .search-underline .search-icon,
+.search-page .lib-hero .material-symbols-outlined {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+/* Mobile stack: search + filter row, tabs below right-aligned */
+@media (max-width: 720px) {
+  .search-page .lib-hero > .lib-hero-grid {
+    grid-template-columns: 1fr min-content !important;
+    grid-template-areas:
+      "search  filter"
+      ".       tabs";
+    row-gap: 12px;
+  }
+  .search-page .lib-hero-grid .search-identity-slot { grid-area: search !important; }
+  .search-page .lib-hero-grid .lib-hero-cta         { grid-area: filter !important; justify-self: end !important; }
+  .search-page .lib-hero-grid .lib-tabs             { grid-area: tabs !important; justify-self: end !important; }
+  .search-page .lib-hero-grid .search-identity-slot .search-underline {
+    width: 100% !important; max-width: none !important;
+  }
+}
+
+/* ===== One-row hero: [ search | filter | (spacer) | tabs ] ===== */
+.search-page .lib-hero {
+  --hero-h: clamp(64px, 8vw, 88px);
+  min-height: var(--hero-h) !important;
+  display: flex !important;          /* center the grid vertically */
+  align-items: center !important;
+  padding-left: var(--pad-x, 28px) !important;
+  padding-right: var(--pad-x, 28px) !important;
+}
+
+.search-page .lib-hero > .lib-hero-grid {
+  /* SINGLE ROW, no implicit wrapping */
+  display: grid !important;
+  grid-template-columns: auto min-content 1fr auto !important; /* search | filter | spacer | tabs */
+  grid-template-rows: 1fr !important;                           /* exactly one row */
+  grid-auto-flow: column !important;                            /* place items left→right */
+  grid-auto-rows: 0 !important;                                 /* don't create extra rows */
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  grid-template-areas: none !important;                         /* kill any earlier 2-row areas */
+}
+
+/* Put EVERY direct child on row 1 */
+.search-page .lib-hero > .lib-hero-grid > * {
+  grid-row: 1 !important;
+}
+
+/* Explicit column placement */
+.search-page .lib-hero-grid .search-identity-slot { grid-column: 1 / 2 !important; justify-self: start !important; min-width: 0 !important; }
+.search-page .lib-hero-grid .lib-hero-cta         { grid-column: 2 / 3 !important; justify-self: start !important; position: static !important; margin: 0 !important; transform: none !important; }
+.search-page .lib-hero-grid .lib-tabs             { grid-column: 4 / 5 !important; justify-self: end   !important; display: inline-flex !important; flex-wrap: nowrap !important; gap: 8px; width: max-content !important; }
+
+/* Make the search line fill its left cell nicely */
+.search-page .lib-hero-grid .search-identity-slot .search-underline { width: clamp(300px, 42vw, 560px) !important; max-width: 100% !important; display: flex !important; align-items: center !important; }
+.search-page .search-input-underline { width: 100% !important; box-sizing: border-box !important; }
+
+/* Normalize icon/button metrics so vertical centering looks perfect */
+.search-page .search-underline .search-icon,
+.search-page .lib-hero .material-symbols-outlined { display: inline-flex !important; align-items: center !important; line-height: 1 !important; }
+
+/* (Optional) If you previously added a mobile 2-row layout, this keeps desktop single-row.
+   Re-apply your mobile stacking only under 720px if you still want it. */
+@media (max-width: 720px) {
+  .search-page .lib-hero > .lib-hero-grid {
+    grid-template-columns: 1fr min-content !important;
+    grid-template-rows: auto auto !important;
+    grid-auto-rows: auto !important;
+    grid-auto-flow: row !important;
+  }
+  .search-page .lib-hero-grid .search-identity-slot { grid-column: 1 / 2 !important; }
+  .search-page .lib-hero-grid .lib-hero-cta         { grid-column: 2 / 3 !important; justify-self: end !important; }
+  .search-page .lib-hero-grid .lib-tabs             { grid-column: 1 / -1 !important; justify-self: end !important; margin-top: 8px; }
+}
+
+/* Center the hero row contents vertically */
+.search-page .lib-hero > .lib-hero-grid {
+  align-items: center !important;
+}
+
+/* Make the search cluster a flex row and center its icon */
+.search-page .search-underline {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px;
+}
+
+/* Normalize BOTH icons to the same metrics */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn .material-symbols-outlined {
+  /* exact same size + box so they line up */
+  font-size: 28px !important;        /* set your preferred size */
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 28px !important;           /* match font-size for a square box */
+  margin: 0 !important;
+  transform: none !important;        /* kill previous nudges */
+}
+
+/* Ensure the filter container sits on the same vertical center as the row */
+.search-page .lib-hero-grid .lib-hero-cta {
+  align-self: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Remove extra paddings that could offset alignment */
+.search-page .lib-filter-btn {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+}
+
+/* ===== Uniform blue squares for Search + Filter ===== */
+.search-page .lib-hero {
+  --icon-box: 40px;                 /* change once, both update */
+  --icon-radius: 10px;
+  --brand-blue: var(--bar2, #3949ab);
+}
+
+/* Same square for both */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: var(--icon-box) !important;
+  height: var(--icon-box) !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: var(--icon-radius) !important;
+
+  background: var(--brand-blue) !important;
+  color: #fff !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 0 0 var(--icon-box) !important; /* prevent shrinking */
+  box-sizing: border-box !important;
+}
+
+/* Inner glyph size (same for both) */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn .material-symbols-outlined {
+  font-size: 22px !important; /* adjust to taste; both stay equal */
+  line-height: 1 !important;
+}
+
+/* Optional: subtle hover for the filter (interactive) */
+@media (hover: hover) and (pointer: fine) {
+  .search-page .lib-filter-btn:hover { transform: translateY(-1px); }
+}
+.search-page .lib-filter-btn:active { transform: translateY(0); }
+.search-page .lib-filter-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Keep the search/input spacing pleasant */
+.search-page .search-underline { gap: 10px; }
+
+/* --- Make both icon squares perfectly square (no rounding) --- */
+.search-page .lib-hero {
+  --icon-box: 40px;            /* adjust once to resize both */
+  --icon-radius: 0px;          /* no rounded edges */
+}
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn {
+  width: var(--icon-box) !important;
+  height: var(--icon-box) !important;
+  border-radius: var(--icon-radius) !important; /* 0 */
+}
+
+/* --- Bring the filter closer to the search --- */
+.search-page .lib-hero > .lib-hero-grid {
+  gap: 8px !important;               /* tighter column gap */
+  column-gap: 8px !important;        /* ensure columns specifically are tight */
+}
+
+/* kill any leftover spacing on the filter cluster */
+.search-page .lib-hero-grid .lib-hero-cta {
+  margin: 0 !important;
+}
+
+/* keep the search icon + input spacing comfy but compact */
+.search-page .search-underline { gap: 8px !important; }
+
+/* keep inner glyph sizes identical */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn .material-symbols-outlined {
+  font-size: 22px !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* === Make search input text match .lib-tab typography (no change to buttons) === */
+.search-page .search-input-underline {
+  font-family: inherit !important;
+  font-weight: 800 !important;
+  font-size: clamp(14px, calc(var(--tab-h) * 0.34), 18px) !important; /* same as .lib-tab */
+  line-height: 1 !important;
+  letter-spacing: normal !important;  /* tabs don't add tracking */
+  text-transform: none !important;    /* tabs are not forced uppercase in your CSS */
+  -webkit-text-fill-color: #fff !important; /* keep visible in WebKit */
+  color: #fff !important;
+}
+
+/* Placeholder styled like a dimmed tab label */
+.search-page .search-input-underline::placeholder {
+  font-weight: 800;
+  font-size: clamp(14px, calc(var(--tab-h) * 0.34), 18px);
+  line-height: 1;
+  color: rgba(255,255,255,0.6);
+}
+
+/* Bigger search text than the tabs */
+.search-page .search-input-underline {
+  font-weight: 800 !important;
+  font-size: clamp(16px, calc(var(--tab-h) * 0.42), 20px) !important; /* was ~0.34 */
+  line-height: 1.2 !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+}
+
+.search-page .search-input-underline::placeholder {
+  font-weight: 800;
+  font-size: clamp(16px, calc(var(--tab-h) * 0.42), 20px);
+  line-height: 1.2;
+  color: rgba(255,255,255,0.65);
+}
+
+/* Base: bigger search text + placeholder */
+.search-page .search-input-underline {
+  font-weight: 800 !important;
+  font-size: clamp(16px, calc(var(--tab-h) * 0.42), 20px) !important;
+  line-height: 1.2 !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+  transition: font-size 140ms ease;  /* smooth size change */
+}
+.search-page .search-input-underline::placeholder {
+  font-weight: 800;
+  font-size: clamp(16px, calc(var(--tab-h) * 0.42), 20px);
+  line-height: 1.2;
+  color: rgba(255,255,255,0.65);
+}
+
+/* When the user is typing (i.e., placeholder not shown), make it larger */
+.search-page .search-input-underline:not(:placeholder-shown) {
+  font-size: clamp(18px, calc(var(--tab-h) * 0.48), 22px) !important;
+}
+
+/* If you also use the popup input (.lib-search-input), mirror the behavior */
+.search-page .lib-search-input {
+  font-weight: 800 !important;
+  font-size: clamp(16px, calc(var(--tab-h) * 0.42), 20px) !important;
+  line-height: 1.2 !important;
+  color: #fff !important;
+  transition: font-size 140ms ease;
+}
+.search-page .lib-search-input:not(:placeholder-shown) {
+  font-size: clamp(18px, calc(var(--tab-h) * 0.48), 22px) !important;
+}
+
+/* === Keep placeholder and typed text identical; no jump === */
+.search-page .search-input-underline {
+  /* one source of truth */
+  --search-fs: clamp(18px, calc(var(--tab-h) * 0.46), 22px);
+
+  font-weight: 800 !important;
+  font-size: var(--search-fs) !important;   /* typed text */
+  line-height: 1.2 !important;
+  padding-bottom: 10px !important;          /* keep underline distance fixed */
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+}
+
+/* placeholder uses the exact same metrics */
+.search-page .search-input-underline::placeholder {
+  font-weight: 800;
+  font-size: var(--search-fs);
+  line-height: 1.2;
+  color: rgba(255,255,255,0.65);
+}
+
+/* kill any earlier "grow when typing" rule */
+.search-page .search-input-underline:not(:placeholder-shown) {
+  font-size: var(--search-fs) !important;
+}
+
+/* === Remove blue squares and enlarge both icons (search + filter) === */
+.search-page .lib-hero {
+  --icon-fs: clamp(26px, 2.4vw, 34px); /* change once to resize both */
+}
+
+/* Kill the square/background styling */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Make BOTH glyphs the same (bigger) size and neatly centered */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn .material-symbols-outlined {
+  font-size: var(--icon-fs) !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+}
+
+/* Keep alignment tidy in the row */
+.search-page .search-underline { 
+  display: inline-flex !important; 
+  align-items: center !important; 
+  gap: 8px !important;            /* space between icon and input */
+}
+.search-page .lib-hero-grid .lib-hero-cta {
+  display: inline-flex !important;
+  align-items: center !important; /* aligns filter icon with search icon */
+}
+
+/* Optional: keep a comfy (invisible) hit area for the filter button */
+.search-page .lib-filter-btn { padding: 4px !important; }
+
+/* === Larger clean icons (search + filter, no background) === */
+.search-page .lib-hero {
+  --icon-fs: clamp(34px, 3vw, 42px); /* bigger shared size for both icons */
+}
+
+/* Remove any background or border from icon wrappers */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Bigger glyphs, perfectly centered */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn .material-symbols-outlined {
+  font-size: var(--icon-fs) !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+/* Align the row nicely */
+.search-page .search-underline {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.search-page .lib-hero-grid .lib-hero-cta {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Maintain comfortable click area without visible box */
+.search-page .lib-filter-btn {
+  padding: 6px !important;
+}
+
+/* === Keep both icons clean, but make the filter icon slightly larger === */
+.search-page .lib-hero {
+  --icon-fs: clamp(34px, 3vw, 42px);   /* base icon size (search) */
+  --filter-fs: clamp(38px, 3.2vw, 46px); /* slightly larger filter icon */
+}
+
+/* Clean base — no background squares */
+.search-page .search-underline .search-icon,
+.search-page .lib-filter-btn {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Search icon */
+.search-page .search-underline .search-icon {
+  font-size: var(--icon-fs) !important;
+  color: #fff !important;
+  line-height: 1 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Filter icon (slightly larger) */
+.search-page .lib-filter-btn .material-symbols-outlined {
+  font-size: var(--filter-fs) !important;
+  color: #fff !important;
+  line-height: 1 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Alignment and spacing */
+.search-page .search-underline {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.search-page .lib-hero-grid .lib-hero-cta {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.search-page .lib-filter-btn {
+  padding: 6px !important; /* invisible hit area */
+}
+
+/* Tiny vertical nudges */
+.search-page .search-underline .search-icon {
+  transform: translateY(3px) !important;   /* push search icon down 1px */
+}
+
+.search-page .lib-filter-btn .material-symbols-outlined {
+  transform: translateY(5px) !important;   /* push filter icon down 3px */
+}
+
+/* Anchor menu to the filter button wrapper */
+.search-page .lib-hero-grid .lib-hero-cta {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Popover aligned under the filter, right edge */
+.search-page .lib-filter-menu {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;     /* align to button's right */
+  left: auto !important;
+  z-index: 2000 !important;
+}
+
+/* Arrow at TOP RIGHT of the popover (border + fill for crisp edge) */
+.search-page .lib-filter-menu::before,
+.search-page .lib-filter-menu::after {
+  content: "";
+  position: absolute;
+  top: -8px;               /* sits above the popover box */
+  right: 14px;             /* arrow position from right edge */
+  width: 0; height: 0;
+  border: 8px solid transparent;
+  pointer-events: none;
+}
+
+/* border (slightly larger) to match the popover outline */
+.search-page .lib-filter-menu::before {
+  top: -9px;
+  border-bottom-color: rgba(255,255,255,0.16);  /* same as popover border */
+}
+
+/* fill (sits on top of the border arrow) */
+.search-page .lib-filter-menu::after {
+  border-bottom-color: rgba(20,20,20,0.98);     /* same as popover bg */
+}
+
+/* Optional: keep it sane on small screens */
+@media (max-width: 720px) {
+  .search-page .lib-filter-menu {
+    right: 0 !important;
+    left: auto !important;
+    max-width: 92vw !important;
+  }
+}
+
+/* Remove any arrow/chevron/close inside the filter popover */
+.search-page .lib-filter-menu::before,
+.search-page .lib-filter-menu::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* If a close/X slipped in, hide it */
+.search-page .lib-filter-menu .lib-search-clear,
+.search-page .lib-filter-menu .lib-search-clear--inside,
+.search-page .lib-filter-menu .close,
+.search-page .lib-filter-menu .dismiss {
+  display: none !important;
+}
+
+/* Just in case any list markers appear */
+.search-page .lib-filter-menu,
+.search-page .lib-filter-menu * {
+  list-style: none !important;
+  background-image: none !important; /* kill UA arrows on inputs/selects */
+}
+
+/* Nudge the filter a bit to the right of the search */
+.search-page .lib-hero-grid .lib-hero-cta {
+  margin-left: 12px !important;  /* tweak: 8–16px to taste */
+}
+
+/* Don’t add extra gap on narrow screens */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid .lib-hero-cta {
+    margin-left: 0 !important;
+  }
+}
+
+/* === Square dark search field (real rectangle, not an underline) === */
+.search-page .lib-hero{
+  --search-h: 46px;                           /* control height */
+  --search-bg: #0e0e0e;                       /* darker fill */
+  --search-bg-focus: #101010;                 /* slightly brighter on focus/hover */
+  --search-br: 0px;                           /* square corners */
+  --search-pad-x: 14px;                       /* horizontal padding */
+  --search-gap: 10px;                         /* icon ↔ text gap */
+  --search-border: 1px solid rgba(255,255,255,0.16);
+  --search-border-focus: 1px solid rgba(255,255,255,0.28);
+  --search-ring: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+/* Treat your existing wrapper as the rectangular field */
+.search-page .search-underline{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: var(--search-gap);
+  height: var(--search-h);
+  padding: 0 var(--search-pad-x);
+  border-radius: var(--search-br);
+  background: var(--search-bg);
+  border: var(--search-border);
+  box-shadow: none;
+  cursor: text;                                 /* click anywhere to focus */
+  width: clamp(260px, 32vw, 560px);             /* feels like a real field */
+}
+
+/* Hover / focus state */
+.search-page .search-underline:hover{
+  background: var(--search-bg-focus);
+}
+.search-page .search-underline:focus-within{
+  background: var(--search-bg-focus);
+  border: var(--search-border-focus);
+  box-shadow: var(--search-ring);
+}
+
+/* Icon inside the rectangle (keeps your tiny vertical nudge) */
+.search-page .search-underline .search-icon{
+  font-size: var(--icon-fs, 34px) !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  margin: 0 !important;
+  transform: translateY(1px); /* your 1px down tweak */
+}
+
+/* The input: fill the rectangle, remove underline */
+.search-page .search-input-underline{
+  flex: 1 1 auto;
+  min-width: 120px;
+  height: 100%;
+  background: transparent !important;
+  border: 0 !important;                /* no bottom line */
+  outline: none !important;
+  padding: 0 !important;               /* vertically centered via height */
+  margin: 0 !important;
+  line-height: 1.2 !important;
+
+  /* same size for typed & placeholder to avoid jumps */
+  --search-fs: clamp(18px, calc(var(--tab-h) * 0.46), 22px);
+  font-weight: 800 !important;
+  font-size: var(--search-fs) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+.search-page .search-input-underline::placeholder{
+  font-weight: 800;
+  font-size: var(--search-fs);
+  color: rgba(255,255,255,0.65);
+}
+
+/* Keep the filter snug to the right of the rectangle */
+.search-page .lib-hero-grid .lib-hero-cta{
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 10px !important;        /* adjust spacing to taste */
+}
+
+/* Mobile: let the field breathe across the row */
+@media (max-width: 720px){
+  .search-page .search-underline{ width: min(88vw, 560px); }
+}
+
+/* ==== FINAL OVERRIDES — square dark search field (no underline) ==== */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+
+  height: 46px !important;
+  padding: 0 14px !important;
+  box-sizing: border-box !important;
+
+  background: #0e0e0e !important;                           /* dark fill */
+  border: 1px solid rgba(255,255,255,0.16) !important;       /* subtle border */
+  border-radius: 0 !important;                                /* square */
+  box-shadow: none !important;
+
+  width: clamp(260px, 32vw, 560px) !important;               /* real field width */
+  cursor: text !important;
+}
+
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline:hover {
+  background: #101010 !important;
+  border-color: rgba(255,255,255,0.28) !important;
+}
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline:focus-within {
+  background: #101010 !important;
+  border-color: rgba(255,255,255,0.28) !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08) !important;
+}
+
+/* icon inside the rectangle */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline .search-icon {
+  font-size: clamp(34px, 3vw, 42px) !important;
+  color: #fff !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  transform: translateY(1px) !important;  /* your 1px nudge */
+}
+
+/* input fills the rectangle; remove the old underline completely */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline .search-input-underline {
+  flex: 1 1 auto !important;
+  min-width: 120px !important;
+  height: 100% !important;
+
+  background: transparent !important;
+  border: 0 !important;                 /* kills bottom border underline */
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+
+  /* placeholder and typed text same size — no jump */
+  --search-fs: clamp(18px, calc(var(--tab-h) * 0.46), 22px);
+  font-weight: 800 !important;
+  font-size: var(--search-fs) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline .search-input-underline::placeholder {
+  font-weight: 800 !important;
+  font-size: var(--search-fs) !important;
+  color: rgba(255,255,255,0.65) !important;
+}
+
+/* keep filter snug next to the new rectangle */
+.search-page .lib-hero-grid .lib-hero-cta {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 10px !important;
+}
+
+/* ==== Single-outline search: one outer rectangle, split fill (orange | dark) ==== */
+.search-page .lib-hero{
+  --search-h: 46px;
+  --outer-bd: 1px solid rgba(255,255,255,0.16);
+  --outer-bd-focus: 1px solid rgba(255,255,255,0.28);
+  --ring: 0 0 0 2px rgba(255,255,255,0.08);
+  --icon-w: 46px;                /* square for the left icon area */
+  --icon-bg: #fc5f2e;            /* orange */
+  --input-bg: #0e0e0e;           /* dark */
+  --pad-x: 14px;
+}
+
+/* Outer rectangle that holds both halves and has the ONLY border */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  height: var(--search-h) !important;
+  box-sizing: border-box !important;
+
+  /* single outline */
+  border: var(--outer-bd) !important;
+  border-radius: 0 !important;
+  background: transparent !important; /* children paint the two halves */
+  overflow: hidden !important;        /* nothing bleeds past the one outline */
+
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: text !important;
+}
+
+/* Focus/hover styling applied to the ONE outer rectangle */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline:hover {
+  border: var(--outer-bd-focus) !important;
+}
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline:focus-within {
+  border: var(--outer-bd-focus) !important;
+  box-shadow: var(--ring) !important;
+}
+
+/* LEFT half — icon area: background only, NO borders */
+.search-page .search-underline .search-icon {
+  width: var(--icon-w) !important;
+  height: var(--search-h) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--icon-bg) !important;   /* orange fill */
+  color: #fff !important;
+  line-height: 1 !important;
+  font-size: clamp(34px, 3vw, 42px) !important;
+  transform: translateY(1px) !important;   /* your 1px nudge */
+  /* critical: NO borders here */
+  border: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* RIGHT half — input area: dark background only, NO borders, starts immediately after icon */
+.search-page .search-underline .search-input-underline {
+  flex: 1 1 auto !important;
+  min-width: 200px !important;
+  height: var(--search-h) !important;
+  background: var(--input-bg) !important;  /* dark fill */
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+
+  /* critical: remove any underline/border so we keep ONE outline total */
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+
+  /* text positioning only to the right, never under the icon */
+  padding: 0 var(--pad-x) !important;  /* horizontal padding inside the dark half */
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  box-sizing: border-box !important;
+
+  /* placeholder and typed text identical */
+  --search-fs: clamp(18px, calc(var(--tab-h) * 0.46), 22px);
+  font-weight: 800 !important;
+  font-size: var(--search-fs) !important;
+}
+.search-page .search-underline .search-input-underline::placeholder {
+  font-weight: 800;
+  font-size: var(--search-fs);
+  color: rgba(255,255,255,0.65);
+}
+
+/* Ensure the filter stays snug and aligned with this control */
+.search-page .lib-hero-grid .lib-hero-cta {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 10px !important;
+}
+
+/* Keep hero inside page margins (no full-bleed, no negative margins) */
+.search-page .lib-hero {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  padding-left: var(--pad-x) !important;
+  padding-right: var(--pad-x) !important;
+}
+
+/* Make the inner grid honor the padding and not drift left */
+.search-page .lib-hero-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  justify-items: start !important;
+  align-items: center !important;
+}
+
+/* Ensure the search block starts exactly at the left margin (no sneaky offsets) */
+.search-page .lib-hero-grid .search-identity-slot {
+  justify-self: start !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* The two-square control: no extra left margin, no negative shifts */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline {
+  margin-left: 0 !important;
+  transform: none !important;
+}
+
+/* 1) Absolutely kill any full-bleed hacks on the hero */
+.search-page .lib-hero {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;                 /* defeats calc(50% - 50vw) */
+  padding-left: var(--pad-x) !important;     /* respect page margin */
+  padding-right: var(--pad-x) !important;
+}
+
+/* 2) Make the inner grid honor that padding and not drift left */
+.search-page .lib-hero-grid {
+  margin-left: 0 !important;
+  padding-left: 0 !important;                /* padding lives on .lib-hero */
+  justify-items: start !important;
+}
+
+/* 3) Nudge ONLY the search block to align exactly with the gutter */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* 4) Final alignment: add a precise left shim to the two-square control */
+.search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline {
+  margin-left: var(--pad-x) !important;      /* start at the same gutter as the page */
+}
+
+/* If that doubles because some builds already include hero padding, swap the line above for: */
+/* .search-page .lib-hero { padding-left: 0 !important; } */
+
+/* Keep hero inside page gutters */
+.search-page .lib-hero {
+  padding-left: var(--pad-x) !important;
+  padding-right: var(--pad-x) !important;
+}
+
+/* One-row layout: [ search ] [ spacer ] [ right buttons ] */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important; /* padding lives on .lib-hero */
+}
+
+/* Right cluster (tabs / actions) hugs the inside edge of the hero padding */
+.search-page .lib-hero-grid .lib-tabs,
+.search-page .lib-hero-grid .lib-hero-cta {
+  justify-self: end !important;
+  margin-right: 0 !important;      /* no extra offset beyond hero padding */
+  padding-right: 0 !important;
+}
+
+/* Nuke any earlier full-bleed/negative-margin hacks on tabs/actions */
+.search-page .lib-tabs {
+  margin-inline: 0 !important;
+  padding-inline: 0 !important;
+  overflow: visible !important;
+}
+
+/* Mobile: keep things tidy */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid {
+    grid-template-columns: 1fr auto !important; /* search + right group */
+    row-gap: 10px !important;
+  }
+}
+
+/* === Force 28px right gutter for right-side controls === */
+.search-page .lib-hero { 
+  /* ensure the hero itself provides the page gutter */
+  padding-right: var(--pad-x) !important; /* --pad-x is 28px in Library.css */
+}
+
+/* One-row layout: [search] [spacer] [right controls] */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important; /* gutters live on .lib-hero */
+  box-sizing: border-box !important;
+}
+
+/* Right cluster sits INSIDE the hero padding (no overflow past 28px) */
+.search-page .lib-hero-grid .lib-tabs,
+.search-page .lib-hero-grid .lib-hero-cta {
+  justify-self: end !important;
+  margin-right: 0 !important;
+  padding-right: 0 !important;            /* clear old padding */
+}
+
+/* If anything still hugs the edge, add an explicit inset */
+.search-page .lib-hero-grid > .lib-tabs:last-child,
+.search-page .lib-hero-grid > .lib-hero-cta:last-child {
+  padding-right: var(--pad-x) !important; /* final nudge = 28px inset */
+  box-sizing: border-box !important;
+}
+
+/* === Align right edge of LAST tab to app header close button & 4th card edge === */
+
+/* 1) Ensure the hero uses the same right gutter as the rest of the app */
+.search-page .lib-hero {
+  padding-right: var(--pad-x) !important; /* --pad-x = 28px */
+}
+
+/* 2) Single-row layout: [search] [spacer] [tabs+filter] */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* kill any older spacer-column hacks */
+}
+.search-page .lib-hero-grid::after { content: none !important; }
+
+/* 3) Tabs flush to the hero's inner right edge (exact same line as header icons) */
+.search-page .lib-hero-grid .lib-tabs {
+  justify-self: end !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* remove earlier tweaks that added hidden padding/negative margins */
+  margin-inline: 0 !important;
+  padding-inline: 0 !important;
+  /* keep gap between buttons without adding space after the last one */
+  gap: clamp(10px, 1.6vw, 16px) !important;
+  overflow: visible !important;
+}
+
+/* Remove any individual margins that could inset the last button */
+.search-page .lib-hero-grid .lib-tabs > .lib-tab {
+  margin: 0 !important;
+}
+
+/* 4) Filter stays right of the search, not affecting tab alignment line */
+.search-page .lib-hero-grid .lib-hero-cta {
+  justify-self: end !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 5) Kill hover-lift offsets that can make the right edge look misaligned */
+.search-page .lib-tabs .lib-tab,
+.search-page .lib-tabs .lib-tab:hover,
+.search-page .lib-tabs .lib-tab:focus-visible {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* === Align right edge of the three buttons with the grid (compensate scrollbar) === */
+
+/* Use the same scrollbar width your grid uses */
+.search-page .library-app { --scrollbar-w: 6px; }  /* matches .lib-scroll::-webkit-scrollbar { width: 6px } */
+
+/* Give the hero an extra right inset so it visually aligns with the grid content edge */
+.search-page .lib-hero {
+  padding-right: calc(var(--pad-x) + var(--scrollbar-w)) !important; /* 28px + 6px on Windows */
+  padding-left: var(--pad-x) !important; /* keep left gutter as-is */
+}
+
+/* Keep one-row layout and remove hidden padding that could fight alignment */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important; /* search | spacer | three buttons */
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important; /* gutters live on .lib-hero */
+}
+
+/* Tabs (the three buttons) hug the hero's inner right edge exactly */
+.search-page .lib-hero-grid .lib-tabs {
+  justify-self: end !important;
+  margin: 0 !important;
+  padding: 0 !important;       /* no extra inset */
+}
+
+/* Ensure individual buttons don’t add stray right margin */
+.search-page .lib-hero-grid .lib-tabs > .lib-tab { margin: 0 !important; }
+
+/* Leave the filter alone (it stays by the search on the left) */
+.search-page .lib-hero-grid .lib-hero-cta {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Optional: if you have overlay scrollbars (macOS), remove the extra 6px */
+@supports (-webkit-overflow-scrolling: touch) {
+  .search-page .lib-hero { padding-right: var(--pad-x) !important; }
+}
+
+/* === FINAL: align the three buttons with the page right margin (28px) === */
+
+/* 1) Ensure the hero itself uses the same gutter as the rest of the app */
+.search-page .lib-hero {
+  padding-right: var(--pad-x) !important; /* --pad-x is 28px in Library.css */
+  padding-left: var(--pad-x) !important;
+}
+
+/* 2) One-row grid: search | spacer | right cluster (tabs) */
+.search-page .lib-hero-grid {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important; /* gutters live on .lib-hero */
+}
+
+/* 3) Nuke ALL inherited side offsets that were pushing tabs past the gutter */
+.search-page .lib-hero-grid > .lib-tabs,
+.search-page .library-app .lib-tabs,
+.search-page .lib-tabs {
+  justify-self: end !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  margin-inline: 0 !important;
+  padding-inline: 0 !important;
+  translate: 0 !important;                  /* cancel any old transforms */
+  transform: none !important;
+  right: auto !important; left: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* 4) Make sure no individual button adds extra right spacing */
+.search-page .lib-hero-grid > .lib-tabs > .lib-tab {
+  margin: 0 !important;
+}
+
+/* 5) Keep the filter independent (do NOT add extra right padding to it) */
+.search-page .lib-hero-grid .lib-hero-cta {
+  justify-self: end !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* === Manual left nudge for the three buttons (tabs) on Search only === */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs {
+  transform: translateX(var(--tabs-nudge, -20px)) !important; /* tweak -18px as needed */
+}
+
+/* Keep the same nudge on hover/focus so it doesn't jump */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:hover,
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
+  transform: translateX(var(--tabs-nudge, -18px)) !important;
+}
+
+/* === Reset & align FILTER to the SEARCH box (same row, same vertical center) === */
+
+/* One row: [ search ] [ filter ] [ spacer ] [ tabs ] */
+.search-page .lib-hero-grid{
+  display: grid !important;
+  grid-template-columns: auto auto 1fr auto !important; /* search | filter | flex | tabs */
+  align-items: center !important;  /* vertical center for all */
+  column-gap: 10px !important;     /* space between search and filter */
+}
+
+/* Filter wrapper right after search */
+.search-page .lib-hero-grid .lib-hero-cta{
+  grid-column: 2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: var(--search-h, 46px) !important; /* match search height */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Filter button = plain icon, no offsets */
+.search-page .lib-hero-cta .lib-cta--icon,
+.search-page .lib-hero-cta .lib-filter-btn{
+  display: inline-grid !important;
+  place-items: center !important;
+  width: auto !important;
+  height: var(--search-h, 46px) !important;  /* align vertically with search */
+  margin: 0 !important;
+  padding: 0 6px !important;                 /* click room without shifting edges */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Icon sizing + remove all previous nudges */
+.search-page .lib-hero-cta .material-symbols-outlined{
+  font-size: 36px !important;   /* make it big, but centered */
+  line-height: 1 !important;
+  transform: none !important;   /* kill translateY tweaks */
+}
+
+/* Make sure the search block is column 1 and keeps its single-outline rectangle */
+.search-page .lib-hero-grid .search-identity-slot{
+  grid-column: 1 !important;
+}
+.search-page .lib-hero-grid .search-identity-slot > .search-underline{
+  height: var(--search-h, 46px) !important;
+  margin: 0 !important;
+}
+
+/* === Even larger, centered FILTER icon === */
+.search-page .lib-hero-cta .lib-cta--icon,
+.search-page .lib-hero-cta .lib-filter-btn {
+  display: inline-grid !important;
+  place-items: center !important;
+  height: var(--search-h, 46px) !important;
+  width: calc(var(--search-h, 46px) * 1.3) !important; /* make the button itself wider */
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+/* Big centered filter icon */
+.search-page .lib-hero-cta .material-symbols-outlined {
+  font-size: 40px !important;  /* make it noticeably bigger */
+  line-height: 1 !important;
+  transform: none !important;
+  color: #fff !important;
+}
+
+/* Gentle hover scaling so it doesn’t pop out of alignment */
+.search-page .lib-hero-cta .lib-cta--icon:hover {
+  filter: brightness(1.2);
+  transform: scale(1.03);
+}
+
+/* Keep layout centered with a slight gap between search and filter */
+.search-page .lib-hero-grid {
+  align-items: center !important;
+  column-gap: 14px !important;
+}
+
+/* === Search input inner padding: space from icon (left) and outline (right) === */
+.search-page .search-underline .search-input-underline {
+  /* tweak these if you want a hair more/less room */
+  --pad-l: 16px;   /* space to the right of the icon square */
+  --pad-r: 16px;   /* space before the right outline */
+
+  padding: 0 var(--pad-r) 0 var(--pad-l) !important;
+}
+
+/* --- Make sure the text inside the search input doesn't touch the left edge --- */
+body .search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline .search-input-underline {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  padding-left: 16px !important;   /* space between icon square and text */
+  padding-right: 16px !important;  /* keep space from right outline too */
+  text-indent: 0 !important;       /* kill any previous indent tricks */
+}
+
+/* keep placeholder the same so it doesn't shift */
+body .search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline .search-input-underline::placeholder {
+  text-indent: 0 !important;
+}
