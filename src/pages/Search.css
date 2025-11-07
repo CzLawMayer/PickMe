@@ -1137,3 +1137,24 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
   stroke: #d81b60 !important;
   color: #d81b60 !important; /* for any fallback font glyphs */
 }
+
+/* Ensure the center column can shrink and let .lib-scroll take scrolling */
+.search-page .library-layout,
+.search-page .library-left {
+  min-height: 0 !important;   /* critical so children can overflow */
+  overflow: hidden !important; /* scrolling happens in .lib-scroll */
+}
+
+/* The scrollable area (same one Books uses) */
+.search-page .lib-scroll {
+  min-height: 0 !important;
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch; /* smooth on iOS */
+  padding-bottom: 24px;              /* breathing room at the end */
+}
+
+/* Users grid shouldn’t create its own scrolling or fixed height */
+.search-page .users-grid {
+  max-height: none !important;
+  overflow: visible !important;
+}
