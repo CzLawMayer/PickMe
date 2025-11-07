@@ -10,7 +10,8 @@ import "./Reviews.css";
 import "./Library.css";
 import "./Search.css";
 
-import { searchBooks } from "@/searchData";
+import { searchBooks, searchUsers } from "@/searchData";
+
 
 type SortKey = "recent" | "title" | "author" | "rating" | "likes" | "saves";
 type BookState = { liked: boolean; saved: boolean; likeCount: number; saveCount: number };
@@ -147,6 +148,16 @@ export default function SearchPage() {
     });
     return () => cancelAnimationFrame(id);
   }, []); // run once on page load
+
+
+  const rawUserResults = useMemo(() => {
+    if (activeKind !== "users") return [];
+    const q = query.trim();
+    if (!q) return [];
+    return searchUsers(q);
+  }, [activeKind, query]);
+
+
 
   return (
     <div className="library-app search-page">
@@ -405,10 +416,53 @@ export default function SearchPage() {
             )}
 
             {activeKind === "users" && (
-              <div className="muted" style={{ padding: "8px 2px" }}>
-                Users search coming next.
-              </div>
+              <>
+                {!query && (
+                  <p className="muted" style={{ padding: "8px 2px" }}>
+                    Type above to search profiles.
+                  </p>
+                )}
+                {query && rawUserResults.length === 0 && (
+                  <p style={{ padding: "8px 2px" }}>
+                    No profiles found for “{query}”.
+                  </p>
+                )}
+
+                <div className="lib-row users-grid">
+                  {rawUserResults.map((u) => (
+                    <div key={u.id} className="user-card" aria-label={`User card for ${u.name}`}>
+                      <div className="user-avatar" aria-hidden="true">
+                        {u.avatarUrl ? (
+                          <img src={u.avatarUrl} alt="" />
+                        ) : (
+                          /* fallback avatar (simple circle user) */
+                          <svg viewBox="0 0 64 64" role="img" aria-label="" focusable="false">
+                            <circle cx="32" cy="21" r="12" fill="none" stroke="currentColor" strokeWidth="4"/>
+                            <path d="M12 56c3-10 14-16 20-16s17 6 20 16" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+                          </svg>
+                        )}
+                      </div>
+
+                      <div className="user-meta">
+                        <div className="user-name" title={u.name}>{u.name}</div>
+                        <div className="user-username">@{u.username}</div>
+                        <div className="user-stats">
+                          <span className="user-books">{u.storiesWritten} Stories</span>
+                          <span className="user-likes">
+                            <span className="material-symbols-outlined" aria-hidden="true">favorite</span>
+                            {u.likesGiven}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {/* fillers to keep the grid rhythm if needed */}
+                  <div className="user-card filler" />
+                  <div className="user-card filler" />
+                </div>
+              </>
             )}
+
             {activeKind === "genres" && (
               <div className="muted" style={{ padding: "8px 2px" }}>
                 Genres search coming next.
