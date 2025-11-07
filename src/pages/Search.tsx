@@ -170,31 +170,52 @@ export default function SearchPage() {
 
                 {/* Center: the three buttons dead-center */}
                 <nav className="lib-tabs" aria-label="Search types">
-                    <button
+                  <button
                     type="button"
                     className={`lib-tab ${activeKind === "books" ? "is-active" : ""}`}
                     onClick={() => setActiveKind("books")}
                     aria-current={activeKind === "books" ? "page" : undefined}
-                    >
-                    Books
-                    </button>
-                    <button
+                  >
+                    <span className="tab-label">Books</span>
+                    <span className="tab-underline" aria-hidden="true">
+                      <span className="seg seg-1" />
+                      <span className="seg seg-2" />
+                      <span className="seg seg-3" />
+                      <span className="seg seg-4" />
+                    </span>
+                  </button>
+
+                  <button
                     type="button"
                     className={`lib-tab ${activeKind === "users" ? "is-active" : ""}`}
                     onClick={() => setActiveKind("users")}
                     aria-current={activeKind === "users" ? "page" : undefined}
-                    >
-                    Users
-                    </button>
-                    <button
+                  >
+                    <span className="tab-label">Users</span>
+                    <span className="tab-underline" aria-hidden="true">
+                      <span className="seg seg-1" />
+                      <span className="seg seg-2" />
+                      <span className="seg seg-3" />
+                      <span className="seg seg-4" />
+                    </span>
+                  </button>
+
+                  <button
                     type="button"
                     className={`lib-tab ${activeKind === "genres" ? "is-active" : ""}`}
                     onClick={() => setActiveKind("genres")}
                     aria-current={activeKind === "genres" ? "page" : undefined}
-                    >
-                    Genres
-                    </button>
+                  >
+                    <span className="tab-label">Genres</span>
+                    <span className="tab-underline" aria-hidden="true">
+                      <span className="seg seg-1" />
+                      <span className="seg seg-2" />
+                      <span className="seg seg-3" />
+                      <span className="seg seg-4" />
+                    </span>
+                  </button>
                 </nav>
+
 
                 {/* Right: Filter stays where it is */}
                 <div className="lib-hero-cta">

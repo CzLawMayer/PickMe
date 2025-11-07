@@ -726,3 +726,137 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
   transform: none !important;
 }
 
+/* --- Bigger spacing & font for Books / Users / Genres --- */
+
+/* 1) Try flex gap first (modern browsers) */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs {
+  gap: 32px !important; /* increase space between buttons */
+}
+
+/* 2) Hard fallback spacing in case some rule kills gap */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs .lib-tab + .lib-tab {
+  margin-left: 32px !important; /* guarantees visible spacing */
+}
+
+/* 3) Larger type (text-hugging buttons) */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs .lib-tab {
+  font-size: 25px !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+}
+
+
+/* --- four-color underline for active tab --- */
+.search-page .lib-hero-grid .lib-tabs .lib-tab {
+  position: relative !important;   /* anchor underline */
+  padding: 0 !important;           /* stays text-hugging */
+}
+
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-label {
+  display: inline-block !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+/* hidden by default */
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline {
+  position: absolute !important;
+  left: 0; right: 0;
+  top: calc(100% + 6px);           /* distance under text */
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  height: 6px;                     /* bar height */
+  opacity: 0;
+  transform: translateY(2px);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+/* show only on active tab */
+.search-page .lib-hero-grid .lib-tabs .lib-tab.is-active .tab-underline {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* segment colors (use your variables) */
+:root,
+.search-page .library-app {
+  --bar1: #fc5f2e;
+  --bar2: #d81b60;
+  --bar3: #6a1b9a;
+  --bar4: #1e88e5;
+}
+
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline .seg { height: 100%; }
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline .seg-1 { background: var(--bar1); }
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline .seg-2 { background: var(--bar2); }
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline .seg-3 { background: var(--bar3); }
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline .seg-4 { background: var(--bar4); }
+
+/* keep layout stable on wrap or resize */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline {
+    top: calc(100% + 5px);
+    height: 5px;
+    gap: 3px;
+  }
+}
+
+/* tighten the 4-color underline so bars touch */
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline {
+  gap: 0 !important;                 /* no space between segments */
+}
+
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline .seg {
+  margin: 0 !important;              /* just in case */
+  width: 100% !important;            /* equal widths */
+  height: 100% !important;
+  display: block !important;
+}
+
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline {
+  transform: translateY(0) translateZ(0) !important;
+}
+
+/* bring the 4-color bar up tight under the label */
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline {
+  /* sit just below text; tighten as needed */
+  top: calc(100% + -8px) !important;  /* was +6px */
+  height: 4px !important;            /* slightly slimmer bar looks tighter */
+  gap: 0 !important;                  /* bars touch */
+  transform: translateY(0) translateZ(0) !important;
+}
+
+/* keep the label compact so the bar hugs it */
+.search-page .lib-hero-grid .lib-tabs .lib-tab .tab-label {
+  line-height: 1 !important;         /* minimize extra vertical space */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* mobile tweak (optional): 1px tighter, thinner bar */
+@media (max-width: 720px) {
+  .search-page .lib-hero-grid .lib-tabs .lib-tab .tab-underline {
+    top: calc(100% + 1px) !important;
+    height: 3px !important;
+  }
+}
+
+/* lift Books/Profiles/Genres + their underline by 5px */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs {
+  transform: translateY(-4px) !important;
+}
+
+/* keep any prior “neutralize transforms” rules from canceling it */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:hover,
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
+  transform: translateY(-4px) !important;
+}
+
+/* (optional) on small screens, keep it tight but a bit less aggressive */
+@media (max-width: 720px) {
+  body .search-page .lib-hero .lib-hero-grid .lib-tabs {
+    transform: translateY(-4px) !important;
+  }
+}
