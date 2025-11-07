@@ -137,6 +137,17 @@ export default function SearchPage() {
     });
   };
 
+  // near your other hooks
+  useEffect(() => {
+    // focus after paint (more reliable than setTimeout 0)
+    const id = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      // optional: select existing text
+      // inputRef.current?.select();
+    });
+    return () => cancelAnimationFrame(id);
+  }, []); // run once on page load
+
   return (
     <div className="library-app search-page">
       {/* HEADER */}
@@ -154,18 +165,53 @@ export default function SearchPage() {
             <div className="lib-hero-grid">
                 {/* Left: search takes remaining space */}
                 <div className="search-identity-slot">
-                    <div className="search-underline" onClick={() => inputRef.current?.focus()}>
-                    <span className="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+                  <div className="search-underline" onClick={() => inputRef.current?.focus()}>
+                    {/* left icon button (already added earlier) */}
+                    <button
+                      type="button"
+                      className="search-icon-btn"
+                      aria-label="Focus search input"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => inputRef.current?.focus()}
+                    >
+                      <span className="material-symbols-outlined">search</span>
+                    </button>
+
                     <input
-                        ref={inputRef}
-                        className="search-input-underline"
-                        type="text"
-                        placeholder="Search…"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        aria-label="Search"
+                      ref={inputRef}
+                      className="search-input-underline"
+                      type="text"
+                      placeholder="Search…"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape" && query) {
+                          setQuery("");
+                          requestAnimationFrame(() => inputRef.current?.focus());
+                        }
+                      }}
+                      aria-label="Search"
+                      autoFocus
+                      inputMode="search"
                     />
-                    </div>
+
+                    {/* right clear button — only when there’s text */}
+                    {query && (
+                      <button
+                        type="button"
+                        className="search-clear-btn"
+                        aria-label="Clear search"
+                        onMouseDown={(e) => e.preventDefault()} // keep focus in input
+                        onClick={() => {
+                          setQuery("");
+                          requestAnimationFrame(() => inputRef.current?.focus());
+                        }}
+                      >
+                        <span className="material-symbols-outlined">close</span>
+                      </button>
+                    )}
+                  </div>
+
                 </div>
 
                 {/* Center: the three buttons dead-center */}

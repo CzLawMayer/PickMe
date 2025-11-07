@@ -860,3 +860,89 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
     transform: translateY(-4px) !important;
   }
 }
+
+/* clickable orange icon that behaves like the field */
+.search-page .search-icon-btn {
+  width: var(--icon-w) !important;
+  height: var(--search-h) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  background: var(--icon-bg) !important;
+  color: #fff !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: text !important;               /* feels like “click to type” */
+  line-height: 1 !important;
+}
+.search-page .search-icon-btn .material-symbols-outlined {
+  font-size: var(--icon-fs, clamp(34px, 3vw, 42px)) !important;
+}
+.search-page .search-icon-btn:hover { filter: brightness(1.05); }
+.search-page .search-icon-btn:focus { outline: none; }
+
+/* make the whole control an anchor for the clear button */
+.search-page .lib-hero .search-underline {
+  position: relative !important;
+}
+
+/* give the input room so the X doesn't overlap text */
+.search-page .search-underline .search-input-underline {
+  padding-right: calc(var(--pad-x, 14px) + 28px) !important; /* 28px space for the X */
+}
+
+/* clear (×) button inside the field, right-aligned */
+.search-page .search-underline .search-clear-btn {
+  position: absolute !important;
+  top: 50% !important;
+  right: var(--pad-x, 14px) !important;       /* aligns with input's inner padding */
+  transform: translateY(-50%) !important;
+
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: rgba(255,255,255,0.85) !important;
+  cursor: pointer !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+/* icon sizing */
+.search-page .search-underline .search-clear-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+/* subtle hover/active without shifting layout */
+@media (hover: hover) and (pointer: fine) {
+  .search-page .search-underline .search-clear-btn:hover {
+    filter: brightness(1.12);
+  }
+}
+.search-page .search-underline .search-clear-btn:focus { outline: none !important; }
+
+/* nudge the clear button further right inside the control */
+.search-page .search-underline .search-clear-btn {
+  right: 6px !important;           /* was var(--pad-x, 14px) */
+}
+
+/* keep text from colliding with the button at the new position */
+.search-page .search-underline .search-input-underline {
+  padding-right: calc(6px + 28px) !important;  /* 28px = button width */
+}
+
+/* make the left search icon feel clickable */
+.search-page .search-icon-btn {
+  cursor: pointer !important;           /* was text */
+}
+
+.search-page .search-icon-btn:hover {
+  filter: brightness(1.07);
+}
