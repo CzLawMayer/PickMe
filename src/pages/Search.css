@@ -539,3 +539,190 @@ body .search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-under
   color: #fff !important;
   border: none !important;
 }
+
+/* === FINAL HARD FREEZE: stop any hover nudge on the right-side text buttons === */
+
+/* 0) Nuke container hover transforms (some builds shift the whole group) */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs,
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:hover,
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
+  transform: none !important;
+  translate: none !important;
+  transition: none !important;
+}
+
+/* 1) Lock each tab's box so width never changes */
+body .search-page .lib-hero-grid .lib-tabs .lib-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  /* text-only, fixed metrics */
+  background: transparent !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+  font-size: clamp(14px, calc(var(--tab-h) * 0.34), 18px) !important;
+  line-height: 1 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+
+  /* zero layout drift */
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  outline: 0 !important;
+
+  /* kill animations & subpixel moves */
+  transition: none !important;
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+
+  /* avoid underline pseudo-lines from other themes */
+  position: relative !important;
+}
+
+/* 2) Keep all interactive states identical */
+body .search-page .lib-hero-grid .lib-tabs .lib-tab:hover,
+body .search-page .lib-hero-grid .lib-tabs .lib-tab:focus,
+body .search-page .lib-hero-grid .lib-tabs .lib-tab:focus-visible,
+body .search-page .lib-hero-grid .lib-tabs .lib-tab:active,
+body .search-page .lib-hero-grid .lib-tabs .lib-tab.is-active {
+  background: transparent !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+  letter-spacing: normal !important;
+  transition: none !important;
+  outline: 0 !important;
+}
+
+/* 3) Kill any fancy underline/indicator bars injected via pseudo-elements */
+body .search-page .lib-hero-grid .lib-tabs .lib-tab::before,
+body .search-page .lib-hero-grid .lib-tabs .lib-tab::after {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* 4) If a child span/link had its own hover transform, flatten it too */
+body .search-page .lib-hero-grid .lib-tabs .lib-tab *,
+body .search-page .lib-hero-grid .lib-tabs .lib-tab *:hover {
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+  text-decoration: none !important;
+  transition: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+/* 5) Ensure the tabs group's spacing doesn't change on hover */
+body .search-page .lib-hero-grid .lib-tabs {
+  gap: clamp(10px, 1.6vw, 16px) !important;
+}
+
+/* Make each tab only as wide as its text */
+.search-page .lib-hero-grid .lib-tabs {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: clamp(10px, 1.6vw, 16px) !important;
+  /* prevent spacing rules from stretching children */
+  justify-content: flex-end !important; /* or center/start per your layout */
+}
+
+.search-page .lib-hero-grid .lib-tabs .lib-tab {
+  /* key bits that stop equal-width behavior */
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  inline-size: auto !important;
+  min-width: 0 !important;
+
+  /* zero extra space */
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+
+  /* keep text tidy */
+  white-space: nowrap !important;
+  font-weight: 800 !important;
+  font-size: clamp(14px, calc(var(--tab-h) * 0.34), 18px) !important;
+  line-height: 1 !important;
+  letter-spacing: normal !important;
+
+  /* no hover drift */
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Active/hover states that don't add size */
+.search-page .lib-hero-grid .lib-tabs .lib-tab:hover,
+.search-page .lib-hero-grid .lib-tabs .lib-tab:focus,
+.search-page .lib-hero-grid .lib-tabs .lib-tab:active,
+.search-page .lib-hero-grid .lib-tabs .lib-tab.is-active {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 1) Make the hero itself own the same gutters as AppHeader */
+.search-page .lib-hero {
+  /* AppHeader uses 28px; inherit the same token if you have it */
+  --pad-x: 38px;
+  box-sizing: border-box !important;
+  padding-right: var(--pad-x) !important; /* <-- key bit */
+}
+
+/* 2) The inner grid must NOT add extra padding/margins */
+.search-page .lib-hero > .lib-hero-grid {
+  margin: 0 !important;
+  padding: 0 !important;    /* gutters live on .lib-hero */
+  width: 100% !important;
+}
+
+/* 3) Tabs hug the hero’s inner right edge with no extra padding/nudges */
+.search-page .lib-hero-grid .lib-tabs {
+  justify-self: end !important;  /* pin to hero’s inner right */
+  padding: 0 !important;         /* no extra space beyond the 28px on hero */
+  margin: 0 !important;
+  transform: none !important;    /* kill previous translateX nudges */
+}
+
+/* If you had that earlier “optional nudge”, hard-neutralize it */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs,
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:hover,
+body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
+  transform: none !important;
+}
+
+/* 4) Keep each tab only as wide as its text (no stretch) */
+.search-page .lib-hero-grid .lib-tabs .lib-tab {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;   /* no added width */
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  white-space: nowrap !important;
+  transition: none !important;
+  transform: none !important;
+}
+
