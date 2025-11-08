@@ -58,12 +58,7 @@
 
 .genre-stripe:hover { filter: brightness(1.06); }
 
-/* active (center) stripe pops a bit */
-.genre-stripe[data-active="true"] {
-  transform: scale(1.06);
-  box-shadow: 0 16px 44px rgba(0,0,0,0.46),
-              inset 0 0 0 1px rgba(255,255,255,0.08);
-}
+
 
 .genre-name {
   position: absolute;
@@ -205,14 +200,7 @@
   will-change: transform, filter !important;
 }
 
-/* active stripe pops above BOTH neighbors */
-.genre-stripe[data-active="true"] {
-  z-index: 999 !important;                   /* sits on top */
-  transform: scale(1.06) translateZ(0) !important;
-  box-shadow:
-    0 18px 48px rgba(0,0,0,0.5),
-    inset 0 0 0 1px rgba(255,255,255,0.10) !important;
-}
+
 
 /* just in case any neighbor had a z-index set somewhere */
 .genre-stripe:not([data-active="true"]) {
@@ -320,4 +308,182 @@
   max-width: min(900px, 92vw) !important;
   font-weight: 600;
   opacity: 0.98;
+}
+
+
+.genre-stripe{
+  background: none !important;   /* we’ll paint with ::before */
+  overflow: visible !important;  /* allow the skewed paint to spill a bit */
+}
+
+:root{
+  /* visual tilt & tiny overscan to avoid hairline gaps */
+  --stripe-tilt-deg: -18deg;   /* ~20° to the right visually */
+  --stripe-bleed: 14px;        /* widen paint so seams never show */
+}
+
+/* draw each colored band as a skewed paint layer */
+.genre-stripe::before{
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(-1 * var(--stripe-bleed));
+  right: calc(-1 * var(--stripe-bleed));
+  z-index: 0;
+  pointer-events: none;
+
+  /* your original gradient hues */
+  background:
+    linear-gradient(-12deg,
+      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
+      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
+
+  /* fast GPU transform for the slant */
+  transform: skewX(var(--stripe-tilt-deg));
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* keep stripes tight together so the skewed paint touches */
+.genres-track{
+  gap: 0 !important;
+}
+
+/* make the active one pop above neighbors (your existing effect) */
+.genre-stripe[data-active="true"]{ z-index: 2; }
+
+/* 1) Nuke visuals on the rectangular box */
+.genre-stripe{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+/* 2) Draw the slanted band on ::before */
+:root{
+  --stripe-tilt-deg: -18deg;  /* tilt to the right */
+  --stripe-bleed: 14px;       /* overpaint to hide seams */
+}
+
+.genre-stripe::before{
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(-1 * var(--stripe-bleed));
+  right: calc(-1 * var(--stripe-bleed));
+  z-index: 0;
+  pointer-events: none;
+
+  /* your gradient */
+  background:
+    linear-gradient(-12deg,
+      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
+      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
+
+  /* move effects here so only the slanted layer shows */
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.38),
+    inset 0 0 0 1px rgba(255,255,255,0.06);
+
+  transform: skewX(var(--stripe-tilt-deg));
+  transform-origin: center;
+  will-change: transform;
+  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+
+/* 3) Hover/active states target ::before (not the base box) */
+.genre-stripe:hover::before{
+  filter: brightness(1.06);
+}
+
+.genre-stripe[data-active="true"]::before{
+  box-shadow:
+    0 16px 44px rgba(0,0,0,0.46),
+    inset 0 0 0 1px rgba(255,255,255,0.08);
+  transform: skewX(var(--stripe-tilt-deg)) scale(1.06);
+}
+
+/* 4) Keep stripes flush so skewed paint touches perfectly */
+.genres-track{ gap: 0 !important; }
+
+
+/* --- HARD KILL of the straight rectangle (base box) --- */
+.genres-viewport .genres-track .genre-stripe,
+.genres-viewport .genres-track .genre-stripe[data-active="true"]{
+  background: transparent !important;
+  background-image: none !important;   /* in case background shorthand re-applies */
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  transform: none !important;          /* neutralize the active scale */
+}
+
+/* also suppress any after-layer someone added earlier */
+.genres-viewport .genres-track .genre-stripe::after{
+  content: none !important;
+  display: none !important;
+}
+
+/* keep only the slanted paint on ::before */
+:root{
+  --stripe-tilt-deg: -18deg;
+  --stripe-bleed: 14px;
+}
+.genres-viewport .genres-track .genre-stripe::before{
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(-1 * var(--stripe-bleed));
+  right: calc(-1 * var(--stripe-bleed));
+  pointer-events: none;
+  z-index: 0;
+
+  background:
+    linear-gradient(-12deg,
+      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
+      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
+
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.38),
+    inset 0 0 0 1px rgba(255,255,255,0.06);
+
+  transform: skewX(var(--stripe-tilt-deg));
+  transform-origin: center;
+  will-change: transform;
+  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+
+/* hover/active now target only the slanted layer */
+.genres-viewport .genres-track .genre-stripe:hover::before{
+  filter: brightness(1.06);
+}
+.genres-viewport .genres-track .genre-stripe[data-active="true"]::before{
+  transform: skewX(var(--stripe-tilt-deg)) scale(1.06);
+  box-shadow:
+    0 16px 44px rgba(0,0,0,0.46),
+    inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+/* stripes remain flush so skewed paint touches perfectly */
+.genres-viewport .genres-track{ gap: 0 !important; }
+
+/* Make the active (center) stripe render above neighbors */
+.genres-viewport .genres-track .genre-stripe{
+  position: relative !important;  /* create stacking context */
+  z-index: 1 !important;          /* default layer for non-active */
+}
+
+.genres-viewport .genres-track .genre-stripe::before{
+  z-index: 0 !important;          /* paint layer sits inside element */
+}
+
+.genres-viewport .genres-track .genre-stripe[data-active="true"]{
+  z-index: 5 !important;          /* lift the active one above sides */
+  /* keep base transform NONE so only ::before scales/tilts */
+  transform: none !important;
+}
+
+.genres-viewport .genres-track .genre-stripe[data-active="true"]::before{
+  transform: skewX(var(--stripe-tilt-deg)) scale(1.06) !important;
 }
