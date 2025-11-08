@@ -1,6 +1,6 @@
 // src/components/GenresCarousel.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { allGenres } from "@/searchData";
+import { allGenres, getGenreDescription } from "@/searchData";
 import "./GenresCarousel.css";
 
 type GenresCarouselProps = { onPick?: (genre: string) => void };
@@ -153,11 +153,20 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
   const offset = centerPad - idx * STEP;
 
   const activeName = base[((idx % N) + N) % N];
+  const activeDesc = getGenreDescription(activeName) || "";
 
   return (
     <div className="genres-overlay" role="region" aria-label="Genres carousel">
-      <div className="genres-title-overlay" aria-live="polite" aria-atomic="true">
-        {activeName}
+      {/* Centered title + description */}
+      <div className="genres-caption" aria-live="polite" aria-atomic="true">
+        <div className="genres-caption-inner">
+            <div className="genres-caption">
+                <div>
+                    <div className="genres-title-overlay">{activeName}</div>
+                    {activeDesc && <div className="genres-desc-overlay">{activeDesc}</div>}
+                </div>
+            </div>
+        </div>
       </div>
 
       <button className="genres-nav genres-nav--left" aria-label="Previous" onClick={prev}>‹</button>

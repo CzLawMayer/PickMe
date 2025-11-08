@@ -1198,3 +1198,22 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
 /* (optional debug) uncomment to confirm the overlay bounds
 .genres-overlay { outline: 2px solid lime !important; }
 */
+
+
+/* --- Results area (scrolls) + supports overlay --- */
+.search-page .lib-scroll {
+  position: relative !important;
+  /* fill viewport under header + hero */
+  min-height: calc(100svh - var(--app-header-h, 64px) - clamp(64px, 8vw, 88px)) !important;
+  height: auto !important;
+
+  /* key fix: allow scrolling here */
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+
+  padding: 0 !important;
+  z-index: 0 !important; /* overlay sits above */
+}
+
+.genres-overlay { pointer-events: none; }
+.genres-nav { pointer-events: auto; }

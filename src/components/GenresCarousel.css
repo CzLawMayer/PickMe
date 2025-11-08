@@ -247,3 +247,77 @@
 
 /* Hide any small per-stripe names (we replaced with overlay) */
 .genre-name { display: none !important; }
+
+
+/* Center the title+description block in the viewport */
+.genres-caption{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none; z-index:60; text-align:center;
+}
+
+/* Keep your existing title sizing — just remove extra margins */
+.genres-title-overlay{ margin:0; }
+
+/* Put the text directly under the title and keep it centered */
+.genres-desc-overlay{
+  margin-top:12px;
+  font-size:clamp(14px,1.6vw,20px);
+  line-height:1.35;
+  max-width:min(800px,90vw);
+  margin-inline:auto;
+  color:#fff;
+}
+
+/* Center the whole caption block */
+.genres-caption{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 60;
+  text-align: center;
+}
+
+/* Stack title above description */
+.genres-caption > div{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Kill any old absolute/transform on the title so it sits in flow */
+.genres-title-overlay{
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  margin: 0 0 10px 0 !important; /* space under the title */
+  line-height: 1.02;
+}
+
+/* Description directly below title */
+.genres-desc-overlay{
+  margin: 0;
+  font-size: clamp(14px, 1.6vw, 20px);
+  line-height: 1.35;
+  max-width: min(820px, 90vw);
+  color: #fff;
+}
+
+/* Title: a touch smaller + more space below */
+.genres-title-overlay{
+  font-size: clamp(40px, 8.8vw, 120px) !important;  /* was larger */
+  margin-bottom: clamp(18px, 2.6vw, 34px) !important; /* bigger gap */
+  letter-spacing: -0.02em;
+}
+
+/* Description: bigger and comfy to read */
+.genres-desc-overlay{
+  font-size: clamp(18px, 2.2vw, 23px) !important;   /* bigger text */
+  line-height: 1.45 !important;
+  max-width: min(900px, 92vw) !important;
+  font-weight: 600;
+  opacity: 0.98;
+}
