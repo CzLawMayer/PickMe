@@ -1158,3 +1158,43 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
   max-height: none !important;
   overflow: visible !important;
 }
+
+
+
+
+
+
+
+
+/* CAROUSEL */
+
+
+.search-page .lib-scroll { position: relative; }
+
+/* Results container must provide height for the overlay */
+.search-page .lib-scroll {
+  position: relative;
+  /* fill the page under the header + hero */
+  min-height: calc(100svh - var(--app-header-h, 64px) - clamp(64px, 8vw, 88px));
+  padding: 0; /* optional: keeps the overlay flush */
+}
+
+/* --- FIX: ensure results area has height so the genres overlay can fill it --- */
+.search-page .lib-scroll {
+  position: relative !important;
+  /* fill viewport under header + hero */
+  min-height: calc(100svh - var(--app-header-h, 64px) - clamp(64px, 8vw, 88px)) !important;
+  height: auto !important;
+  overflow: hidden !important;   /* overlay owns the space; internal scrollers can scroll */
+  padding: 0 !important;
+  z-index: 0 !important;
+}
+
+/* keep the overlay on top of cards/popovers */
+.genres-overlay {
+  z-index: 50 !important;
+}
+
+/* (optional debug) uncomment to confirm the overlay bounds
+.genres-overlay { outline: 2px solid lime !important; }
+*/

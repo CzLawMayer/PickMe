@@ -11,6 +11,8 @@ import "./Library.css";
 import "./Search.css";
 
 import { searchBooks, searchUsers } from "@/searchData";
+import GenresCarousel from "@/components/GenresCarousel";
+
 
 
 type SortKey = "recent" | "title" | "author" | "rating" | "likes" | "saves";
@@ -304,6 +306,17 @@ export default function SearchPage() {
 
           {/* RESULTS */}
           <section className="lib-scroll" aria-label="Search results">
+            {/* GENRES OVERLAY */}
+            {activeKind === "genres" && (
+              <GenresCarousel
+                onPick={(g) => {
+                  console.log("Picked genre:", g);
+                  // later: setActiveKind("books") and filter by g
+                }}
+              />
+            )}
+
+            {/* BOOKS */}
             {activeKind === "books" && (
               <>
                 {!query && (
@@ -320,7 +333,9 @@ export default function SearchPage() {
                 <div className="lib-row search-books-grid">
                   {sortedBooks.map((book) => {
                     const avgRatingNum = parseFloat(
-                      typeof book.rating === "string" ? book.rating : (book.rating ?? "0").toString()
+                      typeof book.rating === "string"
+                        ? book.rating
+                        : (book.rating ?? "0").toString()
                     );
                     const st = bookStates[String(book.id)];
                     const likeActive = st?.liked ?? false;
@@ -358,9 +373,8 @@ export default function SearchPage() {
                               {book.author || "—"}
                             </div>
 
-                            {/* Actions — identical behavior to Reviews */}
                             <div className="lib-row lib-row-actions is-inline" role="group" aria-label="Likes, rating, saves">
-                                <LikeButton
+                              <LikeButton
                                 className={`meta-icon-btn like ${likeActive ? "is-active" : ""}`}
                                 glyphClass="meta-icon-glyph"
                                 countClass="meta-icon-count"
@@ -368,26 +382,25 @@ export default function SearchPage() {
                                 count={likeCount}
                                 onToggle={() => toggleLike(book.id)}
                                 aria-label={likeActive ? "Unlike" : "Like"}
-                                // prevent focus shift + bubbling that might change hover context
                                 onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
                                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                                />
+                              />
 
-                                <button
+                              <button
                                 type="button"
                                 className={`meta-icon-btn star ${(avgRatingNum ?? 0) > 0 ? "is-active" : ""}`}
                                 aria-pressed={(avgRatingNum ?? 0) > 0}
                                 title="Average rating"
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={(e) => e.stopPropagation()}
-                                >
+                              >
                                 <span className="material-symbols-outlined meta-icon-glyph">star</span>
                                 <span className="meta-icon-count">
-                                    {Number.isFinite(avgRatingNum) ? `${avgRatingNum.toFixed(1)}/5` : "—"}
+                                  {Number.isFinite(avgRatingNum) ? `${avgRatingNum.toFixed(1)}/5` : "—"}
                                 </span>
-                                </button>
+                              </button>
 
-                                <SaveButton
+                              <SaveButton
                                 className={`meta-icon-btn save ${saveActive ? "is-active" : ""}`}
                                 glyphClass="meta-icon-glyph"
                                 countClass="meta-icon-count"
@@ -396,11 +409,9 @@ export default function SearchPage() {
                                 onToggle={() => toggleSave(book.id)}
                                 aria-label={saveActive ? "Unsave" : "Save"}
                                 onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
-                                onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                                />
-
+                                onClick={(e) => e.stopPropagation()}
+                              />
                             </div>
-
                           </div>
                         </div>
                       </div>
@@ -415,6 +426,7 @@ export default function SearchPage() {
               </>
             )}
 
+            {/* USERS */}
             {activeKind === "users" && (
               <>
                 {!query && (
@@ -435,7 +447,6 @@ export default function SearchPage() {
                         {u.avatarUrl ? (
                           <img src={u.avatarUrl} alt="" />
                         ) : (
-                          /* fallback avatar (simple circle user) */
                           <svg viewBox="0 0 64 64" role="img" aria-label="" focusable="false">
                             <circle cx="32" cy="21" r="12" fill="none" stroke="currentColor" strokeWidth="4"/>
                             <path d="M12 56c3-10 14-16 20-16s17 6 20 16" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
@@ -456,19 +467,13 @@ export default function SearchPage() {
                       </div>
                     </div>
                   ))}
-                  {/* fillers to keep the grid rhythm if needed */}
                   <div className="user-card filler" />
                   <div className="user-card filler" />
                 </div>
               </>
             )}
-
-            {activeKind === "genres" && (
-              <div className="muted" style={{ padding: "8px 2px" }}>
-                Genres search coming next.
-              </div>
-            )}
           </section>
+
         </div>
       </main>
 

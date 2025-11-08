@@ -1,0 +1,249 @@
+/* ================================
+   GenresCarousel.css
+   ================================ */
+
+.genres-overlay {
+  position: absolute;
+  inset: 0;                     /* cover all of .lib-scroll */
+  z-index: 30;
+  pointer-events: auto;         /* receive clicks */
+}
+
+/* viewport: defines height & clipping; track is absolutely positioned in it */
+.genres-viewport {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;                 /* fill the results area */
+  min-height: 360px;            /* safety */
+}
+
+/* track: only as wide as its content so translate works */
+.genres-track {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+
+  display: flex;
+  align-items: center;
+  gap: var(--stripe-gap, 16px);
+  width: max-content;
+
+  will-change: transform;
+  transform: translate3d(0,0,0);
+}
+
+/* stripes: slim/tall rectangles */
+.genre-stripe {
+  --stripe-w: 260px;
+
+  flex: 0 0 auto;
+  width: var(--stripe-w);
+  height: 100%;
+  min-height: 320px;
+
+  position: relative;
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+
+  background:
+    linear-gradient(-12deg,
+      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
+      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.38),
+              inset 0 0 0 1px rgba(255,255,255,0.06);
+  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+
+.genre-stripe:hover { filter: brightness(1.06); }
+
+/* active (center) stripe pops a bit */
+.genre-stripe[data-active="true"] {
+  transform: scale(1.06);
+  box-shadow: 0 16px 44px rgba(0,0,0,0.46),
+              inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.genre-name {
+  position: absolute;
+  left: 0; right: 0; bottom: 16px;
+  text-align: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: clamp(18px, 4.2vw, 48px);
+  line-height: 1.06;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  padding: 0 8px;
+  pointer-events: none;
+}
+
+/* arrows float on top of stripes; no layout impact */
+.genres-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 36px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+.genres-nav--left  { left: 12px; }
+.genres-nav--right { right: 12px; }
+.genres-nav:hover  { filter: brightness(1.1); }
+.genres-nav:active { transform: translateY(-50%) scale(0.98); }
+
+@media (max-width: 900px) {
+  .genres-nav { width: 48px; height: 48px; font-size: 30px; }
+}
+@media (max-width: 600px) {
+  .genres-nav { width: 44px; height: 44px; font-size: 28px; }
+}
+
+/* GenresCarousel.css */
+
+/* Viewport/track stay the same, just tighten gap to 0 */
+.genres-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--stripe-w, 325px); /* was 260px */
+  gap: var(--stripe-gap, 0px);               /* was 16px */
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+
+/* Slim, tall rectangles */
+.genre-stripe {
+  --stripe-w: 325px; /* was 260px (25% wider) */
+
+  position: relative;
+  width: var(--stripe-w);
+  height: clamp(260px, 60vh, 520px);
+
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+
+  background:
+    linear-gradient(-12deg,
+      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
+      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.38),
+              inset 0 0 0 1px rgba(255,255,255,0.06);
+  transform: translateZ(0);
+  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+
+/* Make the overlay column stretch so the viewport fills all available height */
+.genres-overlay {
+  /* keep your existing rules */
+  align-items: stretch !important; /* was center */
+}
+
+/* The viewport must fill the overlay column */
+.genres-viewport {
+  height: 100% !important;    /* fill from top to bottom */
+  min-height: 0 !important;   /* avoid unexpected clamps */
+  display: grid !important;
+}
+
+/* Let the track stretch its children vertically */
+.genres-track {
+  align-items: stretch !important; /* was center */
+  grid-auto-columns: var(--stripe-w, 325px) !important;
+  gap: var(--stripe-gap, 0px) !important;
+}
+
+/* Each rectangle should fill the full height of the viewport */
+.genre-stripe {
+  --stripe-w: 325px;           /* your 25% wider width */
+  width: var(--stripe-w) !important;
+
+  height: 100% !important;     /* <-- key: take full height of lib-scroll overlay */
+  min-height: 0 !important;    /* prevent clamping */
+  /* keep the rest of your styles (gradient, shadows, transitions, etc.) */
+}
+
+/* If your arrow buttons are absolutely positioned on top, keep them out of layout */
+.genres-nav {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  left: auto; right: auto;     /* each side sets its own */
+  pointer-events: auto !important;
+}
+
+.genres-nav--left  { left: 12px !important; }
+.genres-nav--right { right: 12px !important; }
+
+/* allow overlapping stripes inside the viewport */
+.genres-viewport {
+  overflow: hidden !important;
+}
+.genres-track {
+  overflow: visible !important;              /* neighbors can overlap */
+}
+
+/* base: make each stripe a stacking context */
+.genre-stripe {
+  position: relative !important;
+  z-index: 1 !important;
+  transform-origin: center !important;       /* scale from center */
+  will-change: transform, filter !important;
+}
+
+/* active stripe pops above BOTH neighbors */
+.genre-stripe[data-active="true"] {
+  z-index: 999 !important;                   /* sits on top */
+  transform: scale(1.06) translateZ(0) !important;
+  box-shadow:
+    0 18px 48px rgba(0,0,0,0.5),
+    inset 0 0 0 1px rgba(255,255,255,0.10) !important;
+}
+
+/* just in case any neighbor had a z-index set somewhere */
+.genre-stripe:not([data-active="true"]) {
+  z-index: 2 !important;
+}
+
+
+
+
+/* Big centered title for the active stripe only (we render one overlay) */
+.genres-title-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;                /* never block clicks on stripes/arrows */
+  z-index: 50;                         /* above stripes and arrows */
+  padding-inline: 24px;
+  text-align: center;
+
+  /* Typography */
+  color: #fff;
+  font-weight: 900;
+  line-height: 1.02;
+  text-shadow:
+    0 2px 8px rgba(0,0,0,0.45),
+    0 8px 28px rgba(0,0,0,0.35);
+
+  /* Big responsive size */
+  font-size: clamp(40px, 10vw, 140px);
+}
+
+/* Hide any small per-stripe names (we replaced with overlay) */
+.genre-name { display: none !important; }
