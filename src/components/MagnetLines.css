@@ -1,0 +1,73 @@
+/* Centers content and gives it a controlled box */
+.empty-center {
+  min-height: min(56vh, 640px);
+  display: grid;
+  place-items: center;
+  padding: 24px 8px;
+}
+
+/* The effect lives inside this box */
+.ascii-slot {
+  width: 100%;
+  max-width: 960px;                 /* cap width on large screens */
+  height: clamp(240px, 42vh, 520px);/* responsive, prevents huge growth */
+  margin: 0 auto;                   /* center horizontally */
+  position: relative;               /* create containing block for absolute children */
+  overflow: hidden;                 /* clip anything that might overflow */
+}
+
+/* Let ASCIIText fill the ascii-slot, not the whole page */
+.ascii-slot .ascii-text-container {
+  position: absolute;
+  inset: 0;
+}
+.ascii-slot .ascii-text-container canvas,
+.ascii-slot .ascii-text-container pre {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Keep header & hero above any empty-state art */
+.header,
+.lib-hero {
+  position: relative;
+  z-index: 20;
+}
+
+/* Empty-state ASCII art must sit under UI and not eat clicks */
+.ascii-slot { position: relative; z-index: 0; }
+.ascii-slot .ascii-text-container { position: absolute; inset: 0; z-index: 0; }
+.ascii-slot .ascii-text-container canvas,
+.ascii-slot .ascii-text-container pre {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;   /* <-- important so buttons remain clickable */
+}
+
+
+/* already similar, reiterating the key bits */
+.lib-scroll { display: flex; flex-direction: column; min-height: 0; }
+
+.empty-center {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.ascii-slot {
+  position: relative;
+  width: min(960px, 100%);
+  height: clamp(240px, 42vh, 520px);
+  overflow: hidden;
+}
+
+.ascii-slot .ascii-text-container { position: absolute; inset: 0; }
+.ascii-slot .ascii-text-container canvas,
+.ascii-slot .ascii-text-container pre {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; /* don’t block clicks in the area */
+}
