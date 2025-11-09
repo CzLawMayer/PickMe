@@ -1,4 +1,5 @@
 // src/pages/Search.tsx
+import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -10,7 +11,8 @@ import "./Reviews.css";
 import "./Library.css";
 import "./Search.css";
 
-import { searchBooks, searchUsers } from "@/searchData";
+import { searchBooks, searchUsers, genreCatalog } from "@/searchData";
+import { sampleBooks } from "@/booksData";
 import GenresCarousel from "@/components/GenresCarousel";
 
 
@@ -51,11 +53,36 @@ export default function SearchPage() {
     };
   }, [sortOpen]);
 
+
+  const [genreFilter, setGenreFilter] = useState<string | null>(null);
+
+  function canonGenre(tag: string): string {
+    const t = String(tag).trim().toLowerCase();
+    const hit = genreCatalog.find(
+      g =>
+        g.name.toLowerCase() === t ||
+        (g.aliases && g.aliases.some(a => a.toLowerCase() === t))
+    );
+    return hit ? hit.name : String(tag).trim();
+  }
+
+
+
   // Data (books only for now)
   const rawBookResults = useMemo(() => {
-    if (!query.trim()) return [];
-    return searchBooks(query.trim());
-  }, [query]);
+    // 1) Genre filter wins — scan the full dataset
+    if (genreFilter) {
+      const g = canonGenre(genreFilter);
+      return sampleBooks.filter(b =>
+        (b.tags || []).some(t => canonGenre(t) === g)
+      );
+    }
+
+    // 2) Otherwise, fall back to your existing text search
+    const q = query.trim();
+    if (!q) return [];
+    return searchBooks(q);
+  }, [genreFilter, query]);
 
   const booksWithIndex = useMemo(
     () => rawBookResults.map((b, i) => ({ ...b, __index: i })),
@@ -158,6 +185,8 @@ export default function SearchPage() {
     if (!q) return [];
     return searchUsers(q);
   }, [activeKind, query]);
+
+
 
 
 
@@ -310,8 +339,11 @@ export default function SearchPage() {
             {activeKind === "genres" && (
               <GenresCarousel
                 onPick={(g) => {
-                  console.log("Picked genre:", g);
-                  // later: setActiveKind("books") and filter by g
+                  const cg = canonGenre(g);
+                  setGenreFilter(cg);        // apply canonical genre
+                  setQuery("");              // clear text search
+                  setActiveKind("books");    // jump to the Books tab
+                  setSortKey("recent");      // optional reset
                 }}
               />
             )}
@@ -319,17 +351,42 @@ export default function SearchPage() {
             {/* BOOKS */}
             {activeKind === "books" && (
               <>
-                {!query && (
+                {/* F) Show & clear the active genre */}
+                {genreFilter && (
+                  <div style={{ padding: "8px 2px", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="muted">Filtered by genre:</span>
+                    <button
+                      type="button"
+                      onClick={() => setGenreFilter(null)}
+                      aria-label={`Clear ${genreFilter} filter`}
+                      style={{
+                        fontWeight: 800,
+                        background: "transparent",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.28)",
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {genreFilter} ✕
+                    </button>
+                  </div>
+                )}
+
+                {/* G) Empty states (genre-first, then text fallback) */}
+                {!genreFilter && !query && (
                   <p className="muted" style={{ padding: "8px 2px" }}>
-                    Type above to search books.
+                    Type above to search books or pick a genre.
                   </p>
                 )}
-                {query && sortedBooks.length === 0 && (
+                {(genreFilter || query) && sortedBooks.length === 0 && (
                   <p style={{ padding: "8px 2px" }}>
-                    No books found for “{query}”.
+                    No books found{genreFilter ? ` in “${genreFilter}”` : query ? ` for “${query}”` : ""}.
                   </p>
                 )}
 
+                {/* Books grid */}
                 <div className="lib-row search-books-grid">
                   {sortedBooks.map((book) => {
                     const avgRatingNum = parseFloat(

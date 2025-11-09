@@ -208,16 +208,22 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
         >
           {looped.map((g, i) => {
             const baseIndex = ((i % N) + N) % N;
+            const isActive = i === idx;
             return (
               <button
                 key={`${g}-${i}`}
                 className="genre-stripe"
-                data-active={i === idx}
+                data-active={isActive}
                 title={g}
                 aria-label={g}
                 onClick={() => {
-                  centerOnBaseIndex(baseIndex);
-                  onPick?.(g);
+                  if (!isActive) {
+                    // if it’s a side stripe, slide it to center
+                    centerOnBaseIndex(baseIndex);
+                  } else {
+                    // centered: commit the pick
+                    onPick?.(g);
+                  }
                 }}
                 style={{ ["--stripe-hue" as any]: (i * 37) % 360 }}
               />
