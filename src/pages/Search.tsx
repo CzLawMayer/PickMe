@@ -70,18 +70,20 @@ export default function SearchPage() {
 
   // Data (books only for now)
   const rawBookResults = useMemo(() => {
-    // 1) Genre filter wins — scan the full dataset
-    if (genreFilter) {
-      const g = canonGenre(genreFilter);
-      return sampleBooks.filter(b =>
-        (b.tags || []).some(t => canonGenre(t) === g)
-      );
-    }
+    // 1) Base set: whole library or the chosen genre subset
+    const base = genreFilter
+      ? sampleBooks.filter(b => (b.tags || []).some(t => canonGenre(t) === genreFilter))
+      : sampleBooks;
 
-    // 2) Otherwise, fall back to your existing text search
+    // 2) If no text query, return the base (this shows all books in the picked genre)
     const q = query.trim();
-    if (!q) return [];
-    return searchBooks(q);
+    if (!q) return base;
+
+    // 3) If there *is* a query, filter the base set by that query
+    //    (we reuse your searchBooks() then intersect by id to keep results within the genre)
+    const byQuery = searchBooks(q);
+    const allowed = new Set(base.map(b => String(b.id)));
+    return byQuery.filter(b => allowed.has(String(b.id)));
   }, [genreFilter, query]);
 
   const booksWithIndex = useMemo(
