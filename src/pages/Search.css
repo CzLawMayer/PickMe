@@ -285,7 +285,7 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
   padding: 0 !important;
   margin: 0 !important;
   cursor: text !important;
-  width: clamp(260px, 32vw, 560px) !important;
+  width: var(--search-w, clamp(260px, 32vw, 560px)) !important;
 }
 .search-page .lib-hero .lib-hero-grid .search-identity-slot > .search-underline:hover {
   border: var(--outer-bd-focus) !important;
@@ -1217,3 +1217,6 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
 
 .genres-overlay { pointer-events: none; }
 .genres-nav { pointer-events: auto; }
+
+
+

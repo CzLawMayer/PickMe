@@ -198,7 +198,64 @@ export default function SearchPage() {
   }, [activeKind, query]);
 
 
+  const heroRef = useRef<HTMLElement | null>(null);
 
+useEffect(() => {
+  // Only size the bar when we’re on Books and have at least one card.
+  if (activeKind !== "books") return;
+
+  const hero = heroRef.current;
+  if (!hero) return;
+
+  const grid = document.querySelector<HTMLElement>(".search-page .search-books-grid");
+  if (!grid) return;
+
+  const measure = () => {
+    const firstCard = grid.querySelector<HTMLElement>(".lib-col .lib-card .lib-cover")
+                     ?? grid.querySelector<HTMLElement>(".lib-col .lib-card")
+                     ?? grid.querySelector<HTMLElement>(".lib-col");
+    if (!firstCard) {
+      hero.style.removeProperty("--search-w"); // fall back to default clamp
+      return;
+    }
+
+    const heroRect = hero.getBoundingClientRect();
+    const heroCS = getComputedStyle(hero);
+    const padL = parseFloat(heroCS.paddingLeft || "0");
+    const heroInnerLeft = heroRect.left + padL;
+
+    const firstRect = firstCard.getBoundingClientRect();
+    let w = Math.max(0, firstRect.right - heroInnerLeft);
+
+    // Nice, safe clamps so it never explodes
+    const MIN = 220;        // feel free to tweak
+    const MAX = 560;        // keep aligned with your old max
+    w = Math.max(MIN, Math.min(MAX, Math.round(w)));
+
+    hero.style.setProperty("--search-w", `${w}px`);
+  };
+
+  // Measure now and after layout/loads settle
+  const raf = requestAnimationFrame(measure);
+
+  // Re-measure on resize and when grid changes size
+  const ro = new ResizeObserver(() => measure());
+  ro.observe(grid);
+
+  // Also re-measure when images load (covers can change width slightly)
+  const imgs = grid.querySelectorAll("img");
+  imgs.forEach(img => {
+    if (!img.complete) img.addEventListener("load", measure, { once: true });
+  });
+
+  window.addEventListener("resize", measure);
+
+  return () => {
+    cancelAnimationFrame(raf);
+    ro.disconnect();
+    window.removeEventListener("resize", measure);
+  };
+}, [activeKind, sortedBooks, genreFilter]);
 
 
   return (
@@ -214,7 +271,7 @@ export default function SearchPage() {
       <main className="library-layout library-layout--full">
         <div className="library-left">
           {/* HERO */}
-          <section className="lib-hero" aria-label="Search header">
+          <section ref={heroRef} className="lib-hero" aria-label="Search header">
             <div className="lib-hero-grid">
                 {/* Left: search takes remaining space */}
                 <div className="search-identity-slot">
