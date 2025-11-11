@@ -1,4 +1,3 @@
-// src/components/AppHeader.tsx
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import StaggeredMenu from "@/components/StaggeredMenu";
@@ -6,7 +5,7 @@ import { menuItems, socialItems } from "@/constants/nav";
 import "./AppHeader.css";
 
 type Props = {
-  onClickWrite?: () => void;
+  onClickWrite?: () => void; // kept for compatibility, but unused now
 };
 
 export default function AppHeader({ onClickWrite }: Props) {
@@ -27,29 +26,19 @@ export default function AppHeader({ onClickWrite }: Props) {
       </h1>
 
       <div className="header-icons">
-        {/* Search as a Link */}
-        <Link
-          to="/search"
-          className="header-icon-btn"
-          aria-label="Search"
-        >
+        {/* Search */}
+        <Link to="/search" className="header-icon-btn" aria-label="Search">
           <span className="material-symbols-outlined" aria-hidden="true">search</span>
           <span className="sr-only">Search</span>
         </Link>
 
-        {/* Write remains a button (keeps custom handler) */}
-        <button
-          type="button"
-          className="header-icon-btn"
-          aria-label="Write a story"
-          onClick={onClickWrite}
-        >
+        {/* Write -> Submit page */}
+        <Link to="/submit" className="header-icon-btn" aria-label="Submit a story">
           <span className="material-symbols-outlined" aria-hidden="true">edit</span>
-          <span className="sr-only">Write</span>
-        </button>
+          <span className="sr-only">Submit</span>
+        </Link>
       </div>
 
-      {/* Global StaggeredMenu with its own (+) toggle */}
       <StaggeredMenu
         isFixed
         position="right"
