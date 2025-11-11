@@ -110,32 +110,19 @@ function BooksSection({
   onLeaveAll: () => void;
   className?: string;
 }) {
-  const { railRef, rowH } = useRailFit(books.length);
-
   return (
     <section className={`submit-section ${className}`}>
-        <div className="submit-head">
+      <div className="submit-head">
         <h2 className="submit-title">{title}</h2>
         <div className="submit-bars">
-            <div className="bar bar-1" />
-            <div className="bar bar-2" />
-            <div className="bar bar-3" />
-            <div className="bar bar-4" />
+          <div className="bar bar-1" />
+          <div className="bar bar-2" />
+          <div className="bar bar-3" />
+          <div className="bar bar-4" />
         </div>
-        </div>
+      </div>
 
-
-      <div
-        className="books-rail"
-        ref={railRef}
-        onMouseLeave={onLeaveAll}
-        style={
-          rowH
-            ? ({ ["--row-h" as any]: `${rowH}px` } as React.CSSProperties)
-            : undefined
-        }
-        aria-label={`${title} books`}
-      >
+      <div className="books-rail" onMouseLeave={onLeaveAll} aria-label={`${title} books`}>
         <div className="books-track">
           {books.map((b) => (
             <button
@@ -143,11 +130,7 @@ function BooksSection({
               className="book-tile"
               aria-label={b.title}
               onMouseEnter={() => onHoverBook(b)}
-              style={
-                b.coverUrl
-                  ? { backgroundImage: `url(${b.coverUrl})` }
-                  : undefined
-              }
+              style={b.coverUrl ? { backgroundImage: `url(${b.coverUrl})` } : undefined}
             />
           ))}
         </div>

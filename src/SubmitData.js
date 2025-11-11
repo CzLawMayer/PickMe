@@ -31,6 +31,9 @@
 /* -------------------------------------------------
    In-Progress: make up 1 book (counts all set to 0)
    ------------------------------------------------- */
+/* -------------------------------------------------
+   In-Progress: 15 lightweight items for scroll test
+   ------------------------------------------------- */
 export const inProgressBooks =
 /** @type {SubmitBook[]} */([
   {
@@ -42,14 +45,11 @@ export const inProgressBooks =
     language: "English",
     mainGenre: "Fantasy",
     subGenres: ["Adventure", "Mystery", "Coming-of-Age"],
-    isbn: null,                       // optional; not assigned yet
+    isbn: null,
     nsfw: "no",
     allowComments: "yes",
     numberOfChapters: 12,
-    chapters: Array.from({ length: 12 }, (_, i) => ({
-      title: null,                    // you can rename later; defaults like "Chapter 1"
-      content: ""                     // you’ll fill this
-    })),
+    chapters: Array.from({ length: 12 }, () => ({ title: null, content: "" })),
     summary:
       "An apprentice mapmaker discovers living cartography beneath a desert metropolis and must chart a route before the city’s memory turns to sand.",
     likes: 0,
@@ -60,8 +60,42 @@ export const inProgressBooks =
     backCoverUrl:
       "https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=1200&auto=format&fit=crop",
     currentChapter: 0
-  }
+  },
+  // Add 14 quick items with minimal fields (enough for your rails/feature)
+  ...Array.from({ length: 14 }, (_, i) => {
+    const n = i + 2; // sub-002 .. sub-015
+    const covers = [
+      "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1528207776546-365bb710ee93?q=80&w=1200&auto=format&fit=crop",
+    ];
+    return {
+      id: `sub-${String(n).padStart(3, "0")}`,
+      title: `WIP Book ${n}`,
+      author: "Test Author",
+      date: "2025-11-01",
+      copyright: "© 2025 Test",
+      language: "English",
+      mainGenre: ["Fantasy","Sci-Fi","Mystery","Drama","Adventure"][i % 5],
+      subGenres: [],
+      isbn: null,
+      nsfw: "no",
+      allowComments: "yes",
+      numberOfChapters: 10,
+      chapters: [],
+      summary: "Placeholder summary for scroll testing.",
+      likes: 0,
+      rating: 0,
+      saves: 0,
+      coverUrl: covers[i % covers.length],
+      backCoverUrl: covers[(i + 1) % covers.length],
+      currentChapter: 0
+    };
+  })
 ]);
+
 
 /* -------------------------------------------------
    Published: bk-001 (filled in with plausible data)
