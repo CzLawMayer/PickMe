@@ -1217,3 +1217,11 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
 
 .genres-overlay { pointer-events: none; }
 .genres-nav { pointer-events: auto; }
+
+
+/* Nudge helper and empty-state elements for alignment */
+.search-page .lib-scroll > p,
+.search-page .lib-scroll > div:has(> .muted) {
+  margin-left: 28px;  /* push right */
+  margin-top: 10px;   /* push down a bit */
+}
