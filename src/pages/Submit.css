@@ -1,3 +1,179 @@
-.submit-app-blank {
-  min-height: 100svh; /* just ensures full-height canvas */
+/* =========================
+   Submit.css — clean baseline
+   ========================= */
+
+/* ---- Layout tokens ---- */
+:root { --panel-w: 360px; }
+.submit-app { --app-header-h: 64px; } /* set to your REAL header height */
+
+/* ---- Page scaffold: main area is the only scroller ---- */
+html, body, #root { height: 100%; }
+body { margin: 0; overflow: hidden; } /* lock body; let .submit-page scroll */
+
+.submit-app{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #111;
+  color: #fff;
 }
+
+/* Reserve space for the fixed right panel so content never hides behind it */
+.submit-page{
+  position: relative;
+  box-sizing: border-box;
+  height: calc(100svh - var(--app-header-h));
+  min-height: 0;
+  overflow: auto;
+
+  /* page padding + right reservation for panel */
+  --page-pad: clamp(12px, 2vw, 24px);
+  padding: var(--page-pad);
+  padding-right: calc(var(--panel-w) + var(--page-pad));
+}
+
+/* Optional content grid wrapper (left column only, since panel is fixed) */
+.submit-page .submit-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: clamp(18px, 2.2vw, 28px);
+  min-width: 0;
+  min-height: 0;
+}
+
+.grid-left{
+  display: grid;
+  grid-template-rows: auto auto; /* In Progress, Published */
+  gap: clamp(18px, 2.2vw, 28px);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* =========================
+   Right Feature Panel (fixed)
+   ========================= */
+.feature-slot{
+  position: fixed;
+  /* top hugs under header; right & bottom hug viewport; width = token */
+  inset: var(--app-header-h) 0 0 auto;
+  width: var(--panel-w);
+  z-index: 50;
+
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden; /* clip inside edges cleanly */
+}
+
+/* Let FeaturePanel fill the slot; do NOT change its inner padding */
+.feature-slot > .feature-card{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 0; /* flush to the page edge */
+  box-sizing: border-box;
+}
+
+/* =========================
+   Section heading + underline
+   ========================= */
+.submit-section{ min-width: 0; }
+
+.submit-head{
+  display: inline-block;      /* shrink-wrap to title width */
+}
+
+.submit-title{
+  margin: 0 0 8px 0;
+  font-size: clamp(1.4rem, 3.6vw, 2.2rem);
+  line-height: 1.1;
+  font-weight: 800;
+  white-space: nowrap;        /* predictable underline width */
+}
+
+/* Four-color underline that exactly matches the title width */
+.submit-bars{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;                     /* stuck together; no gaps */
+  width: 100%;                /* equals .submit-head width (title width) */
+  height: 8px;                /* sharp edge (no radius) */
+}
+
+.submit-bars .bar{ border-radius: 0; }
+.bar-1 { background: #fc5f2e; }  /* orange */
+.bar-2 { background: #d81b60; }  /* pink */
+.bar-3 { background: #6a1b9a; }  /* purple */
+.bar-4 { background: #1e88e5; }  /* blue */
+
+/* =========================
+   Books rail (simple, no black strip)
+   ========================= */
+/* JS sets --row-h on .books-rail; we keep everything inside that height */
+.books-rail{
+  --tile-gap: 16px;                 /* read by JS; keep in px */
+  --row-h: 220px;                   /* fallback if JS hasn’t run yet */
+  min-height: var(--row-h);
+  height: var(--row-h);             /* rail height is the tile height */
+  overflow: hidden;                 /* ensure children never escape vertically */
+}
+
+/* Horizontal scroller: only shows if content exceeds width */
+.books-track{
+  display: flex;
+  align-items: center;
+  gap: var(--tile-gap);
+  height: 100%;                     /* equals rail height */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;              /* tiny buffer so scrollbar doesn’t overlap */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.books-track::-webkit-scrollbar{ height: 6px; }
+.books-track::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,0.25);
+  border-radius: 999px;
+}
+.books-track::-webkit-scrollbar-track{ background: transparent; }
+
+/* Book tiles: 2:3, sharp corners, scale from the rail height */
+.book-tile{
+  /* width derives from height to keep 2:3 ratio */
+  height: 100%;                               /* fill the rail vertically */
+  width: calc(var(--row-h) * (2 / 3));
+  min-width: calc(var(--row-h) * (2 / 3));
+  flex: 0 0 auto;                              /* no grow/shrink */
+  border: 0;
+  border-radius: 0;                            /* sharp corners */
+  background: #222 center / cover no-repeat;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+.book-tile:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.34);
+}
+
+/* =========================
+   Small screens (optional)
+   ========================= */
+/* If you prefer the feature panel to stack below content on narrow screens,
+   uncomment this block. Otherwise, the panel will stay fixed on the right. */
+/*
+@media (max-width: 920px){
+  .feature-slot{
+    position: static;
+    width: 100%;
+    inset: auto;
+    height: auto;
+  }
+  .submit-page{
+    padding-right: var(--page-pad);  // no need to reserve the fixed panel
+  }
+}
+*/
