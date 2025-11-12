@@ -1,0 +1,588 @@
+:root{
+  --modal-bg: #1f1f1f;
+  --ink: #fff;
+  --muted: #bdbdbd;
+
+  /* label colors (match your UI) */
+  --c-orange: #ef6c00;   /* Title/Author/Language */
+  --c-pink:   #d81b60;   /* Date/Copy/Allow comments */
+  --c-purple: #6a1b9a;   /* Main Genre/ISBN */
+  --c-blue:   #1e88e5;   /* Sub-Genres/NSFW */
+
+  --pad: 16px;
+  --gap: 14px;
+}
+
+/* ---- overlay ---- */
+.submodal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+/* ---- modal container: 90% page area ---- */
+.submodal{
+  width: 90vw;
+  height: 90vh;
+  background: var(--modal-bg);
+  color: var(--ink);
+  border: 2px solid rgba(255,255,255,.08);
+  border-radius: 6px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  position: relative;
+  overflow: hidden;
+}
+
+/* close X */
+.submodal-close{
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 28px;
+  line-height: 1;
+  color: #fff;
+  opacity: .9;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* two columns */
+.submodal-grid{
+  display: grid;
+  grid-template-columns: 42% 58%;
+  gap: 20px;
+  height: 100%;
+  padding: 20px;
+}
+
+/* left column */
+.sub-left{
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 16px;
+  min-height: 0;
+}
+
+/* "New Project" chip (top-left) */
+.chip-title{
+  display: inline-block;
+  background: #1e88e5;     /* bright blue like screenshot tag */
+  color: #fff;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 1.25rem;
+}
+
+/* cover uploaders (two equal columns) */
+.covers{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-height: 0;
+}
+.cover-uploader{
+  display: block;
+  cursor: pointer;
+}
+.cover-uploader input{ display: none; }
+
+/* keep 2:3 aspect, full bleed image if present */
+.cover-box{
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: #111;
+  border: 2px solid rgba(255,255,255,.12);
+  overflow: hidden;
+}
+.cover-box img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cover-hint{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(16px, 2vw, 22px);
+  opacity: .9;
+}
+
+/* Summary */
+.summary-block{
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+  min-height: 0;
+}
+.summary-label{
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+.summary-input{
+  width: 100%;
+  height: 100%;
+  resize: none;
+  background: #141414;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,.12);
+  border-radius: 2px;
+  padding: 10px;
+  font-size: 0.98rem;
+  line-height: 1.4;
+}
+
+/* right column */
+.sub-right{
+  display: grid;
+  grid-template-rows: repeat(10, auto) 1fr auto; /* 8 fields + 2 checks + spacer + actions */
+  gap: 10px;
+  min-height: 0;
+  align-content: start;
+}
+
+/* field row: label chip + input */
+.field{
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.field-label{
+  color: #fff;
+  font-weight: 800;
+  padding: 10px 12px;
+  border-radius: 4px;
+  text-align: right;
+  white-space: nowrap;
+}
+.field-input{
+  height: 40px;
+  background: #111;
+  border: 2px solid rgba(255,255,255,.14);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0 12px;
+  font-size: 1.1rem;
+}
+
+/* checks row */
+.checks-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.check{
+  display: grid;
+  grid-template-columns: 200px auto;
+  gap: 8px;
+  align-items: center;
+}
+.check-label{
+  color: #fff;
+  font-weight: 800;
+  padding: 10px 12px;
+  border-radius: 4px;
+  text-align: right;
+}
+.check-box{
+  width: 40px;
+  height: 40px;
+  background: #111;
+  border: 2px solid rgba(255,255,255,.14);
+  border-radius: 4px;
+  position: relative;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.check-tick{
+  font-size: 22px;
+  color: #ffb300; /* amber tick for contrast */
+  opacity: 0;     /* hidden when off */
+}
+.check-box.is-on .check-tick{ opacity: 1; }
+
+/* push actions to bottom with a spacer row in grid */
+.actions{
+  margin-top: auto;
+  display: grid;
+  grid-auto-flow: column;
+  gap: 12px;
+  justify-content: end;
+}
+.btn{
+  min-width: 160px;
+  height: 52px;
+  border: 0;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.btn.cancel{
+  background: #e53935;
+  color: #fff;
+}
+.btn.save{
+  background: #43a047;
+  color: #fff;
+}
+
+/* responsive fallback */
+@media (max-width: 980px){
+  .submodal-grid{
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+  .sub-right .field,
+  .sub-right .check{
+    grid-template-columns: 160px 1fr;
+  }
+}
+
+/* Give the whole modal bigger interior padding */
+.submodal-grid{
+  padding: 28px 32px;   /* was 20px */
+  gap: 24px;            /* a touch more column gap */
+}
+
+/* Add inner padding on each column so content never hits the edges */
+.sub-left{
+  padding: 0 8px 8px 8px;
+}
+.sub-right{
+  padding: 0 8px 8px 8px;
+}
+
+/* Widen field label gutter slightly so inputs sit further from right edge */
+.field{
+  grid-template-columns: 220px 1fr;   /* was 200px + 1fr */
+  gap: 12px;                          /* was 8–10px */
+}
+
+/* Buttons area: keep off the right wall */
+.actions{
+  padding-right: 4px;
+  gap: 16px;          /* a bit more space between Cancel / Save */
+}
+
+/* On smaller screens, increase container padding a bit for comfort */
+@media (max-width: 980px){
+  .submodal-grid{
+    padding: 24px;
+  }
+  .sub-right .field,
+  .sub-right .check{
+    grid-template-columns: 180px 1fr; /* still adds margin without crowding */
+  }
+}
+
+/* --- align right column start with top of covers --- */
+:root{
+  /* tune if you change the chip size or spacing */
+  --chip-h: 44px;      /* visual height of "New Project" chip */
+  --chip-gap: 16px;    /* space between chip and covers */
+}
+
+/* give the chip a predictable height so we can offset the right side */
+.chip-title{
+  min-height: var(--chip-h);
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;             /* keep your existing look */
+}
+
+/* offset the right column so Title: aligns with covers, not the chip */
+.sub-right{
+  padding-top: calc(var(--chip-h) + var(--chip-gap));
+}
+
+/* responsive: when stacked, remove the offset */
+@media (max-width: 980px){
+  .sub-right{
+    padding-top: 0;
+  }
+}
+
+/* Make both columns stretch the same full height of the modal */
+.submodal-grid{
+  height: 100%;
+  align-items: stretch;
+}
+
+/* Left column already ends with the Summary block that fills remaining space */
+.sub-left{
+  min-height: 0; /* allow the textarea to grow */
+}
+
+/* Right column: keep spacer -> actions at the very bottom */
+.sub-right{
+  min-height: 0;
+  display: grid;
+  /* 8 fields + 2 checks + spacer + actions */
+  grid-template-rows: repeat(10, auto) 1fr auto;
+}
+
+/* Actions pinned to the bottom and spanning full width */
+.actions{
+  align-self: end;              /* stick to the bottom row */
+  margin-top: 0;                /* we don’t need auto now */
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* two equal buttons */
+  gap: 16px;
+  padding-right: 0;             /* keep edges clean */
+}
+
+/* Buttons fill their grid cell entirely */
+.btn{
+  width: 100%;
+  height: 56px;                 /* a touch taller for presence */
+}
+
+/* Mobile: stack the buttons full-width */
+@media (max-width: 980px){
+  .actions{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Stack NSFW and Allow comments vertically (NSFW first, then Allow comments) */
+.checks-row{
+  grid-template-columns: 1fr !important; /* was 1fr 1fr */
+  gap: 12px;                              /* vertical space between them */
+}
+
+/* Fill the modal height so both columns align */
+.submodal-grid{ height: 100% !important; }
+
+/* Right column: make rows grow and pin actions to bottom */
+.sub-right{
+  height: 100% !important;
+  min-height: 0;
+  display: flex !important;
+  flex-direction: column;
+  row-gap: 8px; /* tighter gaps so growth looks clean */
+}
+
+/* Every row above the buttons grows to consume available space */
+.sub-right > .field,
+.sub-right > .checks-row{
+  flex: 1 1 0;                  /* <-- key: grow rows */
+  display: grid;
+  grid-template-columns: 220px 1fr;  /* keep your label gutter */
+  align-items: stretch;         /* inputs fill the row’s height */
+}
+
+/* Stack NSFW and Allow comments vertically (keeps from earlier) */
+.checks-row{
+  grid-template-columns: 1fr !important;
+  gap: 8px;
+}
+.check{
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: stretch;
+  gap: 10px;
+}
+
+/* Controls fill the taller rows */
+.field-input{
+  height: 100%;
+  min-height: 44px;   /* adjust if you want them even taller */
+}
+.check-box{
+  height: 100%;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+}
+
+/* Buttons sit flush at the bottom and stretch horizontally */
+.actions{
+  margin-top: auto !important;  /* <-- pins to bottom */
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.btn{ width: 100%; height: 56px; }
+
+/* Ensure the left Summary truly reaches the bottom for perfect alignment */
+.sub-left{
+  grid-template-rows: auto auto 1fr; /* chip + covers + summary(fill) */
+  min-height: 0;
+}
+.summary-block{ grid-template-rows: auto 1fr; min-height: 0; }
+.summary-input{ height: 100%; min-height: 0; }
+
+/* Right column stays flex so rows can grow */
+.sub-right{
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* Each text field = 1 row unit */
+.sub-right > .field{
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: stretch;
+}
+
+/* Checks block = TWO row units, split into two equal rows */
+.sub-right > .checks-row{
+  flex: 2 1 0;                 /* equals height of two field rows */
+  display: grid !important;
+  grid-template-rows: 1fr 1fr; /* NSFW (1fr) + Allow comments (1fr) */
+  gap: 8px;                    /* small gap between the two rows */
+}
+
+/* Each check row mirrors a field row and stretches fully */
+.check{
+  display: grid;
+  grid-template-columns: 220px 1fr;  /* label | box */
+  align-items: stretch;
+  min-height: 0;
+}
+
+/* Label chip fills height and centers text */
+.check-label{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* The checkbox “box” fills the row height like an input */
+.check-box{
+  height: 100% !important;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+/* Optional: keep tick nicely sized inside the taller box */
+.check-tick{ font-size: 22px; }
+
+/* Make the NSFW / Allow comments inputs square, not full-width */
+:root { --ctrl-h: 46px; } /* keep in sync with your field height */
+
+.check{
+  grid-template-columns: 220px var(--ctrl-h) !important; /* fixed box column */
+  align-items: center;
+  gap: 10px;
+}
+
+.check-box{
+  width: var(--ctrl-h) !important;
+  height: var(--ctrl-h) !important;
+  aspect-ratio: 1 / 1;
+  justify-self: start;   /* sits right after the label */
+  align-self: center;    /* centered vertically within the row */
+  display: grid;
+  place-items: center;
+}
+
+.check-tick{ font-size: 22px; }
+
+/* Use the same label gutter everywhere */
+:root { --label-col: 220px; --ctrl-h: 46px; }
+
+/* The checks block still takes two row units (so each check = one field row) */
+.sub-right > .checks-row{
+  flex: 2 1 0;                 /* equals height of two field rows */
+  display: grid !important;
+  grid-template-rows: 1fr 1fr; /* NSFW (1fr) + Allow comments (1fr) */
+  gap: 8px;
+}
+
+/* Each check row is a full-width field-like row */
+.check{
+  display: grid !important;
+  grid-template-columns: var(--label-col) 1fr !important;  /* <-- back to full 2-column */
+  align-items: stretch;
+  min-height: var(--ctrl-h);                               /* matches text fields */
+}
+
+/* Label fills height and centers text */
+.check-label{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Checkbox stays a square, centered vertically; row keeps full height */
+.check-box{
+  width: var(--ctrl-h) !important;
+  height: var(--ctrl-h) !important;
+  aspect-ratio: 1 / 1;
+  justify-self: start;     /* sits right after label */
+  align-self: center;      /* vertically centered within the taller row */
+  display: grid;
+  place-items: center;
+}
+
+/* "New Project" chip should hug its text, not fill the row */
+.chip-title{
+  display: inline-flex;     /* shrink to content */
+  width: max-content;       /* no stretching */
+  align-self: start;        /* top-left of its grid cell */
+  justify-self: start;
+  white-space: nowrap;      /* keep on one line */
+  min-height: var(--chip-h, 44px); /* keep your earlier height if set */
+  padding: 6px 10px;        /* keep existing paddings */
+}
+
+/* ======== REMOVE ALL ROUNDED CORNERS (square edges everywhere) ======== */
+
+/* modal container */
+.submodal {
+  border-radius: 0 !important;
+}
+
+/* label chips, cover boxes, text inputs, checkboxes, and buttons */
+.chip-title,
+.field-label,
+.field-input,
+.check-label,
+.check-box,
+.cover-box,
+.summary-input,
+.btn,
+.submodal-close {
+  border-radius: 0 !important;
+}
+
+/* summary and file inputs */
+.cover-uploader input,
+.summary-input {
+  border-radius: 0 !important;
+}
+
+/* make sure buttons and form controls stay squared on hover/focus too */
+.btn:focus,
+.btn:hover,
+.field-input:focus,
+.check-box:focus,
+.cover-box:focus {
+  border-radius: 0 !important;
+}
+
+/* remove any residual rounding from the whole component grid */
+.submodal-grid,
+.sub-left,
+.sub-right,
+.actions {
+  border-radius: 0 !important;
+}

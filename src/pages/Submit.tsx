@@ -5,12 +5,15 @@ import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
 import ProfileIdentity from "@/components/ProfileIdentity";
+import SubmissionModal from "@/components/SubmissionModal";
+
 import { profile } from "@/profileData";
 import { inProgressBooks, publishedBooks } from "@/SubmitData";
 
-import "./Library.css";   // existing layout/hero/feature styles
-import "./Submit.css";    // your rows + tiles + scrollbar styles
+import "./Library.css";
+import "./Submit.css";
 
+/* ---------- PanelBook + mapper ---------- */
 type PanelBook = {
   id: string | number;
   title: string;
@@ -29,7 +32,8 @@ type PanelBook = {
 function toPanelBook(b: any): PanelBook {
   const total =
     (typeof b.totalChapters === "number" && b.totalChapters) ||
-    (Array.isArray(b.chapters) ? b.chapters.length : 0) || 0;
+    (Array.isArray(b.chapters) ? b.chapters.length : 0) ||
+    0;
 
   return {
     id: b.id,
@@ -37,24 +41,17 @@ function toPanelBook(b: any): PanelBook {
     author: b.author,
     coverUrl: b.coverUrl ?? null,
     likes: typeof b.likes === "number" ? b.likes : 0,
-    rating:
-      typeof b.rating === "string"
-        ? b.rating
-        : (typeof b.rating === "number" ? b.rating : 0),
-    bookmarks:
-      typeof b.bookmarks === "number"
-        ? b.bookmarks
-        : (typeof b.saves === "number" ? b.saves : 0),
+    rating: typeof b.rating === "string" ? b.rating : (typeof b.rating === "number" ? b.rating : 0),
+    bookmarks: typeof b.bookmarks === "number" ? b.bookmarks : (typeof b.saves === "number" ? b.saves : 0),
     currentChapter: typeof b.currentChapter === "number" ? b.currentChapter : 0,
     totalChapters: total,
     chapters: b.chapters,
-    tags: Array.isArray(b.tags)
-      ? b.tags
-      : (Array.isArray(b.subGenres) ? b.subGenres : []),
+    tags: Array.isArray(b.tags) ? b.tags : (Array.isArray(b.subGenres) ? b.subGenres : []),
     userRating: typeof b.userRating === "number" ? b.userRating : 0,
   };
 }
 
+/* ---------- BooksSection with overflow detect, wheel mapping, and trailing Add tile ---------- */
 function BooksSection({
   title,
   books,
@@ -63,8 +60,8 @@ function BooksSection({
   className = "",
   wheelToHorizontal = false,
   alwaysShowScrollbar = false,
-  showAddTile = false,            // NEW
-  onClickAdd,                     // NEW
+  showAddTile = false,
+  onClickAdd,
 }: {
   title: string;
   books: PanelBook[];
@@ -73,12 +70,12 @@ function BooksSection({
   className?: string;
   wheelToHorizontal?: boolean;
   alwaysShowScrollbar?: boolean;
-  showAddTile?: boolean;          // NEW
-  onClickAdd?: () => void;        // NEW
+  showAddTile?: boolean;
+  onClickAdd?: () => void;
 }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
 
-  // Robust overflow detector (adds/removes .has-scroll)
+  // robust overflow detector
   useLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) return;
@@ -109,7 +106,7 @@ function BooksSection({
     };
   }, [books]);
 
-  // Map vertical wheel to horizontal scroll (optional)
+  // map vertical wheel to horizontal scroll (optional)
   const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
     if (!wheelToHorizontal || !trackRef.current) return;
     if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
@@ -146,13 +143,14 @@ function BooksSection({
             />
           ))}
 
-          {/* Trailing Add Book tile (only when requested) */}
+          {/* trailing Add Book tile (only for sections that request it) */}
           {showAddTile && (
             <button
               type="button"
               className="book-tile book-add"
               aria-label="Add book"
               onClick={onClickAdd}
+              title="Add book"
             />
           )}
         </div>
@@ -161,45 +159,50 @@ function BooksSection({
   );
 }
 
+/* ---------- Page ---------- */
 export default function SubmitPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<PanelBook | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const inProg = useMemo(() => inProgressBooks.map(toPanelBook), []);
   const pub = useMemo(() => publishedBooks.map(toPanelBook), []);
 
   void profile;
 
+  const openSubmission = () => setShowModal(true);
+  const closeSubmission = () => setShowModal(false);
+
   return (
     <div className="library-app">
+      {/* Keep your global header */}
       <AppHeader onClickWrite={() => setMenuOpen(true)} />
 
       <main className="library-layout">
+        {/* LEFT column (hero + two rows) */}
         <div className="library-left">
+          {/* User header (hero) preserved */}
           <section className="lib-hero" aria-label="Submit header">
             <div className="identity-cell">
               <ProfileIdentity compact />
             </div>
 
-            {/* remove the 4 tabs entirely */}
+            {/* middle cell empty to preserve grid from Library.css */}
             <div aria-hidden="true" />
 
-            {/* right-aligned CTA */}
+            {/* right-aligned CTA: Add book */}
             <div className="lib-hero-cta">
               <button
                 className="add-book-btn"
                 type="button"
-                onClick={() => {
-                  // TODO: wire this to your route/modal
-                  // e.g., navigate("/submit/new") or open a compose dialog
-                }}
+                onClick={openSubmission}
               >
                 Add book
               </button>
             </div>
           </section>
 
-
+          {/* Two equal-height rows */}
           <div className="rows">
             <BooksSection
               title="In Progress"
@@ -208,10 +211,9 @@ export default function SubmitPage() {
               onLeaveAll={() => setHovered(null)}
               className="inprogress"
               wheelToHorizontal
-              showAddTile                     // NEW
-                  onClickAdd={() => {
-                    // TODO: wire to your add flow (e.g., navigate("/submit/new"))
-                  }}              
+              showAddTile
+              onClickAdd={openSubmission}
+              alwaysShowScrollbar
             />
             <BooksSection
               title="Published"
@@ -219,17 +221,29 @@ export default function SubmitPage() {
               onHoverBook={setHovered}
               onLeaveAll={() => setHovered(null)}
               className="published"
-              // no forced scrollbar; will show only on overflow
+              // scrollbar appears only if overflow
             />
           </div>
         </div>
 
+        {/* RIGHT column: Feature panel preserved */}
         <aside className="library-feature" aria-label="Featured">
           <FeaturePanel book={hovered ?? undefined} />
         </aside>
       </main>
 
+      {/* Side menu preserved */}
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* Submission popover (90% viewport), opens from hero button or + tile */}
+      <SubmissionModal
+        open={showModal}
+        onClose={closeSubmission}
+        onSave={(data) => {
+          // TODO: persist data → add to your in-progress list
+          closeSubmission();
+        }}
+      />
     </div>
   );
 }
