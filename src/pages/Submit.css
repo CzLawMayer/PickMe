@@ -1,658 +1,169 @@
-/* =========================
-   Submit.css — clean baseline
-   ========================= */
+:root{
+  --pad-x: 28px;
+  --rows-gap: 16px;   /* space between rows */
+  --rows-pad: 12px;   /* bottom breathing room in left column */
+  --tile-gap: 16px;   /* between covers */
+}
 
-/* ---- Layout tokens ---- */
-:root { --panel-w: 360px; }
-.submit-app { --app-header-h: 64px; } /* set to your REAL header height */
+/* Let Library.css handle app header, hero, feature, two-column grid */
 
-/* ---- Page scaffold: main area is the only scroller ---- */
-html, body, #root { height: 100%; }
-body { margin: 0; overflow: hidden; } /* lock body; let .submit-page scroll */
+/* Under the hero, use the remaining height for two equal rows */
+.library-left {
+  /* Library.css already lays this as hero + content; we just ensure no overflow */
+  overflow: hidden;
+}
 
-.submit-app{
+.rows{
+  padding: 0 var(--pad-x) var(--rows-pad);
+  min-height: 0;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #111;
-  color: #fff;
-}
-
-/* Reserve space for the fixed right panel so content never hides behind it */
-.submit-page{
-  position: relative;
-  box-sizing: border-box;
-  height: calc(100svh - var(--app-header-h));
-  min-height: 0;
-  overflow: auto;
-
-  /* page padding + right reservation for panel */
-  --page-pad: clamp(12px, 2vw, 24px);
-  padding: var(--page-pad);
-  padding-right: calc(var(--panel-w) + var(--page-pad));
-}
-
-/* Optional content grid wrapper (left column only, since panel is fixed) */
-.submit-page .submit-grid{
   display: grid;
-  grid-template-columns: 1fr;
-  row-gap: clamp(18px, 2.2vw, 28px);
-  min-width: 0;
-  min-height: 0;
+  grid-template-rows: 1fr 1fr;   /* equal row heights */
+  gap: var(--rows-gap);
+  overflow: hidden;              /* no vertical overflow out of left column */
 }
 
-.grid-left{
+/* Each section = header (auto) + rail (1fr) so rail always fits its row */
+.subsec{
+  min-height: 0;
   display: grid;
-  grid-template-rows: auto auto; /* In Progress, Published */
-  gap: clamp(18px, 2.2vw, 28px);
-  min-width: 0;
-  min-height: 0;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
 
-/* =========================
-   Right Feature Panel (fixed)
-   ========================= */
-.feature-slot{
-  position: fixed;
-  /* top hugs under header; right & bottom hug viewport; width = token */
-  inset: var(--app-header-h) 0 0 auto;
-  width: var(--panel-w);
-  z-index: 50;
-
-  margin: 0;
-  padding: 0;
-  border: 0;
-  overflow: hidden; /* clip inside edges cleanly */
-}
-
-/* Let FeaturePanel fill the slot; do NOT change its inner padding */
-.feature-slot > .feature-card{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  border-radius: 0; /* flush to the page edge */
-  box-sizing: border-box;
-}
-
-/* =========================
-   Section heading + underline
-   ========================= */
-.submit-section{ min-width: 0; }
-
-.submit-head{
-  display: inline-block;      /* shrink-wrap to title width */
-}
-
-.submit-title{
-  margin: 0 0 8px 0;
-  font-size: clamp(1.4rem, 3.6vw, 2.2rem);
-  line-height: 1.1;
+/* Section header */
+.subsec-head{ display: inline-block; }
+.subsec-title{
+  margin: 0 0 8px;
   font-weight: 800;
-  white-space: nowrap;        /* predictable underline width */
+  line-height: 1.1;
+  font-size: clamp(1.25rem, 2.8vw, 2rem);
+  white-space: nowrap;
 }
-
-/* Four-color underline that exactly matches the title width */
-.submit-bars{
+.subsec-bars{
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0;                     /* stuck together; no gaps */
-  width: 100%;                /* equals .submit-head width (title width) */
-  height: 8px;                /* sharp edge (no radius) */
+  height: 8px;
 }
+.bar{ border-radius: 0; }
+.b1{ background:#fc5f2e; }
+.b2{ background:#d81b60; }
+.b3{ background:#6a1b9a; }
+.b4{ background:#1e88e5; }
 
-.submit-bars .bar{ border-radius: 0; }
-.bar-1 { background: #fc5f2e; }  /* orange */
-.bar-2 { background: #d81b60; }  /* pink */
-.bar-3 { background: #6a1b9a; }  /* purple */
-.bar-4 { background: #1e88e5; }  /* blue */
-
-/* =========================
-   Books rail (simple, no black strip)
-   ========================= */
-/* JS sets --row-h on .books-rail; we keep everything inside that height */
+/* Rail consumes the remainder of the section height, no vertical overflow */
 .books-rail{
-  --tile-gap: 16px;                 /* read by JS; keep in px */
-  --row-h: 220px;                   /* fallback if JS hasn’t run yet */
-  min-height: var(--row-h);
-  height: var(--row-h);             /* rail height is the tile height */
-  overflow: hidden;                 /* ensure children never escape vertically */
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* Horizontal scroller: only shows if content exceeds width */
+/* Track: horizontal scroller that ALWAYS matches rail height */
 .books-track{
   display: flex;
-  align-items: center;
+  align-items: stretch;          /* tiles inherit the rail height */
   gap: var(--tile-gap);
-  height: 100%;                     /* equals rail height */
+  height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 2px;              /* tiny buffer so scrollbar doesn’t overlap */
-  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
 .books-track::-webkit-scrollbar{ height: 6px; }
 .books-track::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,.25);
   border-radius: 999px;
 }
-.books-track::-webkit-scrollbar-track{ background: transparent; }
 
-/* Book tiles: 2:3, sharp corners, scale from the rail height */
+/* Tiles fill rail height and keep 2:3 ratio; width derives from height */
 .book-tile{
-  /* width derives from height to keep 2:3 ratio */
-  height: 100%;                               /* fill the rail vertically */
-  width: calc(var(--row-h) * (2 / 3));
-  min-width: calc(var(--row-h) * (2 / 3));
-  flex: 0 0 auto;                              /* no grow/shrink */
-  border: 0;
-  border-radius: 0;                            /* sharp corners */
+  flex: 0 0 auto;                /* no shrinking; scroll horizontally if needed */
+  height: 100%;                  /* exactly the rail height */
+  aspect-ratio: 2 / 3;           /* width auto-computed from height */
   background: #222 center / cover no-repeat;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.28);
-  cursor: pointer;
-  transition: transform 140ms ease, box-shadow 140ms ease;
-}
-.book-tile:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0,0,0,0.34);
-}
-
-/* =========================
-   Small screens (optional)
-   ========================= */
-/* If you prefer the feature panel to stack below content on narrow screens,
-   uncomment this block. Otherwise, the panel will stay fixed on the right. */
-/*
-@media (max-width: 920px){
-  .feature-slot{
-    position: static;
-    width: 100%;
-    inset: auto;
-    height: auto;
-  }
-  .submit-page{
-    padding-right: var(--page-pad);  // no need to reserve the fixed panel
-  }
-}
-*/
-/* ---- Fixed cover size per rail (responsive but constant) ---- */
-.submit-section .books-rail{
-  /* Pick your preferred size once; same for all rails */
-  --row-h: clamp(220px, 28vh, 340px);
-  --tile-gap: 16px; /* keep as-is */
-}
-
-/* Tiles: use the fixed --row-h, width follows 2:3 ratio */
-.book-tile{
-  --ratio: calc(2 / 3);
-  height: var(--row-h);
-  width: calc(var(--row-h) * var(--ratio));
-  min-width: calc(var(--row-h) * var(--ratio));
-}
-
-/* =========================
-   Stories Page — Layout
-   ========================= */
-.stories-app{
-  --app-header-h: 64px;
-  --panel-w: 360px;        /* right feature width */
-  --grid-gap: 24px;
-  --rail-min-h: 240px;     /* min height per books rail row */
-  --rail-max-h: 340px;     /* cap to keep things tasteful */
-  --tile-gap: 16px;
-  background: #111;
-  color: #fff;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-}
-
-.stories-page{
-  position: relative;
-  height: calc(100svh - var(--app-header-h));
-  min-height: 0;
-  overflow: auto;
-  padding: clamp(12px, 2vw, 24px);
-  padding-right: calc(var(--panel-w) + clamp(12px, 2vw, 24px)); /* reserve space for fixed panel */
-  box-sizing: border-box;
-}
-
-/* Main grid: left column = 3 rows; right = feature spanning all */
-.stories-grid{
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr; /* content is a single flow column; feature is fixed */
-  grid-template-rows: auto 1fr 1fr; /* banner (auto) + two rails */
-  gap: var(--grid-gap);
-}
-
-/* =========================
-   Fixed Feature Panel (right)
-   ========================= */
-.feature-slot{
-  position: fixed;
-  top: var(--app-header-h);
-  right: 0;
-  bottom: 0;              /* fully hugs the bottom */
-  width: var(--panel-w);
-  z-index: 30;
-}
-.feature-slot > .feature-card{
-  position: absolute;
-  inset: 0;
+  border: 0;
   border-radius: 0;
-  box-sizing: border-box;
-}
-
-/* =========================
-   Row 1 — Compact Banner
-   ========================= */
-.banner-row{
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: center;
-  gap: 16px;
-}
-
-.banner-left{
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 14px;
-  align-items: center;
-  min-width: 0;
-}
-
-.banner-avatar{
-  width: 56px;
-  height: 56px;
-  background: #000;
-  overflow: hidden;
-}
-.banner-avatar img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.avatar-placeholder{
-  width: 100%;
-  height: 100%;
-  background: #222;
-}
-
-.banner-id{
-  min-width: 0;
-  display: grid;
-  grid-template-rows: auto auto auto;
-  gap: 4px;
-}
-.banner-name{
-  font-size: clamp(18px, 2.2vw, 24px);
-  font-weight: 800;
-  line-height: 1.12;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.banner-user{
-  font-size: 13px;
-  color: rgba(255,255,255,0.7);
-}
-
-/* Four-color underline stuck together, no rounded corners */
-.banner-bars{
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
-  height: 8px;
-  width: min(420px, 100%);
-}
-.banner-bars .bar{ border-radius: 0; }
-.bar-1{ background:#fc5f2e; }
-.bar-2{ background:#d81b60; }
-.bar-3{ background:#6a1b9a; }
-.bar-4{ background:#1e88e5; }
-
-.banner-right{
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-/* Button styled like your icon row buttons (solid, compact) */
-.cta-btn{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: #fff;
-  color: #000;
-  border: none;
-  cursor: pointer;
-  font-weight: 700;
-  line-height: 1;
-}
-.cta-btn .material-symbols-outlined{
-  font-size: 20px;
-  line-height: 1;
-}
-.cta-btn:active{ transform: translateY(1px); }
-
-/* =========================
-   Rows 2 & 3 — Books Rails
-   ========================= */
-.stories-section{
-  display: flex;
-  flex-direction: column;
-  min-height: 0; /* so the rail can flex */
-}
-.stories-head{
-  display: inline-block; /* shrink-wrap the underline to the title */
-}
-.stories-title{
-  margin: 0 0 8px 0;
-  font-size: clamp(1.4rem, 3.6vw, 2.2rem);
-  font-weight: 800;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-.stories-bars{
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
-  height: 8px;
-  width: 100%; /* exactly match the title width via inline-block wrapper */
-}
-.stories-bars .bar{ border-radius: 0; }
-
-/* Rail fills the remaining row height */
-.covers-rail{
-  flex: 1 1 auto;
-  min-height: var(--rail-min-h);
-  max-height: var(--rail-max-h);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;               /* clip vertical overflow */
-  /* no background (you asked for clean rails) */
-}
-
-/* Track is the scroller only if needed */
-.covers-track{
-  height: 100%;
-  display: flex;
-  gap: var(--tile-gap);
-  align-items: center;             /* vertical center covers */
-  overflow-x: auto;                /* appears only when needed */
-  overflow-y: hidden;
-  padding: 0 4px 4px 0;            /* tiny breathing room for scrollbar */
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-}
-.covers-track::-webkit-scrollbar{ height: 8px; }
-.covers-track::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,0.28);
-}
-.covers-track::-webkit-scrollbar-track{ background: transparent; }
-
-/* Covers: take full rail height; width follows 2:3 */
-.cover-tile{
-  --ratio: calc(2 / 3);
-  height: 100%;
-  width: calc(100% * var(--ratio)); /* not actually used; min-width controls flow */
-  min-width: calc((min(var(--rail-max-h), 100%)) * var(--ratio));
-  aspect-ratio: 2 / 3;
-  flex: 0 0 auto;
-  border: none;
-  border-radius: 0;
-  background: #222 center/cover no-repeat;
-  box-shadow: 0 4px 18px rgba(0,0,0,.28);
-  cursor: pointer;
-  transition: transform 140ms ease, box-shadow 140ms ease;
-}
-.cover-tile:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0,0,0,.34);
-}
-
-/* =========================
-   Responsive
-   ========================= */
-@media (max-width: 960px){
-  .stories-page{
-    padding-right: clamp(12px, 2vw, 24px); /* allow content to fill width; panel will stack */
-  }
-  .feature-slot{
-    position: static;
-    width: auto;
-    height: auto;
-    margin-top: var(--grid-gap);
-  }
-}
-
-/* === SAFETY: neutralize any global img height leak on this page === */
-.stories-page :where(img){
-  max-width: 100%;
-  height: auto;           /* reset any global height:100% */
-  display: block;
-}
-
-/* Avatar: explicitly fill its small square only */
-.banner-avatar{
-  width: 56px;
-  height: 56px;
-  overflow: hidden;
-  background: #000;
-}
-.banner-avatar img{
-  width: 100% !important;
-  height: 100% !important;     /* only here we want 100% */
-  object-fit: cover !important;
-}
-
-/* Feature panel: keep its internal image sizing sane */
-.feature-slot .feature-card img{
-  width: 100%;
-  height: auto;                 /* don’t let covers stretch vertically */
-  object-fit: cover;
-}
-
-/* If your FeaturePanel uses a cover div with background, ensure it doesn't stretch unexpectedly */
-.feature-slot .feature-cover-placeholder{
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  background-size: cover;
-  background-position: center;
-}
-
-/* Make absolutely sure the fixed panel isn’t overlaying full width by mistake */
-.feature-slot{
-  position: fixed;
-  top: var(--app-header-h, 64px);
-  right: 0;
-  bottom: 0;
-  width: var(--panel-w, 360px);
-  z-index: 30;
-}
-
-/* And reserve the space on the right so the left content is visible */
-.stories-page{
-  padding-right: calc(var(--panel-w, 360px) + clamp(12px, 2vw, 24px));
-}
-
-/* =========================
-   Image safety on Stories page
-   ========================= */
-
-/* 1) Reset ALL images inside this page */
-.stories-page :where(img){
-  display: block;
-  max-width: 100%;
-  height: auto;              /* undo any global height:100% */
-}
-
-/* 2) FeaturePanel: never let its cover img fill the viewport */
-.feature-slot .feature-card :where(img){
-  width: 100%;
-  height: auto !important;   /* force out any inherited 100% */
-  object-fit: cover;
-}
-
-/* 3) Avatar: the ONLY place we actually want 100% height */
-.banner-avatar{
-  width: 56px;
-  height: 56px;
-  flex: 0 0 56px;
-  overflow: hidden;
-  background: #000;
-  border-radius: 0;          /* sharp corners as per your style */
-}
-.banner-avatar img{
-  width: 100% !important;
-  height: 100% !important;   /* fill the 56x56 box */
-  object-fit: cover !important;
-}
-
-/* 4) Fixed right FeaturePanel: truly hug top/right/bottom */
-.stories-app{
-  --app-header-h: 64px;      /* match your AppHeader */
-  --panel-w: 360px;          /* panel width */
-}
-.feature-slot{
-  position: fixed;
-  top: var(--app-header-h);
-  right: 0;
-  bottom: 0;
-  width: var(--panel-w);
-  z-index: 30;
   margin: 0;
-  padding: 0;
-  border: 0;
+  box-shadow: none;
+  cursor: pointer;
 }
-.feature-slot > .feature-card{
-  position: absolute;
-  inset: 0;                  /* fill the slot, keeps inner padding intact */
-  border-radius: 0;
-}
-
-/* 5) Keep main content from sliding under the fixed panel */
-.stories-page{
-  padding-right: calc(var(--panel-w) + clamp(12px, 2vw, 24px));
+.book-tile:focus-visible{
+  outline: 2px solid rgba(255,255,255,.6);
+  outline-offset: 2px;
 }
 
-/* 6) Covers rail: ensure we’re using backgrounds, not <img> */
-.covers-rail{ overflow: hidden; }
-.covers-track{
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  overflow-x: auto;
-  padding: 0 12px 6px;
-  -webkit-overflow-scrolling: touch;
-}
-.cover-tile{
-  --h: var(--row-h, 220px);
-  height: var(--h);
-  width: calc(var(--h) * 2 / 3); /* 2:3 aspect */
-  min-width: calc(var(--h) * 2 / 3);
-  flex: 0 0 auto;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border: 0;
-  border-radius: 0;
-}
+/* Ensure Published really sits in the bottom row (explicit, in case of reordering) */
+.subsec.inprogress { grid-row: 1; }
+.subsec.published  { grid-row: 2; }
 
-/* --- Kill any global "full-screen image" rules inside Stories only --- */
-.stories-page img{
-  position: static !important;
-  top: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  left: auto !important;
-
-  width: auto !important;
-  height: auto !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-
-  transform: none !important;
-  z-index: auto !important;
-  display: block !important;
-  object-fit: cover !important; /* safe default */
-}
-
-/* FeaturePanel images too (in case its template uses <img>) */
-.feature-slot .feature-card img{
-  position: static !important;
-  width: 100% !important;
-  height: auto !important;
-  max-height: 100% !important;
-  object-fit: cover !important;
-}
-
-/* Avatar is the ONLY image that should fill its tiny box */
-.banner-avatar{
-  width: 56px;
-  height: 56px;
-  flex: 0 0 56px;
-  overflow: hidden;
-  background: #000;
-  border-radius: 0;
-}
-.banner-avatar img{
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-}
-
-/* Ensure layout itself isn't letting something slip under the panel */
-.stories-app{ --app-header-h: 64px; --panel-w: 360px; }
-.feature-slot{
-  position: fixed; top: var(--app-header-h); right: 0; bottom: 0; width: var(--panel-w);
-  z-index: 30;
-}
-.feature-slot > .feature-card{ position: absolute; inset: 0; border-radius: 0; }
-.stories-page{ padding-right: calc(var(--panel-w) + clamp(12px, 2vw, 24px)); }
-
-/* Hide any leftover avatar styles if present */
-.banner-avatar{ display:none !important; }
-
-/* Banner without avatar: tighter layout */
-.banner-left.no-avatar{
-  display: flex;
-  align-items: center;
-  gap: clamp(8px, 1.2vw, 16px);
-}
-
-/* Make sure the identity block sizes nicely without an avatar */
-.banner-id{
+/* clean, safe spacing between colored bar and covers */
+.subsec{
   display: grid;
-  grid-template-rows: auto auto auto;
-  align-content: center;
-  min-width: 0;
+  grid-template-rows: auto 1fr;
+  row-gap: 8px;        /* <- the breathing space you want */
+  min-height: 0;
+  overflow: hidden;
 }
 
-.banner-name{
+.books-track{ padding-bottom: 2px; } /* tiny buffer so the thin scrollbar isn’t cramped */
+
+/* small gap above the first (In Progress) section */
+.rows{
+  padding-top: 8px; /* tweak to taste (6–12px) */
+}
+
+/* ==== Always-visible white slider for book rails ==== */
+.books-track{
+  overflow-x: scroll;                 /* show bar whenever content overflows */
+  scrollbar-width: thin;              /* Firefox thickness */
+  scrollbar-color: #fff rgba(255,255,255,.16); /* Firefox: thumb, track */
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.books-track::-webkit-scrollbar{
+  height: 8px;                        /* thickness */
+}
+.books-track::-webkit-scrollbar-track{
+  background: rgba(255,255,255,.16);  /* subtle dark track */
+  border-radius: 999px;
+}
+.books-track::-webkit-scrollbar-thumb{
+  background: #fff;                   /* WHITE slider */
+  border-radius: 999px;
+  /* optional: softer edges on dark bg */
+  box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
+}
+
+/* (Remove any previous :hover or :focus-within rules for .books-track scrollbars) */
+
+/* Title + underline behave as one shrink-to-fit block */
+.subsec-head{
+  display: inline-grid;          /* stack title over bars */
+  grid-template-rows: auto auto;
+  width: max-content;            /* shrink to the widest child (the title) */
+}
+
+/* Title stays as-is */
+.subsec-title{
+  margin: 0 0 8px;
   font-weight: 800;
   line-height: 1.1;
-  font-size: clamp(1.2rem, 2.6vw, 1.8rem);
+  font-size: clamp(1.25rem, 2.8vw, 2rem);
+  white-space: nowrap;           /* keep single line so underline matches */
 }
 
-.banner-user{
-  opacity: .75;
-  font-size: clamp(.9rem, 1.8vw, 1rem);
-}
-
-/* Bars stay as your underline */
-.banner-bars{
+/* Bars become an underline whose width == title width */
+.subsec-bars{
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
   height: 8px;
-  width: max-content;
+  width: 100%;                   /* exactly the same width as the title above */
 }
-.banner-bars .bar{ border-radius: 0; }
-.bar-1{ background:#fc5f2e; } .bar-2{ background:#d81b60; }
-.bar-3{ background:#6a1b9a; } .bar-4{ background:#1e88e5; }
+
+/* keep your colors */
+.subsec-bars .bar { border-radius: 0; }
+.subsec-bars .b1 { background:#fc5f2e; }
+.subsec-bars .b2 { background:#d81b60; }
+.subsec-bars .b3 { background:#6a1b9a; }
+.subsec-bars .b4 { background:#1e88e5; }
