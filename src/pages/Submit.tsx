@@ -63,6 +63,8 @@ function BooksSection({
   className = "",
   wheelToHorizontal = false,
   alwaysShowScrollbar = false,
+  showAddTile = false,            // NEW
+  onClickAdd,                     // NEW
 }: {
   title: string;
   books: PanelBook[];
@@ -71,6 +73,8 @@ function BooksSection({
   className?: string;
   wheelToHorizontal?: boolean;
   alwaysShowScrollbar?: boolean;
+  showAddTile?: boolean;          // NEW
+  onClickAdd?: () => void;        // NEW
 }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
 
@@ -141,6 +145,16 @@ function BooksSection({
               style={b.coverUrl ? { backgroundImage: `url(${b.coverUrl})` } : undefined}
             />
           ))}
+
+          {/* Trailing Add Book tile (only when requested) */}
+          {showAddTile && (
+            <button
+              type="button"
+              className="book-tile book-add"
+              aria-label="Add book"
+              onClick={onClickAdd}
+            />
+          )}
         </div>
       </div>
     </section>
@@ -167,15 +181,24 @@ export default function SubmitPage() {
               <ProfileIdentity compact />
             </div>
 
-            <nav className="lib-tabs" aria-label="Sections">
-              <NavLink to="/library" className="lib-tab">Library</NavLink>
-              <NavLink to="/stories" className="lib-tab">Stories</NavLink>
-              <NavLink to="/read" className="lib-tab">Read</NavLink>
-              <NavLink to="/reviews" className="lib-tab">Reviews</NavLink>
-            </nav>
+            {/* remove the 4 tabs entirely */}
+            <div aria-hidden="true" />
 
-            <div className="lib-hero-cta" aria-hidden="true" />
+            {/* right-aligned CTA */}
+            <div className="lib-hero-cta">
+              <button
+                className="add-book-btn"
+                type="button"
+                onClick={() => {
+                  // TODO: wire this to your route/modal
+                  // e.g., navigate("/submit/new") or open a compose dialog
+                }}
+              >
+                Add book
+              </button>
+            </div>
           </section>
+
 
           <div className="rows">
             <BooksSection
@@ -185,7 +208,10 @@ export default function SubmitPage() {
               onLeaveAll={() => setHovered(null)}
               className="inprogress"
               wheelToHorizontal
-              alwaysShowScrollbar   // ensure visible scrollbar here
+              showAddTile                     // NEW
+                  onClickAdd={() => {
+                    // TODO: wire to your add flow (e.g., navigate("/submit/new"))
+                  }}              
             />
             <BooksSection
               title="Published"
