@@ -167,3 +167,59 @@
 .subsec-bars .b2 { background:#d81b60; }
 .subsec-bars .b3 { background:#6a1b9a; }
 .subsec-bars .b4 { background:#1e88e5; }
+
+/* default: no scrollbar visuals if there’s no overflow */
+.books-track{
+  overflow-x: auto;
+  scrollbar-width: none;            /* Firefox: hide when not needed */
+}
+.books-track::-webkit-scrollbar{    /* WebKit: hide when not needed */
+  height: 0;
+}
+
+/* when overflow exists, style the scrollbar (white thumb) */
+.books-track.has-scroll{
+  scrollbar-width: thin;                        /* Firefox: show */
+  scrollbar-color: #fff rgba(255,255,255,.16);  /* thumb / track */
+}
+.books-track.has-scroll::-webkit-scrollbar{
+  height: 8px;                                  /* visible thickness */
+}
+.books-track.has-scroll::-webkit-scrollbar-track{
+  background: rgba(255,255,255,.16);
+  border-radius: 999px;
+}
+.books-track.has-scroll::-webkit-scrollbar-thumb{
+  background: #fff;                              /* white slider */
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
+}
+
+/* default: hide visuals (but keep horizontal scrolling) */
+.books-track{
+  overflow-x: auto;
+  scrollbar-width: none;                /* Firefox hidden by default */
+}
+.books-track::-webkit-scrollbar{ height: 0; }   /* WebKit hidden */
+
+/* show when needed (overflow detected) OR explicitly forced */
+.books-track.has-scroll,
+.books-track.force-scrollbar{
+  scrollbar-width: thin;                              /* Firefox show */
+  scrollbar-color: #fff rgba(255,255,255,.16);        /* thumb / track */
+}
+.books-track.has-scroll::-webkit-scrollbar,
+.books-track.force-scrollbar::-webkit-scrollbar{
+  height: 8px;
+}
+.books-track.has-scroll::-webkit-scrollbar-track,
+.books-track.force-scrollbar::-webkit-scrollbar-track{
+  background: rgba(255,255,255,.16);
+  border-radius: 999px;
+}
+.books-track.has-scroll::-webkit-scrollbar-thumb,
+.books-track.force-scrollbar::-webkit-scrollbar-thumb{
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
+}

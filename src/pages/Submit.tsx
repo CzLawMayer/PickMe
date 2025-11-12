@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import AppHeader from "@/components/AppHeader";
@@ -8,8 +8,8 @@ import ProfileIdentity from "@/components/ProfileIdentity";
 import { profile } from "@/profileData";
 import { inProgressBooks, publishedBooks } from "@/SubmitData";
 
-import "./Library.css";       // your existing layout/hero/feature styles
-import "./Submit.css";    // new: just the two rows + tiles
+import "./Library.css";   // existing layout/hero/feature styles
+import "./Submit.css";    // your rows + tiles + scrollbar styles
 
 type PanelBook = {
   id: string | number;
@@ -37,17 +37,23 @@ function toPanelBook(b: any): PanelBook {
     author: b.author,
     coverUrl: b.coverUrl ?? null,
     likes: typeof b.likes === "number" ? b.likes : 0,
-    rating: typeof b.rating === "string" ? b.rating : (typeof b.rating === "number" ? b.rating : 0),
-    bookmarks: typeof b.bookmarks === "number" ? b.bookmarks : (typeof b.saves === "number" ? b.saves : 0),
+    rating:
+      typeof b.rating === "string"
+        ? b.rating
+        : (typeof b.rating === "number" ? b.rating : 0),
+    bookmarks:
+      typeof b.bookmarks === "number"
+        ? b.bookmarks
+        : (typeof b.saves === "number" ? b.saves : 0),
     currentChapter: typeof b.currentChapter === "number" ? b.currentChapter : 0,
     totalChapters: total,
     chapters: b.chapters,
-    tags: Array.isArray(b.tags) ? b.tags : (Array.isArray(b.subGenres) ? b.subGenres : []),
+    tags: Array.isArray(b.tags)
+      ? b.tags
+      : (Array.isArray(b.subGenres) ? b.subGenres : []),
     userRating: typeof b.userRating === "number" ? b.userRating : 0,
   };
 }
-
-import { useRef } from "react";
 
 function BooksSection({
   title,
@@ -55,27 +61,57 @@ function BooksSection({
   onHoverBook,
   onLeaveAll,
   className = "",
-  wheelToHorizontal = false,   // <— NEW
+  wheelToHorizontal = false,
+  alwaysShowScrollbar = false,
 }: {
   title: string;
   books: PanelBook[];
   onHoverBook: (bk: PanelBook | null) => void;
   onLeaveAll: () => void;
   className?: string;
-  wheelToHorizontal?: boolean; // <— NEW
+  wheelToHorizontal?: boolean;
+  alwaysShowScrollbar?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
 
+  // Robust overflow detector (adds/removes .has-scroll)
+  useLayoutEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const needs = el.scrollWidth - el.clientWidth > 1;
+      el.classList.toggle("has-scroll", needs);
+    };
+
+    update();
+    requestAnimationFrame(update);
+    const t = setTimeout(update, 60);
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    const mo = new MutationObserver(update);
+    mo.observe(el, { childList: true, subtree: true });
+
+    (document as any).fonts?.ready?.then(update).catch(() => {});
+    window.addEventListener("resize", update);
+
+    return () => {
+      clearTimeout(t);
+      ro.disconnect();
+      mo.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [books]);
+
+  // Map vertical wheel to horizontal scroll (optional)
   const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
     if (!wheelToHorizontal || !trackRef.current) return;
-
-    // If the user is primarily scrolling vertically, translate it to horizontal
-    const verticalIntent = Math.abs(e.deltaY) >= Math.abs(e.deltaX);
-    if (verticalIntent) {
-      e.preventDefault(); // keep the page from trying to scroll vertically
-      trackRef.current.scrollLeft += e.deltaY; // natural direction
+    if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+      e.preventDefault();
+      trackRef.current.scrollLeft += e.deltaY;
     }
-    // If they use a trackpad swiping left/right (deltaX), let the browser handle it.
   };
 
   return (
@@ -92,9 +128,9 @@ function BooksSection({
 
       <div className="books-rail" onMouseLeave={onLeaveAll} aria-label={`${title} books`}>
         <div
-          className="books-track"
+          className={`books-track${alwaysShowScrollbar ? " force-scrollbar" : ""}`}
           ref={trackRef}
-          onWheel={handleWheel}   // <— NEW
+          onWheel={handleWheel}
         >
           {books.map((b) => (
             <button
@@ -111,22 +147,20 @@ function BooksSection({
   );
 }
 
-
 export default function SubmitPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<PanelBook | null>(null);
 
   const inProg = useMemo(() => inProgressBooks.map(toPanelBook), []);
-  const pub    = useMemo(() => publishedBooks.map(toPanelBook), []);
+  const pub = useMemo(() => publishedBooks.map(toPanelBook), []);
 
-  void profile; // if ProfileIdentity uses it internally
+  void profile;
 
   return (
     <div className="library-app">
       <AppHeader onClickWrite={() => setMenuOpen(true)} />
 
       <main className="library-layout">
-        {/* LEFT: your existing hero from Library.css + our two rows */}
         <div className="library-left">
           <section className="lib-hero" aria-label="Submit header">
             <div className="identity-cell">
@@ -143,7 +177,6 @@ export default function SubmitPage() {
             <div className="lib-hero-cta" aria-hidden="true" />
           </section>
 
-          {/* Two equal-height rows (in progress at top, published at bottom) */}
           <div className="rows">
             <BooksSection
               title="In Progress"
@@ -152,6 +185,7 @@ export default function SubmitPage() {
               onLeaveAll={() => setHovered(null)}
               className="inprogress"
               wheelToHorizontal
+              alwaysShowScrollbar   // ensure visible scrollbar here
             />
             <BooksSection
               title="Published"
@@ -159,12 +193,11 @@ export default function SubmitPage() {
               onHoverBook={setHovered}
               onLeaveAll={() => setHovered(null)}
               className="published"
-              wheelToHorizontal
+              // no forced scrollbar; will show only on overflow
             />
           </div>
         </div>
 
-        {/* RIGHT: your existing feature panel area from Library.css */}
         <aside className="library-feature" aria-label="Featured">
           <FeaturePanel book={hovered ?? undefined} />
         </aside>
