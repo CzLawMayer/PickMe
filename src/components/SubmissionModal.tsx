@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "./SubmissionModal.css";
 
 /* ===== Genre options (names only) ===== */
@@ -15,8 +16,8 @@ type SubmitFormData = {
   title: string;
   author: string;
   date: string;
-  mainGenre: string;
-  subGenres: string; // comma-separated
+  mainGenre: string;   // single
+  subGenres: string;   // comma-separated list, up to 4
   language: string;
   isbn: string;
   copyright: string;
@@ -61,13 +62,12 @@ export default function SubmissionModal({
     () => (form.coverFile instanceof File ? URL.createObjectURL(form.coverFile) : ""),
     [form.coverFile]
   );
-  // 3) useMemo
   const backUrl = useMemo(
     () => (form.backCoverFile instanceof File ? URL.createObjectURL(form.backCoverFile) : ""),
     [form.backCoverFile]
   );
 
-  // 4) useEffect – revoke blobs
+  // 3) revoke blobs
   useEffect(() => {
     return () => {
       try { if (coverUrl) URL.revokeObjectURL(coverUrl); } catch {}
@@ -75,14 +75,15 @@ export default function SubmissionModal({
     };
   }, [coverUrl, backUrl]);
 
-  // 5) useEffect – ESC to close (hook always declared)
+  // 4) esc to close
   useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [open, onClose]);
 
-  // 6) useEffect – ALWAYS declared: keep SubGenres from containing Main
+  // 5) keep subGenres from containing main
   useEffect(() => {
     if (!form.mainGenre) return;
     const cleaned = (form.subGenres || "")
@@ -96,7 +97,6 @@ export default function SubmissionModal({
     }
   }, [form.mainGenre, form.subGenres]);
 
-  // helper (pure function, not a hook)
   const setField = (k: keyof SubmitFormData, v: any) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -109,7 +109,6 @@ export default function SubmissionModal({
     e.target.value = "";
   };
 
-  // Now safe to early-return (no hooks below this line)
   if (!open) return null;
 
   return (
@@ -157,7 +156,6 @@ export default function SubmissionModal({
               <Field label="Author:" color="--c-orange" value={form.author} onChange={(v) => setField("author", v)} required />
               <Field label="Date:" color="--c-pink" value={form.date} onChange={(v) => setField("date", v)} type="date" required placeholder="YYYY-MM-DD" />
 
-              {/* Main Genre: single select */}
               <GenreSelect
                 label="Main Genre:"
                 color="--c-purple"
@@ -165,7 +163,6 @@ export default function SubmissionModal({
                 value={form.mainGenre}
                 onChange={(v) => {
                   setField("mainGenre", v);
-                  // also strip from subGenres if present
                   if (form.subGenres) {
                     const cleaned = form.subGenres
                       .split(",")
@@ -179,7 +176,6 @@ export default function SubmissionModal({
                 placeholder="required"
               />
 
-              {/* Sub-Genres: multi select (up to 4), excludes Main */}
               <GenreSelect
                 label="Sub-Genres:"
                 color="--c-blue"
@@ -191,12 +187,39 @@ export default function SubmissionModal({
                 exclude={form.mainGenre ? [form.mainGenre] : []}
               />
 
-              <Field label="Language:" color="--c-orange" value={form.language} onChange={(v) => setField("language", v)} required />
-              <Field label="ISBN:" color="--c-purple" value={form.isbn} onChange={(v) => setField("isbn", v)} />
-              <Field label="Copyright:" color="--c-pink" value={form.copyright} onChange={(v) => setField("copyright", v)} />
+              <Field
+                label="Language:"
+                color="--c-orange"
+                value={form.language}
+                onChange={(v) => setField("language", v)}
+                required
+              />
+
+              <Field
+                label="ISBN:"
+                color="--c-purple"
+                value={form.isbn}
+                onChange={(v) => setField("isbn", v)}
+                info={{
+                  title: "About ISBN",
+                  body:
+                    "An ISBN uniquely identifies a published book version. If you’re still drafting or publishing later, you can leave this blank for now.",
+                }}
+              />
+
+              <Field
+                label="Copyright:"
+                color="--c-pink"
+                value={form.copyright}
+                onChange={(v) => setField("copyright", v)}
+                info={{
+                  title: "Copyright notice",
+                  body:
+                    "A short line like '© 2025 Your Name'. It’s optional here because you can add or finalize it at publication time.",
+                }}
+              />
 
               <Field label="Dedication:" color="--c-blue" value={form.dedication} onChange={(v) => setField("dedication", v)} />
-
               <Check label="NSFW:" color="--c-blue" checked={form.nsfw} onChange={(v) => setField("nsfw", v)} />
             </div>
 
@@ -211,7 +234,7 @@ export default function SubmissionModal({
   );
 }
 
-/* ---------- Tiny subcomponents ---------- */
+/* ---------- Subcomponents ---------- */
 
 function Field({
   label,
@@ -221,6 +244,7 @@ function Field({
   placeholder,
   type = "text",
   required = false,
+  info,
 }: {
   label: string;
   color: "--c-orange" | "--c-pink" | "--c-purple" | "--c-blue";
@@ -229,18 +253,138 @@ function Field({
   type?: "text" | "date";
   required?: boolean;
   onChange: (v: string) => void;
+  info?: { title?: string; body: string };
 }) {
   const word = required ? "required" : "optional";
   const ph = placeholder ? `${placeholder} ${word}` : word;
 
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Info tooltip state + anchors
+  const [showInfo, setShowInfo] = useState(false);
+  const infoBtnRef = useRef<HTMLButtonElement | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const [infoPos, setInfoPos] = useState<{top: number; left: number; width: number}>({
+    top: 0, left: 0, width: 260
+  });
+
+  useEffect(() => {
+    if (!showInfo) return;
+
+    const calc = () => {
+      const btn = infoBtnRef.current;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      const width = 260;
+      const gap = 8;
+      setInfoPos({
+        top: r.bottom + gap,
+        left: Math.max(8, r.right - width),
+        width
+      });
+    };
+    const onOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (
+        !infoBtnRef.current?.contains(t) &&
+        !tooltipRef.current?.contains(t)
+      ) {
+        setShowInfo(false);
+      }
+    };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setShowInfo(false); };
+
+    calc();
+    window.addEventListener("scroll", calc, true);
+    window.addEventListener("resize", calc);
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onEsc);
+
+    return () => {
+      window.removeEventListener("scroll", calc, true);
+      window.removeEventListener("resize", calc);
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [showInfo]);
+
   return (
     <div className="field">
-      <div className="field-label" style={{ background: `var(${color})` }}>
+      <div
+        className="field-label"
+        style={{
+          background: `var(${color})`,
+          position: "relative",
+          paddingRight: info ? 30 : 12,  // make room for the right-side "i"
+        }}
+      >
         <span className="field-label-text">{label}</span>
+
+        {info && (
+          <>
+            {/* Right-aligned circular "i" inside the colored label */}
+            <button
+              ref={infoBtnRef}
+              type="button"
+              className="label-info-btn"
+              aria-label={`${label} info`}
+              aria-expanded={showInfo}
+              onClick={() => setShowInfo((v) => !v)}
+              style={{
+                position: "absolute",
+                top: "50%",
+                right: 6,
+                transform: "translateY(-50%)",
+                display: "inline-grid",
+                placeItems: "center",
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                border: "1px solid rgba(255,255,255,.95)",
+                background: "transparent",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 900,
+                lineHeight: 1,
+              }}
+            >
+              i
+            </button>
+
+            {showInfo && createPortal(
+              <div
+                ref={tooltipRef}
+                role="tooltip"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: "fixed",
+                  top: infoPos.top,
+                  left: infoPos.left,
+                  width: infoPos.width,
+                  zIndex: 1000000,
+                  background: "#1d1d1d",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,.15)",
+                  boxShadow: "0 10px 28px rgba(0,0,0,.45)",
+                  borderRadius: 0,
+                  padding: 10
+                }}
+              >
+                {info.title && (
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>{info.title}</div>
+                )}
+                <div style={{ opacity: 0.95, lineHeight: 1.35 }}>{info.body}</div>
+              </div>,
+              document.body
+            )}
+          </>
+        )}
       </div>
 
       <div className={`field-control ${type === "date" ? "is-date" : ""}`}>
         <input
+          ref={inputRef}
           className="field-input"
           type={type}
           value={value}
@@ -249,6 +393,14 @@ function Field({
           required={required}
           aria-required={required}
         />
+        {type === "date" && (
+          <button
+            type="button"
+            className="date-icon"
+            aria-label="Open calendar"
+            onClick={() => inputRef.current?.showPicker?.()}
+          />
+        )}
       </div>
     </div>
   );
@@ -283,7 +435,7 @@ function Check({
   );
 }
 
-/* ===== GenreSelect (same height as .field-input) ===== */
+/* ===== GenreSelect (portal popover; equal height as inputs) ===== */
 
 function GenreSelect({
   label,
@@ -304,8 +456,11 @@ function GenreSelect({
   placeholder?: string;
   exclude?: string[];
 }) {
-  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number }>({
+    top: 0, left: 0, width: 280
+  });
 
   const selected = useMemo(() => {
     if (mode === "single") return value ? [value.trim()] : [];
@@ -313,22 +468,48 @@ function GenreSelect({
   }, [mode, value]);
 
   const visibleOptions = useMemo(() => {
-    if (mode === "multi" && exclude && exclude.length > 0) {
+    if (exclude && exclude.length > 0) {
       const excl = new Set(exclude);
       return GENRE_OPTIONS.filter((g) => !excl.has(g));
     }
     return GENRE_OPTIONS.slice();
-  }, [mode, exclude]);
+  }, [exclude]);
+
+  const display =
+    selected.length > 0 ? selected.join(", ")
+    : (placeholder ?? (mode === "single" ? "required" : "optional"));
 
   useEffect(() => {
     if (!open) return;
+
+    const calc = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = Math.max(260, r.width);
+      const gap = 8;
+      setPos({
+        top: r.bottom + gap,
+        left: Math.max(8, r.right - width),
+        width
+      });
+    };
+
     const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (triggerRef.current && !triggerRef.current.contains(t)) setOpen(false);
     };
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+
+    calc();
+    window.addEventListener("scroll", calc, true);
+    window.addEventListener("resize", calc);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
+
     return () => {
+      window.removeEventListener("scroll", calc, true);
+      window.removeEventListener("resize", calc);
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onEsc);
     };
@@ -345,18 +526,15 @@ function GenreSelect({
     onChange(Array.from(bag).join(", "));
   };
 
-  const display =
-    selected.length > 0 ? selected.join(", ")
-    : (placeholder ?? (mode === "single" ? "required" : "optional"));
-
   return (
     <div className="field">
       <div className="field-label" style={{ background: `var(${color})` }}>
         <span className="field-label-text">{label}</span>
       </div>
 
-      <div className="field-control" ref={wrapRef} style={{ position: "relative", minWidth: 0 }}>
+      <div className="field-control" style={{ position: "relative", minWidth: 0 }}>
         <button
+          ref={triggerRef}
           type="button"
           className="field-input genre-trigger"
           onClick={() => setOpen((v) => !v)}
@@ -382,22 +560,24 @@ function GenreSelect({
           <span aria-hidden style={{ opacity: 0.9 }}>▾</span>
         </button>
 
-        {open && (
+        {open && createPortal(
           <div
             role="listbox"
-            className="genre-pop"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              right: 0,
-              zIndex: 4000,
-              minWidth: 260,
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
               maxHeight: 260,
               overflow: "auto",
+              zIndex: 1000000,
               background: "#1d1d1d",
               color: "#fff",
               border: "1px solid rgba(255,255,255,.15)",
               boxShadow: "0 10px 28px rgba(0,0,0,.45)",
+              borderRadius: 0,
             }}
           >
             {visibleOptions.map((name) => {
@@ -425,7 +605,8 @@ function GenreSelect({
                 </button>
               );
             })}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

@@ -1334,3 +1334,188 @@
 /* Ensure popover can escape clipping */
 .submodal, .submodal-grid, .sub-right, .genre-simple-control { overflow: visible; }
 
+/* Dark scrollbars for genre dropdowns */
+.submodal .genre-pop,
+.submodal .genre-list {
+  scrollbar-color: #4a4a4a #1a1a1a; /* thumb, track (Firefox) */
+  scrollbar-width: thin;            /* Firefox */
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.submodal .genre-pop::-webkit-scrollbar,
+.submodal .genre-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.submodal .genre-pop::-webkit-scrollbar-track,
+.submodal .genre-list::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.submodal .genre-pop::-webkit-scrollbar-thumb,
+.submodal .genre-list::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 8px;
+  border: 2px solid #1a1a1a; /* creates a gap look */
+}
+
+.submodal .genre-pop::-webkit-scrollbar-thumb:hover,
+.submodal .genre-list::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+
+
+
+
+
+
+
+/* --- Per-row label colors (override inline styles) --- */
+.sub-right .sub-right-rows > :nth-child(1) .field-label {  /* Title */
+  background: #fc5f2e !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(2) .field-label {  /* Author */
+  background: #d81b60 !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(3) .field-label {  /* Date */
+  background: #6a1b9a !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(4) .field-label {  /* Main Genre */
+  background: #1e88e5 !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(5) .field-label {  /* Sub-Genres */
+  background: #fc5f2e !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(6) .field-label {  /* Language */
+  background: #d81b60 !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(7) .field-label {  /* ISBN */
+  background: #6a1b9a !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(8) .field-label {  /* Copyright */
+  background: #1e88e5 !important;
+  color: #ffffff !important;
+}
+.sub-right .sub-right-rows > :nth-child(9) .field-label {  /* Dedication */
+  background: #fc5f2e !important;
+  color: #ffffff !important;
+}
+/* NSFW (10th row is a .check) */
+.sub-right .sub-right-rows > :nth-child(10) .check-label {
+  background: #d81b60 !important;
+  color: #ffffff !important;
+}
+
+/* New Project chip */
+.chip-title {
+  background: #1e88e5 !important;
+  color: #ffffff !important;
+}
+
+/* Buttons (with hover/focus just in case) */
+.btn.cancel {
+  background: #e53935 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+.btn.cancel:hover,
+.btn.cancel:focus { filter: brightness(1.05); }
+
+.btn.save {
+  background: #43a047 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+.btn.save:hover,
+.btn.save:focus { filter: brightness(1.05); }
+
+
+/* === Bigger typography knobs === */
+.submodal .sub-right { --RC-FS: 23px; }   /* right column font size */
+.submodal .sub-left  { --LC-FS: 23px; }   /* left column (chip + summary) */
+
+/* RIGHT column (already bigger from before, kept here for completeness) */
+.submodal .sub-right .field-label,
+.submodal .sub-right .check-label,
+.submodal .sub-right .field-input,
+.submodal .sub-right .genre-trigger,
+.submodal .sub-right .label-info-btn,
+.submodal .sub-right .actions .btn{
+  font-size: var(--RC-FS) !important;
+  line-height: 1 !important;
+}
+.submodal .sub-right .field-input::placeholder{ font-size: var(--RC-FS) !important; opacity:.7; }
+.submodal .sub-right input[type="date"]::-webkit-datetime-edit{ font-size: var(--RC-FS) !important; }
+.submodal .sub-right input[type="date"]::-webkit-calendar-picker-indicator{ transform: scale(1.15); }
+.submodal .sub-right .genre-pop,
+.submodal .sub-right .genre-pop .genre-opt,
+.submodal .sub-right .genre-pop .genre-hint{
+  font-size: calc(var(--RC-FS) * 0.95) !important; line-height: 1.1 !important;
+}
+.submodal .sub-right .field-input,
+.submodal .sub-right .genre-trigger,
+.submodal .sub-right .actions .btn{
+  padding-top:0 !important; padding-bottom:0 !important;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* LEFT column: "New Project" chip + Summary */
+.submodal .chip-title{
+  font-size: var(--LC-FS) !important;
+  line-height: 1 !important;
+}
+
+.submodal .summary-label{
+  font-size: var(--LC-FS) !important;
+  line-height: 1 !important;
+}
+
+.submodal .summary-input{
+  font-size: calc(var(--LC-FS) * 0.95) !important;  /* readable but compact */
+  line-height: 1.25 !important;                     /* keep paragraphs comfy */
+}
+
+/* Optional: placeholder in summary */
+.submodal .summary-input::placeholder{
+  font-size: calc(var(--LC-FS) * 0.95) !important;
+  opacity: .7;
+}
+
+/* Dark scrollbar for the Summary textarea */
+.submodal .summary-input{
+  /* Firefox */
+  scrollbar-color: #4a4a4a #121212; /* thumb, track */
+  scrollbar-width: thin;
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.submodal .summary-input::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+.submodal .summary-input::-webkit-scrollbar-track{
+  background: #121212;
+}
+.submodal .summary-input::-webkit-scrollbar-thumb{
+  background: #4a4a4a;
+  border-radius: 8px;
+  border: 2px solid #121212; /* creates the gap effect */
+}
+.submodal .summary-input::-webkit-scrollbar-thumb:hover{
+  background: #5a5a5a;
+}
+
+/* Make the NSFW checkbox tick white */
+.submodal .check-tick{
+  color: #fff !important;   /* override the amber */
+}
+
