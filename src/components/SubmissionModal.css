@@ -586,3 +586,595 @@
 .actions {
   border-radius: 0 !important;
 }
+
+/* === FINAL SPACING FIX: keep inputs away from the right edge === */
+
+/* 1) Remove padding from the grid so it doesn't fight our column padding */
+.submodal-grid {
+  padding: 0 !important;
+  gap: 0;                    /* we’ll control gaps ourselves */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 2) Give BOTH columns the same inner padding from the modal border */
+.sub-left,
+.sub-right {
+  padding: 28px 32px 24px 32px !important;  /* top, right, bottom, left */
+  box-sizing: border-box;
+}
+
+/* 3) Inside the right column, let rows/inputs fill their column but never
+      push beyond it */
+.sub-right {
+  min-width: 0;              /* allow it to shrink if needed */
+}
+
+.field,
+.check {
+  min-width: 0;
+}
+
+.field-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* 4) Buttons follow the same rule, they stay inside the padding box */
+.actions {
+  width: 100%;
+}
+
+/* Mobile: keep some padding when stacked vertically */
+@media (max-width: 980px) {
+  .sub-left,
+  .sub-right {
+    padding: 24px !important;
+  }
+}
+
+/* === Strip all light grey borders from fields & covers === */
+
+/* Text inputs + summary textarea: no borders, no outlines */
+.field-input,
+.field-input:focus,
+.field-input:focus-visible,
+.summary-input,
+.summary-input:focus,
+.summary-input:focus-visible {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Cover boxes: no border, no outline */
+.cover-box,
+.cover-box:focus,
+.cover-box:focus-visible {
+  border: none !important;
+  outline: none !important;
+}
+
+/* === RECTANGLE LAYOUT: covers+summary ↔ inputs+buttons === */
+
+/* Shared layout tokens */
+:root {
+  --sub-col-pad-top: 28px;
+  --sub-col-pad-x: 32px;
+  --sub-col-pad-bottom: 24px;
+  --sub-chip-h: 44px;    /* height of "New Project" chip */
+  --sub-chip-gap: 16px;  /* space between chip and covers */
+  --sub-label-col: 220px;
+  --sub-row-min-h: 44px; /* min height for all field rows */
+}
+
+/* Modal grid fills the modal and keeps both columns same height */
+.submodal {
+  height: 90vh; /* already there, just reinforcing */
+}
+
+.submodal-grid {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 42% 58%;
+  align-items: stretch;
+  padding: 0 !important;         /* padding handled per-column */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Both columns get the same outer padding from the modal border */
+.sub-left,
+.sub-right {
+  padding: var(--sub-col-pad-top) var(--sub-col-pad-x)
+           var(--sub-col-pad-bottom) var(--sub-col-pad-x);
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+/* LEFT: chip + covers + summary fills full column height */
+.sub-left {
+  display: grid;
+  grid-template-rows: auto auto 1fr; /* chip, covers, summary */
+  row-gap: 16px;
+}
+
+/* Chip has predictable height so we can match on the right */
+.chip-title {
+  min-height: var(--sub-chip-h);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Summary stretches to the bottom of the left column */
+.summary-block {
+  display: grid;
+  grid-template-rows: auto 1fr; /* label + textarea */
+  min-height: 0;
+}
+.summary-input {
+  height: 100%;
+  min-height: 0;
+}
+
+/* RIGHT: offset down so Title aligns with covers top */
+.sub-right {
+  display: flex !important;
+  flex-direction: column;
+  /* top padding: same as left + chip height + gap before covers */
+  padding-top: calc(
+    var(--sub-col-pad-top) + var(--sub-chip-h) + var(--sub-chip-gap)
+  ) !important;
+  min-width: 0;
+}
+
+/* All fields & the checks block share the available height equally */
+.sub-right > .field,
+.sub-right > .checks-row {
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: var(--sub-label-col) 1fr;
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* Checks row = two stacked "field-sized" rows (NSFW + Allow comments) */
+.checks-row {
+  display: grid !important;
+  grid-template-rows: 1fr 1fr;
+  row-gap: 8px;
+}
+
+/* Each check row behaves like a normal field row */
+.check {
+  display: grid !important;
+  grid-template-columns: var(--sub-label-col) 1fr;
+  align-items: stretch;
+  min-height: var(--sub-row-min-h);
+}
+
+/* Controls fill the row height; all same height (inputs & checkboxes) */
+.field-input,
+.check-box {
+  height: 100%;
+  min-height: var(--sub-row-min-h);
+  box-sizing: border-box;
+}
+
+/* Keep checkbox a nice square inside its cell */
+.check-box {
+  width: var(--sub-row-min-h);
+  justify-self: flex-start;
+}
+
+/* Buttons pinned to the bottom, bottoms aligned with summary bottom */
+.actions {
+  margin-top: auto !important;   /* pushes actions to bottom of right column */
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.btn {
+  width: 100%;
+  height: 52px;
+}
+
+/* === Responsive behavior: stack on small screens, keep everything inside modal === */
+@media (max-width: 980px) {
+  .submodal-grid {
+    grid-template-columns: 1fr;
+    overflow: auto;           /* internal scroll instead of page overflow */
+  }
+
+  .sub-left,
+  .sub-right {
+    padding: 24px;
+  }
+
+  /* On stacked layout we don’t need cover-top alignment offset */
+  .sub-right {
+    padding-top: 16px !important;
+  }
+
+  /* Let rows shrink naturally on smaller screens */
+  .sub-right > .field,
+  .sub-right > .checks-row {
+    flex: 0 0 auto;
+  }
+}
+
+/* === Exact-fit, no scroll, always aligned === */
+:root{
+  --sub-col-pad-top: 28px;
+  --sub-col-pad-x: 32px;
+  --sub-col-pad-bottom: 24px;
+  --sub-chip-h: 44px;
+  --sub-chip-gap: 16px;
+
+  /* label column shrinks on narrower screens */
+  --label-col: clamp(120px, 20vw, 220px);
+
+  /* buttons can compress on short screens */
+  --btn-h: clamp(32px, 4.5vh, 44px);
+
+  /* vertical gap between rows on the right */
+  --row-gap: 6px;
+}
+
+/* Modal is fixed height; columns fill it */
+.submodal { height: 90vh; max-height: 90vh; overflow: hidden; }
+.submodal-grid { height: 100%; padding: 0 !important; }
+
+/* Columns share padding */
+.sub-left, .sub-right{
+  padding: var(--sub-col-pad-top) var(--sub-col-pad-x) var(--sub-col-pad-bottom) var(--sub-col-pad-x);
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+/* Left column: chip + covers + summary fills height */
+.sub-left{ display: grid; grid-template-rows: auto auto 1fr; row-gap: 16px; }
+.chip-title{ min-height: var(--sub-chip-h); display: inline-flex; align-items: center; }
+.summary-block{ display: grid; grid-template-rows: auto 1fr; min-height: 0; }
+.summary-input{ height: 100%; min-height: 0; }
+
+/* Right column: two areas:
+   1) .sub-right-rows (all 10 rows) fills available space above
+   2) .actions sits at bottom with height --btn-h
+   Title aligns to covers by offsetting top padding */
+.sub-right{
+  display: grid !important;
+  grid-template-rows: 1fr var(--btn-h);  /* rows area + buttons area */
+  min-height: 0; min-width: 0;
+  padding-top: calc(var(--sub-col-pad-top) + var(--sub-chip-h) + var(--sub-chip-gap)) !important;
+}
+
+/* Rows area: EXACT FIT
+   We have 10 rows (8 fields + 2 checks). Make them equal height: 1fr each.
+   Total height for rows = (right column height - --btn-h - total gaps) */
+.sub-right-rows{
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: 1fr;                    /* each row gets equal share */
+  row-gap: var(--row-gap);
+  /* prevent overflow by reducing internal padding and font if needed */
+}
+
+/* Turn the checks container into TWO rows (so total = 10 rows) */
+.checks-row{
+  display: grid !important;
+  grid-template-rows: 1fr 1fr;  /* NSFW row + Allow comments row */
+  row-gap: var(--row-gap);
+}
+
+/* Every row (field and each check row): label | control */
+.field,
+.check{
+  display: grid !important;
+  grid-template-columns: var(--label-col) 1fr;
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* Controls fill their row; shrink with the row height */
+.field-input,
+.check-box{
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 0 10px;
+  line-height: 1.1;
+  font-size: clamp(10px, 1.6vh, 14px);  /* tightens on short screens */
+}
+
+/* Checkbox square tracks row height visually */
+.check-box{
+  width: 100%;
+  max-width: 44px;                 /* upper bound on large screens */
+  aspect-ratio: 1 / 1;
+  justify-self: start;
+}
+
+/* Buttons pinned to bottom; their total height is --btn-h */
+.actions{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-self: stretch;
+}
+.btn{
+  height: 100%;
+  font-size: clamp(11px, 1.6vh, 14px);
+  font-weight: 800;
+}
+
+/* Safety: nothing can force horizontal overflow */
+.sub-right, .sub-right-rows, .field, .check{ min-width: 0; }
+.field-input{ width: 100%; max-width: 100%; min-width: 0; }
+
+/* Keep borders/ outlines removed as requested */
+.field-input, .field-input:focus, .field-input:focus-visible,
+.summary-input, .summary-input:focus, .summary-input:focus-visible,
+.cover-box, .cover-box:focus, .cover-box:focus-visible{
+  border: none !important;
+  outline: none !important;
+}
+
+/* Stacked on small width: same math still applies per column */
+@media (max-width: 980px){
+  .submodal-grid{ grid-template-columns: 1fr; }
+  .sub-left, .sub-right{ padding: 24px; }
+  .sub-right{ padding-top: 16px !important; }
+}
+
+/* === Make ALL rows the same height (fields, checks, buttons) === */
+
+/* Right column: 11 equal rows:
+   8 fields + 2 checks + 1 buttons row = 11 */
+.sub-right{
+  /* keep the cover-top alignment offset */
+  padding-top: calc(
+    var(--sub-col-pad-top, 28px) + var(--sub-chip-h, 44px) + var(--sub-chip-gap, 16px)
+  ) !important;
+
+  --rows: 11;                 /* total rows, all equal height */
+  --row-gap: 6px;
+
+  display: grid !important;
+  grid-template-rows: repeat(var(--rows), 1fr);  /* all rows equal */
+  row-gap: var(--row-gap);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Flatten wrappers so each inner item occupies a grid row */
+.sub-right-rows{ display: contents !important; }
+
+/* Split the checks container into TWO rows (so they count as 2 lines) */
+.checks-row{
+  display: contents !important;
+}
+
+/* Each row (fields and each check row) = label | control */
+.field,
+.check{
+  display: grid !important;
+  grid-template-columns: var(--label-col, clamp(120px, 20vw, 220px)) 1fr;
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* Controls fill their row height */
+.field-input,
+.check-box{
+  height: 100% !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+  padding: 0 10px;
+  line-height: 1.1;
+  font-size: clamp(11px, 1.6vh, 14px);
+}
+
+/* Checkbox stays a square matching the row height */
+.check-box{
+  aspect-ratio: 1 / 1;
+  width: auto;                /* width derives from height via aspect-ratio */
+  justify-self: start;
+}
+
+/* Buttons occupy ONE equal-height row (like any other line) */
+.actions{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-self: stretch;        /* fill the row */
+}
+.btn{
+  height: 100% !important;    /* match row height */
+  width: 100%;
+  font-size: clamp(11px, 1.6vh, 14px);
+  font-weight: 800;
+}
+
+/* Safety: no horizontal overflow */
+.sub-right, .field, .check{ min-width: 0; }
+.field-input{ width: 100%; max-width: 100%; min-width: 0; }
+
+/* === FORCE every line (fields, each check, and the buttons row) to same height === */
+
+/* 1) Make the right column auto-place each direct item as one equal-height row */
+.sub-right{
+  /* keep your alignment offset */
+  padding-top: calc(
+    var(--sub-col-pad-top, 28px) + var(--sub-chip-h, 44px) + var(--sub-chip-gap, 16px)
+  ) !important;
+
+  /* every item becomes one row of equal height */
+  display: grid !important;
+  grid-auto-flow: row;
+  grid-auto-rows: 1fr;      /* <- every row same height */
+  row-gap: var(--row-gap, 6px);
+
+  min-width: 0; min-height: 0; overflow: hidden;
+}
+
+/* 2) Flatten wrappers so each inner line is a direct grid item (gets 1fr) */
+.sub-right-rows{ display: contents !important; }  /* fields container disappears */
+.checks-row{ display: contents !important; }      /* each Check becomes its own row */
+
+/* 3) Each "line" (field + each check) = label | control and stretches fully */
+.field,
+.check{
+  display: grid !important;
+  grid-template-columns: var(--label-col, clamp(120px, 20vw, 220px)) 1fr;
+  align-items: stretch;
+  min-width: 0; min-height: 0;
+}
+
+/* Controls fill the full row height */
+.field-input,
+.check-box{
+  height: 100% !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+  padding: 0 10px;
+  line-height: 1.1;
+  font-size: clamp(11px, 1.6vh, 14px);
+}
+
+/* Checkbox stays square to the row height */
+.check-box{
+  aspect-ratio: 1 / 1;
+  width: auto;
+  justify-self: start;
+}
+
+/* 4) Make the BUTTONS ROW itself one equal-height row, not shorter */
+.actions{
+  /* treat the whole actions block as ONE grid row with 1fr height */
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  align-self: stretch;      /* fill the row height */
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Buttons fill that row completely */
+.btn{
+  height: 100% !important;  /* exact same row height as other lines */
+  min-height: 0 !important;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  line-height: 1.1;
+  font-size: clamp(11px, 1.6vh, 14px);
+  font-weight: 800;
+}
+
+/* Safety: nothing can force horizontal expansion */
+.sub-right, .field, .check{ min-width: 0; }
+.field-input{ width: 100%; max-width: 100%; min-width: 0; }
+
+/* Kill the light gray border/outline on the tick boxes */
+.check-box {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep it off in all interaction states too */
+.check-box:focus,
+.check-box:focus-visible,
+.check-box:hover,
+.check-box:active {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* — Tighten the gap between columns — */
+.submodal-grid {
+  column-gap: 4px !important;   /* set to 0px if you want them touching */
+}
+
+/* Trim only the inner edges so outer margins stay comfy */
+.sub-left  { padding-right: 8px !important; }
+.sub-right { padding-left:  8px !important; }
+
+/* Keep the existing top offset on the right column */
+.sub-right{
+  padding-top: calc(
+    var(--sub-col-pad-top, 28px) + var(--sub-chip-h, 44px) + var(--sub-chip-gap, 16px)
+  ) !important;
+}
+
+/* --- Right-column label alignment: centered vertically, left-aligned text --- */
+.field-label,
+.check-label {
+  display: flex !important;
+  align-items: center !important;      /* vertical center */
+  justify-content: flex-start !important; /* left side of the label cell */
+  text-align: left !important;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 12px !important;          /* keep a little left/right breathing room */
+  white-space: nowrap;                  /* prevent multi-line wrap */
+  overflow: hidden;
+  text-overflow: ellipsis;              /* truncate long labels cleanly */
+}
+
+/* === Dynamic typography that grows to fill, never breaks the layout === */
+
+/* A single variable to control size across the right column */
+.sub-right{
+  /* scales with the smaller of vw/vh, clamped for readability */
+  --dyn-fs: clamp(11px, min(1.9vw, 2.2vh), 16px);
+}
+
+/* Labels (Title, Author, …) and the two checks */
+.field-label,
+.check-label{
+  font-size: var(--dyn-fs) !important;
+  line-height: 1 !important;            /* don't expand the row */
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Inputs match the row height but text scales dynamically */
+.field-input{
+  font-size: var(--dyn-fs) !important;
+  line-height: 1.1 !important;          /* tiny extra breathing room */
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  white-space: nowrap;                   /* avoid wrapping that could grow height */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Buttons scale the same way and still fill their row */
+.actions .btn{
+  font-size: var(--dyn-fs) !important;
+  line-height: 1.1 !important;
+  padding: 0 10px !important;
+}
+
+/* (Optional) Summary label + textarea text scale too */
+.summary-label,
+.summary-input{
+  font-size: var(--dyn-fs) !important;
+  line-height: 1.25 !important;         /* comfortable multi-line reading */
+}

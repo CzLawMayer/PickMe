@@ -151,79 +151,25 @@ export default function SubmissionModal({
 
           {/* RIGHT COLUMN */}
           <div className="sub-right">
-            <Field
-              label="Title:"
-              color="--c-orange"
-              value={form.title}
-              onChange={(v) => set("title", v)}
-            />
-            <Field
-              label="Author:"
-              color="--c-orange"
-              value={form.author}
-              onChange={(v) => set("author", v)}
-            />
-            <Field
-              label="Date:"
-              color="--c-pink"
-              value={form.date}
-              onChange={(v) => set("date", v)}
-              placeholder="YYYY-MM-DD"
-            />
-            <Field
-              label="Main Genre:"
-              color="--c-purple"
-              value={form.mainGenre}
-              onChange={(v) => set("mainGenre", v)}
-            />
-            <Field
-              label="Sub-Genres:"
-              color="--c-blue"
-              value={form.subGenres}
-              onChange={(v) => set("subGenres", v)}
-              placeholder="Comma separated"
-            />
-            <Field
-              label="Language:"
-              color="--c-orange"
-              value={form.language}
-              onChange={(v) => set("language", v)}
-            />
-            <Field
-              label="ISBN:"
-              color="--c-purple"
-              value={form.isbn}
-              onChange={(v) => set("isbn", v)}
-            />
-            <Field
-              label="Copyright:"
-              color="--c-pink"
-              value={form.copyright}
-              onChange={(v) => set("copyright", v)}
-            />
+            <div className="sub-right-rows">
+              <Field label="Title:" color="--c-orange" value={form.title} onChange={(v) => set("title", v)} />
+              <Field label="Author:" color="--c-orange" value={form.author} onChange={(v) => set("author", v)} />
+              <Field label="Date:" color="--c-pink" value={form.date} onChange={(v) => set("date", v)} placeholder="YYYY-MM-DD" />
+              <Field label="Main Genre:" color="--c-purple" value={form.mainGenre} onChange={(v) => set("mainGenre", v)} />
+              <Field label="Sub-Genres:" color="--c-blue" value={form.subGenres} onChange={(v) => set("subGenres", v)} placeholder="Comma separated" />
+              <Field label="Language:" color="--c-orange" value={form.language} onChange={(v) => set("language", v)} />
+              <Field label="ISBN:" color="--c-purple" value={form.isbn} onChange={(v) => set("isbn", v)} />
+              <Field label="Copyright:" color="--c-pink" value={form.copyright} onChange={(v) => set("copyright", v)} />
 
-            <div className="checks-row">
-              <Check
-                label="NSFW:"
-                color="--c-blue"
-                checked={form.nsfw}
-                onChange={(v) => set("nsfw", v)}
-              />
-              <Check
-                label="Allow comments:"
-                color="--c-pink"
-                checked={form.allowComments}
-                onChange={(v) => set("allowComments", v)}
-              />
+              <div className="checks-row">
+                <Check label="NSFW:" color="--c-blue" checked={form.nsfw} onChange={(v) => set("nsfw", v)} />
+                <Check label="Allow comments:" color="--c-pink" checked={form.allowComments} onChange={(v) => set("allowComments", v)} />
+              </div>
             </div>
 
             <div className="actions">
-              <button className="btn cancel" onClick={onClose}>
-                Cancel
-              </button>
-              <button className="btn save" onClick={() => onSave(form)}>
-                Save
-              </button>
+              <button className="btn cancel" onClick={onClose}>Cancel</button>
+              <button className="btn save" onClick={() => onSave(form)}>Save</button>
             </div>
           </div>
         </div>
