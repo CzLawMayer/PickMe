@@ -1178,3 +1178,159 @@
   font-size: var(--dyn-fs) !important;
   line-height: 1.25 !important;         /* comfortable multi-line reading */
 }
+
+/* Field input wrapper so we can show a date placeholder overlay */
+.field-control {
+  position: relative;
+  min-width: 0;
+}
+
+/* Overlay placeholder for date inputs (since native date ignores placeholder) */
+.date-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  pointer-events: none;
+  opacity: 0.7;
+  /* tie into your dynamic type var if present */
+  font-size: var(--dyn-fs, 13px);
+  line-height: 1.1;
+  color: #bdbdbd; /* muted */
+}
+
+/* Hide the overlay once focused or when a value exists */
+.field-control:has(.field-input:focus) .date-placeholder {
+  opacity: 0.35;
+}
+
+/* === Restore blinking caret in modal inputs/textarea (no borders/outlines) === */
+.field-input,
+.summary-input {
+  color: var(--ink, #fff) !important;          /* ensure visible text */
+  caret-color: var(--ink, #fff) !important;    /* bring back the blinking line */
+  -webkit-text-fill-color: currentColor;       /* Safari/iOS consistency */
+  pointer-events: auto;                        /* ensure focusable/clickable */
+  opacity: 1;                                  /* avoid accidental dimming */
+}
+
+/* Keep border/outline removed as before */
+.field-input:focus,
+.field-input:focus-visible,
+.summary-input:focus,
+.summary-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* ===============================
+   Simple, bulletproof Genre UI
+   =============================== */
+.submodal [class^="genre-simple"],
+.submodal [class*=" genre-simple"] {
+  font: inherit;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  text-shadow: none;
+  mix-blend-mode: normal;
+  filter: none;
+}
+
+/* Container anchors the popover */
+.submodal .genre-simple-control {
+  position: relative;
+  min-width: 0;
+}
+
+/* Display (button in the field area) */
+.submodal .genre-simple-display {
+  width: 100%;
+  height: 100%;
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  background: #111;
+  color: #fff;
+  border: none;
+  outline: none;
+  padding: 0 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.submodal .genre-simple-display.is-placeholder .genre-simple-text {
+  color: #bdbdbd;
+  -webkit-text-fill-color: #bdbdbd;
+  opacity: 0.9;
+}
+.submodal .genre-simple-caret { opacity: 0.9; }
+
+/* Popover */
+.submodal .genre-simple-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10000;
+  min-width: 260px;
+  max-height: 260px;
+  overflow: auto;
+  background: #1d1d1d;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.15);
+  box-shadow: 0 10px 28px rgba(0,0,0,.45);
+}
+
+/* List + items */
+.submodal .genre-simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+}
+.submodal .genre-simple-item {
+  width: 100%;
+  display: block;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  border: 0;
+  padding: 10px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.submodal .genre-simple-item:hover {
+  background: #242424;
+}
+.submodal .genre-simple-item.is-selected {
+  background: #1e88e5;
+  color: #fff;
+}
+.submodal .genre-simple-item.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Name text — never disappear */
+.submodal .genre-simple-name {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit; /* follows item color */
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Hint line for multi-select */
+.submodal .genre-simple-hint {
+  padding: 8px 12px;
+  font-size: 0.92em;
+  color: rgba(255,255,255,0.8);
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+
+/* Ensure popover can escape clipping */
+.submodal, .submodal-grid, .sub-right, .genre-simple-control { overflow: visible; }
+
