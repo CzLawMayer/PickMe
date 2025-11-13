@@ -19,6 +19,7 @@
     "gsap": "^3.13.0",
     "hammerjs": "^2.0.8",
     "lucide-react": "^0.542.0",
+    "matter-js": "^0.20.0",
     "pagedjs": "^0.4.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

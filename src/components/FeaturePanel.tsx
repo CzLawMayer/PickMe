@@ -6,7 +6,6 @@ import LikeButton from "@/components/LikeButton";
 import StarButton from "@/components/StarButton";
 import SaveButton from "@/components/SaveButton";
 
-/** Minimal shape your pages can pass in. Extend as needed. */
 export type Bookish = {
   id: string | number;
   title: string;
@@ -42,7 +41,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
   onRate,
   emptyBrand,
 }) => {
-  // ===== Title line measurement (unchanged) =====
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const [titleLines, setTitleLines] = useState(2);
 
@@ -65,41 +63,27 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     };
   }, [book?.title]);
 
-  // ===== NEW: gradient rotation with readable overlay =====
-  // Base colors you gave:
+  // Solid color rotation (no gradients, no transitions)
   const C1 = "#fc5f2e";
   const C2 = "#d81b60";
   const C3 = "#6a1b9a";
   const C4 = "#1e88e5";
+  const colorPalette = [C1, C2, C3, C4] as const;
 
-  // Four tasteful, minimal gradients using those colors
-  const gradientPalette = [
-    `linear-gradient(135deg, ${C1} 0%, ${C2} 70%)`,
-    `linear-gradient(135deg, ${C2} 0%, ${C3} 70%)`,
-    `linear-gradient(135deg, ${C3} 0%, ${C4} 70%)`,
-    `linear-gradient(135deg, ${C4} 0%, ${C1} 90%)`,
-  ] as const;
-
-  // We place a subtle dark overlay *above* the gradient for readability
-  const overlay = `linear-gradient(0deg, rgba(0,0,0,0.42), rgba(0,0,0,0.42))`;
-
-  const gradIdxRef = useRef(0);
+  const colorIdxRef = useRef(0);
   const prevBookIdRef = useRef<string | number | null>(null);
-  const [panelBgImage, setPanelBgImage] = useState<string | undefined>(undefined);
+  const [panelBgColor, setPanelBgColor] = useState<string>("#000");
 
   useEffect(() => {
-    if (!book) return; // idle → keep default black (no gradient)
+    if (!book) return;
     const currId = book.id;
     if (currId !== prevBookIdRef.current) {
-      const nextGrad = gradientPalette[gradIdxRef.current];
-      // Multiple backgrounds: overlay first, gradient second
-      setPanelBgImage(`${overlay}, ${nextGrad}`);
-      gradIdxRef.current = (gradIdxRef.current + 1) % gradientPalette.length;
+      setPanelBgColor(colorPalette[colorIdxRef.current]);
+      colorIdxRef.current = (colorIdxRef.current + 1) % colorPalette.length;
       prevBookIdRef.current = currId;
     }
   }, [book]);
 
-  // ===== Empty-state brand (unchanged) =====
   const Brand =
     emptyBrand ?? (
       <h3 className="brand-mark">
@@ -108,7 +92,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
       </h3>
     );
 
-  // Normalize average rating input to number
   const avgRatingNum = book
     ? parseFloat(
         typeof book.rating === "string"
@@ -118,15 +101,8 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     : 0;
 
   if (!book) {
-    // EMPTY (PickMe!) — stays black (no backgroundImage set)
     return (
-      <div
-        className="feature-card"
-        style={{
-          // keep a nice subtle transition for when the first book appears
-          transition: "background-image 220ms ease, background 220ms ease",
-        }}
-      >
+      <div className="feature-card" style={{ backgroundColor: "#000" }}>
         <div className="feature-stack">
           <div className="feature-empty-inline" aria-label="No book selected">
             {Brand}
@@ -136,20 +112,15 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     );
   }
 
-  // We DO have a book: apply the rotating gradient (with overlay)
   return (
     <div
       className="feature-card"
       style={{
-        backgroundColor: "#000", // fallback
-        backgroundImage: panelBgImage,
-        transition: "background-image 220ms ease, background 220ms ease",
-        // small inner border for definition on bright gradients
-        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+        backgroundColor: panelBgColor, // instant swap, no transition
+        boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)",
       }}
     >
       <div className="feature-stack">
-        {/* Cover row with link + jump arrow (unchanged) */}
         {book.coverUrl ? (
           <div className="feature-cover-row">
             <Link
@@ -185,7 +156,6 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
           />
         )}
 
-        {/* Info block */}
         <div className="feature-info">
           <div className={`feature-title-wrap ${titleLines === 1 ? "one-line" : ""}`}>
             <h3 ref={titleRef} className="feature-title">
