@@ -1,131 +1,125 @@
-// src/pages/Write.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AppHeader from "@/components/AppHeader";
 import SubmissionModal from "@/components/SubmissionModal";
 import "./Write.css";
 
-type Chapter = { id: string; title: string };
+type Chapter = { id: string; title: string; content: string; isEditing?: boolean };
 
 export default function WritePage() {
   const [isLeftOpen, setLeftOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
 
-  // Chapters (contiguous order is just array index)
+  // chapters
   const [chapters, setChapters] = useState<Chapter[]>([
-    { id: crypto.randomUUID(), title: "" },
-    { id: crypto.randomUUID(), title: "" },
-    { id: crypto.randomUUID(), title: "" },
-    { id: crypto.randomUUID(), title: "" },
-    { id: crypto.randomUUID(), title: "" },
+    { id: crypto.randomUUID(), title: "Chapter 1", content: "" },
+    { id: crypto.randomUUID(), title: "Chapter 2", content: "" },
+    { id: crypto.randomUUID(), title: "Chapter 3", content: "" },
   ]);
+  const [activeId, setActiveId] = useState<string>(() => chapters[0]?.id);
 
-  // Inline rename state
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draftTitle, setDraftTitle] = useState("");
-
-  // Active chapter (optional)
-  const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
-
-  // Submission modal
   const [showSubmission, setShowSubmission] = useState(false);
-  const openSubmissionModal = () => setShowSubmission(true);
 
-  // ESC closes topmost UI
+  // helpers
+  const active = useMemo(
+    () => chapters.find(c => c.id === activeId) ?? chapters[0],
+    [chapters, activeId]
+  );
+
+  const addChapter = () =>
+    setChapters(list => {
+      const idx = list.length + 1;
+      const c = { id: crypto.randomUUID(), title: `Chapter ${idx}`, content: "" };
+      return [...list, c];
+    });
+
+  const beginRename = (id: string, _title: string) =>
+    setChapters(list => list.map(c => (c.id === id ? { ...c, isEditing: true } : c)));
+
+  const commitRename = (id: string, value: string) =>
+    setChapters(list =>
+      list.map(c =>
+        c.id === id ? { ...c, title: (value || "Untitled").trim(), isEditing: false } : c
+      )
+    );
+
+  const cancelRename = (id: string) =>
+    setChapters(list => list.map(c => (c.id === id ? { ...c, isEditing: false } : c)));
+
+  const removeChapter = (id: string) =>
+    setChapters(list => {
+      const next = list.filter(c => c.id !== id);
+      // keep a valid active id
+      if (activeId === id && next.length) setActiveId(next[0].id);
+      return next.map((c, i) =>
+        // if the title was the auto “Chapter N”, renumber it; custom titles stay untouched
+        /^Chapter \d+$/.test(c.title) ? { ...c, title: `Chapter ${i + 1}` } : c
+      );
+    });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (showSubmission) return setShowSubmission(false);
-      if (isLeftOpen) return setLeftOpen(false);
-      if (isRightOpen) return setRightOpen(false);
+      if (e.key === "Escape") {
+        if (showSubmission) setShowSubmission(false);
+        else if (isLeftOpen) setLeftOpen(false);
+        else if (isRightOpen) setRightOpen(false);
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [isLeftOpen, isRightOpen, showSubmission]);
 
-  const addChapter = () =>
-    setChapters((list) => [...list, { id: crypto.randomUUID(), title: "" }]);
-
-  const beginRename = (id: string, currentTitle: string) => {
-    setEditingId(id);
-    setDraftTitle(currentTitle);
+  // editor: write content to the active chapter
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const onEditorInput = () => {
+    const text = editorRef.current?.innerText ?? "";
+    setChapters(list => list.map(c => (c.id === active?.id ? { ...c, content: text } : c)));
   };
 
-  const commitRename = (id: string) => {
-    setChapters((list) =>
-      list.map((c) => (c.id === id ? { ...c, title: draftTitle.trim() } : c))
-    );
-    setEditingId(null);
-    setDraftTitle("");
-  };
-
-  const cancelRename = () => {
-    setEditingId(null);
-    setDraftTitle("");
-  };
-
-  const removeChapter = (id: string) => {
-    setChapters((list) => list.filter((c) => c.id !== id));
-    if (activeChapterId === id) setActiveChapterId(null);
-    if (editingId === id) cancelRename();
-  };
-
-  const setActiveChapter = (id: string) => setActiveChapterId(id);
-
-  // Helpful: a fast lookup for index → used for color cycling and fallback label
-  const indexById = useMemo(() => {
-    const m = new Map<string, number>();
-    chapters.forEach((c, i) => m.set(c.id, i));
-    return m;
-  }, [chapters]);
+  // keep editor text in sync when switching chapters
+  useEffect(() => {
+    if (!editorRef.current) return;
+    editorRef.current.innerText = active?.content ?? "";
+  }, [active?.id]); // eslint-disable-line
 
   return (
     <div className="write-shell">
       <AppHeader />
 
-      {/* LEFT SLIDER */}
+      {/* LEFT PANEL */}
       <aside
         className={`slide-panel slide-left ${isLeftOpen ? "is-open" : "is-closed"}`}
         aria-hidden={!isLeftOpen}
       >
         <div className="slide-inner">
-          <button className="lm-settings" onClick={openSubmissionModal}>
+          <button className="lm-settings" onClick={() => setShowSubmission(true)}>
             Settings
           </button>
 
           <ul className="lm-list" role="list">
             {chapters.map((ch, i) => {
-              // Cycle through 1..4 for colors based on visible order
               const colorClass = `lm-c${(i % 4) + 1}`;
-              const isEditing = editingId === ch.id;
-              const fallback = `Chapter ${i + 1}`;
-              const label = (ch.title || "").trim() || fallback;
-
               return (
                 <li key={ch.id}>
                   <div
                     className={`lm-item lm-chapter ${colorClass}`}
-                    onClick={() => setActiveChapter(ch.id)}
+                    onClick={() => setActiveId(ch.id)}
                     data-id={ch.id}
-                    aria-current={activeChapterId === ch.id ? "true" : undefined}
                   >
-                    {/* left text or inline edit */}
-                    {isEditing ? (
+                    {ch.isEditing ? (
                       <input
                         className="lm-edit-input"
-                        value={draftTitle}
+                        defaultValue={ch.title}
                         autoFocus
-                        onChange={(e) => setDraftTitle(e.target.value)}
-                        onBlur={() => commitRename(ch.id)}
+                        onBlur={(e) => commitRename(ch.id, e.currentTarget.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") commitRename(ch.id);
-                          if (e.key === "Escape") cancelRename();
+                          if (e.key === "Enter") commitRename(ch.id, (e.target as HTMLInputElement).value);
+                          if (e.key === "Escape") cancelRename(ch.id);
                         }}
                       />
                     ) : (
-                      <span className="lm-text">{label}</span>
+                      <span className="lm-text">{ch.title}</span>
                     )}
 
-                    {/* actions */}
                     <span className="lm-actions">
                       <button
                         type="button"
@@ -155,14 +149,8 @@ export default function WritePage() {
               );
             })}
 
-            {/* ADD ROW — inside the list, always last */}
             <li>
-              <button
-                type="button"
-                className="lm-item lm-add"
-                onClick={addChapter}
-                title="Add chapter"
-              >
+              <button type="button" className="lm-item lm-add" onClick={addChapter}>
                 + Add chapter
               </button>
             </li>
@@ -178,7 +166,7 @@ export default function WritePage() {
         </button>
       </aside>
 
-      {/* RIGHT SLIDER (empty) */}
+      {/* RIGHT PANEL (empty) */}
       <aside
         className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
         aria-hidden={!isRightOpen}
@@ -187,18 +175,30 @@ export default function WritePage() {
         <button
           className="slide-tab tab-right"
           onClick={() => setRightOpen((v) => !v)}
-          aria-label={isRightOpen ? "Close right panel" : "Open right panel"}
           aria-expanded={isRightOpen}
         >
           Notes
         </button>
       </aside>
 
-      {/* MAIN CANVAS */}
-      <main className="write-canvas" role="main">
-        <div className="write-placeholder">
-          <p className="muted">Your writing canvas goes here.</p>
-        </div>
+      {/* CENTER WRITING CANVAS */}
+      <main className="write-canvas" role="main" aria-live="polite">
+        <section className="editor-wrap" aria-label="Writing editor">
+          <h1 className="editor-title">{active?.title || "Untitled Chapter"}</h1>
+
+          <div className="editor-frame">
+            <div
+              ref={editorRef}
+              className="editor-area"
+              contentEditable
+              spellCheck={true}
+              data-placeholder="Start writing here…"
+              onInput={onEditorInput}
+              aria-multiline="true"
+              role="textbox"
+            />
+          </div>
+        </section>
       </main>
 
       {/* Submission Modal */}
