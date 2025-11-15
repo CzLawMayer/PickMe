@@ -1519,3 +1519,26 @@
   color: #fff !important;   /* override the amber */
 }
 
+/* Fainter placeholder look for select-like fields (Genre, Sub-Genres, Language) */
+.genre-trigger .fi-placeholder {
+  color: var(--muted, #bdbdbd);
+  -webkit-text-fill-color: var(--muted, #bdbdbd);
+  opacity: 0.52;           /* faint */
+}
+
+/* Also dim the caret when it's a placeholder */
+.genre-trigger .fi-placeholder + .fi-caret {
+  opacity: 0.45;
+}
+
+/* Make native input placeholders faint (text fields) */
+.field-input::placeholder {
+  color: var(--muted, #bdbdbd);
+  opacity: 0.5;
+}
+
+/* Date overlay placeholder even fainter to match */
+.date-placeholder {
+  color: var(--muted, #bdbdbd) !important;
+  opacity: 0.5 !important;
+}

@@ -12,6 +12,98 @@ const GENRE_OPTIONS = [
   "Steampunk","Thriller","Time Travel","Urban Fantasy","Young Adult"
 ];
 
+const LANG_OPTIONS = [
+  "Afrikaans",
+  "Albanian",
+  "Amharic",
+  "Arabic",
+  "Armenian",
+  "Azerbaijani",
+  "Basque",
+  "Bengali",
+  "Bhojpuri",
+  "Bosnian",
+  "Bulgarian",
+  "Burmese",
+  "Cantonese",
+  "Catalan",
+  "Cebuano",
+  "Croatian",
+  "Czech",
+  "Danish",
+  "Dutch",
+  "English",
+  "Estonian",
+  "Finnish",
+  "French",
+  "Galician",
+  "Georgian",
+  "German",
+  "Greek",
+  "Gujarati",
+  "Hausa",
+  "Hebrew",
+  "Hindi",
+  "Hungarian",
+  "Icelandic",
+  "Indonesian",
+  "Irish",
+  "Italian",
+  "Japanese",
+  "Kannada",
+  "Kazakh",
+  "Kinyarwanda",
+  "Khmer",
+  "Korean",
+  "Kurdish",
+  "Lao",
+  "Latvian",
+  "Lithuanian",
+  "Maithili",
+  "Malay (MS)",
+  "Malayalam",
+  "Mandarin Chinese",
+  "Marathi",
+  "Mongolian",
+  "Nepali",
+  "Norwegian",
+  "Odia (Oriya)",
+  "Pashto",
+  "Persian (Farsi)",
+  "Polish",
+  "Portuguese",
+  "Punjabi",
+  "Romanian",
+  "Russian",
+  "Scottish Gaelic",
+  "Serbian",
+  "Sinhala",
+  "Slovak",
+  "Somali",
+  "Spanish",
+  "Sundanese",
+  "Swahili",
+  "Swedish",
+  "Tagalog (Filipino)",
+  "Tajik",
+  "Tamil",
+  "Telugu",
+  "Thai",
+  "Turkish",
+  "Turkmen",
+  "Ukrainian",
+  "Urdu",
+  "Uzbek",
+  "Vietnamese",
+  "Welsh",
+  "Xhosa",
+  "Yoruba",
+  "Zulu",
+];
+
+
+
+
 type SubmitFormData = {
   title: string;
   author: string;
@@ -187,12 +279,12 @@ export default function SubmissionModal({
                 exclude={form.mainGenre ? [form.mainGenre] : []}
               />
 
-              <Field
+              <LanguageSelect
                 label="Language:"
                 color="--c-orange"
                 value={form.language}
                 onChange={(v) => setField("language", v)}
-                required
+                placeholder="required"
               />
 
               <Field
@@ -554,10 +646,13 @@ function GenreSelect({
             width: "100%",
           }}
         >
-          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", opacity: selected.length === 0 ? 0.8 : 1 }}>
+          <span
+            className={selected.length === 0 ? "fi-placeholder" : ""}
+            style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+          >
             {display}
           </span>
-          <span aria-hidden style={{ opacity: 0.9 }}>▾</span>
+          <span className="fi-caret" aria-hidden>▾</span>
         </button>
 
         {open && createPortal(
@@ -608,6 +703,163 @@ function GenreSelect({
           </div>,
           document.body
         )}
+      </div>
+    </div>
+  );
+}
+
+function LanguageSelect({
+  label,
+  color,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  color: "--c-orange" | "--c-pink" | "--c-purple" | "--c-blue";
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number }>({
+    top: 0,
+    left: 0,
+    width: 280,
+  });
+
+  const selected = useMemo(() => (value ? [value.trim()] : []), [value]);
+  const display = selected.length > 0 ? selected.join(", ") : (placeholder ?? "required");
+
+  useEffect(() => {
+    if (!open) return;
+
+    const calc = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = Math.max(260, r.width);
+      const gap = 8;
+      setPos({
+        top: r.bottom + gap,
+        left: Math.max(8, r.right - width),
+        width,
+      });
+    };
+
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current && !triggerRef.current.contains(t)) setOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    calc();
+    window.addEventListener("scroll", calc, true);
+    window.addEventListener("resize", calc);
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      window.removeEventListener("scroll", calc, true);
+      window.removeEventListener("resize", calc);
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
+
+  const choose = (name: string) => {
+    onChange(name);  // single select
+    setOpen(false);
+  };
+
+  return (
+    <div className="field">
+      <div className="field-label" style={{ background: `var(${color})` }}>
+        <span className="field-label-text">{label}</span>
+      </div>
+
+      <div className="field-control" style={{ position: "relative", minWidth: 0 }}>
+        <button
+          ref={triggerRef}
+          type="button"
+          className="field-input genre-trigger"
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr auto",
+            alignItems: "center",
+            padding: "0 12px",
+            textAlign: "left",
+            cursor: "pointer",
+            background: "#111",
+            color: "#fff",
+            border: "none",
+            outline: "none",
+            width: "100%",
+          }}
+        >
+          <span
+            className={selected.length === 0 ? "fi-placeholder" : ""}
+            style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+          >
+            {display}
+          </span>
+          <span className="fi-caret" aria-hidden>▾</span>
+        </button>
+
+        {open &&
+          createPortal(
+            <div
+              role="listbox"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: "fixed",
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                maxHeight: 260,
+                overflow: "auto",
+                zIndex: 1000000,
+                background: "#1d1d1d",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,.15)",
+                boxShadow: "0 10px 28px rgba(0,0,0,.45)",
+                borderRadius: 0,
+              }}
+            >
+              {LANG_OPTIONS.map((name) => {
+                const sel = selected.includes(name);
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => choose(name)}
+                    aria-selected={sel}
+                    className={sel ? "genre-opt is-selected" : "genre-opt"}
+                    style={{
+                      width: "100%",
+                      display: "block",
+                      padding: "10px 12px",
+                      textAlign: "left",
+                      border: "none",
+                      background: sel ? "#1e88e5" : "transparent",
+                      color: "#fff",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body
+          )}
       </div>
     </div>
   );
