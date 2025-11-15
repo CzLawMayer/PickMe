@@ -1,0 +1,214 @@
+/* =========================
+   Write Page — Full CSS
+   ========================= */
+
+/* --- Page tokens --- */
+:root{
+  --ink: #fff;
+  --bg: #0f0f10;
+
+  --app-header-h: 64px;
+
+  --panel-w: clamp(260px, 28vw, 360px);
+  --panel-bg: #151517;
+  --tab-w: 44px;
+  --tab-h: 120px;
+
+  /* stripe colors */
+  --c1:#ef5623;  /* orange */
+  --c2:#e41f6c;  /* pink   */
+  --c3:#6a1b9a;  /* purple */
+  --c4:#1e88e5;  /* blue   */
+  --cAdd:#ff4d8d;/* add row */
+}
+
+/* --- App frame --- */
+.write-shell{
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+  position: relative;
+  overflow: hidden;               /* keep canvas tidy; tabs are outside panels */
+}
+.app-header{ position: relative; z-index: 70; }
+
+.write-canvas{
+  position: relative;
+  min-height: calc(100svh - var(--app-header-h));
+  padding-top: var(--app-header-h);
+  display: grid;
+  place-items: center;
+}
+.write-placeholder .muted{ color:#bdbdbd; opacity:.8; }
+
+/* =========================
+   Sliding Panels (both sides)
+   ========================= */
+.slide-panel{
+  position: fixed;
+  top: 0;
+  height: 100dvh;                 /* exact device viewport height */
+  width: var(--panel-w);
+  background: var(--panel-bg);
+  z-index: 60;
+  overflow: visible;              /* let the tab stick out */
+  border: 0;
+  box-shadow: none;
+  transform: translateZ(0);       /* avoid sub-pixel seams on some GPUs */
+}
+
+/* left */
+.slide-left{ left: 0; }
+.slide-left.is-closed{ transform: translateX(-100%); }
+.slide-left.is-open{    transform: translateX(0); box-shadow: 8px 0 28px rgba(0,0,0,.35); }
+
+/* right */
+.slide-right{ right: 0; }
+.slide-right.is-closed{ transform: translateX(100%); }
+.slide-right.is-open{    transform: translateX(0); box-shadow: -8px 0 28px rgba(0,0,0,.35); }
+
+/* inner stack fills from just under the header down to the very bottom */
+.slide-panel .slide-inner{
+  position: absolute;
+  top: var(--app-header-h);
+  right: 0;
+  bottom: 0;                      /* <- no static space below content */
+  left: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+/* tabs that open/close panels */
+.slide-tab{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--tab-w);
+  height: var(--tab-h);
+  display: grid; place-items: center;
+  background:#1e88e5;
+  color:#fff;
+  border:0;
+  cursor:pointer;
+  font-weight: 800;
+  letter-spacing:.02em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  user-select:none;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+}
+.tab-left { right: calc(-1 * var(--tab-w)); }
+.tab-right{ left:  calc(-1 * var(--tab-w)); }
+
+/* =========================
+   Left Panel Content (Settings + Chapters)
+   ========================= */
+
+/* settings row pinned at top of inner stack */
+.lm-settings{
+  all: unset;
+  display:block;
+  padding:16px 18px;
+  font: 900 28px/1.2 system-ui, sans-serif;
+  color:#fff;
+  cursor:pointer;
+}
+
+/* scrollable list takes ALL remaining height below Settings */
+.lm-list{
+  flex: 1 1 auto;                 /* grows to the bottom */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+
+  /* hide scrollbars visually */
+  -ms-overflow-style: none;       /* IE/Edge */
+  scrollbar-width: none;          /* Firefox */
+}
+.lm-list::-webkit-scrollbar{ width:0; height:0; }
+
+/* generic row */
+.lm-item{
+  width:100%;
+  border:0;
+  margin:0;
+  padding:16px 18px;
+  color:#fff;
+  font: 900 26px/1.15 system-ui, sans-serif;
+  text-align:left;
+  cursor:pointer;
+  user-select:none;
+}
+
+/* chapter row layout (text/input + actions) */
+.lm-chapter{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  align-items:center;
+  gap:10px;
+  padding-right:12px;
+}
+
+/* color cycle for chapters */
+.lm-chapter.lm-c1{ background: var(--c1); }
+.lm-chapter.lm-c2{ background: var(--c2); }
+.lm-chapter.lm-c3{ background: var(--c3); }
+.lm-chapter.lm-c4{ background: var(--c4); }
+
+/* inline edit field */
+.lm-text{ pointer-events:none; }
+.lm-edit-input{
+  width:100%;
+  border:0;
+  outline:none;
+  background:rgba(0,0,0,.15);
+  color:#fff;
+  font:inherit;
+  font-weight:800;
+  padding:8px 10px;
+  border-radius:4px;
+}
+
+/* actions (edit/delete icons) */
+.lm-actions{ display:inline-flex; gap:8px; }
+.icon-btn{
+  display:inline-grid; place-items:center;
+  width:28px; height:28px;
+  border-radius:6px; border:0; cursor:pointer;
+  background: rgba(0,0,0,.18);
+  color:#fff;
+}
+.icon-btn:hover{ background: rgba(0,0,0,.28); }
+.icon-btn:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+
+/* add row behaves like a normal chapter row and is last in the list */
+.lm-add{
+  background: var(--cAdd);
+  text-align:center;
+  font-size:28px;
+  line-height:1.1;
+}
+
+/* ensure the LAST li sits flush with the panel bottom */
+.lm-list > li:last-child{ margin:0; }
+
+/* =========================
+   Right Panel (empty for now)
+   ========================= */
+
+.rm-inner{ /* optional hook for future content */
+  position: absolute;
+  inset: var(--app-header-h) 0 0 0;
+  display: block;
+}
+
+/* =========================
+   Responsive tweak
+   ========================= */
+@media (max-width: 860px){
+  :root{ --panel-w: clamp(240px, 60vw, 320px); }
+}
