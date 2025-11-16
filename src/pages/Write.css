@@ -266,3 +266,132 @@
 html, body{
   overscroll-behavior: contain;
 }
+
+/* Hug the header even tighter */
+.write-canvas{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:calc(100svh - var(--app-header-h,64px));
+  padding-top: calc(var(--app-header-h,64px) + 2px); /* almost no gap */
+}
+
+/* Remove extra top spacing inside the editor */
+.editor-wrap{ padding-top: 0; }
+
+/* Title tight to the top */
+.editor-title{
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+/* ---------- WRITE EDITOR: bottom-safe, no buried lines ---------- */
+
+/* Page stays fixed; only the editor column scrolls */
+.write-shell{ overflow: hidden; }
+
+/* Canvas fills under header; no extra vertical gaps */
+.write-canvas{
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100dvh - var(--app-header-h,64px));
+  padding-top: var(--app-header-h,64px);
+}
+
+/* Make the editor column exactly the viewport minus header */
+.editor-wrap{
+  width: min(820px, 92vw);
+  margin: 0 auto;
+  height: calc(100dvh - var(--app-header-h,64px));
+  display: flex;                 /* stack: title + area */
+  flex-direction: column;
+  overflow: hidden;              /* prevent double scroll containers */
+  padding: 0 24px;               /* horizontal padding only */
+  box-sizing: border-box;
+}
+
+/* Title snug at top */
+.editor-title{
+  margin: 6px 0 8px;
+  text-align: center;
+  font-size: clamp(20px, 3.2vw, 28px);
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+/* The ONLY scroller: fills all remaining height */
+.editor-area{
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 4px 28px;           /* small bottom pad so last line is visible */
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: clamp(14px, 1.2vw, 16px);
+  line-height: 1.65;
+  color: #e7e7e7;
+
+  /* hide scrollbars */
+  -ms-overflow-style: none;      /* IE/Edge */
+  scrollbar-width: none;         /* Firefox */
+}
+.editor-area::-webkit-scrollbar{ width:0; height:0; }
+
+/* Placeholder for empty contenteditable */
+.editor-area:empty::before{
+  content: attr(data-placeholder);
+  color: #bdbdbd;
+  opacity: .6;
+  font-style: italic;
+}
+
+/* Nuke any previous gradient overlay or bottom padding that could cover text */
+.editor-wrap::after{ content:none !important; display:none !important; }
+.editor-frame{ display: contents !important; overflow: visible !important; }
+
+/* Ensure side panels don’t introduce a 1px seam on some GPUs */
+.slide-panel{
+  top: 0;
+  bottom: 0;
+  height: 100dvh;
+  border: 0;
+  box-shadow: none;
+  transform: translateZ(0);
+}
+.slide-panel .slide-inner{
+  position: absolute;
+  top: var(--app-header-h,64px);
+  right: 0; bottom: 0; left: 0;
+  display: flex; flex-direction: column;
+  gap: 0; padding: 0; margin: 0;
+}
+
+/* Keep the canvas padded below the header (64px by default) */
+.write-canvas{
+  padding-top: var(--app-header-h, 64px);
+}
+
+/* This rail sits inside that padding by offsetting itself upward */
+.editor-title-rail{
+  position: sticky;
+  top: 0; /* stick at the top of the scroll container */
+  margin-top: calc(-1 * var(--app-header-h, 64px)); /* pull into the padding area */
+  padding-top: var(--app-header-h, 64px);           /* restore layout below */
+  background: var(--bg);
+  z-index: 2; /* above the editable area */
+}
+
+/* Exact 8px spacing you asked for */
+.editor-title{
+  margin: 28px 0;
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(20px, 3.2vw, 28px);
+}
+
+/* Ensure the content starts right under the title rail */
+.editor-content{
+  min-height: calc(100% - 48px); /* rough title area; adjust if needed */
+}
