@@ -395,3 +395,45 @@ html, body{
 .editor-content{
   min-height: calc(100% - 48px); /* rough title area; adjust if needed */
 }
+
+.app-header{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 70;
+}
+
+.write-canvas{
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  /* Fill the whole viewport; header is fixed on top, so we don’t subtract */
+  min-height: 100dvh;
+
+  /* Push the content down so it doesn’t sit under the fixed header */
+  padding-top: var(--app-header-h, 64px);
+}
+
+.editor-area{
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 4px 28px;
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: clamp(14px, 1.2vw, 16px);
+  line-height: 1.65;
+  color: #e7e7e7;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.editor-area::-webkit-scrollbar{ width:0; height:0; }
+
+html, body{
+  height: 100%;
+  overflow: hidden;
+}
