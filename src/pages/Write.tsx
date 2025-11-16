@@ -480,124 +480,151 @@ export default function WritePage() {
       {/* CENTER CANVAS */}
       <main className="write-canvas" role="main" aria-live="polite">
         <section className="editor-wrap" aria-label="Writing editor">
-          <header className="editor-header">
-            <h1 className="editor-title">{active?.title || "Untitled Chapter"}</h1>
-          </header>
+          <div className="editor-inner">
+            <header className="editor-header">
+              <h1 className="editor-title">{active?.title || "Untitled Chapter"}</h1>
+            </header>
 
-          <div className="editor-body">
-            {/* TOOLBAR (static left) */}
-            <div className="editor-toolbar" aria-label="Text formatting tools">
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => applyCommand("bold")}
-              >
-                B
-              </button>
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => applyCommand("italic")}
-              >
-                I
-              </button>
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => applyCommand("underline")}
-              >
-                U
-              </button>
+            <div className="editor-body">
+              {/* TOOLBAR (now hanging to the left) */}
+              <div className="editor-toolbar-shell">
+                <div className="editor-toolbar" aria-label="Text formatting tools">
+                  {/* 0. Undo & Redo */}
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("undo")}
+                    title="Undo"
+                  >
+                    ↺
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("redo")}
+                    title="Redo"
+                  >
+                    ↻
+                  </button>
 
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => applyCommand("justifyLeft")}
-              >
-                L
-              </button>
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => applyCommand("justifyCenter")}
-              >
-                C
-              </button>
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => applyCommand("justifyRight")}
-              >
-                R
-              </button>
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => applyCommand("justifyFull")}
-              >
-                J
-              </button>
+                  {/* 1. Bold & Italic */}
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("bold")}
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("italic")}
+                  >
+                    I
+                  </button>
 
-              {/* LIST CYCLER: 1. -> • -> none */}
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={cycleListMode}
-                title="Toggle list (1. / • / none)"
-              >
-                {listMode === "none" && "1."}
-                {listMode === "ordered" && "•"}
-                {listMode === "unordered" && "–"}
-              </button>
+                  {/* 2. Underline & Caps/lowercase */}
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("underline")}
+                  >
+                    U
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={cycleCase}
+                    title="Cycle case (Aa / AA / aa)"
+                  >
+                    Aa
+                  </button>
 
-              {/* CASE CYCLER */}
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={cycleCase}
-                title="Cycle case (Aa / AA / aa)"
-              >
-                Aa
-              </button>
+                  {/* 3. Center & Justify */}
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("justifyCenter")}
+                  >
+                    C
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("justifyFull")}
+                  >
+                    J
+                  </button>
 
-              {/* SEPARATOR */}
-              <button
-                type="button"
-                className="editor-tool-btn"
-                onMouseDown={e => e.preventDefault()}
-                onClick={insertSectionDivider}
-              >
-                ○
-              </button>
-            </div>
+                  {/* 4. Left & Right */}
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("justifyLeft")}
+                  >
+                    L
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => applyCommand("justifyRight")}
+                  >
+                    R
+                  </button>
 
-            {/* ONLY THIS SCROLLS */}
-            <div className="editor-scroll">
-              <div
-                ref={editorRef}
-                className="editor-area"
-                contentEditable
-                spellCheck={true}
-                data-placeholder="Start writing here…"
-                onInput={onEditorInput}
-                onPaste={handlePaste}
-                onKeyDown={handleEditorKeyDown}
-                aria-multiline="true"
-                role="textbox"
-              />
+                  {/* 5. Numbers & Separator */}
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={cycleListMode}
+                    title="Toggle list (1. / • / none)"
+                  >
+                    {listMode === "none" && "1."}
+                    {listMode === "ordered" && "•"}
+                    {listMode === "unordered" && "–"}
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={insertSectionDivider}
+                  >
+                    ○
+                  </button>
+                </div>
+              </div>
+
+              {/* ONLY THIS SCROLLS */}
+              <div className="editor-scroll">
+                <div
+                  ref={editorRef}
+                  className="editor-area"
+                  contentEditable
+                  spellCheck={true}
+                  data-placeholder="Start writing here…"
+                  onInput={onEditorInput}
+                  onPaste={handlePaste}
+                  onKeyDown={handleEditorKeyDown}
+                  aria-multiline="true"
+                  role="textbox"
+                />
+              </div>
             </div>
           </div>
         </section>
       </main>
+
 
       {showSubmission && (
         <SubmissionModal

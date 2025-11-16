@@ -248,89 +248,134 @@ body {
    Editor Layout
    ========================= */
 
+/* Centered column under the fixed header */
 .editor-wrap {
   width: min(820px, 92vw);
   margin: 0 auto;
   height: calc(100dvh - var(--app-header-h, 64px));
-  display: flex;
-  flex-direction: column;
+  display: block;                /* the real flex is on .editor-inner */
   padding: 0 24px;
   box-sizing: border-box;
 }
 
+/* Inner column: title + body */
+.editor-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;                  /* critical for scrolling to work */
+}
+
+/* Title area – static, no scrolling */
 .editor-header {
   flex: 0 0 auto;
 }
 
 .editor-title {
-  margin: 8px 0 12px;
+  margin: 23px 0;
   text-align: center;
   font-weight: 900;
   font-size: clamp(20px, 3.2vw, 28px);
 }
 
-/* Toolbar + editor row */
+/* Body: fills remaining height, acts as layout box */
 .editor-body {
+  position: relative;
   flex: 1 1 auto;
-  display: flex;
-  gap: 16px;
-  min-height: 0;
+  min-height: 0;                 /* allow children to scroll */
+  display: flex;                 /* toolbar (absolute) + scroll area */
+  align-items: stretch;
 }
 
-/* Toolbar rail */
-.editor-toolbar {
-  flex: 0 0 52px;
+/* =========================
+   Toolbar (floating on the left)
+   ========================= */
+
+/* Toolbar container: hangs to the left of the centered text */
+.editor-toolbar-shell {
+  position: absolute;
+  top: 0px;                     /* vertical offset relative to title */
+  left: -129px;                   /* how far it sits to the left of the text column */
+  width: 80px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 6px;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: auto;
+  z-index: 5;
+}
+
+/* Glassy toolbar panel */
+.editor-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 4px;
+  padding: 8px 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
 }
 
 /* Toolbar buttons */
 .editor-tool-btn {
-  border: 0;
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  font-size: 12px;
+  border: none;
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 11px;
   padding: 6px 4px;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   text-align: center;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    transform 0.08s ease,
+    box-shadow 0.16s ease;
 }
 
 .editor-tool-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.editor-tool-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .editor-tool-btn:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
 
-/* Only scroller */
+/* =========================
+   Scroll container + content
+   ========================= */
+
+/* Scroll container: fills remaining height, is the ONLY scroller */
 .editor-scroll {
   flex: 1 1 auto;
   min-height: 0;
   max-height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none;   /* IE / Edge */
+  scrollbar-width: none;      /* Firefox */
 }
+
 .editor-scroll::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
-/* =========================
-   Editor Content
-   ========================= */
-
-/* Root editor: default style */
+/* Root editor: no own scroll, just content */
 .editor-area {
-  flex: 1 1 auto;
   min-height: 100%;
   padding: 0 4px 28px;
   font-size: clamp(14px, 1.2vw, 16px);
@@ -340,17 +385,10 @@ body {
   background: transparent;
   white-space: pre-wrap;
   word-wrap: break-word;
-  overflow-y: auto;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  text-align: justify; /* default alignment */
+  text-align: justify;         /* default alignment */
 
   -webkit-appearance: none;
   border: none;
-}
-.editor-area::-webkit-scrollbar {
-  width: 0;
-  height: 0;
 }
 
 /* Children inherit color/bg and may override text-align via inline styles */
@@ -369,13 +407,22 @@ body {
   font-style: italic;
 }
 
+/* Paragraph spacing for typed/pasted paragraphs */
+.editor-area p {
+  margin: 0 0 1rem;
+}
+
+.editor-area p:last-child {
+  margin-bottom: 0;
+}
+
 /* Lists inside editor */
 .editor-area ol,
 .editor-area ul {
   margin: 0 0 1rem 1.8rem;
   padding-left: 1.8rem;
   list-style-position: outside;
-  text-align: left; /* visible and clean */
+  text-align: left;
 }
 
 .editor-area ol {
@@ -408,12 +455,8 @@ body {
   .editor-wrap {
     padding: 0 16px;
   }
-}
-/* Paragraph spacing for pasted/typed paragraphs */
-.editor-area p {
-  margin: 0 0 1rem;
-}
 
-.editor-area p:last-child {
-  margin-bottom: 0;
+  .editor-toolbar-shell {
+    left: -80px;
+  }
 }
