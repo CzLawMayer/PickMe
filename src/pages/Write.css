@@ -1,9 +1,9 @@
 /* =========================
-   Write Page — Full CSS
+   Write Page – Clean CSS
    ========================= */
 
 /* --- Page tokens --- */
-:root{
+:root {
   --ink: #fff;
   --bg: #0f0f10;
 
@@ -14,65 +14,92 @@
   --tab-w: 44px;
   --tab-h: 120px;
 
-  /* stripe colors */
-  --c1:#ef5623;  /* orange */
-  --c2:#e41f6c;  /* pink   */
-  --c3:#6a1b9a;  /* purple */
-  --c4:#1e88e5;  /* blue   */
-  --cAdd:#ff4d8d;/* add row */
+  --c1: #ef5623;
+  --c2: #e41f6c;
+  --c3: #6a1b9a;
+  --c4: #1e88e5;
+  --cAdd: #ff4d8d;
 }
 
 /* --- App frame --- */
-.write-shell{
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.write-shell {
   min-height: 100svh;
   background: var(--bg);
   color: var(--ink);
   position: relative;
-  overflow: hidden;               /* keep canvas tidy; tabs are outside panels */
+  overflow: hidden;
 }
-.app-header{ position: relative; z-index: 70; }
 
-.write-canvas{
-  position: relative;
-  min-height: calc(100svh - var(--app-header-h));
-  padding-top: var(--app-header-h);
-  display: grid;
-  place-items: center;
-}
-.write-placeholder .muted{ color:#bdbdbd; opacity:.8; }
-
-/* =========================
-   Sliding Panels (both sides)
-   ========================= */
-.slide-panel{
+.app-header {
   position: fixed;
   top: 0;
-  height: 100dvh;                 /* exact device viewport height */
+  left: 0;
+  right: 0;
+  z-index: 70;
+}
+
+/* Center canvas under fixed header */
+.write-canvas {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100dvh;
+  padding-top: var(--app-header-h, 64px);
+}
+
+/* =========================
+   Sliding Panels
+   ========================= */
+
+.slide-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  height: 100dvh;
   width: var(--panel-w);
   background: var(--panel-bg);
   z-index: 60;
-  overflow: visible;              /* let the tab stick out */
+  overflow: visible;
   border: 0;
   box-shadow: none;
-  transform: translateZ(0);       /* avoid sub-pixel seams on some GPUs */
+  transform: translateZ(0);
 }
 
-/* left */
-.slide-left{ left: 0; }
-.slide-left.is-closed{ transform: translateX(-100%); }
-.slide-left.is-open{    transform: translateX(0); box-shadow: 8px 0 28px rgba(0,0,0,.35); }
+.slide-left {
+  left: 0;
+}
+.slide-left.is-closed {
+  transform: translateX(-100%);
+}
+.slide-left.is-open {
+  transform: translateX(0);
+  box-shadow: 8px 0 28px rgba(0, 0, 0, 0.35);
+}
 
-/* right */
-.slide-right{ right: 0; }
-.slide-right.is-closed{ transform: translateX(100%); }
-.slide-right.is-open{    transform: translateX(0); box-shadow: -8px 0 28px rgba(0,0,0,.35); }
-
-/* inner stack fills from just under the header down to the very bottom */
-.slide-panel .slide-inner{
-  position: absolute;
-  top: var(--app-header-h);
+.slide-right {
   right: 0;
-  bottom: 0;                      /* <- no static space below content */
+}
+.slide-right.is-closed {
+  transform: translateX(100%);
+}
+.slide-right.is-open {
+  transform: translateX(0);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.35);
+}
+
+/* Inner content below header */
+.slide-panel .slide-inner {
+  position: absolute;
+  top: var(--app-header-h, 64px);
+  right: 0;
+  bottom: 0;
   left: 0;
   box-sizing: border-box;
   display: flex;
@@ -81,359 +108,312 @@
   padding: 0;
 }
 
-/* tabs that open/close panels */
-.slide-tab{
+/* Tabs to open/close */
+.slide-tab {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   width: var(--tab-w);
   height: var(--tab-h);
-  display: grid; place-items: center;
-  background:#1e88e5;
-  color:#fff;
-  border:0;
-  cursor:pointer;
+  display: grid;
+  place-items: center;
+  background: #1e88e5;
+  color: #fff;
+  border: 0;
+  cursor: pointer;
   font-weight: 800;
-  letter-spacing:.02em;
+  letter-spacing: 0.02em;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  user-select:none;
-  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+  user-select: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
-.tab-left { right: calc(-1 * var(--tab-w)); }
-.tab-right{ left:  calc(-1 * var(--tab-w)); }
+
+.tab-left {
+  right: calc(-1 * var(--tab-w));
+}
+.tab-right {
+  left: calc(-1 * var(--tab-w));
+}
 
 /* =========================
-   Left Panel Content (Settings + Chapters)
+   Left Panel – Chapters
    ========================= */
 
-/* settings row pinned at top of inner stack */
-.lm-settings{
+.lm-settings {
   all: unset;
-  display:block;
-  padding:16px 18px;
+  display: block;
+  padding: 16px 18px;
   font: 900 28px/1.2 system-ui, sans-serif;
-  color:#fff;
-  cursor:pointer;
+  color: #fff;
+  cursor: pointer;
 }
 
-/* scrollable list takes ALL remaining height below Settings */
-.lm-list{
-  flex: 1 1 auto;                 /* grows to the bottom */
+.lm-list {
+  flex: 1 1 auto;
   margin: 0;
   padding: 0;
   list-style: none;
   overflow-y: auto;
-
-  /* hide scrollbars visually */
-  -ms-overflow-style: none;       /* IE/Edge */
-  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-.lm-list::-webkit-scrollbar{ width:0; height:0; }
+.lm-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
 
-/* generic row */
-.lm-item{
-  width:100%;
-  border:0;
-  margin:0;
-  padding:16px 18px;
-  color:#fff;
+.lm-item {
+  width: 100%;
+  border: 0;
+  margin: 0;
+  padding: 16px 18px;
+  color: #fff;
   font: 900 26px/1.15 system-ui, sans-serif;
-  text-align:left;
-  cursor:pointer;
-  user-select:none;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
 }
 
-/* chapter row layout (text/input + actions) */
-.lm-chapter{
-  display:grid;
+.lm-chapter {
+  display: grid;
   grid-template-columns: 1fr auto;
-  align-items:center;
-  gap:10px;
-  padding-right:12px;
+  align-items: center;
+  gap: 10px;
+  padding-right: 12px;
 }
 
-/* color cycle for chapters */
-.lm-chapter.lm-c1{ background: var(--c1); }
-.lm-chapter.lm-c2{ background: var(--c2); }
-.lm-chapter.lm-c3{ background: var(--c3); }
-.lm-chapter.lm-c4{ background: var(--c4); }
-
-/* inline edit field */
-.lm-text{ pointer-events:none; }
-.lm-edit-input{
-  width:100%;
-  border:0;
-  outline:none;
-  background:rgba(0,0,0,.15);
-  color:#fff;
-  font:inherit;
-  font-weight:800;
-  padding:8px 10px;
-  border-radius:4px;
+/* chapter colors */
+.lm-chapter.lm-c1 {
+  background: var(--c1);
+}
+.lm-chapter.lm-c2 {
+  background: var(--c2);
+}
+.lm-chapter.lm-c3 {
+  background: var(--c3);
+}
+.lm-chapter.lm-c4 {
+  background: var(--c4);
 }
 
-/* actions (edit/delete icons) */
-.lm-actions{ display:inline-flex; gap:8px; }
-.icon-btn{
-  display:inline-grid; place-items:center;
-  width:28px; height:28px;
-  border-radius:6px; border:0; cursor:pointer;
-  background: rgba(0,0,0,.18);
-  color:#fff;
+.lm-text {
+  pointer-events: none;
 }
-.icon-btn:hover{ background: rgba(0,0,0,.28); }
-.icon-btn:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
 
-/* add row behaves like a normal chapter row and is last in the list */
-.lm-add{
+.lm-edit-input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: rgba(0, 0, 0, 0.15);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+
+.lm-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 0;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+}
+.icon-btn:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+.icon-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.lm-add {
   background: var(--cAdd);
-  text-align:center;
-  font-size:28px;
-  line-height:1.1;
+  text-align: center;
+  font-size: 28px;
+  line-height: 1.1;
 }
-
-/* ensure the LAST li sits flush with the panel bottom */
-.lm-list > li:last-child{ margin:0; }
 
 /* =========================
-   Right Panel (empty for now)
+   Editor Layout
    ========================= */
 
-.rm-inner{ /* optional hook for future content */
-  position: absolute;
-  inset: var(--app-header-h) 0 0 0;
-  display: block;
+.editor-wrap {
+  width: min(820px, 92vw);
+  margin: 0 auto;
+  height: calc(100dvh - var(--app-header-h, 64px));
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.editor-header {
+  flex: 0 0 auto;
+}
+
+.editor-title {
+  margin: 8px 0 12px;
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(20px, 3.2vw, 28px);
+}
+
+/* Toolbar + editor row */
+.editor-body {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+}
+
+/* Toolbar rail */
+.editor-toolbar {
+  flex: 0 0 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+/* Toolbar buttons */
+.editor-tool-btn {
+  border: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.editor-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.editor-tool-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Only scroller */
+.editor-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.editor-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* =========================
+   Editor Content
+   ========================= */
+
+/* Root editor: default style */
+.editor-area {
+  flex: 1 1 auto;
+  min-height: 100%;
+  padding: 0 4px 28px;
+  font-size: clamp(14px, 1.2vw, 16px);
+  line-height: 1.65;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  background: transparent;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  text-align: justify; /* default alignment */
+
+  -webkit-appearance: none;
+  border: none;
+}
+.editor-area::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Children inherit color/bg and may override text-align via inline styles */
+.editor-area * {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Placeholder */
+.editor-area:empty::before {
+  content: attr(data-placeholder);
+  color: #bdbdbd;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Lists inside editor */
+.editor-area ol,
+.editor-area ul {
+  margin: 0 0 1rem 1.8rem;
+  padding-left: 1.8rem;
+  list-style-position: outside;
+  text-align: left; /* visible and clean */
+}
+
+.editor-area ol {
+  list-style-type: decimal;
+}
+
+.editor-area ul {
+  list-style-type: disc;
+}
+
+/* Separator dot between paragraphs */
+.editor-section-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px 0;
+  font-size: 18px;
+  color: #e7e7e7;
+  opacity: 0.7;
 }
 
 /* =========================
    Responsive tweak
    ========================= */
-@media (max-width: 860px){
-  :root{ --panel-w: clamp(240px, 60vw, 320px); }
+@media (max-width: 860px) {
+  :root {
+    --panel-w: clamp(240px, 60vw, 320px);
+  }
+
+  .editor-wrap {
+    padding: 0 16px;
+  }
+}
+/* Paragraph spacing for pasted/typed paragraphs */
+.editor-area p {
+  margin: 0 0 1rem;
 }
 
-/* ===== Center Editor ===== */
-.editor-wrap{
-  width: min(880px, 92vw);
-  margin: 0 auto;
-  padding: 24px 20px 32px;
-  box-sizing: border-box;
-}
-
-.editor-title{
-  margin: 0 0 14px 0;
-  text-align: center;
-  font-weight: 900;
-  font-size: clamp(22px, 2.6vw, 32px);
-  line-height: 1.15;
-}
-
-/* a soft card just for separation, not too bright */
-.editor-frame{
-  height: clamp(52svh, 68svh, 74svh); /* tall area that can scroll */
-  overflow: hidden;                  /* mask edges */
-  display: grid;
-}
-
-/* inner scroll; page stays fixed */
-.editor-area{
-  padding: 22px 28px;
-  font-size: clamp(15px, 1.2vw, 18px);
-  line-height: 1.75;
-  color: #e8e8e8;
-
-  overflow-y: auto;
-  outline: none;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  -webkit-user-modify: read-write-plaintext-only;
-
-  /* hide scrollbars */
-  -ms-overflow-style: none;      /* IE/Edge */
-  scrollbar-width: none;         /* Firefox */
-}
-.editor-area::-webkit-scrollbar{ width:0; height:0; }
-
-/* placeholder for empty contenteditable */
-.editor-area:empty::before{
-  content: attr(data-placeholder);
-  color: #bdbdbd;
-  opacity: .55;
-}
-
-/* never let the page itself scroll; only editor-area does */
-html, body{
-  overscroll-behavior: contain;
-}
-
-/* Hug the header even tighter */
-.write-canvas{
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  min-height:calc(100svh - var(--app-header-h,64px));
-  padding-top: calc(var(--app-header-h,64px) + 2px); /* almost no gap */
-}
-
-/* Remove extra top spacing inside the editor */
-.editor-wrap{ padding-top: 0; }
-
-/* Title tight to the top */
-.editor-title{
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-/* ---------- WRITE EDITOR: bottom-safe, no buried lines ---------- */
-
-/* Page stays fixed; only the editor column scrolls */
-.write-shell{ overflow: hidden; }
-
-/* Canvas fills under header; no extra vertical gaps */
-.write-canvas{
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: calc(100dvh - var(--app-header-h,64px));
-  padding-top: var(--app-header-h,64px);
-}
-
-/* Make the editor column exactly the viewport minus header */
-.editor-wrap{
-  width: min(820px, 92vw);
-  margin: 0 auto;
-  height: calc(100dvh - var(--app-header-h,64px));
-  display: flex;                 /* stack: title + area */
-  flex-direction: column;
-  overflow: hidden;              /* prevent double scroll containers */
-  padding: 0 24px;               /* horizontal padding only */
-  box-sizing: border-box;
-}
-
-/* Title snug at top */
-.editor-title{
-  margin: 6px 0 8px;
-  text-align: center;
-  font-size: clamp(20px, 3.2vw, 28px);
-  font-weight: 900;
-  flex: 0 0 auto;
-}
-
-/* The ONLY scroller: fills all remaining height */
-.editor-area{
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 0 4px 28px;           /* small bottom pad so last line is visible */
-  outline: none;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-size: clamp(14px, 1.2vw, 16px);
-  line-height: 1.65;
-  color: #e7e7e7;
-
-  /* hide scrollbars */
-  -ms-overflow-style: none;      /* IE/Edge */
-  scrollbar-width: none;         /* Firefox */
-}
-.editor-area::-webkit-scrollbar{ width:0; height:0; }
-
-/* Placeholder for empty contenteditable */
-.editor-area:empty::before{
-  content: attr(data-placeholder);
-  color: #bdbdbd;
-  opacity: .6;
-  font-style: italic;
-}
-
-/* Nuke any previous gradient overlay or bottom padding that could cover text */
-.editor-wrap::after{ content:none !important; display:none !important; }
-.editor-frame{ display: contents !important; overflow: visible !important; }
-
-/* Ensure side panels don’t introduce a 1px seam on some GPUs */
-.slide-panel{
-  top: 0;
-  bottom: 0;
-  height: 100dvh;
-  border: 0;
-  box-shadow: none;
-  transform: translateZ(0);
-}
-.slide-panel .slide-inner{
-  position: absolute;
-  top: var(--app-header-h,64px);
-  right: 0; bottom: 0; left: 0;
-  display: flex; flex-direction: column;
-  gap: 0; padding: 0; margin: 0;
-}
-
-/* Keep the canvas padded below the header (64px by default) */
-.write-canvas{
-  padding-top: var(--app-header-h, 64px);
-}
-
-/* This rail sits inside that padding by offsetting itself upward */
-.editor-title-rail{
-  position: sticky;
-  top: 0; /* stick at the top of the scroll container */
-  margin-top: calc(-1 * var(--app-header-h, 64px)); /* pull into the padding area */
-  padding-top: var(--app-header-h, 64px);           /* restore layout below */
-  background: var(--bg);
-  z-index: 2; /* above the editable area */
-}
-
-/* Exact 8px spacing you asked for */
-.editor-title{
-  margin: 28px 0;
-  text-align: center;
-  font-weight: 900;
-  font-size: clamp(20px, 3.2vw, 28px);
-}
-
-/* Ensure the content starts right under the title rail */
-.editor-content{
-  min-height: calc(100% - 48px); /* rough title area; adjust if needed */
-}
-
-.app-header{
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 70;
-}
-
-.write-canvas{
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-
-  /* Fill the whole viewport; header is fixed on top, so we don’t subtract */
-  min-height: 100dvh;
-
-  /* Push the content down so it doesn’t sit under the fixed header */
-  padding-top: var(--app-header-h, 64px);
-}
-
-.editor-area{
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 0 4px 28px;
-  outline: none;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-size: clamp(14px, 1.2vw, 16px);
-  line-height: 1.65;
-  color: #e7e7e7;
-
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.editor-area::-webkit-scrollbar{ width:0; height:0; }
-
-html, body{
-  height: 100%;
-  overflow: hidden;
+.editor-area p:last-child {
+  margin-bottom: 0;
 }
