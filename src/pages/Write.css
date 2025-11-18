@@ -482,3 +482,181 @@
 .editor-area * {
   caret-color: inherit !important;
 }
+
+
+
+/* =========================
+   Right Panel – Project Summary
+   ========================= */
+
+.rm-shell {
+  height: 100%;
+  padding: 24px 20px 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;      /* title → middle → actions */
+}
+
+/* Title: fixed at top, max 2 lines so it can't eat all the height */
+.rm-title {
+  margin: 0;
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(14px, 1.7vw, 18px);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;       /* clamp to 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Middle section: can grow/shrink; sits just under the title */
+.rm-middle {
+  flex: 1 1 auto;              /* takes remaining space but can shrink */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* Cover */
+
+.rm-cover-btn {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.rm-cover-box {
+  /* big by default, but this is what we'll shrink in media queries */
+  width: calc(100% - 32px);
+  max-width: 260px;
+  aspect-ratio: 3 / 4;
+  background: #262626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.rm-cover-box img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.rm-cover-plus {
+  font-size: 48px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+/* Meta: chapters + separator + genre */
+
+.rm-meta {
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.rm-chapters {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.rm-separator {
+  width: 80%;
+  height: 1px;
+  background: #f5f5f5;
+  opacity: 0.85;
+}
+
+.rm-genre {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Actions: hard pinned to the bottom and never shrink away */
+
+.rm-actions {
+  flex: 0 0 auto;              /* don't let flexbox steal height from buttons */
+  width: 100%;
+  margin-top: auto;            /* pushes them to the bottom of the panel */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rm-btn {
+  width: 100%;
+  border: none;
+  padding: 8px 12px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* use your existing color tokens */
+.rm-btn-preview {
+  background: var(--c1);
+}
+
+.rm-btn-save {
+  background: var(--c2);
+}
+
+.rm-btn-publish {
+  background: var(--c3);
+}
+
+/* ---------- Shorter screens: shrink cover first so buttons stay visible ---------- */
+
+@media (max-height: 750px) {
+  .rm-shell {
+    padding-top: 18px;
+    padding-bottom: 14px;
+  }
+
+  .rm-cover-box {
+    max-width: 220px;
+  }
+}
+
+@media (max-height: 650px) {
+  .rm-shell {
+    padding-top: 16px;
+    padding-bottom: 10px;
+  }
+
+  .rm-title {
+    font-size: 14px;
+  }
+
+  .rm-cover-box {
+    max-width: 190px;
+  }
+
+  .rm-cover-plus {
+    font-size: 40px;
+  }
+
+  .rm-btn {
+    padding: 6px 10px;
+    font-size: 15px;
+  }
+}

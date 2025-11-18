@@ -104,7 +104,7 @@ const LANG_OPTIONS = [
 
 
 
-type SubmitFormData = {
+export type SubmitFormData = {
   title: string;
   author: string;
   date: string;

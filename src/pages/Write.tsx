@@ -7,7 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import AppHeader from "@/components/AppHeader";
-import SubmissionModal from "@/components/SubmissionModal";
+import SubmissionModal, { type SubmitFormData } from "@/components/SubmissionModal";
 import "./Write.css";
 
 type Chapter = { id: string; title: string; content: string; isEditing?: boolean };
@@ -26,7 +26,18 @@ export default function WritePage() {
   ]);
   const [activeId, setActiveId] = useState<string>(() => chapters[0]?.id);
 
+  // submission / project meta
   const [showSubmission, setShowSubmission] = useState(false);
+  const [projectMeta, setProjectMeta] = useState<{
+    title: string;
+    mainGenre: string;
+    coverFile: File | null;
+  }>({
+    title: "",
+    mainGenre: "",
+    coverFile: null,
+  });
+  const [coverUrl, setCoverUrl] = useState<string>("");
 
   // toolbar state
   const [listMode, setListMode] = useState<ListMode>("none");
@@ -236,7 +247,6 @@ export default function WritePage() {
     );
   };
 
-
   const handleEditorKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "Enter") return;
 
@@ -249,12 +259,10 @@ export default function WritePage() {
     let node: Node | null = sel.anchorNode;
     if (!node) return;
 
-    // If selection is in a text node, go up to its parent
     if (node.nodeType === Node.TEXT_NODE) {
       node = node.parentNode;
     }
 
-    // Walk up from the current node to see if we're inside a divider
     let current: Node | null = node;
     let divider: HTMLElement | null = null;
 
@@ -269,13 +277,10 @@ export default function WritePage() {
       current = current.parentNode;
     }
 
-    // If we're not inside a divider, let the browser handle Enter normally
     if (!divider) return;
 
-    // We ARE in a divider: override the default behavior
     e.preventDefault();
 
-    // Create a fresh paragraph after the divider
     const p = document.createElement("p");
     p.appendChild(document.createElement("br"));
 
@@ -285,21 +290,17 @@ export default function WritePage() {
       editor.appendChild(p);
     }
 
-    // Move caret into the new paragraph
     const range = document.createRange();
     range.setStart(p, 0);
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
 
-    // Persist to chapter content
     const html = editor.innerHTML;
     setChapters(list =>
       list.map(c => (c.id === activeId ? { ...c, content: html } : c))
     );
   };
-
-
 
   // PASTE: convert text to HTML paragraphs, respecting double line breaks
   const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
@@ -310,10 +311,7 @@ export default function WritePage() {
     let text = e.clipboardData.getData("text/plain");
     if (!text) return;
 
-    // Normalise newlines
     text = text.replace(/\r\n/g, "\n");
-
-    // Split on 2+ newlines = paragraph separator
     const paragraphs = text.split(/\n{2,}/);
 
     const escapeHtml = (str: string) =>
@@ -324,10 +322,6 @@ export default function WritePage() {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
-    // For each paragraph:
-    //  - keep single newlines as <br>
-    //  - wrap the whole thing in <p>
-    //  - NO extra <p><br></p> in between
     const html = paragraphs
       .map(p => {
         const inner = escapeHtml(p).replace(/\n/g, "<br>");
@@ -343,7 +337,6 @@ export default function WritePage() {
       list.map(c => (c.id === activeId ? { ...c, content: newHtml } : c))
     );
   };
-
 
   // ESC closes modal / panels
   useEffect(() => {
@@ -365,6 +358,31 @@ export default function WritePage() {
     setListMode("none");
     setCaseState({ mode: "none", original: "" });
   }, [active?.id]);
+
+  // keep a preview URL for the cover file
+  useEffect(() => {
+    if (!projectMeta.coverFile) {
+      setCoverUrl("");
+      return;
+    }
+    const url = URL.createObjectURL(projectMeta.coverFile);
+    setCoverUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [projectMeta.coverFile]);
+
+  // handle save from submission modal
+  const handleSubmissionSave = (data: SubmitFormData) => {
+    setProjectMeta({
+      title: data.title?.trim() || "",
+      mainGenre: data.mainGenre?.trim() || "",
+      coverFile: data.coverFile ?? null,
+    });
+    setShowSubmission(false);
+  };
+
+  const projectTitle = projectMeta.title || "Untitled Project";
+  const projectGenre = projectMeta.mainGenre || "Genre not set";
+  const chapterLabel = `${chapters.length} Chapter${chapters.length === 1 ? "" : "s"}`;
 
   return (
     <div className="write-shell">
@@ -462,22 +480,60 @@ export default function WritePage() {
         </button>
       </aside>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT PANEL – PROJECT SUMMARY */}
       <aside
         className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
         aria-hidden={!isRightOpen}
       >
-        <div className="slide-inner" />
+        <div className="slide-inner">
+          <div className="rm-shell">
+            <h2 className="rm-title">{projectTitle}</h2>
+
+            <div className="rm-middle">
+              <button
+                type="button"
+                className="rm-cover-btn"
+                onClick={() => setShowSubmission(true)}
+              >
+                <div className={`rm-cover-box ${coverUrl ? "has-img" : ""}`}>
+                  {coverUrl ? (
+                    <img src={coverUrl} alt={`${projectTitle} cover`} />
+                  ) : (
+                    <span className="rm-cover-plus">+</span>
+                  )}
+                </div>
+              </button>
+
+              <div className="rm-meta">
+                <div className="rm-chapters">{chapterLabel}</div>
+                <div className="rm-separator" />
+                <div className="rm-genre">{projectGenre}</div>
+              </div>
+            </div>
+
+            <div className="rm-actions">
+              <button type="button" className="rm-btn rm-btn-preview">
+                Preview
+              </button>
+              <button type="button" className="rm-btn rm-btn-save">
+                Save
+              </button>
+              <button type="button" className="rm-btn rm-btn-publish">
+                Publish
+              </button>
+            </div>
+          </div>
+        </div>
+
         <button
           className="slide-tab tab-right"
           onClick={() => setRightOpen(v => !v)}
           aria-expanded={isRightOpen}
         >
-          Notes
+          Project
         </button>
       </aside>
 
-      {/* CENTER CANVAS */}
       {/* CENTER CANVAS */}
       <main className="write-canvas" role="main" aria-live="polite">
         <section className="editor-wrap" aria-label="Writing editor">
@@ -486,7 +542,6 @@ export default function WritePage() {
               {/* TOOLBAR (floating on the left) */}
               <div className="editor-toolbar-shell">
                 <div className="editor-toolbar" aria-label="Text formatting tools">
-                  {/* 0. Undo & Redo */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -506,7 +561,6 @@ export default function WritePage() {
                     ↻
                   </button>
 
-                  {/* 1. Bold & Italic */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -524,7 +578,6 @@ export default function WritePage() {
                     I
                   </button>
 
-                  {/* 2. Underline & Caps/lowercase */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -543,7 +596,6 @@ export default function WritePage() {
                     Aa
                   </button>
 
-                  {/* 3. Center & Justify */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -561,7 +613,6 @@ export default function WritePage() {
                     J
                   </button>
 
-                  {/* 4. Left & Right */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -579,7 +630,6 @@ export default function WritePage() {
                     R
                   </button>
 
-                  {/* 5. Numbers & Separator */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -628,13 +678,11 @@ export default function WritePage() {
         </section>
       </main>
 
-
-
       {showSubmission && (
         <SubmissionModal
           open={showSubmission}
           onClose={() => setShowSubmission(false)}
-          onSave={() => setShowSubmission(false)}
+          onSave={handleSubmissionSave}
         />
       )}
     </div>
