@@ -2,7 +2,7 @@
    Write Page – Clean CSS
    ========================= */
 
-/* --- Page tokens --- */
+/* --- Page tokens (GLOBAL, like old version) --- */
 :root {
   --ink: #fff;
   --bg: #0f0f10;
@@ -21,13 +21,7 @@
   --cAdd: #ff4d8d;
 }
 
-/* --- App frame --- */
-html,
-body {
-  height: 100%;
-  overflow: hidden;
-}
-
+/* --- App frame (scoped) --- */
 .write-shell {
   min-height: 100svh;
   background: var(--bg);
@@ -36,7 +30,7 @@ body {
   overflow: hidden;
 }
 
-.app-header {
+.write-shell > .app-header {
   position: fixed;
   top: 0;
   left: 0;
@@ -250,7 +244,8 @@ body {
 
 /* Centered column under the fixed header */
 .editor-wrap {
-  width: min(820px, 92vw);
+  /* slightly narrower editor column */
+  width: min(720px, 82vw);
   margin: 0 auto;
   height: calc(100dvh - var(--app-header-h, 64px));
   display: block;                /* the real flex is on .editor-inner */
@@ -293,8 +288,8 @@ body {
 /* Toolbar container: hangs to the left of the centered text */
 .editor-toolbar-shell {
   position: absolute;
-  top: 0px;                     /* vertical offset relative to title */
-  left: -129px;                   /* how far it sits to the left of the text column */
+  top: 0px;                      /* vertical offset relative to title */
+  left: -129px;                  /* how far it sits to the left of the text column */
   width: 80px;
   display: flex;
   justify-content: center;
@@ -459,4 +454,31 @@ body {
   .editor-toolbar-shell {
     left: -80px;
   }
+}
+
+/* Paragraph spacing + book-like first-line indent */
+.editor-area p {
+  margin: 0 0 1rem;
+  text-indent: 1.5em;         /* first-line indent like in books */
+}
+
+/* No extra space after the last paragraph */
+.editor-area p:last-child {
+  margin-bottom: 0;
+}
+
+/* If you ever have paragraphs inside list items, don’t indent those */
+.editor-area li p {
+  text-indent: 0;
+}
+
+/* --- Force caret visible in the write editor --- */
+.editor-area {
+  caret-color: #ffffff !important;  /* bring back the blinking caret */
+  cursor: text !important;          /* make sure it behaves like a text field */
+}
+
+/* Just in case any nested spans got weird styles */
+.editor-area * {
+  caret-color: inherit !important;
 }
