@@ -660,3 +660,539 @@
     font-size: 15px;
   }
 }
+
+/* =========================
+   Editor font size control
+   ========================= */
+
+.font-size-control {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 65;                        /* above content, below header/panels if needed */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  color: #f5f5f5;
+  backdrop-filter: blur(6px);
+}
+
+.font-size-btn {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.font-size-btn:focus-visible {
+  outline: 1px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.font-size-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+
+
+/* missing in your snippet but needed for the spin */
+@keyframes rotate-center {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* default: dark background (unchanged) */
+.write-shell {
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+
+/* light mode ONLY for this page */
+.write-shell--light {
+  background: #ffffff;
+  color: #111111;
+}
+
+/* center canvas also white in light mode */
+.write-shell--light .write-canvas {
+  background: #ffffff;
+}
+
+/* editor column text color */
+.write-shell--light .editor-wrap {
+  color: #111111;
+}
+
+/* Title (dark default) */
+.editor-title {
+  margin: 23px 0;
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(20px, 3.2vw, 28px);
+  color: #ffffff;
+}
+
+/* Title in light mode */
+.write-shell--light .editor-title {
+  color: #111111;
+}
+
+/* Toolbar default (dark on dark glass) */
+.editor-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 4px;
+  padding: 8px 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.editor-tool-btn {
+  border: none;
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 11px;
+  padding: 6px 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    transform 0.08s ease,
+    box-shadow 0.16s ease;
+}
+
+/* Light mode toolbar: visible on white */
+.write-shell--light .editor-toolbar {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.write-shell--light .editor-tool-btn {
+  color: #222222;
+}
+
+.write-shell--light .editor-tool-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #000000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+/* Root editor: no own scroll, just content */
+.editor-area {
+  min-height: 100%;
+  padding: 0 4px 28px;
+  font-size: calc(
+    clamp(14px, 1.2vw, 16px) * var(--editor-font-scale, 1)
+  );
+  line-height: 1.65;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  background: transparent;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: justify;
+
+  -webkit-appearance: none;
+  border: none;
+  caret-color: #ffffff !important;
+  cursor: text !important;
+}
+
+/* Children inherit color/bg and may override text-align via inline styles */
+.editor-area * {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+  background: transparent !important;
+  background-color: transparent !important;
+  caret-color: inherit !important;
+}
+
+/* Placeholder */
+.editor-area:empty::before {
+  content: attr(data-placeholder);
+  color: #bdbdbd;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Paragraph spacing + book-like first-line indent */
+.editor-area p {
+  margin: 0 0 1rem;
+  text-indent: 1.5em;
+}
+
+.editor-area p:last-child {
+  margin-bottom: 0;
+}
+
+/* no indent in list paragraphs */
+.editor-area li p {
+  text-indent: 0;
+}
+
+/* Light mode editor background + text */
+.write-shell--light .editor-area {
+  background: #ffffff;
+  color: #111111;
+  -webkit-text-fill-color: #111111;
+  caret-color: #111111 !important;
+  border-radius: 8px;
+}
+
+/* light placeholder */
+.write-shell--light .editor-area:empty::before {
+  color: #757575;
+}
+
+/* =========================
+   Editor font size control
+   ========================= */
+
+.font-size-control {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 65;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #f5f5f5;
+  font-size: 12px;
+}
+
+/* In light mode, match dark text so it’s readable */
+.write-shell--light .font-size-control {
+  color: #111111;
+}
+
+.font-size-btn {
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 16px;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.font-size-btn:focus-visible {
+  outline: none;
+}
+
+.font-size-label {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ==== Smaller switch size ==== */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;   /* was 60px */
+  height: 26px;  /* was 34px */
+}
+
+.switch #input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #2196f3;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.sun-moon {
+  position: absolute;
+  content: "";
+  height: 20px;  /* was 26px */
+  width: 20px;   /* was 26px */
+  left: 3px;     /* was 4px */
+  bottom: 3px;   /* was 4px */
+  background-color: yellow;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+#input:checked + .slider {
+  background-color: black;
+}
+
+#input:focus + .slider {
+  box-shadow: 0 0 1px #2196f3;
+}
+
+/* translate distance adjusted to new width/height */
+#input:checked + .slider .sun-moon {
+  -webkit-transform: translateX(20px);  /* was 26px */
+  -ms-transform: translateX(20px);
+  transform: translateX(20px);
+  background-color: white;
+}
+
+/* dots & graphics scaled slightly down */
+
+.moon-dot {
+  opacity: 0;
+  transition: 0.4s;
+  fill: gray;
+}
+
+#input:checked + .slider .sun-moon .moon-dot {
+  opacity: 1;
+}
+
+.slider.round {
+  border-radius: 26px; /* match new height */
+}
+
+.slider.round .sun-moon {
+  border-radius: 50%;
+}
+
+#moon-dot-1 {
+  left: 7px;
+  top: 2px;
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  z-index: 4;
+}
+
+#moon-dot-2 {
+  left: 1px;
+  top: 8px;
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  z-index: 4;
+}
+
+#moon-dot-3 {
+  left: 12px;
+  top: 14px;
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  z-index: 4;
+}
+
+#light-ray-1 {
+  left: -6px;
+  top: -6px;
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  z-index: -1;
+  fill: white;
+  opacity: 10%;
+}
+
+#light-ray-2 {
+  left: -50%;
+  top: -50%;
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  z-index: -1;
+  fill: white;
+  opacity: 10%;
+}
+
+#light-ray-3 {
+  left: -14px;
+  top: -14px;
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  z-index: -1;
+  fill: white;
+  opacity: 10%;
+}
+
+.cloud-light,
+.cloud-dark {
+  position: absolute;
+  animation-name: cloud-move;
+  animation-duration: 6s;
+  animation-iteration-count: infinite;
+}
+
+.cloud-light {
+  fill: #eee;
+}
+
+.cloud-dark {
+  fill: #ccc;
+  animation-delay: 1s;
+}
+
+/* clouds nudged to fit smaller track */
+#cloud-1 {
+  left: 24px;
+  top: 11px;
+  width: 30px;
+}
+
+#cloud-2 {
+  left: 34px;
+  top: 8px;
+  width: 15px;
+}
+
+#cloud-3 {
+  left: 14px;
+  top: 18px;
+  width: 22px;
+}
+
+#cloud-4 {
+  left: 28px;
+  top: 14px;
+  width: 30px;
+}
+
+#cloud-5 {
+  left: 36px;
+  top: 10px;
+  width: 15px;
+}
+
+#cloud-6 {
+  left: 18px;
+  top: 20px;
+  width: 22px;
+}
+
+@keyframes cloud-move {
+  0% { transform: translateX(0px); }
+  40% { transform: translateX(3px); }
+  80% { transform: translateX(-3px); }
+  100% { transform: translateX(0px); }
+}
+
+.stars {
+  transform: translateY(-26px); /* slightly less offset */
+  opacity: 0;
+  transition: 0.4s;
+}
+
+.star {
+  fill: white;
+  position: absolute;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  animation-name: star-twinkle;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+
+#input:checked + .slider .stars {
+  -webkit-transform: translateY(0);
+  -ms-transform: translateY(0);
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* stars slightly smaller / repositioned */
+#star-1 {
+  width: 14px;
+  top: 1px;
+  left: 2px;
+  animation-delay: 0.3s;
+}
+
+#star-2 {
+  width: 4px;
+  top: 13px;
+  left: 2px;
+}
+
+#star-3 {
+  width: 8px;
+  top: 15px;
+  left: 7px;
+  animation-delay: 0.6s;
+}
+
+#star-4 {
+  width: 12px;
+  top: 0px;
+  left: 13px;
+  animation-delay: 1.3s;
+}
+
+@keyframes star-twinkle {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.2); }
+  80%  { transform: scale(0.8); }
+  100% { transform: scale(1); }
+}
+
+.font-size-control {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 50;  /* was 65 – now below slide-panel (60) */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #f5f5f5;
+  font-size: 12px;
+}
+
+/* In light mode, match dark text so it’s readable */
+.write-shell--light .font-size-control {
+  color: #111111;
+}
+
+/* Keep side panels dark-themed even in light mode */
+.write-shell--light .slide-panel {
+  background: var(--panel-bg);
+}
+
+/* Force text in side panels to stay white */
+.write-shell--light .slide-panel,
+.write-shell--light .slide-panel * {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}

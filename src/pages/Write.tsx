@@ -5,9 +5,10 @@ import {
   useState,
   type ClipboardEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type CSSProperties,
 } from "react";
 import AppHeader from "@/components/AppHeader";
-import SubmissionModal, { type SubmitFormData } from "@/components/SubmissionModal";
+import SubmissionModal from "@/components/SubmissionModal";
 import "./Write.css";
 
 type Chapter = { id: string; title: string; content: string; isEditing?: boolean };
@@ -26,18 +27,7 @@ export default function WritePage() {
   ]);
   const [activeId, setActiveId] = useState<string>(() => chapters[0]?.id);
 
-  // submission / project meta
   const [showSubmission, setShowSubmission] = useState(false);
-  const [projectMeta, setProjectMeta] = useState<{
-    title: string;
-    mainGenre: string;
-    coverFile: File | null;
-  }>({
-    title: "",
-    mainGenre: "",
-    coverFile: null,
-  });
-  const [coverUrl, setCoverUrl] = useState<string>("");
 
   // toolbar state
   const [listMode, setListMode] = useState<ListMode>("none");
@@ -45,6 +35,22 @@ export default function WritePage() {
     mode: "none",
     original: "",
   });
+
+  // font size scale (only editor text, via CSS var)
+  const [fontScaleStep, setFontScaleStep] = useState(0); // -3..3
+  const editorScale = useMemo(() => 1 + fontScaleStep * 0.1, [fontScaleStep]);
+
+  const changeFontSize = (delta: number) => {
+    setFontScaleStep(prev => {
+      const next = Math.max(-3, Math.min(3, prev + delta));
+      return next;
+    });
+  };
+
+  // editor theme (this page only)
+  // checked (moon) = dark, unchecked (sun) = light
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const isLightMode = !isDarkMode;
 
   // active chapter helper
   const active = useMemo(
@@ -112,11 +118,11 @@ export default function WritePage() {
       document.execCommand("insertOrderedList", false);
       setListMode("ordered");
     } else if (listMode === "ordered") {
-      document.execCommand("insertOrderedList", false); // remove OL
-      document.execCommand("insertUnorderedList", false); // add UL
+      document.execCommand("insertOrderedList", false);
+      document.execCommand("insertUnorderedList", false);
       setListMode("unordered");
     } else {
-      document.execCommand("insertUnorderedList", false); // remove UL
+      document.execCommand("insertUnorderedList", false);
       setListMode("none");
     }
   };
@@ -359,33 +365,8 @@ export default function WritePage() {
     setCaseState({ mode: "none", original: "" });
   }, [active?.id]);
 
-  // keep a preview URL for the cover file
-  useEffect(() => {
-    if (!projectMeta.coverFile) {
-      setCoverUrl("");
-      return;
-    }
-    const url = URL.createObjectURL(projectMeta.coverFile);
-    setCoverUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [projectMeta.coverFile]);
-
-  // handle save from submission modal
-  const handleSubmissionSave = (data: SubmitFormData) => {
-    setProjectMeta({
-      title: data.title?.trim() || "",
-      mainGenre: data.mainGenre?.trim() || "",
-      coverFile: data.coverFile ?? null,
-    });
-    setShowSubmission(false);
-  };
-
-  const projectTitle = projectMeta.title || "Untitled Project";
-  const projectGenre = projectMeta.mainGenre || "Genre not set";
-  const chapterLabel = `${chapters.length} Chapter${chapters.length === 1 ? "" : "s"}`;
-
   return (
-    <div className="write-shell">
+    <div className={`write-shell ${isLightMode ? "write-shell--light" : ""}`}>
       <AppHeader />
 
       {/* LEFT PANEL */}
@@ -480,37 +461,37 @@ export default function WritePage() {
         </button>
       </aside>
 
-      {/* RIGHT PANEL – PROJECT SUMMARY */}
+      {/* RIGHT PANEL – restored rm-* structure */}
       <aside
         className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
         aria-hidden={!isRightOpen}
       >
         <div className="slide-inner">
           <div className="rm-shell">
-            <h2 className="rm-title">{projectTitle}</h2>
+            {/* Title pinned at the top, clamped to 2 lines by CSS */}
+            <h2 className="rm-title">{active?.title || "Untitled Project"}</h2>
 
+            {/* Middle section: cover + meta */}
             <div className="rm-middle">
               <button
-                type="button"
                 className="rm-cover-btn"
+                type="button"
                 onClick={() => setShowSubmission(true)}
               >
-                <div className={`rm-cover-box ${coverUrl ? "has-img" : ""}`}>
-                  {coverUrl ? (
-                    <img src={coverUrl} alt={`${projectTitle} cover`} />
-                  ) : (
-                    <span className="rm-cover-plus">+</span>
-                  )}
+                <div className="rm-cover-box">
+                  {/* later this will be the uploaded image */}
+                  <span className="rm-cover-plus">+</span>
                 </div>
               </button>
 
               <div className="rm-meta">
-                <div className="rm-chapters">{chapterLabel}</div>
+                <div className="rm-chapters">{chapters.length} chapters</div>
                 <div className="rm-separator" />
-                <div className="rm-genre">{projectGenre}</div>
+                <div className="rm-genre">Main genre: (from submission)</div>
               </div>
             </div>
 
+            {/* Actions pinned at the bottom */}
             <div className="rm-actions">
               <button type="button" className="rm-btn rm-btn-preview">
                 Preview
@@ -530,7 +511,7 @@ export default function WritePage() {
           onClick={() => setRightOpen(v => !v)}
           aria-expanded={isRightOpen}
         >
-          Project
+          Notes
         </button>
       </aside>
 
@@ -542,6 +523,7 @@ export default function WritePage() {
               {/* TOOLBAR (floating on the left) */}
               <div className="editor-toolbar-shell">
                 <div className="editor-toolbar" aria-label="Text formatting tools">
+                  {/* 0. Undo & Redo */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -561,6 +543,7 @@ export default function WritePage() {
                     ↻
                   </button>
 
+                  {/* 1. Bold & Italic */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -578,6 +561,7 @@ export default function WritePage() {
                     I
                   </button>
 
+                  {/* 2. Underline & Caps/lowercase */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -596,6 +580,7 @@ export default function WritePage() {
                     Aa
                   </button>
 
+                  {/* 3. Center & Justify */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -613,6 +598,7 @@ export default function WritePage() {
                     J
                   </button>
 
+                  {/* 4. Left & Right */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -630,6 +616,7 @@ export default function WritePage() {
                     R
                   </button>
 
+                  {/* 5. Numbers & Separator */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -671,6 +658,11 @@ export default function WritePage() {
                   onKeyDown={handleEditorKeyDown}
                   aria-multiline="true"
                   role="textbox"
+                  style={
+                    {
+                      "--editor-font-scale": editorScale,
+                    } as CSSProperties
+                  }
                 />
               </div>
             </div>
@@ -678,11 +670,100 @@ export default function WritePage() {
         </section>
       </main>
 
+      {/* font size control + theme switch */}
+      <div className="font-size-control" aria-label="Adjust editor font size">
+        <button
+          type="button"
+          className="font-size-btn"
+          onClick={() => changeFontSize(-1)}
+        >
+          –
+        </button>
+
+        <span className="font-size-label">A</span>
+
+        <button
+          type="button"
+          className="font-size-btn"
+          onClick={() => changeFontSize(1)}
+        >
+          +
+        </button>
+
+        {/* Uiverse.io switch */}
+        <label className="switch" aria-label="Toggle theme">
+          <input
+            id="input"
+            type="checkbox"
+            checked={isDarkMode}
+            onChange={e => setIsDarkMode(e.target.checked)}
+          />
+          <div className="slider round">
+            <div className="sun-moon">
+              <svg id="moon-dot-1" className="moon-dot" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="moon-dot-2" className="moon-dot" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="moon-dot-3" className="moon-dot" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+
+              <svg id="light-ray-1" className="light-ray" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="light-ray-2" className="light-ray" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="light-ray-3" className="light-ray" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+
+              <svg id="cloud-1" className="cloud-dark" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="cloud-2" className="cloud-dark" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="cloud-3" className="cloud-dark" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+
+              <svg id="cloud-4" className="cloud-light" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="cloud-5" className="cloud-light" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+              <svg id="cloud-6" className="cloud-light" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="50" />
+              </svg>
+            </div>
+
+            <div className="stars">
+              <svg id="star-1" className="star" viewBox="0 0 20 20">
+                <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z" />
+              </svg>
+              <svg id="star-2" className="star" viewBox="0 0 20 20">
+                <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z" />
+              </svg>
+              <svg id="star-3" className="star" viewBox="0 0 20 20">
+                <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z" />
+              </svg>
+              <svg id="star-4" className="star" viewBox="0 0 20 20">
+                <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z" />
+              </svg>
+            </div>
+          </div>
+        </label>
+      </div>
+
       {showSubmission && (
         <SubmissionModal
           open={showSubmission}
           onClose={() => setShowSubmission(false)}
-          onSave={handleSubmissionSave}
+          onSave={() => setShowSubmission(false)}
         />
       )}
     </div>
