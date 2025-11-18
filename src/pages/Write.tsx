@@ -478,15 +478,12 @@ export default function WritePage() {
       </aside>
 
       {/* CENTER CANVAS */}
+      {/* CENTER CANVAS */}
       <main className="write-canvas" role="main" aria-live="polite">
         <section className="editor-wrap" aria-label="Writing editor">
           <div className="editor-inner">
-            <header className="editor-header">
-              <h1 className="editor-title">{active?.title || "Untitled Chapter"}</h1>
-            </header>
-
             <div className="editor-body">
-              {/* TOOLBAR (now hanging to the left) */}
+              {/* TOOLBAR (floating on the left) */}
               <div className="editor-toolbar-shell">
                 <div className="editor-toolbar" aria-label="Text formatting tools">
                   {/* 0. Undo & Redo */}
@@ -605,8 +602,14 @@ export default function WritePage() {
                 </div>
               </div>
 
-              {/* ONLY THIS SCROLLS */}
+              {/* SCROLLS: title + text together */}
               <div className="editor-scroll">
+                <header className="editor-header">
+                  <h1 className="editor-title">
+                    {active?.title || "Untitled Chapter"}
+                  </h1>
+                </header>
+
                 <div
                   ref={editorRef}
                   className="editor-area"
@@ -624,6 +627,7 @@ export default function WritePage() {
           </div>
         </section>
       </main>
+
 
 
       {showSubmission && (
