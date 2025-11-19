@@ -5,7 +5,6 @@ import {
   useState,
   type ClipboardEvent,
   type KeyboardEvent as ReactKeyboardEvent,
-  type CSSProperties,
 } from "react";
 import AppHeader from "@/components/AppHeader";
 import SubmissionModal from "@/components/SubmissionModal";
@@ -36,27 +35,37 @@ export default function WritePage() {
     original: "",
   });
 
-  // font size scale (only editor text, via CSS var)
-  const [fontScaleStep, setFontScaleStep] = useState(0); // -3..3
-  const editorScale = useMemo(() => 1 + fontScaleStep * 0.1, [fontScaleStep]);
+  // font size + light mode (for editor area)
+  const [fontScale, setFontScale] = useState(1);
+  const [isLightMode, setIsLightMode] = useState(false);
 
-  const changeFontSize = (delta: number) => {
-    setFontScaleStep(prev => {
-      const next = Math.max(-3, Math.min(3, prev + delta));
-      return next;
-    });
-  };
+  // project meta coming from SubmissionModal
+  const [projectMeta, setProjectMeta] = useState<{
+    title: string;
+    mainGenre: string;
+    coverFile?: File | null;
+  } | null>(null);
 
-  // editor theme (this page only)
-  // checked (moon) = dark, unchecked (sun) = light
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const isLightMode = !isDarkMode;
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   // active chapter helper
   const active = useMemo(
     () => chapters.find(c => c.id === activeId) ?? chapters[0],
     [chapters, activeId]
   );
+
+  // cleanup cover object URL
+  useEffect(() => {
+    return () => {
+      if (coverUrl) {
+        try {
+          URL.revokeObjectURL(coverUrl);
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [coverUrl]);
 
   const addChapter = () =>
     setChapters(list => {
@@ -118,11 +127,11 @@ export default function WritePage() {
       document.execCommand("insertOrderedList", false);
       setListMode("ordered");
     } else if (listMode === "ordered") {
-      document.execCommand("insertOrderedList", false);
-      document.execCommand("insertUnorderedList", false);
+      document.execCommand("insertOrderedList", false); // remove OL
+      document.execCommand("insertUnorderedList", false); // add UL
       setListMode("unordered");
     } else {
-      document.execCommand("insertUnorderedList", false);
+      document.execCommand("insertUnorderedList", false); // remove UL
       setListMode("none");
     }
   };
@@ -318,6 +327,7 @@ export default function WritePage() {
     if (!text) return;
 
     text = text.replace(/\r\n/g, "\n");
+
     const paragraphs = text.split(/\n{2,}/);
 
     const escapeHtml = (str: string) =>
@@ -364,6 +374,50 @@ export default function WritePage() {
     setListMode("none");
     setCaseState({ mode: "none", original: "" });
   }, [active?.id]);
+
+  // handle save from submission modal
+  const handleSubmissionSave = (data: any) => {
+    setProjectMeta({
+      title: data.title ?? "",
+      mainGenre: data.mainGenre ?? "",
+      coverFile: data.coverFile ?? null,
+    });
+
+    if (data.coverFile instanceof File) {
+      setCoverUrl(prev => {
+        if (prev) {
+          try {
+            URL.revokeObjectURL(prev);
+          } catch {
+            // ignore
+          }
+        }
+        return URL.createObjectURL(data.coverFile);
+      });
+    } else {
+      setCoverUrl(prev => {
+        if (prev) {
+          try {
+            URL.revokeObjectURL(prev);
+          } catch {
+            // ignore
+          }
+        }
+        return null;
+      });
+    }
+
+    setShowSubmission(false);
+  };
+
+  const bookTitle = projectMeta?.title?.trim() || "Untitled project";
+  const mainGenreLabel =
+    projectMeta?.mainGenre?.trim() || "Main genre not selected";
+
+  const decreaseFont = () =>
+    setFontScale(v => Math.max(0.8, Math.round((v - 0.05) * 100) / 100));
+  const increaseFont = () =>
+    setFontScale(v => Math.min(1.4, Math.round((v + 0.05) * 100) / 100));
 
   return (
     <div className={`write-shell ${isLightMode ? "write-shell--light" : ""}`}>
@@ -461,37 +515,42 @@ export default function WritePage() {
         </button>
       </aside>
 
-      {/* RIGHT PANEL – restored rm-* structure */}
+      {/* RIGHT PANEL */}
       <aside
         className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
         aria-hidden={!isRightOpen}
       >
         <div className="slide-inner">
           <div className="rm-shell">
-            {/* Title pinned at the top, clamped to 2 lines by CSS */}
-            <h2 className="rm-title">{active?.title || "Untitled Project"}</h2>
+            {/* Title from submission modal */}
+            <h2 className="rm-title">{bookTitle}</h2>
 
-            {/* Middle section: cover + meta */}
+            {/* Middle content: cover + meta */}
             <div className="rm-middle">
+              {/* Cover – click opens submission modal */}
               <button
-                className="rm-cover-btn"
                 type="button"
+                className="rm-cover-btn"
                 onClick={() => setShowSubmission(true)}
               >
                 <div className="rm-cover-box">
-                  {/* later this will be the uploaded image */}
-                  <span className="rm-cover-plus">+</span>
+                  {coverUrl ? (
+                    <img src={coverUrl} alt="Project cover" />
+                  ) : (
+                    <span className="rm-cover-plus">+</span>
+                  )}
                 </div>
               </button>
 
+              {/* Meta: chapters & genre */}
               <div className="rm-meta">
                 <div className="rm-chapters">{chapters.length} chapters</div>
                 <div className="rm-separator" />
-                <div className="rm-genre">Main genre: (from submission)</div>
+                <div className="rm-genre">{mainGenreLabel}</div>
               </div>
             </div>
 
-            {/* Actions pinned at the bottom */}
+            {/* Actions pinned to bottom */}
             <div className="rm-actions">
               <button type="button" className="rm-btn rm-btn-preview">
                 Preview
@@ -523,7 +582,7 @@ export default function WritePage() {
               {/* TOOLBAR (floating on the left) */}
               <div className="editor-toolbar-shell">
                 <div className="editor-toolbar" aria-label="Text formatting tools">
-                  {/* 0. Undo & Redo */}
+                  {/* Undo & Redo */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -543,7 +602,7 @@ export default function WritePage() {
                     ↻
                   </button>
 
-                  {/* 1. Bold & Italic */}
+                  {/* Bold & Italic */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -561,7 +620,7 @@ export default function WritePage() {
                     I
                   </button>
 
-                  {/* 2. Underline & Caps/lowercase */}
+                  {/* Underline & Case */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -580,7 +639,7 @@ export default function WritePage() {
                     Aa
                   </button>
 
-                  {/* 3. Center & Justify */}
+                  {/* Center & Justify */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -598,7 +657,7 @@ export default function WritePage() {
                     J
                   </button>
 
-                  {/* 4. Left & Right */}
+                  {/* Left & Right */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -616,7 +675,7 @@ export default function WritePage() {
                     R
                   </button>
 
-                  {/* 5. Numbers & Separator */}
+                  {/* List toggle & separator dot */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -639,7 +698,7 @@ export default function WritePage() {
                 </div>
               </div>
 
-              {/* SCROLLS: title + text together */}
+              {/* Scroll: title + text together */}
               <div className="editor-scroll">
                 <header className="editor-header">
                   <h1 className="editor-title">
@@ -650,6 +709,7 @@ export default function WritePage() {
                 <div
                   ref={editorRef}
                   className="editor-area"
+                  style={{ ["--editor-font-scale" as any]: fontScale }}
                   contentEditable
                   spellCheck={true}
                   data-placeholder="Start writing here…"
@@ -658,11 +718,6 @@ export default function WritePage() {
                   onKeyDown={handleEditorKeyDown}
                   aria-multiline="true"
                   role="textbox"
-                  style={
-                    {
-                      "--editor-font-scale": editorScale,
-                    } as CSSProperties
-                  }
                 />
               </div>
             </div>
@@ -670,77 +725,73 @@ export default function WritePage() {
         </section>
       </main>
 
-      {/* font size control + theme switch */}
-      <div className="font-size-control" aria-label="Adjust editor font size">
+      {/* FONT SIZE + LIGHT/DARK TOGGLE */}
+      <div className="font-size-control">
         <button
           type="button"
           className="font-size-btn"
-          onClick={() => changeFontSize(-1)}
+          onClick={decreaseFont}
+          aria-label="Decrease font size"
         >
           –
         </button>
-
         <span className="font-size-label">A</span>
-
         <button
           type="button"
           className="font-size-btn"
-          onClick={() => changeFontSize(1)}
+          onClick={increaseFont}
+          aria-label="Increase font size"
         >
           +
         </button>
 
-        {/* Uiverse.io switch */}
-        <label className="switch" aria-label="Toggle theme">
+        <label className="switch">
           <input
             id="input"
             type="checkbox"
-            checked={isDarkMode}
-            onChange={e => setIsDarkMode(e.target.checked)}
+            checked={isLightMode}
+            onChange={e => setIsLightMode(e.target.checked)}
           />
           <div className="slider round">
             <div className="sun-moon">
               <svg id="moon-dot-1" className="moon-dot" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="moon-dot-2" className="moon-dot" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="moon-dot-3" className="moon-dot" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
-
               <svg id="light-ray-1" className="light-ray" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="light-ray-2" className="light-ray" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="light-ray-3" className="light-ray" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
 
               <svg id="cloud-1" className="cloud-dark" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="cloud-2" className="cloud-dark" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="cloud-3" className="cloud-dark" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
-
               <svg id="cloud-4" className="cloud-light" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="cloud-5" className="cloud-light" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
               <svg id="cloud-6" className="cloud-light" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50" />
+                <circle cx="50" cy="50" r="50"></circle>
               </svg>
             </div>
-
             <div className="stars">
               <svg id="star-1" className="star" viewBox="0 0 20 20">
                 <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z" />
@@ -763,7 +814,16 @@ export default function WritePage() {
         <SubmissionModal
           open={showSubmission}
           onClose={() => setShowSubmission(false)}
-          onSave={() => setShowSubmission(false)}
+          onSave={handleSubmissionSave}
+          initial={
+            projectMeta
+              ? {
+                  title: projectMeta.title,
+                  mainGenre: projectMeta.mainGenre,
+                  coverFile: projectMeta.coverFile ?? undefined,
+                }
+              : undefined
+          }
         />
       )}
     </div>
