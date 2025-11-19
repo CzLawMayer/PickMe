@@ -1168,7 +1168,7 @@
 
 .font-size-control {
   position: fixed;
-  right: 18px;
+  right: 4px;
   bottom: 18px;
   z-index: 50;  /* was 65 – now below slide-panel (60) */
   display: inline-flex;
@@ -1195,4 +1195,172 @@
 .write-shell--light .slide-panel * {
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
+}
+
+
+/* Toolbar container: hangs to the left of the centered text + column layout */
+.editor-toolbar-shell {
+  position: absolute;
+  /* initial defaults (will be overridden by inline style from React) */
+  top: 84px;
+  left: -140px;
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  pointer-events: auto;
+  z-index: 5;
+}
+
+/* Small handle at the top to drag the toolbar */
+.editor-toolbar-handle {
+  width: 100%;
+  height: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  margin-bottom: 6px;
+}
+
+.editor-toolbar-handle-bar {
+  width: 24px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.editor-toolbar-handle.is-dragging {
+  cursor: grabbing;
+}
+
+/* Notes toggle button under the toolbar, full width */
+.editor-notes-toggle {
+  margin-top: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  transition:
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.08s ease;
+}
+
+.editor-notes-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.editor-notes-toggle.is-open {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+/* Notes popover: below the toolbar, fitting to the left of the editor */
+.editor-notes-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 240px;
+  max-height: 220px;
+  background: #151517;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  z-index: 6;
+}
+
+.editor-notes-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  max-height: 220px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  resize: vertical;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* notes placeholder in lighter tone */
+.editor-notes-textarea::placeholder {
+  color: rgba(245, 245, 245, 0.6);
+}
+
+/* In light mode, keep notes panel dark for contrast */
+.write-shell--light .editor-notes-popover {
+  background: #1c1c1e;
+  border-color: rgba(0, 0, 0, 0.4);
+}
+
+.write-shell--light .editor-notes-textarea {
+  color: #f5f5f5;
+}
+
+.font-size-control {
+  position: fixed;
+  right: 32px;      /* you asked to push it a bit more to the right */
+  bottom: 18px;
+  z-index: 50;      /* below side panels (which are 60) */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #f5f5f5;
+  font-size: 12px;
+}
+
+/* In light mode, keep it readable */
+.write-shell--light .font-size-control {
+  color: #111111;
+}
+
+/* Notes popover: larger and anchored to the RIGHT of the toolbar */
+.editor-notes-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;          /* anchor to right edge of toolbar */
+  left: auto;        /* override any left:0 */
+  margin-top: 8px;
+  width: min(320px, 60vw);   /* bigger, but still responsive */
+  max-height: 320px;
+  background: #151517;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  z-index: 6;
+}
+
+.editor-notes-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;   /* larger writing area */
+  max-height: 320px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  resize: vertical;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }

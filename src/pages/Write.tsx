@@ -14,6 +14,13 @@ type Chapter = { id: string; title: string; content: string; isEditing?: boolean
 type ListMode = "none" | "ordered" | "unordered";
 type CaseMode = "none" | "upper" | "lower";
 
+// Snapshot of what we care about from the submission modal
+type SubmissionSnapshot = {
+  title?: string;
+  mainGenre?: string;
+  coverFile?: File | null;
+};
+
 export default function WritePage() {
   const [isLeftOpen, setLeftOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
@@ -35,17 +42,29 @@ export default function WritePage() {
     original: "",
   });
 
-  // font size + light mode (for editor area)
-  const [fontScale, setFontScale] = useState(1);
+  // Theme + font size
   const [isLightMode, setIsLightMode] = useState(false);
+  const [fontScale, setFontScale] = useState(1);
 
-  // project meta coming from SubmissionModal
-  const [projectMeta, setProjectMeta] = useState<{
-    title: string;
-    mainGenre: string;
-    coverFile?: File | null;
+  // Notes (global for the project; persists across chapters)
+  const [showNotes, setShowNotes] = useState(false);
+  const [notes, setNotes] = useState("");
+
+  // Toolbar drag state
+  const [toolbarPos, setToolbarPos] = useState<{ top: number; left: number }>({
+    top: 84,
+    left: -140,
+  });
+  const [isDraggingToolbar, setIsDraggingToolbar] = useState(false);
+  const dragStartRef = useRef<{
+    mouseX: number;
+    mouseY: number;
+    top: number;
+    left: number;
   } | null>(null);
 
+  // Submission data for right menu
+  const [submission, setSubmission] = useState<SubmissionSnapshot | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   // active chapter helper
@@ -54,18 +73,18 @@ export default function WritePage() {
     [chapters, activeId]
   );
 
-  // cleanup cover object URL
+  // cover URL derived from submission.coverFile
   useEffect(() => {
+    if (!submission?.coverFile) {
+      setCoverUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(submission.coverFile);
+    setCoverUrl(url);
     return () => {
-      if (coverUrl) {
-        try {
-          URL.revokeObjectURL(coverUrl);
-        } catch {
-          // ignore
-        }
-      }
+      URL.revokeObjectURL(url);
     };
-  }, [coverUrl]);
+  }, [submission?.coverFile]);
 
   const addChapter = () =>
     setChapters(list => {
@@ -361,11 +380,12 @@ export default function WritePage() {
         if (showSubmission) setShowSubmission(false);
         else if (isLeftOpen) setLeftOpen(false);
         else if (isRightOpen) setRightOpen(false);
+        else if (showNotes) setShowNotes(false);
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [isLeftOpen, isRightOpen, showSubmission]);
+  }, [isLeftOpen, isRightOpen, showSubmission, showNotes]);
 
   // sync editor with active chapter
   useEffect(() => {
@@ -375,52 +395,64 @@ export default function WritePage() {
     setCaseState({ mode: "none", original: "" });
   }, [active?.id]);
 
-  // handle save from submission modal
-  const handleSubmissionSave = (data: any) => {
-    setProjectMeta({
-      title: data.title ?? "",
-      mainGenre: data.mainGenre ?? "",
-      coverFile: data.coverFile ?? null,
-    });
+  // toolbar drag global listeners
+  useEffect(() => {
+    if (!isDraggingToolbar) return;
 
-    if (data.coverFile instanceof File) {
-      setCoverUrl(prev => {
-        if (prev) {
-          try {
-            URL.revokeObjectURL(prev);
-          } catch {
-            // ignore
-          }
-        }
-        return URL.createObjectURL(data.coverFile);
+    const onMove = (e: MouseEvent) => {
+      if (!dragStartRef.current) return;
+      const { mouseX, mouseY, top, left } = dragStartRef.current;
+      const dx = e.clientX - mouseX;
+      const dy = e.clientY - mouseY;
+      setToolbarPos({
+        top: top + dy,
+        left: left + dx,
       });
-    } else {
-      setCoverUrl(prev => {
-        if (prev) {
-          try {
-            URL.revokeObjectURL(prev);
-          } catch {
-            // ignore
-          }
-        }
-        return null;
-      });
-    }
+    };
 
-    setShowSubmission(false);
+    const onUp = () => {
+      setIsDraggingToolbar(false);
+      dragStartRef.current = null;
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isDraggingToolbar]);
+
+  const handleToolbarHandleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingToolbar(true);
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      top: toolbarPos.top,
+      left: toolbarPos.left,
+    };
   };
 
-  const bookTitle = projectMeta?.title?.trim() || "Untitled project";
-  const mainGenreLabel =
-    projectMeta?.mainGenre?.trim() || "Main genre not selected";
-
   const decreaseFont = () =>
-    setFontScale(v => Math.max(0.8, Math.round((v - 0.05) * 100) / 100));
+    setFontScale(s => Math.max(0.8, Math.round((s - 0.1) * 10) / 10));
   const increaseFont = () =>
-    setFontScale(v => Math.min(1.4, Math.round((v + 0.05) * 100) / 100));
+    setFontScale(s => Math.min(1.6, Math.round((s + 0.1) * 10) / 10));
+
+  const shellClass =
+    "write-shell" + (isLightMode ? " write-shell--light" : "");
+
+  const projectTitle =
+    submission?.title?.trim() || "Project title not set";
+  const mainGenreLabel =
+    submission?.mainGenre?.trim() || "Main genre not selected";
 
   return (
-    <div className={`write-shell ${isLightMode ? "write-shell--light" : ""}`}>
+    <div
+      className={shellClass}
+      style={{ ["--editor-font-scale" as any]: fontScale }}
+    >
       <AppHeader />
 
       {/* LEFT PANEL */}
@@ -522,12 +554,14 @@ export default function WritePage() {
       >
         <div className="slide-inner">
           <div className="rm-shell">
-            {/* Title from submission modal */}
-            <h2 className="rm-title">{bookTitle}</h2>
+            <h2
+              className="rm-title"
+              onClick={() => setShowSubmission(true)}
+            >
+              {projectTitle}
+            </h2>
 
-            {/* Middle content: cover + meta */}
             <div className="rm-middle">
-              {/* Cover – click opens submission modal */}
               <button
                 type="button"
                 className="rm-cover-btn"
@@ -542,15 +576,15 @@ export default function WritePage() {
                 </div>
               </button>
 
-              {/* Meta: chapters & genre */}
               <div className="rm-meta">
-                <div className="rm-chapters">{chapters.length} chapters</div>
+                <div className="rm-chapters">
+                  {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
+                </div>
                 <div className="rm-separator" />
                 <div className="rm-genre">{mainGenreLabel}</div>
               </div>
             </div>
 
-            {/* Actions pinned to bottom */}
             <div className="rm-actions">
               <button type="button" className="rm-btn rm-btn-preview">
                 Preview
@@ -579,10 +613,26 @@ export default function WritePage() {
         <section className="editor-wrap" aria-label="Writing editor">
           <div className="editor-inner">
             <div className="editor-body">
-              {/* TOOLBAR (floating on the left) */}
-              <div className="editor-toolbar-shell">
+              {/* TOOLBAR (floating, draggable, with notes button) */}
+              <div
+                className="editor-toolbar-shell"
+                style={{
+                  top: toolbarPos.top,
+                  left: toolbarPos.left,
+                }}
+              >
+                <div
+                  className={
+                    "editor-toolbar-handle" +
+                    (isDraggingToolbar ? " is-dragging" : "")
+                  }
+                  onMouseDown={handleToolbarHandleMouseDown}
+                >
+                  <div className="editor-toolbar-handle-bar" />
+                </div>
+
                 <div className="editor-toolbar" aria-label="Text formatting tools">
-                  {/* Undo & Redo */}
+                  {/* 0. Undo & Redo */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -602,7 +652,7 @@ export default function WritePage() {
                     ↻
                   </button>
 
-                  {/* Bold & Italic */}
+                  {/* 1. Bold & Italic */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -620,7 +670,7 @@ export default function WritePage() {
                     I
                   </button>
 
-                  {/* Underline & Case */}
+                  {/* 2. Underline & Caps/lowercase */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -639,7 +689,7 @@ export default function WritePage() {
                     Aa
                   </button>
 
-                  {/* Center & Justify */}
+                  {/* 3. Center & Justify */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -657,7 +707,7 @@ export default function WritePage() {
                     J
                   </button>
 
-                  {/* Left & Right */}
+                  {/* 4. Left & Right */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -675,7 +725,7 @@ export default function WritePage() {
                     R
                   </button>
 
-                  {/* List toggle & separator dot */}
+                  {/* 5. Numbers & Separator */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -696,9 +746,32 @@ export default function WritePage() {
                     ○
                   </button>
                 </div>
+
+                {/* Notes toggle button (full width, below toolbar) */}
+                <button
+                  type="button"
+                  className={
+                    "editor-notes-toggle" + (showNotes ? " is-open" : "")
+                  }
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => setShowNotes(v => !v)}
+                >
+                  Notes
+                </button>
+
+                {showNotes && (
+                  <div className="editor-notes-popover">
+                    <textarea
+                      className="editor-notes-textarea"
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                      placeholder="Quick notes for this project…"
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Scroll: title + text together */}
+              {/* SCROLLS: title + text together */}
               <div className="editor-scroll">
                 <header className="editor-header">
                   <h1 className="editor-title">
@@ -709,7 +782,6 @@ export default function WritePage() {
                 <div
                   ref={editorRef}
                   className="editor-area"
-                  style={{ ["--editor-font-scale" as any]: fontScale }}
                   contentEditable
                   spellCheck={true}
                   data-placeholder="Start writing here…"
@@ -725,13 +797,13 @@ export default function WritePage() {
         </section>
       </main>
 
-      {/* FONT SIZE + LIGHT/DARK TOGGLE */}
+      {/* Font size + theme switch (bottom-right) */}
       <div className="font-size-control">
         <button
           type="button"
           className="font-size-btn"
           onClick={decreaseFont}
-          aria-label="Decrease font size"
+          aria-label="Decrease editor font size"
         >
           –
         </button>
@@ -740,14 +812,18 @@ export default function WritePage() {
           type="button"
           className="font-size-btn"
           onClick={increaseFont}
-          aria-label="Increase font size"
+          aria-label="Increase editor font size"
         >
           +
         </button>
 
-        <label className="switch">
+        <label
+          className="switch"
+          aria-label="Toggle editor light mode"
+          style={{ marginLeft: 10 }}
+        >
           <input
-            id="input"
+            id="editor-theme-toggle"
             type="checkbox"
             checked={isLightMode}
             onChange={e => setIsLightMode(e.target.checked)}
@@ -755,41 +831,41 @@ export default function WritePage() {
           <div className="slider round">
             <div className="sun-moon">
               <svg id="moon-dot-1" className="moon-dot" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="moon-dot-2" className="moon-dot" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="moon-dot-3" className="moon-dot" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="light-ray-1" className="light-ray" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="light-ray-2" className="light-ray" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="light-ray-3" className="light-ray" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
 
               <svg id="cloud-1" className="cloud-dark" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="cloud-2" className="cloud-dark" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="cloud-3" className="cloud-dark" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="cloud-4" className="cloud-light" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="cloud-5" className="cloud-light" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="cloud-6" className="cloud-light" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="50"></circle>
+                <circle cx="50" cy="50" r="50" />
               </svg>
             </div>
             <div className="stars">
@@ -810,20 +886,20 @@ export default function WritePage() {
         </label>
       </div>
 
+      {/* SUBMISSION MODAL */}
       {showSubmission && (
         <SubmissionModal
           open={showSubmission}
           onClose={() => setShowSubmission(false)}
-          onSave={handleSubmissionSave}
-          initial={
-            projectMeta
-              ? {
-                  title: projectMeta.title,
-                  mainGenre: projectMeta.mainGenre,
-                  coverFile: projectMeta.coverFile ?? undefined,
-                }
-              : undefined
-          }
+          onSave={(data: any) => {
+            setSubmission({
+              title: data.title,
+              mainGenre: data.mainGenre,
+              coverFile: data.coverFile ?? null,
+            });
+            setShowSubmission(false);
+          }}
+          initial={submission ?? undefined}
         />
       )}
     </div>
