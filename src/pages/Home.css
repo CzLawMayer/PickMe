@@ -2931,3 +2931,57 @@ body {
    - Ensure no filter/blur gets applied mid-flip
 */
 
+/* --- Un-mirror the FRONT cover (final overrides) --- */
+
+/* Keep physical backs hidden */
+.book-face{
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  transform-style: preserve-3d !important;
+}
+
+/* Face orientations (tiny Z avoids z-fighting) */
+.book-front{ transform: rotateY(0deg) translateZ(0.01px) !important; }
+.book-back { transform: rotateY(180deg) translateZ(0.01px) !important; }
+
+/* Paint layers share your --face-url background */
+.book-face .face-layer{
+  position: absolute;
+  inset: 0;
+  background-image: var(--face-url);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  will-change: transform;
+  background-color: #2d2d2d;
+}
+
+/* FRONT:
+   Force the *outside* bitmap upright (no rotation at all).
+   Only the inside gets 180° so it’s readable past 90°. */
+.book-front .face-layer.out{
+  transform: rotateY(0deg) translateZ(0.06px) !important;
+}
+.book-front .face-layer.in{
+  transform: rotateY(180deg) translateZ(0.06px) !important;
+}
+
+/* BACK:
+   The face itself is already at 180°. To make its *outside* read upright,
+   add another 180°; inside stays at 0°. */
+.book-back .face-layer.out{
+  transform: rotateY(180deg) translateZ(0.06px) !important;
+}
+.book-back .face-layer.in{
+  transform: rotateY(0deg) translateZ(0.06px) !important;
+}
+
+/* Make sure only the hinge flips */
+.book-inner.is-flipped{ transform: rotateY(180deg) !important; }
+
+.book-front .face-layer.out{ transform: scaleX(-1) translateZ(0.06px) !important; }
+
+/* Hard fix: un-mirror the FRONT cover image */
+.book-front .face-layer.out { transform: scaleX(-1) translateZ(0.06px) !important; }
+.book-front .face-layer.in  { transform: rotateY(180deg) scaleX(-1) translateZ(0.06px) !important; }
+.book-front                  { transform: rotateY(0deg) translateZ(0.01px) !important; }
