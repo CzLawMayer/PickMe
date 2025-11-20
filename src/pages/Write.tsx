@@ -10,7 +10,13 @@ import AppHeader from "@/components/AppHeader";
 import SubmissionModal from "@/components/SubmissionModal";
 import "./Write.css";
 
-type Chapter = { id: string; title: string; content: string; isEditing?: boolean };
+type Chapter = {
+  id: string;
+  title: string;
+  content: string;
+  isEditing?: boolean;
+};
+
 type ListMode = "none" | "ordered" | "unordered";
 type CaseMode = "none" | "upper" | "lower";
 
@@ -89,12 +95,18 @@ export default function WritePage() {
   const addChapter = () =>
     setChapters(list => {
       const idx = list.length + 1;
-      const c = { id: crypto.randomUUID(), title: `Chapter ${idx}`, content: "" };
+      const c: Chapter = {
+        id: crypto.randomUUID(),
+        title: `Chapter ${idx}`,
+        content: "",
+      };
       return [...list, c];
     });
 
   const beginRename = (id: string) =>
-    setChapters(list => list.map(c => (c.id === id ? { ...c, isEditing: true } : c)));
+    setChapters(list =>
+      list.map(c => (c.id === id ? { ...c, isEditing: true } : c))
+    );
 
   const commitRename = (id: string, value: string) =>
     setChapters(list =>
@@ -106,14 +118,18 @@ export default function WritePage() {
     );
 
   const cancelRename = (id: string) =>
-    setChapters(list => list.map(c => (c.id === id ? { ...c, isEditing: false } : c)));
+    setChapters(list =>
+      list.map(c => (c.id === id ? { ...c, isEditing: false } : c))
+    );
 
   const removeChapter = (id: string) =>
     setChapters(list => {
       const next = list.filter(c => c.id !== id);
       if (activeId === id && next.length) setActiveId(next[0].id);
       return next.map((c, i) =>
-        /^Chapter \d+$/.test(c.title) ? { ...c, title: `Chapter ${i + 1}` } : c
+        /^Chapter \d+$/.test(c.title)
+          ? { ...c, title: `Chapter ${i + 1}` }
+          : c
       );
     });
 
@@ -159,7 +175,6 @@ export default function WritePage() {
   const cycleCase = () => {
     const editor = editorRef.current;
     if (!editor) return;
-
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
 
@@ -207,7 +222,9 @@ export default function WritePage() {
 
     const html = editor.innerHTML;
     setChapters(list =>
-      list.map(c => (c.id === activeId ? { ...c, content: html } : c))
+      list.map(c =>
+        c.id === activeId ? { ...c, content: html } : c
+      )
     );
   };
 
@@ -215,7 +232,6 @@ export default function WritePage() {
   const insertSectionDivider = () => {
     const editor = editorRef.current;
     if (!editor) return;
-
     editor.focus();
 
     const sel = window.getSelection();
@@ -270,14 +286,18 @@ export default function WritePage() {
 
     const html = editor.innerHTML;
     setChapters(list =>
-      list.map(c => (c.id === activeId ? { ...c, content: html } : c))
+      list.map(c =>
+        c.id === activeId ? { ...c, content: html } : c
+      )
     );
   };
 
   const onEditorInput = () => {
     const html = editorRef.current?.innerHTML ?? "";
     setChapters(list =>
-      list.map(c => (c.id === active?.id ? { ...c, content: html } : c))
+      list.map(c =>
+        c.id === active?.id ? { ...c, content: html } : c
+      )
     );
   };
 
@@ -332,7 +352,9 @@ export default function WritePage() {
 
     const html = editor.innerHTML;
     setChapters(list =>
-      list.map(c => (c.id === activeId ? { ...c, content: html } : c))
+      list.map(c =>
+        c.id === activeId ? { ...c, content: html } : c
+      )
     );
   };
 
@@ -346,7 +368,6 @@ export default function WritePage() {
     if (!text) return;
 
     text = text.replace(/\r\n/g, "\n");
-
     const paragraphs = text.split(/\n{2,}/);
 
     const escapeHtml = (str: string) =>
@@ -369,8 +390,33 @@ export default function WritePage() {
 
     const newHtml = editor.innerHTML;
     setChapters(list =>
-      list.map(c => (c.id === activeId ? { ...c, content: newHtml } : c))
+      list.map(c =>
+        c.id === activeId ? { ...c, content: newHtml } : c
+      )
     );
+  };
+
+  // When the editor gains focus and is empty, seed it with a <p><br></p>
+  // so typing starts inside a proper paragraph (for first-line indent).
+  const handleEditorFocus = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const plain = editor.innerText.replace(/\u200B/g, "").trim();
+    if (plain.length > 0) return;
+
+    editor.innerHTML = "<p><br></p>";
+
+    const sel = window.getSelection();
+    const range = document.createRange();
+    const p = editor.firstChild;
+
+    if (p && sel) {
+      range.setStart(p, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
   };
 
   // ESC closes modal / panels
@@ -404,10 +450,7 @@ export default function WritePage() {
       const { mouseX, mouseY, top, left } = dragStartRef.current;
       const dx = e.clientX - mouseX;
       const dy = e.clientY - mouseY;
-      setToolbarPos({
-        top: top + dy,
-        left: left + dx,
-      });
+      setToolbarPos({ top: top + dy, left: left + dx });
     };
 
     const onUp = () => {
@@ -443,8 +486,7 @@ export default function WritePage() {
   const shellClass =
     "write-shell" + (isLightMode ? " write-shell--light" : "");
 
-  const projectTitle =
-    submission?.title?.trim() || "Project title not set";
+  const projectTitle = submission?.title?.trim() || "Project title not set";
   const mainGenreLabel =
     submission?.mainGenre?.trim() || "Main genre not selected";
 
@@ -457,11 +499,16 @@ export default function WritePage() {
 
       {/* LEFT PANEL */}
       <aside
-        className={`slide-panel slide-left ${isLeftOpen ? "is-open" : "is-closed"}`}
+        className={`slide-panel slide-left ${
+          isLeftOpen ? "is-open" : "is-closed"
+        }`}
         aria-hidden={!isLeftOpen}
       >
         <div className="slide-inner">
-          <button className="lm-settings" onClick={() => setShowSubmission(true)}>
+          <button
+            className="lm-settings"
+            onClick={() => setShowSubmission(true)}
+          >
             Settings
           </button>
 
@@ -480,7 +527,9 @@ export default function WritePage() {
                         className="lm-edit-input"
                         defaultValue={ch.title}
                         autoFocus
-                        onBlur={e => commitRename(ch.id, e.currentTarget.value)}
+                        onBlur={e =>
+                          commitRename(ch.id, e.currentTarget.value)
+                        }
                         onKeyDown={e => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -529,9 +578,12 @@ export default function WritePage() {
                 </li>
               );
             })}
-
             <li>
-              <button type="button" className="lm-item lm-add" onClick={addChapter}>
+              <button
+                type="button"
+                className="lm-item lm-add"
+                onClick={addChapter}
+              >
                 + Add chapter
               </button>
             </li>
@@ -549,15 +601,14 @@ export default function WritePage() {
 
       {/* RIGHT PANEL */}
       <aside
-        className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
+        className={`slide-panel slide-right ${
+          isRightOpen ? "is-open" : "is-closed"
+        }`}
         aria-hidden={!isRightOpen}
       >
         <div className="slide-inner">
           <div className="rm-shell">
-            <h2
-              className="rm-title"
-              onClick={() => setShowSubmission(true)}
-            >
+            <h2 className="rm-title" onClick={() => setShowSubmission(true)}>
               {projectTitle}
             </h2>
 
@@ -578,7 +629,8 @@ export default function WritePage() {
 
               <div className="rm-meta">
                 <div className="rm-chapters">
-                  {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
+                  {chapters.length} chapter
+                  {chapters.length === 1 ? "" : "s"}
                 </div>
                 <div className="rm-separator" />
                 <div className="rm-genre">{mainGenreLabel}</div>
@@ -616,10 +668,7 @@ export default function WritePage() {
               {/* TOOLBAR (floating, draggable, with notes button) */}
               <div
                 className="editor-toolbar-shell"
-                style={{
-                  top: toolbarPos.top,
-                  left: toolbarPos.left,
-                }}
+                style={{ top: toolbarPos.top, left: toolbarPos.left }}
               >
                 <div
                   className={
@@ -631,7 +680,10 @@ export default function WritePage() {
                   <div className="editor-toolbar-handle-bar" />
                 </div>
 
-                <div className="editor-toolbar" aria-label="Text formatting tools">
+                <div
+                  className="editor-toolbar"
+                  aria-label="Text formatting tools"
+                >
                   {/* 0. Undo & Redo */}
                   <button
                     type="button"
@@ -785,6 +837,7 @@ export default function WritePage() {
                   contentEditable
                   spellCheck={true}
                   data-placeholder="Start writing here…"
+                  onFocus={handleEditorFocus}
                   onInput={onEditorInput}
                   onPaste={handlePaste}
                   onKeyDown={handleEditorKeyDown}
@@ -797,6 +850,7 @@ export default function WritePage() {
         </section>
       </main>
 
+      {/* Font size + theme switch (bottom-right) */}
       {/* Font size + theme switch (bottom-right) */}
       <div className="font-size-control">
         <button
@@ -817,19 +871,20 @@ export default function WritePage() {
           +
         </button>
 
+        {/* THEME TOGGLE – wired exactly to your CSS (#input, .slider) */}
         <label
           className="switch"
           aria-label="Toggle editor light mode"
           style={{ marginLeft: 10 }}
         >
           <input
-            id="editor-theme-toggle"
+            id="input"                       // IMPORTANT: this must be "input"
             type="checkbox"
             checked={isLightMode}
             onChange={e => setIsLightMode(e.target.checked)}
           />
-          <div className="slider round">
-            <div className="sun-moon">
+          <span className="slider round">
+            <span className="sun-moon">
               <svg id="moon-dot-1" className="moon-dot" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
@@ -839,13 +894,26 @@ export default function WritePage() {
               <svg id="moon-dot-3" className="moon-dot" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg id="light-ray-1" className="light-ray" viewBox="0 0 100 100">
+
+              <svg
+                id="light-ray-1"
+                className="light-ray"
+                viewBox="0 0 100 100"
+              >
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg id="light-ray-2" className="light-ray" viewBox="0 0 100 100">
+              <svg
+                id="light-ray-2"
+                className="light-ray"
+                viewBox="0 0 100 100"
+              >
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg id="light-ray-3" className="light-ray" viewBox="0 0 100 100">
+              <svg
+                id="light-ray-3"
+                className="light-ray"
+                viewBox="0 0 100 100"
+              >
                 <circle cx="50" cy="50" r="50" />
               </svg>
 
@@ -858,6 +926,7 @@ export default function WritePage() {
               <svg id="cloud-3" className="cloud-dark" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
+
               <svg id="cloud-4" className="cloud-light" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
@@ -867,8 +936,9 @@ export default function WritePage() {
               <svg id="cloud-6" className="cloud-light" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-            </div>
-            <div className="stars">
+            </span>
+
+            <span className="stars">
               <svg id="star-1" className="star" viewBox="0 0 20 20">
                 <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z" />
               </svg>
@@ -881,10 +951,11 @@ export default function WritePage() {
               <svg id="star-4" className="star" viewBox="0 0 20 20">
                 <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z" />
               </svg>
-            </div>
-          </div>
+            </span>
+          </span>
         </label>
       </div>
+
 
       {/* SUBMISSION MODAL */}
       {showSubmission && (
