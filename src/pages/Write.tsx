@@ -9,6 +9,7 @@ import {
 import AppHeader from "@/components/AppHeader";
 import SubmissionModal from "@/components/SubmissionModal";
 import "./Write.css";
+import { useNavigate } from "react-router-dom";
 
 type Chapter = {
   id: string;
@@ -25,6 +26,8 @@ type SubmissionSnapshot = {
   title?: string;
   mainGenre?: string;
   coverFile?: File | null;
+  backCoverFile?: File | null;  // <-- ADD
+  dedication?: string;          // <-- ADD
 };
 
 export default function WritePage() {
@@ -47,6 +50,18 @@ export default function WritePage() {
     mode: "none",
     original: "",
   });
+
+  const navigate = useNavigate();
+
+  function htmlToParagraphText(html: string): string {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    // innerText preserves line breaks; normalize to blank-line paragraphs
+    const txt = (div.innerText || "").replace(/\u200B/g, "").trim();
+    // Convert single newlines to double to mark paragraphs for your splitter
+    return txt.replace(/\n/g, "\n\n");
+  }
 
   // Theme + font size
   const [isLightMode, setIsLightMode] = useState(false);
@@ -638,7 +653,67 @@ export default function WritePage() {
             </div>
 
             <div className="rm-actions">
-              <button type="button" className="rm-btn rm-btn-preview">
+              <button
+                type="button"
+                className="rm-btn rm-btn-preview"
+// inside WritePage, replace onClick of the Preview button:
+
+                onClick={() => {
+                  // Safe helper: returns string | undefined
+                  const toUrl = (v: unknown): string | undefined => {
+                    try {
+                      if (v instanceof Blob) return URL.createObjectURL(v);
+                      if (typeof v === "string" && v.trim()) return v; // already a URL/path
+                    } catch {}
+                    return undefined;
+                  };
+
+                  const coverUrlSafe = toUrl(submission?.coverFile);
+                  const backCoverUrlSafe = toUrl(submission?.backCoverFile);
+
+                  const chapterTitles = chapters.map(c => c.title?.trim() || "Untitled Chapter");
+                  const chapterTexts  = chapters.map(c => {
+                    // convert editor HTML to paragraph text (you already have htmlToParagraphText)
+                    return htmlToParagraphText(c.content || "");
+                  });
+
+                  const book = {
+                    id: "preview",
+                    title: submission?.title?.trim() || "Untitled Project",
+                    user: "You",
+                    coverUrl: coverUrlSafe,
+                    backCoverUrl: backCoverUrlSafe,
+                    dedication: submission?.dedication || "",
+                    chapters: chapterTitles,
+                    chapterTexts,
+                    totalChapters: chapterTitles.length,
+                    currentChapter: 0,
+                    tags: submission?.mainGenre ? [submission.mainGenre] : [],
+                  };
+
+                  // If you want to be extra safe, ensure at least one chapter has text:
+                  // if (!chapterTexts.some(t => t.trim())) { /* show a toast */ return; }
+
+                  navigate("/preview", {
+                    state: {
+                      book: {
+                        id: "preview",
+                        title: submission?.title?.trim() || "Untitled Project",
+                        user: "You",
+                        // pass the FILES directly:
+                        coverFile: submission?.coverFile ?? null,
+                        backCoverFile: submission?.backCoverFile ?? null,
+                        dedication: submission?.dedication || "",
+                        chapters: chapters.map(c => c.title?.trim() || "Untitled Chapter"),
+                        chapterTexts: chapters.map(c => htmlToParagraphText(c.content || "")),
+                        totalChapters: chapters.length,
+                        tags: submission?.mainGenre ? [submission.mainGenre] : [],
+                      }
+                    }
+                  });
+                }}
+
+              >
                 Preview
               </button>
               <button type="button" className="rm-btn rm-btn-save">
@@ -967,6 +1042,8 @@ export default function WritePage() {
               title: data.title,
               mainGenre: data.mainGenre,
               coverFile: data.coverFile ?? null,
+              backCoverFile: data.backCoverFile ?? null,   // <-- ADD
+              dedication: data.dedication ?? "",           // <-- ADD
             });
             setShowSubmission(false);
           }}

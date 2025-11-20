@@ -8,7 +8,8 @@ import ReviewsPage from "@/pages/Reviews";
 import StoriesPage from "@/pages/Stories";
 import SearchPage from "@/pages/Search";
 import SubmitPage from "@/pages/Submit";
-import WritePage from "@/pages/Write"; // <-- ADD
+import WritePage from "@/pages/Write";
+import PreviewPage from "@/pages/Preview"; // <-- ADD
 
 export default function App() {
   return (
@@ -21,7 +22,8 @@ export default function App() {
       <Route path="/reviews" element={<ReviewsPage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route path="/submit" element={<SubmitPage />} />
-      <Route path="/write" element={<WritePage />} /> {/* <-- ADD */}
+      <Route path="/write" element={<WritePage />} />
+      <Route path="/preview" element={<PreviewPage />} /> {/* <-- ADD */}
     </Routes>
   );
 }
