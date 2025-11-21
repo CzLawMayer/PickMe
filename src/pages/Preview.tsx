@@ -10,7 +10,7 @@ import {
 import "./Home.css";
 import AppHeader from "@/components/AppHeader";
 import { sampleBooks } from "@/booksData";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom"; // ⬅️ added useNavigate
 
 // ---------- Types ----------
 type Book = {
@@ -32,7 +32,6 @@ type Book = {
   chapterTexts?: string[];
 };
 
-// When navigating from Write → Preview we may pass File objects:
 type IncomingBook = Book & {
   coverFile?: File | null;
   backCoverFile?: File | null;
@@ -90,9 +89,9 @@ function snapToDeviceLineGrid(cssPixels: number, lineCssPx: number) {
 }
 
 export default function Preview() {
-  // Accept injected book from Write → Preview; fallback to first sample
   const location = useLocation() as any;
   const injected: IncomingBook | null = location?.state?.book || null;
+  const navigate = useNavigate(); // ⬅️ added
 
   const [center] = useState<Book | null>(() =>
     injected
@@ -102,7 +101,6 @@ export default function Preview() {
       : null
   );
 
-  // Locally created object URLs for cover images (revoked on change/unmount)
   const [frontUrl, setFrontUrl] = useState<string | undefined>(undefined);
   const [backUrl, setBackUrl] = useState<string | undefined>(undefined);
 
@@ -110,7 +108,6 @@ export default function Preview() {
     let revokeFront: string | undefined;
     let revokeBack: string | undefined;
 
-    // Prefer explicit URLs if provided
     if (injected?.coverUrl && injected.coverUrl.trim()) {
       setFrontUrl(injected.coverUrl);
     } else if (injected?.coverFile instanceof File) {
@@ -141,12 +138,10 @@ export default function Preview() {
     };
   }, [injected]);
 
-  // Open/flip/pagination
   const [view, setView] = useState<BookView>("front");
   const [isOpening, setIsOpening] = useState(false);
   const [page, setPage] = useState(0);
 
-  // Reader appearance (no bottom menu here)
   const [fontSizeIndex] = useState<0 | 1 | 2 | 3 | 4>(2);
   const [lineHeight, setLineHeight] = useState(1.7);
   const [debouncedLH, setDebouncedLH] = useState(lineHeight);
@@ -159,46 +154,47 @@ export default function Preview() {
     return () => clearTimeout(t);
   }, [lineHeight]);
 
-  // Pagination refs/state
   const spreadRef = useRef<HTMLDivElement | null>(null);
   const paneLeftRef = useRef<HTMLDivElement | null>(null);
   const paneRightRef = useRef<HTMLDivElement | null>(null);
   const probeRef = useRef<HTMLDivElement | null>(null);
   const [chapterPages, setChapterPages] = useState<ReactNode[][]>([]);
 
-  // Flip cross-fade
   const [flipFading, setFlipFading] = useState(false);
   const FLIP_FADE_MS = 260;
 
+  const [frontReady, setFrontReady] = useState(false);
+  const [backReady, setBackReady] = useState(false);
 
-    // put with other state
-    const [frontReady, setFrontReady] = useState(false);
-    const [backReady,  setBackReady]  = useState(false);
-
-    useEffect(() => {
+  useEffect(() => {
     let alive = true;
 
-    const loadOne = (url?: string, setReady?: (v:boolean)=>void) => {
-        if (!url) { setReady?.(true); return Promise.resolve(); }
-        const img = new Image();
-        img.crossOrigin = "anonymous"; // harmless for local blobs; helps if remote allows it
-        img.src = url;
-        const p = (img.decode ? img.decode() : Promise.resolve()).catch(() => {});
-        return p.then(() => { if (alive) setReady?.(true); });
+    const loadOne = (url?: string, setReady?: (v: boolean) => void) => {
+      if (!url) {
+        setReady?.(true);
+        return Promise.resolve();
+      }
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = url;
+      const p = (img.decode ? img.decode() : Promise.resolve()).catch(() => {});
+      return p.then(() => {
+        if (alive) setReady?.(true);
+      });
     };
 
     setFrontReady(false);
     setBackReady(false);
 
-    Promise.all([loadOne(frontUrl, setFrontReady), loadOne(backUrl, setBackReady)])
-        .catch(() => { /* ignore */ });
+    Promise.all([loadOne(frontUrl, setFrontReady), loadOne(backUrl, setBackReady)]).catch(
+      () => {}
+    );
 
-    return () => { alive = false; };
-    }, [frontUrl, backUrl]);
+    return () => {
+      alive = false;
+    };
+  }, [frontUrl, backUrl]);
 
-
-
-  // Measure & paginate
   useEffect(() => {
     if (!center) return;
     if (view !== "open") return;
@@ -211,15 +207,9 @@ export default function Preview() {
         if (!probeRef.current) return;
 
         const probeRoot = probeRef.current as HTMLElement;
-        probeRoot.style.setProperty(
-          "--reader-font-scale",
-          String(FONT_SCALES[fontSizeIndex])
-        );
+        probeRoot.style.setProperty("--reader-font-scale", String(FONT_SCALES[fontSizeIndex]));
         probeRoot.style.setProperty("--reader-line", String(debouncedLH));
-        probeRoot.style.setProperty(
-          "--reader-font-family",
-          FONT_STYLES[fontStyleIndex].css
-        );
+        probeRoot.style.setProperty("--reader-font-family", FONT_STYLES[fontStyleIndex].css);
 
         const pane = paneLeftRef.current || paneRightRef.current;
         if (!pane) return;
@@ -229,37 +219,26 @@ export default function Preview() {
         if (!pageW || !pageH) return;
 
         const texts: string[] = Array.isArray(center.chapterTexts)
-          ? center.chapterTexts
-              .map((t) => String(t ?? ""))
-              .filter((t) => t.trim().length > 0)
+          ? center.chapterTexts.map((t) => String(t ?? "")).filter((t) => t.trim().length > 0)
           : [];
         if (texts.length === 0) {
           setChapterPages([]);
           return;
         }
 
-        const pageEl = probeRef.current!.querySelector(
-          ".chapter-page"
-        ) as HTMLElement;
-        const titleEl = probeRef.current!.querySelector(
-          ".chapter-title"
-        ) as HTMLElement;
-        const bodyEl = probeRef.current!.querySelector(
-          ".chapter-body"
-        ) as HTMLElement;
+        const pageEl = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
+        const titleEl = probeRef.current!.querySelector(".chapter-title") as HTMLElement;
+        const bodyEl = probeRef.current!.querySelector(".chapter-body") as HTMLElement;
 
         pageEl.style.width = `${pageW}px`;
         pageEl.style.height = `${pageH}px`;
         pageEl.style.boxSizing = "border-box";
 
-        // Mirror paddings from a visible page
         let padTop = "6vmin",
           padRight = "6vmin",
           padBottom = "6vmin",
           padLeft = "6vmin";
-        const visiblePage = document.querySelector(
-          ".spread .chapter-page"
-        ) as HTMLElement | null;
+        const visiblePage = document.querySelector(".spread .chapter-page") as HTMLElement | null;
         if (visiblePage) {
           const cs = getComputedStyle(visiblePage);
           padTop = cs.paddingTop || padTop;
@@ -272,7 +251,6 @@ export default function Preview() {
         pageEl.style.paddingBottom = padBottom;
         pageEl.style.paddingLeft = padLeft;
 
-        // Body layout
         bodyEl.style.flex = "0 0 auto";
         bodyEl.style.minHeight = "0";
         bodyEl.style.overflow = "hidden";
@@ -280,7 +258,6 @@ export default function Preview() {
 
         void pageEl.getBoundingClientRect();
 
-        // Content box
         const csPage = getComputedStyle(pageEl);
         const pT = parseFloat(csPage.paddingTop) || 0;
         const pB = parseFloat(csPage.paddingBottom) || 0;
@@ -289,32 +266,24 @@ export default function Preview() {
         const lineStepCss = measureLineStepPx(bodyEl);
         const MIN_LINES = 3;
 
-        // Bottom cushion
         const BOTTOM_CUSHION_LINES = 1;
         const CUSHION_PX = BOTTOM_CUSHION_LINES * lineStepCss;
         probeRoot.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
         bodyEl.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
         setBottomCushionPx(CUSHION_PX);
 
-        // Account for body padding
         const csBody = getComputedStyle(bodyEl);
         const bodyPadTop = parseFloat(csBody.paddingTop) || 0;
         const bodyPadBot = parseFloat(csBody.paddingBottom) || 0;
 
-        // Available content height for text lines (no title yet)
-        const CONTENT_H_FOR_BODY = Math.max(
-          0,
-          CONTENT_H - bodyPadTop - bodyPadBot
-        );
+        const CONTENT_H_FOR_BODY = Math.max(0, CONTENT_H - bodyPadTop - bodyPadBot);
 
-        // Snap blank-page body height to full line boxes
         const BLANK_BODY_H = Math.max(
           lineStepCss * MIN_LINES,
           snapToDeviceLineGrid(CONTENT_H_FOR_BODY, lineStepCss)
         );
         bodyEl.style.height = `${BLANK_BODY_H}px`;
 
-        // Overflow checker
         const overflowed = () => {
           if (bodyEl.scrollHeight - bodyEl.clientHeight > 0.5) return true;
           const last = bodyEl.lastElementChild as HTMLElement | null;
@@ -326,13 +295,11 @@ export default function Preview() {
           return lastR.bottom + mb > bodyR.bottom - bodyPadBot - EPS;
         };
 
-        // Helpers
         const makeP = () => document.createElement("p");
         const setPText = (p: HTMLParagraphElement, t: string) => {
           p.textContent = t;
         };
 
-        // Compute body height for a page (depending on title presence)
         const setBodyHeightFor = (withTitle: boolean) => {
           const tH = withTitle ? titleEl.getBoundingClientRect().height : 0;
           const tGap =
@@ -347,7 +314,6 @@ export default function Preview() {
           return snappedContent;
         };
 
-        // Slice a whole paragraph into blank pages (no title)
         const sliceParagraphBlank = (parText: string): string[] => {
           const out: string[] = [];
           titleEl.textContent = "";
@@ -390,8 +356,6 @@ export default function Preview() {
                 bestC = 0;
               while (loC <= hiC) {
                 const midC = (loC + hiC) >> 1;
-                titleEl.textContent = "";
-                bodyEl.innerHTML = "";
                 const p3 = makeP();
                 setPText(p3, word.slice(0, midC));
                 bodyEl.appendChild(p3);
@@ -485,7 +449,6 @@ export default function Preview() {
           return { first: "", rest: [parText] };
         };
 
-        // Build pages for each chapter
         const pagesByChapter: ReactNode[][] = [];
 
         for (let chapIdx = 0; chapIdx < texts.length; chapIdx++) {
@@ -525,7 +488,7 @@ export default function Preview() {
                   bucket.push({ SPLIT: parts });
                   i++;
                 }
-                break; // close page
+                break;
               } else {
                 const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
                 if (first) {
@@ -533,7 +496,7 @@ export default function Preview() {
                   if (rest.length) paragraphs.splice(i + 1, 0, ...rest);
                   i++;
                 }
-                break; // close page
+                break;
               }
             }
 
@@ -549,10 +512,7 @@ export default function Preview() {
             }
 
             chapterOut.push(
-              <div
-                className="chapter-page"
-                key={`${chapIdx}-${chapterOut.length}`}
-              >
+              <div className="chapter-page" key={`${chapIdx}-${chapterOut.length}`}>
                 {withTitle && <h2 className="chapter-title">{title}</h2>}
                 <div
                   className="chapter-body"
@@ -570,7 +530,6 @@ export default function Preview() {
             firstPageOfChapter = false;
           }
 
-          // Empty chapter placeholder
           if (chapterOut.length === 0) {
             chapterOut.push(
               <div className="chapter-page" key={`${chapIdx}-empty`}>
@@ -594,7 +553,6 @@ export default function Preview() {
 
         setChapterPages(pagesByChapter);
 
-        // Clamp spread if total changed
         setTimeout(() => {
           const claimedChapters =
             Number(center?.totalChapters ?? 0) ||
@@ -605,10 +563,7 @@ export default function Preview() {
             (sum, arr) => sum + arr.length,
             0
           );
-          const remainingChapters = Math.max(
-            0,
-            claimedChapters - materialized
-          );
+          const remainingChapters = Math.max(0, claimedChapters - materialized);
           const newTotalPages = 2 + materializedPages + remainingChapters;
           const newMaxLeft = Math.max(0, (newTotalPages - 1) & ~1);
           setPage((p) => (p > newMaxLeft ? newMaxLeft : p));
@@ -622,7 +577,6 @@ export default function Preview() {
     };
   }, [center, view, fontSizeIndex, debouncedLH, fontStyleIndex]);
 
-  // Re-run pagination once real fonts are ready (metrics)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -637,7 +591,6 @@ export default function Preview() {
     };
   }, []);
 
-  // ---------- Pages model (open) ----------
   const chapterCount = (() => {
     if (!center) return 0;
     if (Array.isArray(center.chapters) && center.chapters.length > 0)
@@ -652,10 +605,7 @@ export default function Preview() {
 
   const chapterTitles: string[] = (() => {
     if (!center) return [];
-    if (
-      Array.isArray(center.chapters) &&
-      center.chapters.length === chapterCount
-    ) {
+    if (Array.isArray(center.chapters) && center.chapters.length === chapterCount) {
       return center.chapters.slice();
     }
     return Array.from({ length: chapterCount }, (_, i) => `Chapter ${i + 1}`);
@@ -677,8 +627,7 @@ export default function Preview() {
     let acc = 2; // first chapter starts at page 2 (right pane)
     for (let i = 0; i < claimedChapters; i++) {
       starts.push(acc);
-      const len =
-        i < chapterPages.length ? Math.max(1, chapterPages[i].length) : 1;
+      const len = i < chapterPages.length ? Math.max(1, chapterPages[i].length) : 1;
       acc += len;
     }
     return starts;
@@ -705,7 +654,6 @@ export default function Preview() {
   const atStart = page <= 0;
   const atEnd = page >= maxLeftPage;
 
-  // Flip choreography
   const returnToCover = useCallback(() => {
     setPage(0);
     setFlipFading(true);
@@ -713,7 +661,6 @@ export default function Preview() {
     setView("front");
   }, []);
 
-  // Keyboard (page turns + cover)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
@@ -754,48 +701,40 @@ export default function Preview() {
     return () => window.removeEventListener("keydown", onKey);
   }, [view, turnPage, maxLeftPage]);
 
-  // Center click: front → back → open → back …
-    const onCenterClick = (e: React.MouseEvent | React.PointerEvent) => {
-        e.stopPropagation();
-        setView((prev) => {
-            const nextView: BookView =
-            prev === "front" ? "back" : prev === "back" ? "open" : "back";
+  const onCenterClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.stopPropagation();
+    setView((prev) => {
+      const nextView: BookView = prev === "front" ? "back" : prev === "back" ? "open" : "back";
 
-            // If we’re about to reveal the back or open the book, wait for back image
-            if ((prev === "front" && (nextView === "back" || nextView === "open")) && !backReady) {
-            // queue the flip right after decode completes
-            const tryFlip = () => setView(nextView);
-            // tiny microtask to avoid state-in-state updates if already ready
-            Promise.resolve().then(() => {
-                if (backReady) tryFlip();
-                else {
-                const i = new Image();
-                if (backUrl) {
-                    i.src = backUrl;
-                    (i.decode ? i.decode() : Promise.resolve())
-                    .catch(() => {})
-                    .then(tryFlip);
-                } else {
-                    tryFlip();
-                }
-                }
-            });
-            return prev; // keep current view until ready
+      if (prev === "front" && (nextView === "back" || nextView === "open") && !backReady) {
+        const tryFlip = () => setView(nextView);
+        Promise.resolve().then(() => {
+          if (backReady) tryFlip();
+          else {
+            const i = new Image();
+            if (backUrl) {
+              i.src = backUrl;
+              (i.decode ? i.decode() : Promise.resolve()).catch(() => {}).then(tryFlip);
+            } else {
+              tryFlip();
             }
-
-            if (prev === "back" && nextView === "open") {
-            setPage(0);
-            setIsOpening(true);
-            window.setTimeout(() => setIsOpening(false), 800);
-            }
-            if ((prev === "front" && nextView === "back") || (prev === "back" && nextView === "front")) {
-            setFlipFading(true);
-            window.setTimeout(() => setFlipFading(false), 260);
-            }
-            return nextView;
+          }
         });
-    };
+        return prev;
+      }
 
+      if (prev === "back" && nextView === "open") {
+        setPage(0);
+        setIsOpening(true);
+        window.setTimeout(() => setIsOpening(false), 800);
+      }
+      if ((prev === "front" && nextView === "back") || (prev === "back" && nextView === "front")) {
+        setFlipFading(true);
+        window.setTimeout(() => setFlipFading(false), 260);
+      }
+      return nextView;
+    });
+  };
 
   if (!center) {
     return (
@@ -808,7 +747,6 @@ export default function Preview() {
     );
   }
 
-  // Explicit backgroundImage + fallback color to ensure image shows
   const frontFillStyle: CSSProperties = {
     backgroundColor: "#2d2d2d",
     backgroundPosition: "center",
@@ -825,6 +763,13 @@ export default function Preview() {
     ...(backUrl ? { backgroundImage: `url(${backUrl})` } : {}),
   };
 
+  const [isRightOpen, setRightOpen] = useState(false);
+  const projectTitle = (center?.title || "Project title not set").trim();
+  const mainGenreLabel =
+    (Array.isArray(center?.tags) && center!.tags!.length > 0
+      ? center!.tags![0]
+      : "Main genre not selected");
+
   return (
     <div className="app">
       <AppHeader />
@@ -839,71 +784,69 @@ export default function Preview() {
         aria-roledescription="carousel"
         aria-label="Book preview"
       >
-{/* Single center book */}
-<div className="book main-book" aria-hidden={false}>
-  {/* Closed flipper: front/back */}
-  <div
-    className={
-      "book-inner" +
-      (view === "back" || view === "open" ? " is-flipped" : "") +
-      (view === "open" ? " is-open" : "") +
-      (flipFading ? " flip-fading" : "")
-    }
-    onClick={onCenterClick}
-    role="button"
-    aria-label={
-      view === "front" ? "Show back cover" : view === "back" ? "Open book" : "Close book"
-    }
-    aria-pressed={view !== "front"}
-    tabIndex={0}
-    onKeyDown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        onCenterClick(e);
-      }
-    }}
-  >
-    {/* FRONT face (two layers: outside + inside) */}
-    <div
-      className="book-face book-front"
-      style={{ ["--face-url" as any]: frontUrl ? `url(${frontUrl})` : "" } as React.CSSProperties}
-    >
-      <div className="face-layer out" />
-      <div className="face-layer in" />
-    </div>
+        {/* Single center book */}
+        <div className="book main-book" aria-hidden={false}>
+          <div
+            className={
+              "book-inner" +
+              (view === "back" || view === "open" ? " is-flipped" : "") +
+              (view === "open" ? " is-open" : "") +
+              (flipFading ? " flip-fading" : "")
+            }
+            onClick={onCenterClick}
+            role="button"
+            aria-label={
+              view === "front" ? "Show back cover" : view === "back" ? "Open book" : "Close book"
+            }
+            aria-pressed={view !== "front"}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onCenterClick(e);
+              }
+            }}
+          >
+            <div
+              className="book-face book-front"
+              style={
+                { ["--face-url" as any]: frontUrl ? `url(${frontUrl})` : "" } as React.CSSProperties
+              }
+            >
+              <div className="face-layer out" />
+              <div className="face-layer in" />
+            </div>
 
-    {/* BACK face (two layers: outside + inside) */}
-    <div
-      className="book-face book-back"
-      style={{ ["--face-url" as any]: backUrl ? `url(${backUrl})` : "" } as React.CSSProperties}
-    >
-      <div className="face-layer out" />
-      <div className="face-layer in" />
-    </div>
-  </div> {/* ✅ close .book-inner here */}
+            <div
+              className="book-face book-back"
+              style={
+                { ["--face-url" as any]: backUrl ? `url(${backUrl})` : "" } as React.CSSProperties
+              }
+            >
+              <div className="face-layer out" />
+              <div className="face-layer in" />
+            </div>
+          </div>
 
-  {/* OPEN spread (sibling of .book-inner) */}
-  <div
-    ref={spreadRef}
-    className={
-      "spread" +
-      (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
-    }
-    lang="en"
-    onClick={onCenterClick}
-    aria-hidden={view !== "open"}
-    aria-label={view === "open" ? "Close book" : undefined}
-    style={{
-      ["--reader-font-scale" as any]: String(FONT_SCALES[fontSizeIndex]),
-      ["--reader-line" as any]: String(debouncedLH),
-      ["--reader-font-family" as any]: FONT_STYLES[fontStyleIndex].css,
-      ["--reader-page-bg" as any]: readerLight ? "#ffffff" : "#2d2d2d",
-      ["--reader-page-fg" as any]: readerLight ? "#000000" : "#ffffff",
-      ["--reader-cushion" as any]: `${bottomCushionPx}px`,
-    }}
-  >
-
-            {/* LEFT pane (even index) */}
+          <div
+            ref={spreadRef}
+            className={
+              "spread" +
+              (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
+            }
+            lang="en"
+            onClick={onCenterClick}
+            aria-hidden={view !== "open"}
+            aria-label={view === "open" ? "Close book" : undefined}
+            style={{
+              ["--reader-font-scale" as any]: String(FONT_SCALES[fontSizeIndex]),
+              ["--reader-line" as any]: String(debouncedLH),
+              ["--reader-font-family" as any]: FONT_STYLES[fontStyleIndex].css,
+              ["--reader-page-bg" as any]: readerLight ? "#ffffff" : "#2d2d2d",
+              ["--reader-page-fg" as any]: readerLight ? "#000000" : "#ffffff",
+              ["--reader-cushion" as any]: `${bottomCushionPx}px`,
+            }}
+          >
             <div
               ref={paneLeftRef}
               className="pane left"
@@ -915,8 +858,7 @@ export default function Preview() {
               {page === 0 ? (
                 <div className="dedication">
                   <div className="dedication-text">
-                    {typeof center?.dedication === "string" &&
-                    center.dedication?.trim()
+                    {typeof center?.dedication === "string" && center.dedication?.trim()
                       ? center.dedication
                       : "— Dedication —"}
                   </div>
@@ -941,7 +883,6 @@ export default function Preview() {
               )}
             </div>
 
-            {/* RIGHT pane (odd index) */}
             <div
               ref={paneRightRef}
               className="pane right"
@@ -968,11 +909,9 @@ export default function Preview() {
                         >
                           <span className="toc-chapter">{t}</span>
                           <span className="toc-dots" aria-hidden="true">
-                            …………………………………………{/* purely decorative */}
+                            …………………………………………
                           </span>
-                          <span className="toc-page">
-                            {startPageOfChapter[i] ?? 2}
-                          </span>
+                          <span className="toc-page">{startPageOfChapter[i] ?? 2}</span>
                         </button>
                       </li>
                     ))}
@@ -999,7 +938,6 @@ export default function Preview() {
               )}
             </div>
 
-            {/* Hidden measurer */}
             <div ref={probeRef} className="pagination-probe" aria-hidden="true">
               <div className="chapter-page">
                 <h2 className="chapter-title"></h2>
@@ -1009,7 +947,6 @@ export default function Preview() {
           </div>
         </div>
 
-        {/* Vertical arrows (page turns only) */}
         <div className="vertical-arrows">
           <button
             type="button"
@@ -1066,6 +1003,66 @@ export default function Preview() {
           </button>
         </div>
       </main>
+
+      {/* --- RIGHT SLIDE MENU: lowered z-index so header stays above --- */}
+      <aside
+        className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
+        aria-hidden={!isRightOpen}
+        style={{ zIndex: 10 }} // ⬅️ ensures AppHeader (higher z-index) sits above
+      >
+        <div className="slide-inner">
+          <div className="rm-shell">
+            <h2 className="rm-title">{projectTitle}</h2>
+
+            <div className="rm-middle">
+              <button
+                type="button"
+                className="rm-cover-btn"
+                onClick={(e) => e.preventDefault()}
+                title="Cover"
+              >
+                <div className="rm-cover-box">
+                  {frontUrl ? <img src={frontUrl} alt="Project cover" /> : <span className="rm-cover-plus">+</span>}
+                </div>
+              </button>
+
+              <div className="rm-meta">
+                <div className="rm-chapters">
+                  {chapterCount} chapter{chapterCount === 1 ? "" : "s"}
+                </div>
+                <div className="rm-separator" />
+                <div className="rm-genre">{mainGenreLabel}</div>
+              </div>
+            </div>
+
+            <div className="rm-actions">
+              {/* ⬅️ Added requested button */}
+              <button
+                type="button"
+                className="rm-btn rm-btn-preview"
+                onClick={() => navigate("/write")}
+              >
+                Back to editor
+              </button>
+
+              <button type="button" className="rm-btn rm-btn-save" disabled>
+                Save
+              </button>
+              <button type="button" className="rm-btn rm-btn-publish" disabled>
+                Publish
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button
+          className="slide-tab tab-right"
+          onClick={() => setRightOpen((v) => !v)}
+          aria-expanded={isRightOpen}
+        >
+          Notes
+        </button>
+      </aside>
     </div>
   );
 }

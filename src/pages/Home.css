@@ -2985,3 +2985,4 @@ body {
 .book-front .face-layer.out { transform: scaleX(-1) translateZ(0.06px) !important; }
 .book-front .face-layer.in  { transform: rotateY(180deg) scaleX(-1) translateZ(0.06px) !important; }
 .book-front                  { transform: rotateY(0deg) translateZ(0.01px) !important; }
+
