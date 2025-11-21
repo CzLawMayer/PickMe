@@ -763,7 +763,7 @@ export default function Preview() {
     ...(backUrl ? { backgroundImage: `url(${backUrl})` } : {}),
   };
 
-  const [isRightOpen, setRightOpen] = useState(false);
+  const [isRightOpen, setRightOpen] = useState(true);
   const projectTitle = (center?.title || "Project title not set").trim();
   const mainGenreLabel =
     (Array.isArray(center?.tags) && center!.tags!.length > 0
