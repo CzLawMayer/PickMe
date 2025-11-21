@@ -1114,15 +1114,7 @@
   transition: 0.4s;
 }
 
-.star {
-  fill: white;
-  position: absolute;
-  -webkit-transition: 0.4s;
-  transition: 0.4s;
-  animation-name: star-twinkle;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
-}
+
 
 #input:checked + .slider .stars {
   -webkit-transform: translateY(0);

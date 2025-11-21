@@ -1,196 +1,224 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { NavLink } from "react-router-dom";
+// src/pages/Submit.tsx
+import { useMemo, useState } from "react";
 
 import AppHeader from "@/components/AppHeader";
-import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
 import ProfileIdentity from "@/components/ProfileIdentity";
-import SubmissionModal from "@/components/SubmissionModal";
+import SubmissionModal, { type SubmitFormData } from "@/components/SubmissionModal";
 
-import { profile } from "@/profileData";
 import { inProgressBooks, publishedBooks } from "@/SubmitData";
+
+import LikeButton from "@/components/LikeButton";
+import SaveButton from "@/components/SaveButton";
 
 import "./Library.css";
 import "./Submit.css";
 
-/* ---------- PanelBook + mapper ---------- */
-type PanelBook = {
+/* --- basic book shape matching what Library cards expect --- */
+type LibBook = {
   id: string | number;
   title: string;
   author?: string;
+  year?: string | number;
   coverUrl?: string | null;
   likes?: number;
-  rating?: number | string;
   bookmarks?: number;
-  currentChapter?: number;
-  totalChapters?: number;
-  chapters?: Array<unknown>;
-  tags?: string[];
+  rating?: number | string;
   userRating?: number;
+  tags?: string[];
 };
 
-function toPanelBook(b: any): PanelBook {
-  const total =
-    (typeof b.totalChapters === "number" && b.totalChapters) ||
-    (Array.isArray(b.chapters) ? b.chapters.length : 0) ||
-    0;
+type Status = "inProgress" | "published";
 
+type BookWithStatus = LibBook & { status: Status };
+
+function toLibBook(b: any): LibBook {
   return {
     id: b.id,
-    title: b.title,
-    author: b.author,
+    title: b.title ?? "",
+    author: b.author ?? "",
+    year: b.year ?? "",
     coverUrl: b.coverUrl ?? null,
     likes: typeof b.likes === "number" ? b.likes : 0,
-    rating: typeof b.rating === "string" ? b.rating : (typeof b.rating === "number" ? b.rating : 0),
-    bookmarks: typeof b.bookmarks === "number" ? b.bookmarks : (typeof b.saves === "number" ? b.saves : 0),
-    currentChapter: typeof b.currentChapter === "number" ? b.currentChapter : 0,
-    totalChapters: total,
-    chapters: b.chapters,
-    tags: Array.isArray(b.tags) ? b.tags : (Array.isArray(b.subGenres) ? b.subGenres : []),
+    bookmarks:
+      typeof b.bookmarks === "number"
+        ? b.bookmarks
+        : typeof b.saves === "number"
+        ? b.saves
+        : 0,
+    rating:
+      typeof b.rating === "string" || typeof b.rating === "number"
+        ? b.rating
+        : 0,
     userRating: typeof b.userRating === "number" ? b.userRating : 0,
+    tags: Array.isArray(b.tags)
+      ? b.tags
+      : Array.isArray(b.subGenres)
+      ? b.subGenres
+      : [],
   };
 }
 
-/* ---------- BooksSection with overflow detect, wheel mapping, and trailing Add tile ---------- */
-function BooksSection({
-  title,
-  books,
-  onHoverBook,
-  onLeaveAll,
-  className = "",
-  wheelToHorizontal = false,
-  alwaysShowScrollbar = false,
-  showAddTile = false,
-  onClickAdd,
-}: {
-  title: string;
-  books: PanelBook[];
-  onHoverBook: (bk: PanelBook | null) => void;
-  onLeaveAll: () => void;
-  className?: string;
-  wheelToHorizontal?: boolean;
-  alwaysShowScrollbar?: boolean;
-  showAddTile?: boolean;
-  onClickAdd?: () => void;
-}) {
-  const trackRef = useRef<HTMLDivElement | null>(null);
-
-  // robust overflow detector
-  useLayoutEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-
-    const update = () => {
-      const needs = el.scrollWidth - el.clientWidth > 1;
-      el.classList.toggle("has-scroll", needs);
-    };
-
-    update();
-    requestAnimationFrame(update);
-    const t = setTimeout(update, 60);
-
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-
-    const mo = new MutationObserver(update);
-    mo.observe(el, { childList: true, subtree: true });
-
-    (document as any).fonts?.ready?.then(update).catch(() => {});
-    window.addEventListener("resize", update);
-
-    return () => {
-      clearTimeout(t);
-      ro.disconnect();
-      mo.disconnect();
-      window.removeEventListener("resize", update);
-    };
-  }, [books]);
-
-  // map vertical wheel to horizontal scroll (optional)
-  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
-    if (!wheelToHorizontal || !trackRef.current) return;
-    if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
-      e.preventDefault();
-      trackRef.current.scrollLeft += e.deltaY;
-    }
-  };
-
-  return (
-    <section className={`subsec ${className}`}>
-      <div className="subsec-head">
-        <h2 className="subsec-title">{title}</h2>
-        <div className="subsec-bars">
-          <div className="bar b1" />
-          <div className="bar b2" />
-          <div className="bar b3" />
-          <div className="bar b4" />
-        </div>
-      </div>
-
-      <div className="books-rail" onMouseLeave={onLeaveAll} aria-label={`${title} books`}>
-        <div
-          className={`books-track${alwaysShowScrollbar ? " force-scrollbar" : ""}`}
-          ref={trackRef}
-          onWheel={handleWheel}
-        >
-          {books.map((b) => (
-            <button
-              key={b.id}
-              className="book-tile"
-              aria-label={b.title}
-              onMouseEnter={() => onHoverBook(b)}
-              style={b.coverUrl ? { backgroundImage: `url(${b.coverUrl})` } : undefined}
-            />
-          ))}
-
-          {/* trailing Add Book tile (only for sections that request it) */}
-          {showAddTile && (
-            <button
-              type="button"
-              className="book-tile book-add"
-              aria-label="Add book"
-              onClick={onClickAdd}
-              title="Add book"
-            />
-          )}
-        </div>
-      </div>
-    </section>
-  );
+function colorFromString(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h * 31 + seed.charCodeAt(i)) % 360;
+  }
+  const bg = `hsl(${h} 70% 50% / 0.16)`;
+  const border = `hsl(${h} 70% 50% / 0.38)`;
+  const text = `hsl(${h} 85% 92%)`;
+  return { bg, border, text };
 }
 
-/* ---------- Page ---------- */
 export default function SubmitPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [hovered, setHovered] = useState<PanelBook | null>(null);
+  // merge both lists but tag them with status so we can filter by tab
+  const allBooks = useMemo<BookWithStatus[]>(
+    () => [
+      ...inProgressBooks.map((b: any) => ({
+        ...toLibBook(b),
+        status: "inProgress" as const,
+      })),
+      ...publishedBooks.map((b: any) => ({
+        ...toLibBook(b),
+        status: "published" as const,
+      })),
+    ],
+    []
+  );
+
+  const [activeTab, setActiveTab] = useState<Status>("inProgress");
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [activeBook, setActiveBook] = useState<BookWithStatus | null>(null);
+
+  const visibleBooks = useMemo(
+    () => allBooks.filter((b) => b.status === activeTab),
+    [allBooks, activeTab]
+  );
+
+  const getBookById = (id: string | null) => {
+    if (!id) return null;
+    return allBooks.find((b) => String(b.id) === String(id)) || null;
+  };
+
+  const previewBook = (book: BookWithStatus) => setActiveBook(book);
+
+  const selectBook = (book: BookWithStatus) => {
+    const idStr = String(book.id);
+    setSelectedBookId(idStr);
+    setActiveBook(book);
+  };
+
+  const clearHover = () => {
+    const sel = getBookById(selectedBookId);
+    setActiveBook(sel || null);
+  };
+
+  // per-book like/save local state
+  type BookState = {
+    liked: boolean;
+    saved: boolean;
+    likeCount: number;
+    saveCount: number;
+  };
+
+  const initialStates = useMemo(() => {
+    const obj: Record<string, BookState> = {};
+    for (const b of allBooks) {
+      obj[b.id] = {
+        liked: false,
+        saved: false,
+        likeCount: typeof b.likes === "number" ? b.likes : 0,
+        saveCount: typeof b.bookmarks === "number" ? b.bookmarks : 0,
+      };
+    }
+    return obj;
+  }, [allBooks]);
+
+  const [bookStates, setBookStates] = useState<Record<string, BookState>>(
+    initialStates
+  );
+
+  const toggleLike = (bookId: string | number) => {
+    setBookStates((prev) => {
+      const id = String(bookId);
+      const st = prev[id];
+      if (!st) return prev;
+      const nextLiked = !st.liked;
+      const nextLikeCount = nextLiked
+        ? st.likeCount + 1
+        : Math.max(0, st.likeCount - 1);
+      return {
+        ...prev,
+        [id]: { ...st, liked: nextLiked, likeCount: nextLikeCount },
+      };
+    });
+  };
+
+  const toggleSave = (bookId: string | number) => {
+    setBookStates((prev) => {
+      const id = String(bookId);
+      const st = prev[id];
+      if (!st) return prev;
+      const nextSaved = !st.saved;
+      const nextSaveCount = nextSaved
+        ? st.saveCount + 1
+        : Math.max(0, st.saveCount - 1);
+      return {
+        ...prev,
+        [id]: { ...st, saved: nextSaved, saveCount: nextSaveCount },
+      };
+    });
+  };
+
+  const activeState = activeBook ? bookStates[String(activeBook.id)] : undefined;
+
+  // submission modal
   const [showModal, setShowModal] = useState(false);
-
-  const inProg = useMemo(() => inProgressBooks.map(toPanelBook), []);
-  const pub = useMemo(() => publishedBooks.map(toPanelBook), []);
-
-  void profile;
-
   const openSubmission = () => setShowModal(true);
   const closeSubmission = () => setShowModal(false);
 
+  const handleSave = (data: SubmitFormData) => {
+    // TODO: push into inProgress list when you wire up persistence
+    console.log("Submit form saved:", data);
+    closeSubmission();
+  };
+
   return (
     <div className="library-app">
-      {/* Keep your global header */}
-      <AppHeader onClickWrite={() => setMenuOpen(true)} />
+      {/* same header as Library */}
+      <AppHeader onClickWrite={() => {}} onClickSearch={() => {}} />
 
       <main className="library-layout">
-        {/* LEFT column (hero + two rows) */}
+        {/* LEFT: hero + scroll, same structure as Library */}
         <div className="library-left">
-          {/* User header (hero) preserved */}
           <section className="lib-hero" aria-label="Submit header">
-            <div className="identity-cell">
+            <div className="identity-cell" style={{ minWidth: 0 }}>
               <ProfileIdentity compact />
             </div>
 
-            {/* middle cell empty to preserve grid from Library.css */}
-            <div aria-hidden="true" />
+            {/* center tabs: In progress / Published */}
+            <nav className="lib-tabs" aria-label="Submission sections">
+              <button
+                type="button"
+                className={
+                  "lib-tab" + (activeTab === "inProgress" ? " is-active" : "")
+                }
+                onClick={() => setActiveTab("inProgress")}
+              >
+                In progress
+              </button>
+              <button
+                type="button"
+                className={
+                  "lib-tab" + (activeTab === "published" ? " is-active" : "")
+                }
+                onClick={() => setActiveTab("published")}
+              >
+                Published
+              </button>
+            </nav>
 
-            {/* right-aligned CTA: Add book */}
+            {/* right CTA: keep your Add book button */}
             <div className="lib-hero-cta">
               <button
                 className="add-book-btn"
@@ -202,48 +230,249 @@ export default function SubmitPage() {
             </div>
           </section>
 
-          {/* Two equal-height rows */}
-          <div className="rows">
-            <BooksSection
-              title="In Progress"
-              books={inProg}
-              onHoverBook={setHovered}
-              onLeaveAll={() => setHovered(null)}
-              className="inprogress"
-              wheelToHorizontal
-              showAddTile
-              onClickAdd={openSubmission}
-              alwaysShowScrollbar
-            />
-            <BooksSection
-              title="Published"
-              books={pub}
-              onHoverBook={setHovered}
-              onLeaveAll={() => setHovered(null)}
-              className="published"
-              // scrollbar appears only if overflow
-            />
-          </div>
+          {/* grid of covers, visually identical to Library cards */}
+          <section
+            className="lib-scroll"
+            aria-label={
+              activeTab === "inProgress"
+                ? "In progress books"
+                : "Published books"
+            }
+            onMouseLeave={clearHover}
+          >
+            <div className="lib-row">
+              {visibleBooks.map((book) => {
+                const st = bookStates[String(book.id)];
+                const likeActive = st?.liked ?? false;
+                const saveActive = st?.saved ?? false;
+                const likeCount = st?.likeCount ?? 0;
+                const saveCount = st?.saveCount ?? 0;
+                const avgRatingNum = parseFloat(
+                  typeof book.rating === "string"
+                    ? book.rating
+                    : (book.rating ?? "0").toString()
+                );
+                const coverIsSelected =
+                  selectedBookId === String(book.id) ? " is-selected" : "";
+
+                return (
+                  <div key={book.id} className="lib-col">
+                    <div
+                      className="lib-card"
+                      aria-label={`Book card for ${book.title}`}
+                      onMouseEnter={() => previewBook(book)}
+                      onFocus={() => previewBook(book)}
+                      onClick={() => selectBook(book)}
+                    >
+                      {/* COVER */}
+                      <div
+                        className={`lib-cover${coverIsSelected}`}
+                        aria-label={`${book.title} cover`}
+                        onMouseEnter={() => previewBook(book)}
+                      >
+                        {book.coverUrl ? (
+                          <img
+                            src={book.coverUrl}
+                            alt={`${book.title} cover`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              display: "block",
+                              borderRadius: 0,
+                            }}
+                          />
+                        ) : null}
+                      </div>
+
+                      {/* DETAILS */}
+                      <div
+                        className="lib-details"
+                        aria-label="Book details"
+                        onMouseEnter={() => previewBook(book)}
+                        style={{
+                          overflow: "visible",
+                          height: "auto",
+                          minHeight: "0",
+                          display: "grid",
+                          gridTemplateRows: "auto auto auto auto auto",
+                        }}
+                      >
+                        {/* Row 1: title */}
+                        <div
+                          className="lib-line lib-title-line"
+                          title={book.title}
+                          style={{
+                            fontSize: "clamp(16px,1.6vw,20px)",
+                            fontWeight: 700,
+                            lineHeight: 1.15,
+                            wordBreak: "break-word",
+                            whiteSpace: "normal",
+                            overflowWrap: "break-word",
+                          }}
+                        >
+                          {book.title || "—"}
+                        </div>
+
+                        {/* Row 2: year */}
+                        <div
+                          className="lib-line lib-year-line"
+                          style={{
+                            marginTop: "6px",
+                            fontSize: "12px",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {book.year ? book.year : "—"}
+                        </div>
+
+                        {/* Row 3: author */}
+                        <div
+                          className="lib-line lib-author-line"
+                          title={book.author}
+                          style={{
+                            fontSize: "13px",
+                            lineHeight: 1.3,
+                            color: "rgba(255,255,255,0.7)",
+                            wordBreak: "break-word",
+                            whiteSpace: "normal",
+                            overflowWrap: "break-word",
+                          }}
+                        >
+                          {book.author || "—"}
+                        </div>
+
+                        {/* Row 4: like / avg rating / save */}
+                        <div
+                          className="lib-row lib-row-actions is-inline"
+                          role="group"
+                          aria-label="Likes, rating, saves"
+                          style={{
+                            width: "100%",
+                            minWidth: 0,
+                            overflow: "hidden",
+                            marginTop: "10px",
+                            marginBottom: "4px",
+                          }}
+                          onMouseEnter={() => previewBook(book)}
+                        >
+                          <LikeButton
+                            className={`meta-icon-btn like ${
+                              likeActive ? "is-active" : ""
+                            }`}
+                            glyphClass="meta-icon-glyph"
+                            countClass="meta-icon-count"
+                            active={likeActive}
+                            count={likeCount}
+                            onToggle={() => toggleLike(book.id)}
+                            aria-label={likeActive ? "Unlike" : "Like"}
+                          />
+                          <button
+                            type="button"
+                            className={`meta-icon-btn star ${
+                              (book.userRating ?? 0) > 0 ? "is-active" : ""
+                            }`}
+                            aria-pressed={(book.userRating ?? 0) > 0}
+                            title="Average rating"
+                          >
+                            <span className="material-symbols-outlined meta-icon-glyph">
+                              star
+                            </span>
+                            <span className="meta-icon-count">
+                              {Number.isFinite(avgRatingNum)
+                                ? `${avgRatingNum.toFixed(1)}/5`
+                                : "—"}
+                            </span>
+                          </button>
+                          <SaveButton
+                            className={`meta-icon-btn save ${
+                              saveActive ? "is-active" : ""
+                            }`}
+                            glyphClass="meta-icon-glyph"
+                            countClass="meta-icon-count"
+                            active={saveActive}
+                            count={saveCount}
+                            onToggle={() => toggleSave(book.id)}
+                            aria-label={saveActive ? "Unsave" : "Save"}
+                          />
+                        </div>
+
+                        {/* Row 5: first genre tag */}
+                        <div
+                          className="lib-line lib-genre-row"
+                          onMouseEnter={() => previewBook(book)}
+                        >
+                          {Array.isArray(book.tags) && book.tags.length > 0
+                            ? (() => {
+                                const tag = book.tags[0];
+                                const c = colorFromString(tag);
+                                return (
+                                  <span
+                                    className="genre-pill"
+                                    title={tag}
+                                    style={{
+                                      backgroundColor: c.bg,
+                                      borderColor: c.border,
+                                      color: c.text,
+                                    }}
+                                  >
+                                    {tag}
+                                  </span>
+                                );
+                              })()
+                            : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* plus card to create a new project – only in In progress tab */}
+              {activeTab === "inProgress" && (
+                <div className="lib-col">
+                  <button
+                    type="button"
+                    className="lib-card lib-card-add"
+                    onClick={openSubmission}
+                    aria-label="Add a new project"
+                  >
+                    <div className="lib-cover lib-cover-add" aria-hidden="true">
+                      <span className="lib-cover-add-plus">+</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* filler cols to keep last row balanced visually */}
+              <div className="lib-col" />
+              <div className="lib-col" />
+            </div>
+          </section>
         </div>
 
-        {/* RIGHT column: Feature panel preserved */}
+        {/* RIGHT: Feature panel, exactly like Library */}
         <aside className="library-feature" aria-label="Featured">
-          <FeaturePanel book={hovered ?? undefined} />
+          <FeaturePanel
+            book={activeBook || undefined}
+            liked={activeState?.liked ?? false}
+            saved={activeState?.saved ?? false}
+            userRating={activeBook?.userRating ?? 0}
+            onToggleLike={() => {
+              if (activeBook) toggleLike(activeBook.id);
+            }}
+            onToggleSave={() => {
+              if (activeBook) toggleSave(activeBook.id);
+            }}
+            onRate={(val) => {
+              console.log("rate", activeBook?.id, val);
+            }}
+          />
         </aside>
       </main>
 
-      {/* Side menu preserved */}
-      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-
-      {/* Submission popover (90% viewport), opens from hero button or + tile */}
-      <SubmissionModal
-        open={showModal}
-        onClose={closeSubmission}
-        onSave={(data) => {
-          // TODO: persist data → add to your in-progress list
-          closeSubmission();
-        }}
-      />
+      {/* Submission modal – opened by hero button and plus card */}
+      <SubmissionModal open={showModal} onClose={closeSubmission} onSave={handleSave} />
     </div>
   );
 }

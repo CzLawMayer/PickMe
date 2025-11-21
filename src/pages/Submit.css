@@ -372,3 +372,28 @@
   outline: 2px solid rgba(255,255,255,.6);
   outline-offset: 3px;
 }
+
+/* Add-book card in Submit page grid */
+.lib-card-add {
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.lib-cover-add {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lib-cover-add-plus {
+  font-size: clamp(44px, 9vmin, 84px);
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
+}
