@@ -539,9 +539,14 @@ export default function WritePage() {
                   >
                     {ch.isEditing ? (
                       <input
+                        type="text"
                         className="lm-edit-input"
                         defaultValue={ch.title}
                         autoFocus
+                        onFocus={e => {
+                          // Select the whole current title so typing replaces it
+                          e.target.select();
+                        }}
                         onBlur={e =>
                           commitRename(ch.id, e.currentTarget.value)
                         }
@@ -564,6 +569,7 @@ export default function WritePage() {
                     ) : (
                       <span className="lm-text">{ch.title}</span>
                     )}
+
 
                     <span className="lm-actions">
                       <button
