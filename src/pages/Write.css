@@ -1393,3 +1393,56 @@
   letter-spacing: 0;      /* avoid any spacing artifacts */
 }
 
+/* was: #input:checked + .slider */
+#editor-theme-toggle:checked + .slider {
+  background-color: black;
+}
+
+/* was: #input:checked + .slider .sun-moon */
+#editor-theme-toggle:checked + .slider .sun-moon {
+  transform: translateX(20px);
+  background-color: white;
+}
+
+/* was: #input:focus + .slider */
+#editor-theme-toggle:focus + .slider {
+  box-shadow: 0 0 1px #2196f3;
+}
+
+/* was: #input:checked + .slider .sun-moon .moon-dot */
+#editor-theme-toggle:checked + .slider .sun-moon .moon-dot {
+  opacity: 1;
+}
+
+/* was: #input:checked + .slider .stars */
+#editor-theme-toggle:checked + .slider .stars {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Kill any pill/rectangle background behind the theme switch */
+.font-size-control {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Make sure the switch label itself is transparent */
+.font-size-control .switch {
+  background: transparent !important;
+  padding: 0;
+}
+
+/* Just in case buttons inside picked up a generic pink bg */
+.font-size-control button {
+  background: none !important;
+  border: none;
+  box-shadow: none;
+}
+
+.switch input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+}

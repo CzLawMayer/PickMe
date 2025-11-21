@@ -953,10 +953,10 @@ export default function WritePage() {
           style={{ marginLeft: 10 }}
         >
           <input
-            id="input"                       // IMPORTANT: this must be "input"
+            id="input"
             type="checkbox"
-            checked={isLightMode}
-            onChange={e => setIsLightMode(e.target.checked)}
+            checked={!isLightMode}                     // checked = DARK mode
+            onChange={e => setIsLightMode(!e.target.checked)}  // invert it → light = !checked
           />
           <span className="slider round">
             <span className="sun-moon">
