@@ -1,548 +1,290 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-:root {
-  --book-h: clamp(520px, 70vmin, 660px);
-  --book-w: calc(var(--book-h) * 0.7);
-  --side-gap: clamp(0px, calc(50vw - var(--book-w)), 100vw);
-  --meta-gap: clamp(60px, 2vmin, 40px);
-  --arrow-gap: clamp(30px, 5vmin, 32px);
-  --meta-w: clamp(200px, 70vmin, 260px);
-  --bg: #111;
-  --fg: #fff;
-  --book-offset: 45%;
-}
 html, body { height: 100%; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Arial, Helvetica, sans-serif;
 }
 .app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 28px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 .logo { font-size: 28px; font-weight: 800; letter-spacing: .5px; }
 .logo span { color: #bfbfbf; }
-.header-icons { display: flex; gap: 16px; }
-.icon { font-size: 22px; }
 .carousel {
-  position: relative;
-  flex: 1;
-  min-height: calc(var(--book-h) + 120px);
-  overflow: hidden;
-}
-.carousel:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 3px rgba(255,255,255,.9);
-  border-radius: 10px;
+  position: relative;
+  flex: 1;
+  min-height: calc(var(--book-h) + 120px);
+  overflow: hidden;
 }
 .drag-layer {
-  position: absolute;
-  inset: 0;
-  touch-action: pan-y;
-  cursor: grab;
-  user-select: none;
-  will-change: transform;
-  z-index: 2;
-  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+  z-index: 2;
+  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
 }
 .drag-layer.dragging {
-  transition: none !important;
-  cursor: grabbing;
+  transition: none !important;
+  cursor: grabbing;
 }
 .drag-layer.animating {
-  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
+  transition: transform 480ms cubic-bezier(.22, .61, .36, 1);
 }
 .vertical-arrows {
-  position: absolute;
-  top: 45%;
-  left: calc(50% + (var(--book-w) / 2) + var(--arrow-gap));
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 35px;
-  z-index: 4;
+  position: absolute;
+  top: 45%;
+  left: calc(50% + (var(--book-w) / 2) + var(--arrow-gap));
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  z-index: 4;
 }
 .arrow {
-  appearance: none;
-  border: none;
-  background: #1f1f1f;
-  color: #fff;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  user-select: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,.35);
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  appearance: none;
+  border: none;
+  background: #1f1f1f;
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 .arrow:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.4); }
 .arrow:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
-.arrow:focus-visible { outline: 2px solid #fff; outline-offset: 2px; background: #262626; }
-.metadata {
-  position: absolute;
-  top: 45%;
-  transform: translateY(-50%);
-  width: var(--meta-w);
-  left: calc(50% - var(--book-w) - var(--meta-gap));
-  z-index: 3;
-  display: block;
-}
 .user-icon { font-size: 28px; margin-bottom: 8px; }
 .username { font-weight: bold; margin: 4px 0 12px; }
 .icons div { margin: 6px 0; }
 .chapters {
-  border-top: 1px solid #fff;
-  margin-top: 10px;
-  padding-top: 10px;
-  max-width: 180px;
+  border-top: 1px solid #fff;
+  margin-top: 10px;
+  padding-top: 10px;
+  max-width: 180px;
 }
 .tags span { display: block; margin: 6px 0; }
-.book {
-  position: absolute;
-  top: var(--book-offset);
-  transform: translateY(-50%);
-  width: var(--book-w);
-  height: var(--book-h);
-  display: grid;
-  place-items: center;
-  border-radius: 6px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.45);
-  overflow: hidden;
-  z-index: 1;
-  transition:
-    left 500ms cubic-bezier(.25, .8, .25, 1),
-    transform 500ms cubic-bezier(.25, .8, .25, 1),
-    box-shadow 300ms ease;
-}
 .book-placeholder {
-  width: 100%;
-  height: 100%;
-  background: #2d2d2d;
-  display: grid;
-  place-items: center;
-  font-size: 14px;
-  letter-spacing: 2px;
+  width: 100%;
+  height: 100%;
+  background: #2d2d2d;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  letter-spacing: 2px;
 }
-.main-book  { left: 50%; transform: translate(-50%, -50%) scale(1.03); z-index: 2; }
-.left-book  { left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap)); }
+.left-book  { left: calc(50% - (var(--book-w) * 1.5) - var(--side-gap)); }
 .right-book { left: calc(50% + (var(--book-w) * 0.5) + var(--side-gap)); }
-.left-off-1  { left: calc(50% - (var(--book-w) * 2.5) - (var(--side-gap) * 2)); opacity: .001; pointer-events: none; }
+.left-off-1  { left: calc(50% - (var(--book-w) * 2.5) - (var(--side-gap) * 2)); opacity: .001; pointer-events: none; }
 .right-off-1 { left: calc(50% + (var(--book-w) * 1.5) + (var(--side-gap) * 2)); opacity: .001; pointer-events: none; }
 .drag-layer.dragging .book.main-book {
-  transform: translate(-50%, -50%) scale(1.00);
+  transform: translate(-50%, -50%) scale(1.00);
 }
 @media (max-width: 1250px) {
-  :root {
-    --book-w: 380px;
-    --book-h: 540px;
-    --meta-w: 200px;
-  }
-}
-@media (max-width: 1000px) {
-  :root {
-    --book-w: 320px;
-    --book-h: 460px;
-  }
-  .metadata { display: none; }
+  :root {
+    --book-w: 380px;
+    --book-h: 540px;
+    --meta-w: 200px;
+  }
 }
 .material-symbols-outlined {
-  font-family: "Material Symbols Outlined", sans-serif;
-  font-weight: normal;
-  font-style: normal;
-  font-size: 1em;
-  line-height: 1;
-  display: inline-block;
-  letter-spacing: normal;
-  text-transform: none;
-  white-space: nowrap;
-  direction: ltr;
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings:
-    'FILL' var(--ms-fill, 0),
-    'wght' var(--ms-wght, 400),
-    'GRAD' 0,
-    'opsz' var(--ms-opsz, 48);
-}
-:root{
-  --meta-w: clamp(190px, 20vmin, 230px);
-  --meta-gap: clamp(90px, 7vmin, 130px);
-  --meta-h: clamp(250px, 36vmin, 330px);
-  --meta-header-h: 48px;
-  --meta-avatar-ring: 42px;
-  --meta-avatar-glyph: 24px;
-  --meta-name-size: 18px;
-  --meta-glyph-size: 56px;
-  --meta-count-size: 12px;
-  --meta-divider: 1px;
+  font-family: "Material Symbols Outlined", sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1em;
+  line-height: 1;
+  display: inline-block;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings:
+    'FILL' var(--ms-fill, 0),
+    'wght' var(--ms-wght, 400),
+    'GRAD' 0,
+    'opsz' var(--ms-opsz, 48);
 }
 .metadata{
-  position: absolute;
-  top: 45%;
-  transform: translateY(-50%);
-  left: calc(50% - var(--book-w) - var(--meta-gap));
-  width: var(--meta-w);
-  height: var(--meta-h);
-  color: var(--fg);
-  z-index: 3;
-  display: block;
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  left: calc(50% - var(--book-w) - var(--meta-gap));
+  width: var(--meta-w);
+  height: var(--meta-h);
+  color: var(--fg);
+  z-index: 3;
+  display: block;
 }
 .meta-header{
-  display: grid;
-  grid-template-columns: var(--meta-avatar-ring) 1fr;
-  column-gap: 10px;
-  align-items: center;
-  height: var(--meta-header-h);
-  margin-bottom: 10px;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: var(--meta-avatar-ring) 1fr;
+  column-gap: 10px;
+  align-items: center;
+  height: var(--meta-header-h);
+  margin-bottom: 10px;
+  overflow: hidden;
 }
 .meta-avatar{
-  width: var(--meta-avatar-ring);
-  height: var(--meta-avatar-ring);
-  border-radius: 999px;
-  border: 3px solid var(--fg);
-  display: grid;
-  place-items: center;
+  width: var(--meta-avatar-ring);
+  height: var(--meta-avatar-ring);
+  border-radius: 999px;
+  border: 3px solid var(--fg);
+  display: grid;
+  place-items: center;
 }
 .meta-avatar svg{
-  width: var(--meta-avatar-glyph);
-  height: var(--meta-avatar-glyph);
-  display: block;
+  width: var(--meta-avatar-glyph);
+  height: var(--meta-avatar-glyph);
+  display: block;
 }
 .meta-username{
-  display: flex;
-  align-items: center;
-  height: 100%;
-  font-weight: 700;
-  font-size: var(--meta-name-size);
-  line-height: 1.15;
-  white-space: normal;
-  overflow: hidden;
-  max-height: calc(1.15em * 2);
+  display: flex;
+  align-items: center;
+  height: 100%;
+  font-weight: 700;
+  font-size: var(--meta-name-size);
+  line-height: 1.15;
+  white-space: normal;
+  overflow: hidden;
+  max-height: calc(1.15em * 2);
 }
 .meta-hr{
-  border: none;
-  border-top: var(--meta-divider) solid rgba(255,255,255,.95);
-  margin: 10px 0 12px;
+  border: none;
+  border-top: var(--meta-divider) solid rgba(255,255,255,.95);
+  margin: 10px 0 12px;
 }
 .meta-actions{
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  column-gap: 0;
-  align-items: start;
-  margin-bottom: 2px;
-  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  column-gap: 0;
+  align-items: start;
+  margin-bottom: 2px;
+  width: 100%;
 }
 .meta-actions .meta-icon-btn:nth-child(1){ justify-self: start; }
 .meta-actions .meta-icon-btn:nth-child(2){ justify-self: center; }
 .meta-actions .meta-icon-btn:nth-child(3){ justify-self: end; }
-.meta-icon-btn{
-  background: transparent;
-  border: none;
-  color: var(--fg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  padding: 0;
-}
 .meta-icon-glyph{
-  font-size: var(--meta-glyph-size);
-  --ms-opsz: 48;
-  --ms-wght: 250;
-  --ms-fill: 0;
-  line-height: 1;
+  font-size: var(--meta-glyph-size);
+  --ms-opsz: 48;
+  --ms-wght: 250;
+  --ms-fill: 0;
+  line-height: 1;
 }
 .meta-icon-btn.is-active .meta-icon-glyph{ --ms-fill: 1; --ms-wght: 400; }
-.meta-icon-btn:hover .meta-icon-glyph{ filter: drop-shadow(0 0 .4px rgba(255,255,255,.35)); }
-.meta-icon-btn:active .meta-icon-glyph{ transform: translateY(1px) scale(.98); }
 .meta-icon-count{
-  font-size: var(--meta-count-size);
-  line-height: 1;
-  opacity: .95;
+  font-size: var(--meta-count-size);
+  line-height: 1;
+  opacity: .95;
 }
 .meta-chapters{
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  padding: 2px 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  padding: 2px 0 6px;
 }
 .meta-tags{
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-  display: block;
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: block;
 }
 .meta-tags li{
-  font-size: 18px;
-  line-height: 1.25;
-  margin: 6px 0;
-  white-space: normal;
-  word-break: break-word;
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 6px 0;
+  white-space: normal;
+  word-break: break-word;
 }
 @media (max-width: 1000px){
-  .metadata{ display: none; }
+  .metadata{ display: none; }
 }
 .meta-icon-btn:hover .meta-icon-glyph {
-  transform: scale(1.15);
-  transition: transform 120ms ease;
+  transform: scale(1.15);
+  transition: transform 120ms ease;
 }
 .meta-icon-btn:active .meta-icon-glyph { transform: scale(0.95); }
 .meta-icon-btn.is-active.like .meta-icon-glyph { --ms-fill: 1; color: #d81b60; }
-.meta-icon-btn.is-active.star .meta-icon-glyph { --ms-fill: 1; color: #f2ac15; }
 .meta-icon-btn.is-active.save .meta-icon-glyph { --ms-fill: 1; color: #6a1b9a; }
 .meta-icon-btn { outline: none; }
-.meta-icon-btn:focus { outline: none; box-shadow: none; }
 .star-popover {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translate(-50%, -8px);
-  background: rgba(20, 20, 20, 0.95);
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 10px;
-  padding: 8px 10px;
-  box-shadow: 0 8px 22px rgba(0,0,0,.45);
-  z-index: 10;
-  min-width: 160px;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.45);
+  z-index: 10;
+  min-width: 160px;
 }
 .star-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 .star-item {
-  appearance: none;
-  background: transparent;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  line-height: 1;
-  border-radius: 6px;
-  transition: transform 100ms ease;
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 6px;
+  transition: transform 100ms ease;
 }
 .star-item:hover { transform: scale(1.1); }
 .star-hint {
-  text-align: center;
-  font-size: 12px;
-  opacity: .85;
-  margin-top: 6px;
+  text-align: center;
+  font-size: 12px;
+  opacity: .85;
+  margin-top: 6px;
 }
 .meta-icon-btn.is-active.star .meta-icon-glyph { --ms-fill: 1; color: #f2ac15; }
 .meta-icon-btn, .star-item {
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
-.menu-overlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 200ms ease;
-  z-index: 90;
-}
-.menu-overlay.is-open{
-  opacity: 1;
-  pointer-events: auto;
-}
-.side-menu{
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: min(360px, 86vw);
-  background: #151515;
-  color: #fff;
-  box-shadow: -10px 0 30px rgba(0,0,0,.55);
-  transform: translateX(100%);
-  transition: transform 240ms cubic-bezier(.22,.61,.36,1);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid rgba(255,255,255,.08);
-}
-.side-menu.is-open{ transform: translateX(0); }
-.menu-header{
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 16px 12px;
-  border-bottom: 1px solid rgba(255,255,255,.12);
-}
-.menu-title{ font-size: 26px; font-weight: 800; letter-spacing: .3px; }
 .menu-emoji{ font-size: 26px; display: grid; place-items: center; }
 .menu-close{
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  justify-self: end;
-  -webkit-tap-highlight-color: transparent;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  justify-self: end;
+  -webkit-tap-highlight-color: transparent;
 }
-.menu-list{
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-}
-.menu-item{
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.1);
-  background: #1b1b1b;
-  color: #fff;
-  text-align: left;
-  cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.menu-item:hover{
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0,0,0,.35);
-  background: #1f1f1f;
-}
-.menu-item:active{ transform: translateY(0); }
-.menu-text{ font-size: 22px; font-weight: 800; }
-.menu-item .menu-emoji{ font-size: 28px; }
-.item-profile  { border-left: 10px solid #ff8a00; }
-.item-library  { border-left: 10px solid #8b4bff; }
-.item-submit   { border-left: 10px solid #ff36a3; }
-.item-logout   { border-left: 10px solid #29a3ff; }
-.icon-menu{
-  background: transparent;
-  border: none;
-  color: inherit;
-  font-size: 22px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.icon-menu:focus-visible{
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-.header {
-  position: relative;
-  z-index: 200;
-}
-.menu-overlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 200ms ease;
-  z-index: 190;
-}
-.menu-overlay.is-open{
-  opacity: 1;
-  pointer-events: auto;
-}
-.side-menu{
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: min(360px, 86vw);
-  background: #151515;
-  color: #fff;
-  box-shadow: -10px 0 30px rgba(0,0,0,.55);
-  transform: translateX(100%);
-  transition: transform 240ms cubic-bezier(.22,.61,.36,1);
-  z-index: 195;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid rgba(255,255,255,.08);
-}
-.side-menu.is-open{ transform: translateX(0); }
-.menu-header{
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px 12px;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.12);
-}
-.menu-title{ font-size: 26px; font-weight: 800; letter-spacing: .3px; }
-.menu-burger {
-  display: grid;
-  gap: 4px;
-}
+.item-profile  { border-left: 10px solid #ff8a00; }
+.item-library  { border-left: 10px solid #8b4bff; }
+.item-submit   { border-left: 10px solid #ff36a3; }
+.item-logout   { border-left: 10px solid #29a3ff; }
 .menu-burger i {
-  display: block;
-  width: 24px; height: 4px; border-radius: 3px;
-  background: #ff6b6b;
+  display: block;
+  width: 24px; height: 4px; border-radius: 3px;
+  background: #ff6b6b;
 }
 .menu-burger i:nth-child(2){ background:#7b61ff; }
 .menu-burger i:nth-child(3){ background:#28a9ff; }
-.menu-list{
-  display: grid;
-  gap: 0;
-}
-.menu-item.fill{
-  border: none;
-  border-radius: 0;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 58px 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 16px;
-  font: inherit;
-  color: #fff;
-  text-align: left;
-  cursor: pointer;
-  transition: transform 100ms ease, filter 120ms ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.menu-item.fill:hover{
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-.menu-item.fill:active{ transform: translateY(0); }
-.menu-text{ font-size: 26px; font-weight: 900; letter-spacing: .2px; }
-.menu-item .menu-emoji{ font-size: 34px; display: grid; place-items: center; }
-.menu-item.fill.profile { background:#f36b21; }
-.menu-item.fill.library { background:#e83e8c; }
-.menu-item.fill.submit  { background:#7b1fa2; }
-.menu-item.fill.logout  { background:#1e88e5; }
-.icon-menu{
-  background: transparent;
-  border: none;
-  color: inherit;
-  font-size: 22px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.icon-menu:focus-visible{
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-  border-radius: 6px;
-}
 .header,
 .carousel,
 .metadata,
@@ -551,7 +293,7 @@ body {
 .side-menu,
 .menu-header,
 .menu-list {
-  user-select: none;
+  user-select: none;
 }
 .icon,
 .icon-menu,
@@ -559,7 +301,7 @@ body {
 .menu-close,
 .menu-item,
 .meta-icon-btn {
-  outline: none;
+  outline: none;
 }
 .icon:focus,
 .icon-menu:focus,
@@ -567,444 +309,210 @@ body {
 .menu-close:focus,
 .menu-item:focus,
 .meta-icon-btn:focus {
-  outline: none;
-  box-shadow: none;
+  outline: none;
+  box-shadow: none;
 }
 .icon-menu:focus-visible,
 .arrow:focus-visible,
 .menu-close:focus-visible,
 .menu-item:focus-visible,
 .meta-icon-btn:focus-visible {
-  outline: none;
-  box-shadow: none;
+  outline: none;
+  box-shadow: none;
 }
 .carousel:focus,
 .carousel:focus-visible {
-  outline: none;
-  box-shadow: none;
+  outline: none;
+  box-shadow: none;
 }
 :root{
-  --header-icon-size: 22px;
-  --header-btn: 40px;
-  --header-gap: 12px;
+  --header-icon-size: 22px;
+  --header-btn: 40px;
+  --header-gap: 12px;
 }
 .header-icons{
-  display: grid;
-  grid-auto-flow: column;
-  align-items: center;
-  gap: var(--header-gap);
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: var(--header-gap);
 }
 .icon-btn{
-  display: inline-grid;
-  place-items: center;
-  width: var(--header-btn);
-  height: var(--header-btn);
-  font-size: var(--header-icon-size);
-  line-height: 1;
-  border: none;
-  background: transparent;
-  color: inherit;
-  border-radius: 8px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  display: inline-grid;
+  place-items: center;
+  width: var(--header-btn);
+  height: var(--header-btn);
+  font-size: var(--header-icon-size);
+  line-height: 1;
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .icon-btn:focus,
 .icon-btn:focus-visible{ outline: none; box-shadow: none; }
 .icon-menu.duplicate { }
 .icon-close{ background: rgba(255,255,255,0.06); }
-.menu-header{
-  display: grid;
-  grid-template-columns: var(--header-btn) 1fr var(--header-btn);
-  align-items: center;
-  gap: 8px;
-  padding: 14px 16px 12px;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.12);
-}
 .icon-btn.panel-trigger{
-  width: var(--header-btn);
-  height: var(--header-btn);
-  font-size: var(--header-icon-size);
+  width: var(--header-btn);
+  height: var(--header-btn);
+  font-size: var(--header-icon-size);
 }
 .menu-title-wrap{
-  display: grid;
-  grid-template-rows: auto auto;
-  align-items: center;
-  justify-items: center;
-}
-.menu-title{
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: .3px;
-  line-height: 1.1;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-items: center;
+  justify-items: center;
 }
 .menu-subicons{
-  display: grid;
-  grid-auto-flow: column;
-  gap: 8px;
-  margin-top: 4px;
+  display: grid;
+  grid-auto-flow: column;
+  gap: 8px;
+  margin-top: 4px;
 }
 .menu-subicons .icon-btn{
-  --header-btn: 32px;
-  --header-icon-size: 18px;
+  --header-btn: 32px;
+  --header-icon-size: 18px;
 }
 .menu-spacer{ width: var(--header-btn); height: var(--header-btn); }
-.menu-list{ display: grid; gap: 0; padding: 0; }
-.menu-item.fill{
-  border: none; border-radius: 0; width: 100%; min-height: 64px;
-  display: grid; grid-template-columns: 64px 1fr; align-items: center;
-  gap: 10px; padding: 0 16px; color: #fff; cursor: pointer;
-  transition: filter 120ms ease, transform 100ms ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.menu-item.fill:hover{ transform: translateY(-1px); filter: brightness(1.05); }
-.menu-item.fill:active{ transform: translateY(0); }
-.menu-item.fill .menu-emoji{ display: grid; place-items: center; font-size: 34px; height: 100%; }
-.menu-item.fill.profile { background:#f36b21; }
-.menu-item.fill.library { background:#e83e8c; }
-.menu-item.fill.submit  { background:#7b1fa2; }
-.menu-item.fill.logout  { background:#1e88e5; }
-.header {
-  position: relative;
-  z-index: 200;
-}
-.menu-overlay {
-  z-index: 255 !important;
-}
-.side-menu {
-  z-index: 260 !important;
-}
-.icon-menu {
-  position: relative;
-  z-index: 270;
-}
-.header-icons .icon {
-  position: relative;
-  z-index: 190;
-}
-.header-icons .icon {
-  position: relative;
-  z-index: 190;
-}
-.header-icons .icon.icon-menu {
-  position: relative;
-  z-index: 270 !important;
-  pointer-events: auto;
-}
-.header {
-  position: relative;
-  z-index: auto !important;
-}
-.menu-overlay { z-index: 255 !important; }
-.side-menu    { z-index: 260 !important; }
-.header-icons .icon.icon-menu {
-  position: relative;
-  z-index: 1000 !important;
-  pointer-events: auto;
-}
-.header-icons .icon:not(.icon-menu) {
-  position: relative;
-  z-index: 190 !important;
-}
-.menu-header {
-  display: grid;
-  grid-template-columns: var(--header-btn) 1fr var(--header-btn);
-  align-items: center;
-  min-height: var(--header-btn);
-  padding: 0 16px;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.12);
-}
-.menu-title {
-  font-size: 22px;
-  font-weight: 800;
-  text-align: center;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
 :root {
-  --panel-header-h: 64px;
-}
-.menu-item.fill {
-  min-height: var(--panel-header-h);
-}
-.menu-header {
-  display: grid;
-  grid-template-columns: var(--header-btn) 1fr var(--header-btn);
-  align-items: center;
-  height: var(--panel-header-h);
-  padding: 0 16px;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.12);
-}
-.menu-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  line-height: 1;
+  --panel-header-h: 64px;
 }
 .menu-burger {
-  display: grid;
-  place-items: center;
-  height: 100%;
-}
-.header-icons .icon.icon-menu[aria-expanded="true"] {
-  position: fixed;
-  top: 0;
-  right: 16px;
-  width: var(--panel-header-h);
-  height: var(--panel-header-h);
-  display: grid;
-  place-items: center;
-  z-index: 1000 !important;
-  background: transparent;
-  pointer-events: auto;
-}
-.header-icons .icon:not(.icon-menu) {
-  position: relative;
-  z-index: 190 !important;
+  display: grid;
+  place-items: center;
+  height: 100%;
 }
 :root {
-  --app-header-h: 64px;
-}
-.header {
-  height: var(--app-header-h);
-  padding: 0 28px;
-  display: flex;
-  align-items: center;
-}
-.menu-header {
-  height: var(--app-header-h);
-  padding: 0 16px;
-  display: grid;
-  grid-template-columns: var(--header-btn) 1fr var(--header-btn);
-  align-items: center;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.12);
-}
-.menu-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  height: 100%;
+  --app-header-h: 64px;
 }
 .header-icons .icon.icon-menu[aria-expanded="true"] {
-  position: static !important;
-  width: var(--header-btn) !important;
-  height: var(--header-btn) !important;
+  position: static !important;
+  width: var(--header-btn) !important;
+  height: var(--header-btn) !important;
 }
 :root {
-  --app-header-h: 64px;
+  --app-header-h: 64px;
 }
 .header {
-  height: var(--app-header-h);
-  display: flex;
-  align-items: center;
-  padding: 0 28px;
-  position: relative;
-  z-index: 900;
+  height: var(--app-header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  position: relative;
+  z-index: 900;
 }
 .header-icons .icon:not(.icon-menu) {
-  position: relative;
-  z-index: 905;
+  position: relative;
+  z-index: 905;
 }
 .header-icons .icon.icon-menu {
-  position: relative;
-  z-index: 1000 !important;
-  pointer-events: auto;
+  position: relative;
+  z-index: 1000 !important;
+  pointer-events: auto;
 }
 .menu-overlay { z-index: 950 !important; }
-.side-menu    { z-index: 960 !important; }
-.menu-header {
-  height: var(--app-header-h);
-  display: grid;
-  grid-template-columns: var(--header-btn) 1fr var(--header-btn);
-  align-items: center;
-  padding: 0 16px;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.12);
-}
-.menu-title {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  line-height: 1;
-  height: 100%;
-}
+.side-menu    { z-index: 960 !important; }
 .icon.icon-menu {
-  width: var(--header-btn);
-  height: var(--header-btn);
-  display: grid;
-  place-items: center;
-  font-size: var(--header-icon-size);
+  width: var(--header-btn);
+  height: var(--header-btn);
+  display: grid;
+  place-items: center;
+  font-size: var(--header-icon-size);
 }
 
 
-/* Sidebar header: match row layout on the left, match app header height overall */
 .menu-header {
-  /* tall enough to center the top-right menu button */
-  height: var(--app-header-h);
-  /* but never shorter than the row height */
-  min-height: var(--panel-row-h);
+  height: var(--app-header-h);
+  min-height: var(--panel-row-h);
 
-  padding: 0 16px;
-  display: grid;
-  grid-template-columns: 64px 1fr; /* emoji + title (same as rows) */
-  align-items: center;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.12);
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 64px 1fr; 
+  align-items: center;
+  background: #111;
+  border-bottom: 1px solid rgba(255,255,255,.12);
 }
 
-/* Emoji column: same size/placement as rows */
 .menu-header .menu-emoji {
-  display: grid;
-  place-items: center;
-  font-size: 34px;  /* matches .menu-item .menu-emoji */
-  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 34px;  
+  height: 100%;
 }
 
-/* Title: same typography as rows, but LEFT-aligned (flex-start) */
 .menu-header .menu-title {
-  font-size: 26px;   /* matches .menu-text */
-  font-weight: 900;
-  letter-spacing: .2px;
-  display: flex;
-  align-items: center;       /* vertical center within the bar */
-  justify-content: flex-start; /* LEFT align (not centered) */
-  text-align: left;
+  font-size: 26px;   
+  font-weight: 900;
+  letter-spacing: .2px;
+  display: flex;
+  align-items: center;       
+  justify-content: flex-start; 
+  text-align: left;
 }
 
 
 .menu-item.fill { position: relative; }
 
 .menu-item.fill:hover {
-  transform: translateY(-1px);  /* keep your lift */
+  transform: translateY(-1px);  
 }
 
-/* paint over the exposed 1px with the same background as the row */
 .menu-item.fill:hover::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0;
-  bottom: -1px;
-  height: 1px;
-  background: inherit;          /* matches the row’s color */
-  pointer-events: none;
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: inherit;          
+  pointer-events: none;
 }
 
 
 
 
 
-/* ───────── BOOK FLIPPING (shadowless clean version) ───────── */
-
-/* The outer card (each book) provides perspective */
-.book {
-  perspective: 1200px;
-  -webkit-perspective: 1200px;
-  overflow: visible;       /* avoid edge cuts during flip */
-  border-radius: 6px;      /* keep rounded edges */
-  box-shadow: none !important; /* remove all shadows */
-}
-
-/* The element that rotates */
-.book-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transform-origin: center center;
-  transition: transform 600ms cubic-bezier(.22,.61,.36,1);
-  will-change: transform;
-  border-radius: inherit;
-  box-shadow: none !important; /* remove shadow */
-  --flip-cushion: 0px;
-  transform: translateY(var(--flip-cushion)) rotateY(0deg);
-  cursor: default;
-}
-
-/* Faces (front + back) */
-.book-face {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: stretch;
-  border-radius: inherit;
-  overflow: hidden;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  box-shadow: none !important; /* remove shadow */
-}
-
-/* FRONT face */
 .book-front .book-placeholder {
-  background: #2d2d2d; /* or cover image fills this */
+  background: #2d2d2d; 
 }
 .book-front .book-placeholder[style*="url("] {
-  background-color: transparent;
+  background-color: transparent;
 }
 
-/* BACK face */
-.book-back {
-  transform: rotateY(180deg);
-}
 .book-back .book-placeholder.back {
-  background: #232323;
-  display: grid;
-  place-items: center;
-  letter-spacing: 2px;
-  font-size: 14px;
-  opacity: 1;
+  background: #232323;
+  display: grid;
+  place-items: center;
+  letter-spacing: 2px;
+  font-size: 14px;
+  opacity: 1;
 }
 
-/* Flip state */
-.book-inner.is-flipped {
-  transform: translateY(var(--flip-cushion)) rotateY(180deg);
-}
-
-/* Optional cushion while animating */
 .book-inner.is-animating {
-  --flip-cushion: 10px;
+  --flip-cushion: 10px;
 }
 
-/* Ensure clicks land on the flipper */
 .drag-layer .book-inner {
-  pointer-events: auto;
+  pointer-events: auto;
 }
 
-/* While flipping, allow overhang and keep the center card above neighbors */
 .carousel.is-flipping {
-  position: relative;
-  z-index: 1000;
-  overflow: visible !important;
+  position: relative;
+  z-index: 1000;
+  overflow: visible !important;
 }
 .carousel.is-flipping .book.main-book {
-  overflow: visible;
-  position: relative;
-  z-index: 1001;
+  overflow: visible;
+  position: relative;
+  z-index: 1001;
 }
 
-/* Center card safe even when idle */
-.book.main-book {
-  overflow: visible;
-  position: relative;
-  z-index: 905;
-}
-
-
-
-/* ───────── Remove unwanted white outlines on books ───────── */
 .book-inner,
 .book-face,
 .book-placeholder {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .book-inner:focus,
@@ -1013,8 +521,8 @@ body {
 .book-face:focus-visible,
 .book-placeholder:focus,
 .book-placeholder:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 
@@ -1027,915 +535,459 @@ body {
 
 
 
-/* ───────── Flip container (clean) ───────── */
-.book {
-  perspective: 1200px;
-  -webkit-perspective: 1200px;
-  overflow: visible;
-}
-
-.book-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transition: transform 600ms cubic-bezier(.22,.61,.36,1), opacity 280ms ease;
-  border-radius: inherit;
-  will-change: transform, opacity;
-}
-
-/* Faces */
-.book-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-/* Base face rotations */
-.book-front { transform: rotateY(0deg); }
-.book-back  { transform: rotateY(180deg); }
-
-/* Flip state */
-.book-inner.is-flipped { transform: rotateY(180deg); }
-
-/* When 'open', fade the flipper so the spread takes over */
 .book-inner.is-open { opacity: 0; pointer-events: none; }
 
-/* Center card layering safety */
 .book.main-book { overflow: visible; position: relative; z-index: 905; }
 
-/* Fallback fill used by your JSX (.face-fill) */
 .face-fill {
-  width: 100%;
-  height: 100%;
-  background: #2d2d2d;
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 14px;
-  letter-spacing: 2px;
+  width: 100%;
+  height: 100%;
+  background: #2d2d2d;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  letter-spacing: 2px;
 }
 
-/* ───────── OPEN SPREAD (kept, minimal) ───────── */
-
-/* Two book-sized panes; centered by default */
 .spread {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--book-w) * 2);
-  height: var(--book-h);
-  transform: translate(-50%, -50%);
-  display: grid;
-  grid-template-columns: var(--book-w) var(--book-w);
-  gap: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 280ms ease;
-  z-index: 1002;
-  perspective: 1200px;
-  -webkit-perspective: 1200px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--book-w) * 2);
+  height: var(--book-h);
+  transform: translate(-50%, -50%);
+  display: grid;
+  grid-template-columns: var(--book-w) var(--book-w);
+  gap: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 280ms ease;
+  z-index: 1002;
+  perspective: 1200px;
+  -webkit-perspective: 1200px;
 }
 
-/* Panes (neutral visible fill) */
 .spread .pane {
-  width: var(--book-w);
-  height: var(--book-h);
-  background: #2d2d2d;
-  color: #fff;
-  display: grid;
-  place-items: center;
-  transform-style: preserve-3d;
+  width: var(--book-w);
+  height: var(--book-h);
+  background: #2d2d2d;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
 }
 
-/* Hinges */
-.spread .pane.left  { transform-origin: right center; }
-.spread .pane.right { transform-origin: left  center; }
-
-/* Pre-open anchor over the closed book */
 .spread.will-open {
-  opacity: 0;
-  transform: translate(calc(-50% + (var(--book-w) / 2)), -50%);
+  opacity: 0;
+  transform: translate(calc(-50% + (var(--book-w) / 2)), -50%);
 }
-.spread.will-open .pane.left  { transform: rotateY(0deg); }
+.spread.will-open .pane.left  { transform: rotateY(0deg); }
 .spread.will-open .pane.right { transform: rotateY(-180deg); }
 
-/* Open: unfold right page, then slide to center */
-.spread.is-open {
-  opacity: 1;
-  pointer-events: auto;
-  animation: slideSpreadCenter 380ms cubic-bezier(.22,.61,.36,1) 420ms forwards;
-}
-.spread.is-open .pane.right {
-  animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) forwards;
-}
-.spread.is-open .pane.left { transform: rotateY(0deg); }
-
-/* Keyframes */
 @keyframes rightPageUnfold {
-  from { transform: rotateY(-180deg); }
-  to   { transform: rotateY(0deg); }
+  from { transform: rotateY(-180deg); }
+  to   { transform: rotateY(0deg); }
 }
 @keyframes slideSpreadCenter {
-  from { transform: translate(calc(-50% + (var(--book-w) / 2)), -50%); }
-  to   { transform: translate(-50%, -50%); }
+  from { transform: translate(calc(-50% + (var(--book-w) / 2)), -50%); }
+  to   { transform: translate(-50%, -50%); }
 }
 
-/* ───────── Bulletproof visual back (what fixed it) ───────── */
-/* Paint the container itself when flipped so back is always gray, even if a face gets hidden */
 .book .book-inner {
-  background: transparent !important;
-  border-radius: 0px;
+  background: transparent !important;
+  border-radius: 0px;
 }
 .book .book-inner.is-flipped {
-  background: #2d2d2d !important; /* same gray as covers/spread */
+  background: #2d2d2d !important; 
 }
 
 
-/* On OPEN:
-   1) Whole spread slides into perfect center immediately
-   2) Then the right page unfolds (−180° → 0°) */
 .spread.is-open {
-  opacity: 1;
-  pointer-events: auto;
-  animation: slideSpreadCenter 380ms cubic-bezier(.22,.61,.36,1) forwards; /* no delay */
+  opacity: 1;
+  pointer-events: auto;
+  animation: slideSpreadCenter 380ms cubic-bezier(.22,.61,.36,1) forwards; 
 }
 
-/* Right page unfolds AFTER the slide finishes */
 .spread.is-open .pane.right {
-  animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) 380ms forwards; /* delay = slide duration */
+  animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) 380ms forwards; 
 }
 .spread.is-open .pane.left {
-  transform: rotateY(0deg);
+  transform: rotateY(0deg);
 }
 
-/* --- SOLID OPEN: no opacity fading during the slide --- */
-
-/* 1) While opening, don't fade the spread — keep it fully opaque */
 .carousel.is-opening .spread {
-  opacity: 1 !important;
-  transition: none !important;          /* kill opacity transition */
-  will-change: transform;                /* smooth slide only */
+  opacity: 1 !important;
+  transition: none !important;          
+  will-change: transform;                
 }
 
-/* If you prefer to scope tighter, you can target .spread.is-open, but this works well. */
 .carousel.is-opening .spread.is-open {
-  opacity: 1 !important;
+  opacity: 1 !important;
 }
 
-/* 2) Don't cross-fade the flipper when we switch to 'open' — just hide it instantly */
 .carousel.is-opening .book-inner {
-  /* only transform should animate; opacity should cut immediately */
-  transition: transform 600ms cubic-bezier(.22,.61,.36,1) !important;
+  transition: transform 600ms cubic-bezier(.22,.61,.36,1) !important;
 }
 .carousel.is-opening .book-inner.is-open {
-  opacity: 0 !important;                /* hide the closed book */
+  opacity: 0 !important;                
 }
 
-/* (Optional) If you still see any faint blending on some GPUs,
-   force the spread onto its own layer during the slide. */
-.carousel.is-opening .spread { transform: translateZ(0); }
-
-
-/* Smooth slide for metadata + arrows */
 .metadata,
 .vertical-arrows {
-  transition: left 380ms cubic-bezier(.22,.61,.36,1);
-  will-change: left;
+  transition: left 380ms cubic-bezier(.22,.61,.36,1);
+  will-change: left;
 }
 
-/* When open, push UI to match the spread’s wider edges */
 .carousel.is-opening .metadata {
-  left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap));
+  left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap));
 }
 
 .carousel.is-opening .vertical-arrows {
-  left: calc(50% + var(--book-w) + var(--arrow-gap));
+  left: calc(50% + var(--book-w) + var(--arrow-gap));
 }
 
 
 
-/* Animate side books out of view when opening */
 .book {
-  /* ensure opacity animates too */
-  transition:
-    left 500ms cubic-bezier(.25,.8,.25,1),
-    transform 500ms cubic-bezier(.25,.8,.25,1),
-    box-shadow 300ms ease,
-    opacity 300ms ease;
-  will-change: left, transform, opacity;
+  transition:
+    left 500ms cubic-bezier(.25,.8,.25,1),
+    transform 500ms cubic-bezier(.25,.8,.25,1),
+    box-shadow 300ms ease,
+    opacity 300ms ease;
+  will-change: left, transform, opacity;
 }
 
-/* During open, push the immediate neighbors further out and fade them */
 .carousel.is-opening .book.left-book {
-  left: calc(50% - (var(--book-w) * 3) - (var(--side-gap) * 2));
-  opacity: 0;
-  pointer-events: none;
+  left: calc(50% - (var(--book-w) * 3) - (var(--side-gap) * 2));
+  opacity: 0;
+  pointer-events: none;
 }
 
 .carousel.is-opening .book.right-book {
-  left: calc(50% + (var(--book-w) * 2) + (var(--side-gap) * 2));
-  opacity: 0;
-  pointer-events: none;
+  left: calc(50% + (var(--book-w) * 2) + (var(--side-gap) * 2));
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* The off-1 cards are already far; just ensure they’re fully hidden */
 .carousel.is-opening .book.left-off-1,
 .carousel.is-opening .book.right-off-1 {
-  opacity: 0;
-  pointer-events: none;
+  opacity: 0;
+  pointer-events: none;
 }
 
 
 
 
 
-/* ───────── Page content (temporary numbers) ───────── */
 .spread .page-content {
-  font-size: 28px;
-  font-weight: 800;
-  opacity: .9;
+  font-size: 28px;
+  font-weight: 800;
+  opacity: .9;
 }
 
-/* ───────── Hinge points (match open animation) ───────── */
-.spread .pane.left  { transform-origin: right center; }
-.spread .pane.right { transform-origin: left  center; }
+.spread .pane.left  { transform-origin: right center; }
+.spread .pane.right { transform-origin: left  center; }
 
-/* ───────── Page turns (triggered by .turning-right / .turning-left) ───────── */
-/* Kill pane transitions while turning so keyframes take control */
 .spread.turning-right .pane,
-.spread.turning-left  .pane {
-  transition: none !important;
+.spread.turning-left  .pane {
+  transition: none !important;
 }
 
-/* NEXT (→ / click right): animate the RIGHT page */
 .spread.turning-right .pane.right {
-  z-index: 5;
-  will-change: transform;
-  /* ensure a reliable start pose even if other rules set transform */
-  transform: rotateY(-180deg) !important;
-  animation: pageTurnNext 420ms cubic-bezier(.22,.61,.36,1) forwards !important;
+  z-index: 5;
+  will-change: transform;
+  transform: rotateY(-180deg) !important;
+  animation: pageTurnNext 420ms cubic-bezier(.22,.61,.36,1) forwards !important;
 }
 
-/* PREV (← / click left): animate the LEFT page */
 .spread.turning-left .pane.left {
-  z-index: 5;
-  will-change: transform;
-  /* ensure a reliable start pose even if other rules set transform */
-  transform: rotateY(180deg) !important;
-  animation: pageTurnPrev 420ms cubic-bezier(.22,.61,.36,1) forwards !important;
+  z-index: 5;
+  will-change: transform;
+  transform: rotateY(180deg) !important;
+  animation: pageTurnPrev 420ms cubic-bezier(.22,.61,.36,1) forwards !important;
 }
 
-/* ───────── Initial open (one-time unfold) ───────── */
-/* Scope to the ephemeral `.carousel.is-opening` so it won't retrigger later */
 .carousel.is-opening .spread.is-open .pane.right {
-  animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) forwards;
+  animation: rightPageUnfold 420ms cubic-bezier(.22,.61,.36,1) forwards;
 }
 .carousel.is-opening .spread.is-open .pane.left {
-  transform: rotateY(0deg);
+  transform: rotateY(0deg);
 }
 
 
 
-/* Disable ONLY interactive page-turn animations (keep the opening choreography) */
 .spread.turning-right .pane.right,
-.spread.turning-left  .pane.left {
-  animation: none !important;
-  transform: rotateY(0deg) !important;
+.spread.turning-left  .pane.left {
+  animation: none !important;
+  transform: rotateY(0deg) !important;
 }
 
 
-/* Keep the layout in its "open" positions as long as the book is open */
 .carousel.is-opening .metadata,
-.carousel.is-opened  .metadata {
-  left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap));
+.carousel.is-opened  .metadata {
+  left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap));
 }
 
-.carousel.is-opening .vertical-arrows,
-.carousel.is-opened  .vertical-arrows {
-  left: calc(50% + var(--book-w) + var(--arrow-gap));
-}
-
-/* Hide/far-shift neighbors both during opening AND while open */
 .carousel.is-opening .book.left-book,
-.carousel.is-opened  .book.left-book {
-  left: calc(50% - (var(--book-w) * 3) - (var(--side-gap) * 2));
-  opacity: 0;
-  pointer-events: none;
+.carousel.is-opened  .book.left-book {
+  left: calc(50% - (var(--book-w) * 3) - (var(--side-gap) * 2));
+  opacity: 0;
+  pointer-events: none;
 }
 
 .carousel.is-opening .book.right-book,
-.carousel.is-opened  .book.right-book {
-  left: calc(50% + (var(--book-w) * 2) + (var(--side-gap) * 2));
-  opacity: 0;
-  pointer-events: none;
+.carousel.is-opened  .book.right-book {
+  left: calc(50% + (var(--book-w) * 2) + (var(--side-gap) * 2));
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* Off-1 are fully hidden in both states too */
 .carousel.is-opening .book.left-off-1,
-.carousel.is-opened  .book.left-off-1,
+.carousel.is-opened  .book.left-off-1,
 .carousel.is-opening .book.right-off-1,
-.carousel.is-opened  .book.right-off-1 {
-  opacity: 0;
-  pointer-events: none;
+.carousel.is-opened  .book.right-off-1 {
+  opacity: 0;
+  pointer-events: none;
 }
 
 
-/* When the book is open, stretch the arrows column to the book height
-   and space the three buttons vertically (top / middle / bottom). */
-.carousel.is-opened .vertical-arrows {
-  top: 50%;
-  transform: translateY(-50%);
-  height: var(--book-h);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between; /* top / middle / bottom */
-  gap: 0;                         /* gap handled by space-between */
-}
-
-/* Optional: make the middle cover button feel distinct (same size for now) */
 .arrow--cover {
-  /* same base size; tweak if you want a focal control */
-  /* width: 52px; height: 52px; font-size: 22px; */
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  line-height: 1;
 }
 
-
-
-/* Keep open layout persistent */
-.carousel.is-opening .metadata,
-.carousel.is-opened  .metadata { left: calc(50% - (var(--book-w) * 1.5) - var(--meta-gap)); }
 
 .carousel.is-opening .vertical-arrows,
-.carousel.is-opened  .vertical-arrows { left: calc(50% + var(--book-w) + var(--arrow-gap)); }
-
-.carousel.is-opening .book.left-book,
-.carousel.is-opened  .book.left-book {
-  left: calc(50% - (var(--book-w) * 3) - (var(--side-gap) * 2));
-  opacity: 0; pointer-events: none;
-}
-.carousel.is-opening .book.right-book,
-.carousel.is-opened  .book.right-book {
-  left: calc(50% + (var(--book-w) * 2) + (var(--side-gap) * 2));
-  opacity: 0; pointer-events: none;
-}
-.carousel.is-opening .book.left-off-1,
-.carousel.is-opened  .book.left-off-1,
-.carousel.is-opening .book.right-off-1,
-.carousel.is-opened  .book.right-off-1 { opacity: 0; pointer-events: none; }
-
-/* Space arrows top/middle/bottom while open */
-.carousel.is-opened .vertical-arrows {
-  top: 50%;
-  transform: translateY(-50%);
-  height: var(--book-h);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0;
-}
-
-/* Center a tight 3-button stack beside the open book */
-.carousel.is-opening .vertical-arrows,
-.carousel.is-opened  .vertical-arrows {
-  top: 50%;
-  left: calc(50% + var(--book-w) + var(--arrow-gap));
-  transform: translateY(-50%);  /* center the whole stack vertically */
-  height: auto;                  /* no tall column */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;       /* pack the group around the center */
-  align-items: center;
-  gap: 35px;                      /* same spacing as your original */
-}
-
-/* Keep the cover button the same size as the others (optional explicit) */
-.arrow--cover {
-  width: 44px;
-  height: 44px;
-  font-size: 24px;
-  line-height: 1;
+.carousel.is-opened  .vertical-arrows {
+  top: var(--book-offset);       
+  left: calc(50% + var(--book-w) + var(--arrow-gap));
+  transform: translateY(-50%);   
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 35px;                     
 }
 
 
-/* Align arrows stack to the vertical center of the book, not the carousel */
-.carousel.is-opening .vertical-arrows,
-.carousel.is-opened  .vertical-arrows {
-  top: var(--book-offset);       /* match the book’s vertical anchor */
-  left: calc(50% + var(--book-w) + var(--arrow-gap));
-  transform: translateY(-50%);   /* center the stack on that point */
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 35px;                     /* same tight spacing as before */
-}
-
-
-/* Dedication page (page 0, left pane) */
 .dedication {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  padding: 6vmin;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 6vmin;
 }
 
 .dedication-text {
-  max-width: 70%;
-  text-align: center;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(16px, 2.2vmin, 22px);
-  line-height: 1.6;
-  opacity: 0.95;
-  letter-spacing: 0.2px;
-  /* subtle book vibe */
-  transform: translateY(-4%);
+  max-width: 70%;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(16px, 2.2vmin, 22px);
+  line-height: 1.6;
+  opacity: 0.95;
+  letter-spacing: 0.2px;
+  transform: translateY(-4%);
 }
-
-/* Optional faint ornament if you want a title look
-.dedication-text::before,
-.dedication-text::after {
-  content: "—";
-  display: block;
-  opacity: 0.6;
-}
-.dedication-text::before { margin-bottom: 10px; }
-.dedication-text::after  { margin-top: 10px;  }
-*/
-
 
 .arrow:disabled {
-  opacity: .4;
-  cursor: not-allowed;
-  filter: grayscale(0.2);
+  opacity: .4;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
 }
 
-/* Table of Contents (page 1) */
 .toc {
-  width: 100%;
-  height: 100%;
-  padding: 6vmin 6vmin;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 2vmin;
-  font-family: Georgia, "Times New Roman", serif;
+  width: 100%;
+  height: 100%;
+  padding: 6vmin 6vmin;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2vmin;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .toc-title {
-  font-size: clamp(18px, 2.4vmin, 24px);
-  letter-spacing: .3px;
-  text-align: left;
-  opacity: .95;
-}
-
-.toc-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-}
-
-.toc-list li { margin: .4rem 0; }
-
-.toc-link {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: baseline;
-  gap: .6rem;
-  font: inherit;
-  background: transparent;
-  color: inherit;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  padding: .2rem 0;
+  font-size: clamp(18px, 2.4vmin, 24px);
+  letter-spacing: .3px;
+  text-align: left;
+  opacity: .95;
 }
 
 .toc-link:hover .toc-chapter { text-decoration: underline; }
-.toc-dots   { letter-spacing: .1em; opacity: .5; white-space: nowrap; overflow: hidden; }
-.toc-page   { opacity: .85; font-variant-numeric: tabular-nums; }
-
-/* Chapter pages */
-.chapter-page {
-  width: 100%;
-  height: 100%;
-  padding: 6vmin;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 2vmin;
-  font-family: Georgia, "Times New Roman", serif;
-}
-
-.chapter-title {
-  font-size: clamp(18px, 2.6vmin, 26px);
-  letter-spacing: .3px;
-  text-align: left;
-  opacity: .98;
-}
-
-.chapter-body {
-  font-size: clamp(14px, 2vmin, 18px);
-  line-height: 1.7;
-  opacity: .95;
-}
-
-
-/* Keep page content inside the physical page */
 .spread .pane {
-  overflow: hidden;            /* no spill outside the page */
+  overflow: hidden;            
 }
 
-/* TOC layout: title + scrollable list */
-.toc {
-  height: 100%;
-  display: grid;
-  grid-template-rows: auto 1fr; /* title + list */
-  gap: 2vmin;
-  /* Important: allow the grid to actually shrink its children */
-  min-height: 0;
-}
-
-/* Make the list scroll within the page bounds */
-.toc-list {
-  overflow: auto;   /* enable scrolling */
-  min-height: 0;    /* allow it to shrink inside the grid */
-  max-height: 100%; /* never exceed the page */
-  padding-right: 4px; /* tiny gutter so scrollbar doesn't overlay text */
-}
-
-/* Optional: chapter page body can scroll too if content grows */
 .chapter-page {
-  height: 100%;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 2vmin;
-  min-height: 0;  /* critical with CSS grid */
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2vmin;
+  min-height: 0;  
 }
 
 .chapter-body {
-  overflow: auto;
-  min-height: 0;
+  overflow: auto;
+  min-height: 0;
 }
 
-/* Optional: nicer, subtle scrollbars */
 .toc-list::-webkit-scrollbar,
 .chapter-body::-webkit-scrollbar { width: 8px; }
 .toc-list::-webkit-scrollbar-thumb,
 .chapter-body::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,.25);
-  border-radius: 8px;
+  background: rgba(255,255,255,.25);
+  border-radius: 8px;
 }
 .toc-list::-webkit-scrollbar-track,
 .chapter-body::-webkit-scrollbar-track {
-  background: transparent;
+  background: transparent;
 }
 
 
-/* Push the scrollbar further right */
-.toc-list {
-  overflow: auto;
-  min-height: 0;
-  max-height: 100%;
-  /* add extra gutter so scrollbar sits farther to the right of the text */
-  padding-right: 20px;  /* more space between text and scrollbar */
-  box-sizing: content-box; /* so padding doesn't shrink the scroll area */
-}
-
-/* You can also nudge the numbers separately if you want */
 .toc-list .toc-page {
-  margin-left: 8px; /* tiny gap between dots and number */
+  margin-left: 8px; 
 }
 
-/* Optional: tweak scrollbar width again */
-.toc-list::-webkit-scrollbar { width: 8px; }
-/* optional thumb color as before */
-
-
-/* Make each TOC link a single row with three columns */
 .toc-list li {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-/* Flex container to keep chapter / dots / page on one line */
 .toc-link {
-  display: flex;
-  align-items: center;           /* vertically center all */
-  justify-content: space-between; /* push ends apart */
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  padding: 4px 0;
+  display: flex;
+  align-items: center;           
+  justify-content: space-between; 
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 4px 0;
 }
 
-/* Ensure the chapter title stays together with its number */
 .toc-chapter {
-  flex: 0 1 auto; /* left side stays compact */
-  white-space: nowrap; /* prevent breaking “Chapter X” onto two lines */
-  margin-right: 6px;
+  flex: 0 1 auto; 
+  white-space: nowrap; 
+  margin-right: 6px;
 }
 
-/* The dots fill the middle */
 .toc-dots {
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: clip;
-  white-space: nowrap;
-  margin: 0 6px;
-  opacity: .5;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  margin: 0 6px;
+  opacity: .5;
 }
 
-/* Page number sticks to the far right */
 .toc-page {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  margin-left: 6px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  margin-left: 6px;
 }
 
 
-/* A neutral empty page when no content exists */
 .page-blank {
-  width: 100%;
-  height: 100%;
-  /* same base as your pages so it blends in */
-  background: transparent;     /* panes already have #2d2d2d */
+  width: 100%;
+  height: 100%;
+  background: transparent;     
 }
 
 
 .drag-layer.disabled {
-  pointer-events: none; /* drag layer stops catching any drags/clicks */
-  cursor: default;
+  pointer-events: none; 
+  cursor: default;
 }
 
 
-/* ───────────────── Reader bottom menu (open-book only) ───────────────── */
-
-.reader-menu {
-  position: absolute;
-  left: 50%;
-  bottom: 24px;
-  transform: translateX(-50%);
-  z-index: 1100;
-  pointer-events: none;                 /* children re-enable */
-}
-
-/* pack toggle + panel vertically */
 .reader-menu-toggle,
 .reader-menu-panel {
-  pointer-events: auto;
+  pointer-events: auto;
 }
 
-/* Chevron toggle button */
-.reader-menu-toggle {
-  appearance: none;
-  border: none;
-  background: #1f1f1f;
-  color: #fff;
-  width: 48px;
-  height: 48px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0,0,0,.45);
-  transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
-  margin: 40px auto 10px auto;
-  position: relative;
-  top: 80px;
-}
 .reader-menu.is-open .reader-menu-toggle .reader-menu-chevron {
-  transform: rotate(180deg); /* points down when open */
+  transform: rotate(180deg); 
 }
 .reader-menu-toggle:hover { transform: translateY(-1px); }
 .reader-menu-toggle:active { transform: translateY(0); }
 .reader-menu-chevron {
-  display: inline-block;
-  transform: translateY(-1px);
+  display: inline-block;
+  transform: translateY(-1px);
 }
 
-/* Panel container (black rounded square) */
-/* Panel: base (always visible, lives below by default) */
-.reader-menu-panel {
-  background: #1f1f1f;
-  color: #fff;
-  border-radius: 18px;
-  padding: 14px 16px;
-  width: 20vw;                 /* your width */
-  margin: 0 auto;
-  box-shadow: 0 12px 30px rgba(0,0,0,.55);
-
-  /* 👇 start off-screen; one transition handles both directions */
-  transform: translateY(100%);
-  transition: transform 300ms cubic-bezier(.22,.61,.36,1);
-
-  /* 👇 keep constant so there’s no fade/snap */
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Panel when OPEN (pulled up to show top half) */
-.reader-menu.is-open .reader-menu-panel {
-  transform: translateY(50%);
-  /* no transition here */
-}
-
-
-/* 7 rounded square buttons */
-.reader-menu-grid {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 0px;
-  justify-items: center;
-  align-items: center;
-}
-
-.reader-menu-item {
-  appearance: none;
-  border: none;
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  font-weight: 800;
-  background: #242424;                 /* neutral for now */
-  color: #fff;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 6px 16px rgba(0,0,0,.35);
-  transition: transform 120ms ease, filter 160ms ease, box-shadow 160ms ease;
-}
 .reader-menu-item:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
-  box-shadow: 0 10px 20px rgba(0,0,0,.45);
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 10px 20px rgba(0,0,0,.45);
 }
 .reader-menu-item:active { transform: translateY(0); }
 
-/* Tight screens: let buttons wrap but stay centered */
 @media (max-width: 680px) {
-  .reader-menu-panel { width: min(560px, 92vw); }
-  .reader-menu-grid {
-    grid-auto-flow: row;
-    grid-template-columns: repeat(4, 1fr);
-    justify-items: center;
-    row-gap: 12px;
-  }
+  .reader-menu-panel { width: min(560px, 92vw); }
+  .reader-menu-grid {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, 1fr);
+    justify-items: center;
+    row-gap: 12px;
+  }
 }
 
 
-/* Keep the menu pinned bottom-center */
 .reader-menu {
-  position: absolute;
-  left: 50%;
-  bottom: -5px;
-  transform: translateX(-50%);
-  z-index: 1100;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  z-index: 1100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Chevron still clickable */
 .reader-menu-toggle {
-  pointer-events: auto;
-  margin-bottom: 8px; /* small gap above the bottom edge */
-}
-
-/* Panel: fully hidden when CLOSED */
-.reader-menu-panel {
-  pointer-events: auto;
-  width: min(720px, 86vw);
-  margin: 0 auto;
-
-  /* start fully hidden below */
-  transform: translateY(100%);
-  transition: transform 300ms cubic-bezier(.22,.61,.36,1);
-}
-
-/* Panel: only TOP HALF visible when OPEN (peek) */
-.reader-menu.is-open .reader-menu-panel {
-  /* pulled up — only top half visible */
-  transform: translateY(50%);
-  transition: transform 300ms cubic-bezier(.22,.61,.36,1);
-}
-
-
-/* Make button size a variable so math is easy */
-.reader-menu-panel {
-  --reader-btn: 64px;                /* matches .reader-menu-item width/height */
-  overflow: visible;                 /* allow buttons to peek out */
-  padding-top: calc(14px + var(--reader-btn) / 2); /* room for the half-inside part */
-}
-
-/* Lift the entire grid up by half a button */
-.reader-menu-grid {
-  transform: translateY(calc(-1 * var(--reader-btn) / 2));
-}
-
-/* (optional) ensure items render on top of the panel edge if needed */
-.reader-menu-item {
-  position: relative;
-  z-index: 1;
-}
-
-/* --- Make buttons peek with their centers on the panel top edge --- */
-.reader-menu-panel { overflow: visible; padding-top: 14px !important; } /* cancel any extra top padding */
-.reader-menu-grid { position: relative; top: -32px !important; }        /* 32px = half of your 64px buttons */
-
-.reader-menu-panel {
-  overflow: visible; /* let buttons peek out */
-  padding-top: 14px !important; /* keep your original padding */
-}
-
-.reader-menu-grid {
-  position: relative;
-  top: -46px !important; /* 32px (half button) + 14px padding */
-}
-
-.reader-menu-grid {
-  position: relative;
-  top: -16px !important; /* center of button on panel top edge */
-}
-
-.reader-menu-grid {
-  display: flex;
-  justify-content: center; /* center group */
-  gap: 18px; /* controls spacing */
-}
-
-.reader-menu-grid {
-  display: flex;              /* flex instead of grid */
-  justify-content: center;    /* center horizontally */
-  align-items: center;        /* align vertically */
-  gap: 8px;                   /* adjust spacing */
-  flex-wrap: wrap;            /* allows wrapping on small screens */
+  pointer-events: auto;
+  margin-bottom: 8px; 
 }
 
 .reader-menu-item {
-  width: 64px;
-  height: 64px;
-  /* …other styles */
+  position: relative;
+  z-index: 1;
+}
+
+.reader-menu-grid {
+  display: flex;              
+  justify-content: center;    
+  align-items: center;        
+  gap: 8px;                   
+  flex-wrap: wrap;            
 }
 
 .reader-menu-panel {
-  width: min(550px, 70vw); /* or any value you want */
-  margin: 0 auto;
+  width: min(550px, 70vw); 
+  margin: 0 auto;
 }
 
-
-/* Clip anything outside when CLOSED so peeking is hidden */
-.reader-menu-panel { 
-  overflow: hidden;              /* default: closed */
-}
-
-/* Allow peeking only when OPEN */
-.reader-menu.is-open .reader-menu-panel {
-  overflow: visible;             /* open: buttons can stick out */
-}
-
-/* Optional: drop the offset when closed */
-.reader-menu:not(.is-open) .reader-menu-grid {
-  top: 0 !important;
-}
-
-.reader-menu-panel {
-  /* base styles … */
-  overflow: hidden; /* hide overspill when closed */
-}
 
 .reader-menu.is-open .reader-menu-panel {
-  overflow: visible; /* let buttons peek when open */
+  overflow: visible; 
 }
 
 .reader-menu:not(.is-open) .reader-menu-grid {
-  transform: translateY(0) !important; /* reset offset on close */
-  top: 0 !important;
+  transform: translateY(0) !important; 
+  top: 0 !important;
 }
 
 
-
-.reader-menu-panel {
-  transform: translateY(100%);
-  transition: transform 300ms cubic-bezier(.22,.61,.36,1);
-}
 
 .reader-menu.is-open .reader-menu-panel {
-  transform: translateY(50%);
-  transition: transform 700ms cubic-bezier(.25,.8,.25,1); /* slower when going to open */
+  transform: translateY(50%);
+  transition: transform 700ms cubic-bezier(.25,.8,.25,1); 
 }
 
 .reader-menu-grid button:nth-child(1) { background: #f4511e; }
@@ -1950,241 +1002,126 @@ body {
 
 
 
-/* ───────── Reader popover (font & spacing) ───────── */
-.reader-popover {
-  position: absolute;
-  bottom: calc(100% + 10px);       /* above the button */
-  left: 50%;                       /* 👈 center horizontally */
-  transform: translateX(-50%);     /* 👈 center horizontally */
-  background: #0f0f0f;             /* keep original color */
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 12px;
-  padding: 12px 12px 10px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.55);
-  width: 260px;                    /* same width as before */
-  z-index: 2000;
-}
-
-.reader-popover::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;                       /* 👈 caret centered */
-  transform: translateX(-50%);     /* 👈 caret centered */
-  border-width: 8px;
-  border-style: solid;
-  border-color: #0f0f0f transparent transparent transparent;
-}
-
-
-/* Font-size presets row */
-.font-size-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.font-size-option {
-  appearance: none;
-  border: 1px solid rgba(255,255,255,.18);
-  background: #171717;
-  color: #fff;
-  border-radius: 10px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
-}
-.font-size-option:hover { transform: translateY(-1px); filter: brightness(1.05); }
-.font-size-option.is-active {
-  border-color: #7c4dff;
-  box-shadow: 0 0 0 2px rgba(124,77,255,.25) inset;
-}
-
-/* Line-height slider */
-.line-height-wrap {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "label value"
-    "range range";
-  align-items: center;
-  gap: 8px 10px;
-}
-.lh-label { grid-area: label; font-size: 12px; opacity: .85; }
-.lh-value { grid-area: value; font-size: 12px; opacity: .9; }
-.lh-range {
-  grid-area: range;
-  width: 100%;
-  appearance: none;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.18);
-  outline: none;
-}
-.lh-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #d81b60;
-  cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,.4);
-}
-.lh-range::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #d81b60;
-  cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,.4);
-}
-
-/* Optional: active ring on the menu button */
 .reader-menu-item.is-active { outline: 2px solid rgba(255,255,255,.18); }
 
-/* ───────── Apply reader variables to page content ───────── */
-.spread { --reader-font-scale: 1; --reader-line: 1.7; }
-
-.chapter-body, .toc, .dedication-text {
-  line-height: var(--reader-line) !important;
-}
-
-.chapter-body      { font-size: calc(16px * var(--reader-font-scale)) !important; }
-.dedication-text   { font-size: calc(18px * var(--reader-font-scale)) !important; }
-.toc-title,
-.chapter-title     { font-size: calc(20px * var(--reader-font-scale)) !important; }
-.toc-list,
-.toc-link,
-.page-blank        { font-size: calc(15px * var(--reader-font-scale)) !important; }
-
-
-
-
-/* ───────── Reader popover base (centered above button) ───────── */
 .reader-popover {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: #0f0f0f;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 12px;
-  padding: 12px 12px 10px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.55);
-  width: 260px;
-  z-index: 2000;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f0f0f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+  width: 260px;
+  z-index: 2000;
 }
 .reader-popover::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 8px;
-  border-style: solid;
-  border-color: #0f0f0f transparent transparent transparent;
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: #0f0f0f transparent transparent transparent;
 }
 
-/* Font-size presets row */
 .font-size-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .font-size-option {
-  appearance: none;
-  border: 1px solid rgba(255,255,255,.18);
-  background: #171717;
-  color: #fff;
-  border-radius: 10px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #171717;
+  color: #fff;
+  border-radius: 10px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
 }
 .font-size-option:hover { transform: translateY(-1px); filter: brightness(1.05); }
 .font-size-option.is-active {
-  border-color: #7c4dff;
-  box-shadow: 0 0 0 2px rgba(124,77,255,.25) inset;
+  border-color: #7c4dff;
+  box-shadow: 0 0 0 2px rgba(124,77,255,.25) inset;
 }
 
-/* Line-height slider */
 .line-height-wrap {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "label value"
-    "range range";
-  align-items: center;
-  gap: 8px 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "label value"
+    "range range";
+  align-items: center;
+  gap: 8px 10px;
 }
 .lh-label { grid-area: label; font-size: 12px; opacity: .85; }
 .lh-value { grid-area: value; font-size: 12px; opacity: .9; }
 .lh-range {
-  grid-area: range;
-  width: 100%;
-  appearance: none;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.18);
-  outline: none;
+  grid-area: range;
+  width: 100%;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+  outline: none;
 }
 .lh-range::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #d81b60; border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,.4);
-  cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #d81b60; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  cursor: pointer;
 }
 .lh-range::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #d81b60; border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,.4);
-  cursor: pointer;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #d81b60; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  cursor: pointer;
 }
 
-/* Font style popover */
 .reader-fontstyle-popover { width: 280px; }
 .font-style-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 .font-style-option {
-  appearance: none;
-  border: 1px solid rgba(255,255,255,.18);
-  background: #171717;
-  color: #fff;
-  border-radius: 10px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
-  font-size: 20px;
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #171717;
+  color: #fff;
+  border-radius: 10px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
+  font-size: 20px;
 }
 .font-style-option:hover { transform: translateY(-1px); filter: brightness(1.05); }
 .font-style-option.is-active {
-  border-color: #6a1b9a;
-  box-shadow: 0 0 0 2px rgba(106,27,154,.25) inset;
+  border-color: #6a1b9a;
+  box-shadow: 0 0 0 2px rgba(106,27,154,.25) inset;
 }
 
-/* Apply reader variables to page content */
 .spread { --reader-font-scale: 1; --reader-line: 1.7; --reader-font-family: Georgia, 'Times New Roman', serif; }
 
 .chapter-body, .toc, .dedication-text { line-height: var(--reader-line) !important; }
-.chapter-body      { font-size: calc(16px * var(--reader-font-scale)) !important; }
-.dedication-text   { font-size: calc(18px * var(--reader-font-scale)) !important; }
+.chapter-body      { font-size: calc(16px * var(--reader-font-scale)) !important; }
+.dedication-text   { font-size: calc(18px * var(--reader-font-scale)) !important; }
 .toc-title,
-.chapter-title     { font-size: calc(20px * var(--reader-font-scale)) !important; }
+.chapter-title     { font-size: calc(20px * var(--reader-font-scale)) !important; }
 .toc-list,
 .toc-link,
-.page-blank        { font-size: calc(15px * var(--reader-font-scale)) !important; }
+.page-blank        { font-size: calc(15px * var(--reader-font-scale)) !important; }
 
 .chapter-body,
 .toc,
@@ -2192,24 +1129,16 @@ body {
 .chapter-title,
 .toc-title,
 .toc-link {
-  font-family: var(--reader-font-family) !important;
+  font-family: var(--reader-font-family) !important;
 }
 
 
 
-/* ───────── Reader page theme (scoped to the open spread) ───────── */
 .spread {
-  --reader-page-bg: #2d2d2d;  /* default dark */
-  --reader-page-fg: #ffffff;
+  --reader-page-bg: #2d2d2d;  
+  --reader-page-fg: #ffffff;
 }
 
-/* Physical pages (left/right panes) */
-.spread .pane {
-  background: var(--reader-page-bg) !important;
-  color: var(--reader-page-fg) !important;
-}
-
-/* Ensure all common text inside pages inherits the fg color */
 .dedication-text,
 .toc,
 .toc-title,
@@ -2219,258 +1148,232 @@ body {
 .chapter-page,
 .chapter-title,
 .chapter-body {
-  color: var(--reader-page-fg) !important;
+  color: var(--reader-page-fg) !important;
 }
 
-/* TOC button should look like text on the page */
-.toc-link {
-  background: transparent;
-  border: none;
-}
-
-/* Optional: lighten the dot leader a bit in dark, dim in light */
-.toc-dots { opacity: 0.5; }
-
-/* (No changes to the rest of the UI; metadata/arrows/header keep app theme) */
-
-
-/* Anchor wrapper for each menu item + its popover */
 .reader-menu-item-wrap { position: relative; display: inline-block; }
 
-/* Ensure the sliding panel doesn't clip popovers */
-.reader-menu-panel { overflow: visible; }
-
-/* ───────── Dictionary (always dark) — positioned above its button ───────── */
 .reader-dict-popover {
-  position: absolute;
-  bottom: 100%;                     /* sit above the button */
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 12px;              /* gap above button */
-  z-index: 1100;                    /* above menu panel */
+  position: absolute;
+  bottom: 100%;                     
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;              
+  z-index: 1100;                    
 
-  width: min(420px, 86vw);
-  max-height: 80vh;                 /* never exceed viewport */
-  overflow: hidden;                 /* no outer scrollbars */
-  display: grid;
-  grid-template-rows: auto auto 1fr;/* title, form, results */
-  background: #0f0f0f !important;
-  color: #fff !important;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+  width: min(420px, 86vw);
+  max-height: 80vh;                 
+  overflow: hidden;                 
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  background: #0f0f0f !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
 }
 
-/* Title */
 .dict-title {
-  font-size: 18px;
-  font-weight: 800;
-  margin-bottom: 8px;
-  text-align: center;
-  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-align: center;
+  color: #fff;
 }
 
-/* Form */
 .dict-form {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .dict-input {
-  width: 100%;
-  background: #1b1b1b !important;
-  color: #fff !important;
-  border: 1px solid rgba(255,255,255,.18) !important;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font: inherit;
-  outline: none;
-  caret-color: #fff;
+  width: 100%;
+  background: #1b1b1b !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  outline: none;
+  caret-color: #fff;
 }
 .dict-input::placeholder { color: rgba(255,255,255,.55); }
 .dict-input:focus {
-  border-color: #28a9ff !important;
-  box-shadow: 0 0 0 2px rgba(40,169,255,.25) inset;
+  border-color: #28a9ff !important;
+  box-shadow: 0 0 0 2px rgba(40,169,255,.25) inset;
 }
 
-/* Define button */
 .dict-go {
-  appearance: none;
-  border: 1px solid rgba(255,255,255,.18);
-  background: #242424;
-  color: #fff;
-  border-radius: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-  font-weight: 800;
-  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #242424;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 800;
+  transition: transform 100ms ease, filter 120ms ease, border-color 120ms ease;
 }
 .dict-go:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
 .dict-go:disabled { opacity: .5; cursor: not-allowed; }
 
-/* Results list scrolls internally; always dark */
 .dict-results {
-  overflow: auto;
-  padding-right: 6px;
-  display: grid;
-  gap: 10px;
-  background: #0f0f0f;
-  color: #fff;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.35) transparent;
+  overflow: auto;
+  padding-right: 6px;
+  display: grid;
+  gap: 10px;
+  background: #0f0f0f;
+  color: #fff;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.35) transparent;
 }
 .dict-results::-webkit-scrollbar { width: 8px; }
 .dict-results::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,.35);
-  border-radius: 8px;
+  background: rgba(255,255,255,.35);
+  border-radius: 8px;
 }
 .dict-results::-webkit-scrollbar-track { background: transparent; }
 
-/* Each entry card (dark) */
 .dict-entry {
-  border: 1px solid rgba(255,255,255,.12) !important;
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: #151515 !important;
-  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #151515 !important;
+  color: #fff !important;
 }
 .dict-head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  align-items: baseline;
-  margin-bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  margin-bottom: 6px;
 }
 .dict-word { font-weight: 900; font-size: 18px; }
 .dict-phon { opacity: .8; font-size: 14px; }
-.dict-pos  {
-  opacity: .8; font-size: 12px;
-  border: 1px solid rgba(255,255,255,.2);
-  padding: 2px 6px; border-radius: 999px;
+.dict-pos  {
+  opacity: .8; font-size: 12px;
+  border: 1px solid rgba(255,255,255,.2);
+  padding: 2px 6px; border-radius: 999px;
 }
 .dict-senses { margin: 0 0 0 18px; padding: 0; display: grid; gap: 6px; }
-.dict-eg  { opacity: .8; font-size: 12px; margin-top: 2px; }
+.dict-eg  { opacity: .8; font-size: 12px; margin-top: 2px; }
 
-/* ───────── Notepad popover — positioned above its button ───────── */
 .reader-note-popover {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 12px;
-  z-index: 1100;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  z-index: 1100;
 
-  width: min(420px, 86vw);
-  max-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  background: #0f0f0f;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 12px;
-  padding: 16px;
-  gap: 10px;
-  overflow: hidden;
-  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+  width: min(420px, 86vw);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f0f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 16px;
+  gap: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
 }
 
-/* Title */
 .note-title {
-  font-size: 18px;
-  font-weight: 800;
-  margin: 0;
-  text-align: center;
-  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+  color: #fff;
 }
 
-/* Textarea */
 .note-textarea {
-  flex: 1;
-  resize: none;
-  width: 100%;
-  min-height: 200px;
-  background: #1b1b1b;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font: inherit;
-  line-height: 1.6;
-  outline: none;
+  flex: 1;
+  resize: none;
+  width: 100%;
+  min-height: 200px;
+  background: #1b1b1b;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  line-height: 1.6;
+  outline: none;
 }
 .note-textarea::placeholder { color: rgba(255,255,255,.55); }
 .note-textarea:focus {
-  border-color: #28a9ff;
-  box-shadow: 0 0 0 2px rgba(40,169,255,.25) inset;
+  border-color: #28a9ff;
+  box-shadow: 0 0 0 2px rgba(40,169,255,.25) inset;
 }
 .note-textarea::-webkit-scrollbar { width: 8px; }
 .note-textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,.35); border-radius: 8px; }
 .note-textarea::-webkit-scrollbar-track { background: transparent; }
 
-/* ───────── TTS popover ───────── */
 .reader-tts-popover {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 12px;
-  z-index: 1100;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  z-index: 1100;
 
-  width: min(420px, 86vw);
-  background: #0f0f0f;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 12px;
-  padding: 14px 16px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.55);
-  display: grid;
-  gap: 10px;
+  width: min(420px, 86vw);
+  background: #0f0f0f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+  display: grid;
+  gap: 10px;
 }
 
 .tts-title {
-  font-size: 18px;
-  font-weight: 800;
-  text-align: center;
-  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 6px;
 }
 
 .tts-controls {
-  display: grid;
-  grid-auto-flow: column;
-  gap: 8px;
-  justify-content: center;
+  display: grid;
+  grid-auto-flow: column;
+  gap: 8px;
+  justify-content: center;
 }
 
 .tts-btn {
-  appearance: none;
-  border: 1px solid rgba(255,255,255,.18);
-  background: #242424;
-  color: #fff;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: transform 100ms ease, filter 120ms ease;
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #242424;
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 100ms ease, filter 120ms ease;
 }
 .tts-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
 
 .tts-row {
-  display: grid;
-  grid-template-columns: 80px 1fr auto;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 10px;
 }
 .tts-label { opacity: .9; font-size: 14px; }
 .tts-select, .tts-range {
-  width: 100%;
-  background: #1b1b1b;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 10px;
-  padding: 8px 10px;
-  outline: none;
+  width: 100%;
+  background: #1b1b1b;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  padding: 8px 10px;
+  outline: none;
 }
 .tts-value { opacity: .9; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
 
@@ -2496,106 +1399,85 @@ body {
 
 
 
-/* ===== Reader pagination — clean baseline ===== */
-
-/* Variables (JS updates most of these via inline styles) */
 :root{
-  --reader-font-base: 1rem;
-  --reader-font-scale: 1;             /* JS sets on .spread */
-  --reader-line: 1.7;                  /* JS sets on .spread */
-  --reader-font-family: Georgia, 'Times New Roman', serif; /* JS sets */
-  --reader-cushion: 0px;               /* JS sets (n * line step) */
+  --reader-font-base: 1rem;
+  --reader-font-scale: 1;             
+  --reader-line: 1.7;                  
+  --reader-font-family: Georgia, 'Times New Roman', serif; 
+  --reader-cushion: 0px;               
 }
 
-/* Each page lives inside a pane; panes never scroll */
 .spread .pane{ overflow:hidden; }
 
-/* Page box (visible) */
-.chapter-page{
-  display:flex;
-  flex-direction:column;
-  height:100%;
-  box-sizing:border-box;
-  padding:6vmin;                       /* keep in sync with your design */
-  gap:0;
-}
-
-/* Title block (first page when present) */
 .chapter-title{
-  flex:0 0 auto;
-  margin:0 0 calc(1em * var(--reader-line)) 0;   /* exactly one line below */
-  font-weight:700;
-  font-size:calc(var(--reader-font-base) * var(--reader-font-scale) * 1.15);
-  line-height:var(--reader-line);
-  font-family:var(--reader-font-family);
-  transform:none;
+  flex:0 0 auto;
+  margin:0 0 calc(1em * var(--reader-line)) 0;   
+  font-weight:700;
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale) * 1.15);
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  transform:none;
 }
 
-/* Text body (visible): fixed-height set by JS; never scrolls */
 .chapter-body{
-  flex:1 1 auto;
-  min-height:0;
-  overflow:hidden;
-  box-sizing:content-box;               /* JS height is content height */
-  /* JS sets a precise pixel height; default here is only for fallback */
-  height:auto;
-  padding:0;
-  padding-bottom:var(--reader-cushion); /* bottom safety/cushion */
-  font-size:calc(var(--reader-font-base) * var(--reader-font-scale));
-  line-height:var(--reader-line);
-  font-family:var(--reader-font-family);
-  white-space:normal;
-  word-break:normal;
-  overflow-wrap:break-word;
-  transform:none;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  box-sizing:content-box;               
+  height:auto;
+  padding:0;
+  padding-bottom:var(--reader-cushion); 
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale));
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  white-space:normal;
+  word-break:normal;
+  overflow-wrap:break-word;
+  transform:none;
 }
 
-/* Paragraph rhythm: no bottom margins; spacing only *between* paragraphs */
 .chapter-body > p{ margin:0; }
-.chapter-body > p + p{ margin-top:calc(1em * var(--reader-line)); } /* one blank line */
+.chapter-body > p + p{ margin-top:calc(1em * var(--reader-line)); } 
 .chapter-body > *:last-child{ margin-bottom:0; }
 
-/* ---------- Hidden pagination probe (must mirror visible layout) ---------- */
-
 .pagination-probe{
-  position:absolute;
-  left:-99999px; top:-99999px;
-  visibility:hidden;
-  pointer-events:none;
+  position:absolute;
+  left:-99999px; top:-99999px;
+  visibility:hidden;
+  pointer-events:none;
 }
 
 .pagination-probe .chapter-page{
-  display:flex;
-  flex-direction:column;
-  box-sizing:border-box;
-  padding:6vmin;                        /* match .chapter-page exactly */
-  gap:0;
+  display:flex;
+  flex-direction:column;
+  box-sizing:border-box;
+  padding:6vmin;                        
+  gap:0;
 }
 
 .pagination-probe .chapter-title{
-  margin:0 0 calc(1em * var(--reader-line)) 0;
-  font-weight:700;
-  font-size:calc(var(--reader-font-base) * var(--reader-font-scale) * 1.15);
-  line-height:var(--reader-line);
-  font-family:var(--reader-font-family);
-  transform:none;
+  margin:0 0 calc(1em * var(--reader-line)) 0;
+  font-weight:700;
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale) * 1.15);
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  transform:none;
 }
 
 .pagination-probe .chapter-body{
-  min-height:0;
-  /* Keep parity with visible page to avoid scroll-vs-clip mismatches */
-  overflow:hidden;
-  box-sizing:content-box;
-  height:auto;
-  padding:0;
-  padding-bottom:var(--reader-cushion);
-  font-size:calc(var(--reader-font-base) * var(--reader-font-scale));
-  line-height:var(--reader-line);
-  font-family:var(--reader-font-family);
-  white-space:normal;
-  word-break:normal;
-  overflow-wrap:break-word;
-  transform:none;
+  min-height:0;
+  overflow:hidden;
+  box-sizing:content-box;
+  height:auto;
+  padding:0;
+  padding-bottom:var(--reader-cushion);
+  font-size:calc(var(--reader-font-base) * var(--reader-font-scale));
+  line-height:var(--reader-line);
+  font-family:var(--reader-font-family);
+  white-space:normal;
+  word-break:normal;
+  overflow-wrap:break-word;
+  transform:none;
 }
 
 .pagination-probe .chapter-body > p{ margin:0; }
@@ -2603,47 +1485,39 @@ body {
 .pagination-probe .chapter-body > *:last-child{ margin-bottom:0; }
 
 
-/* ---- Make chapter text span the full page like a book ---- */
-
-/* Use the full page width; prevent upstream max-width/blog styles */
 .spread .chapter-page .chapter-body,
 .spread .chapter-page .chapter-body > * {
-  width: auto;
-  max-width: none;
-  margin-inline: 0;
-  align-self: stretch;
+  width: auto;
+  max-width: none;
+  margin-inline: 0;
+  align-self: stretch;
 }
 
-/* Paragraphs: fully justify, but keep the last line left-aligned */
 .spread .chapter-page .chapter-body {
-  text-align: justify;
-  text-align-last: left;
-  hyphens: auto;
-  -webkit-hyphens: auto;
-  -ms-hyphens: auto;
-  text-justify: inter-word; /* helps on some browsers */
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  text-justify: inter-word; 
 }
 
-/* If anything still forces a narrow column, nuke it with specificity */
 .spread .chapter-page .chapter-body p {
-  max-width: none !important;
-  margin-inline: 0 !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
 }
 
-/* (Optional) want smaller/larger page margins? adjust once here */
 .spread .chapter-page {
-  /* was 6vmin; tweak to taste */
-  padding: 5vmin;
+  padding: 5vmin;
 }
 
-/* 1 line of cushion */
 .spread { --reader-cushion: calc(1em * var(--reader-line, 1.7)); }
 
 .chapter-title,
 .pagination-probe .chapter-title {
-  text-align: center !important;
-  text-align-last: center !important; /* keeps the final wrapped line centered */
-  text-wrap: balance;                  /* nicer multi-line centering where supported */
+  text-align: center !important;
+  text-align-last: center !important; 
+  text-wrap: balance;                  
 }
 
 
@@ -2654,335 +1528,85 @@ body {
 
 
 
-/* === TOC scrollbar on LIGHT pages (keep style, just gray colors) === */
-/* Matches when you toggled white pages: --reader-page-bg: #ffffff */
-.spread[style*="--reader-page-bg: #fff"] .toc-list {
-  /* Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: #9aa0a6 rgba(0,0,0,0.12); /* thumb / track */
-}
-
-/* WebKit (Chrome, Safari, Edge) */
-.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar {
-  width: 8px; /* same width as dark */
-}
-.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.12);      /* light gray track */
-}
-.spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-thumb {
-  background: #9aa0a6;               /* medium gray thumb */
-  border-radius: 8px;                 /* same rounded feel */
-}
-.spread[style*="--reader-page-bg: #fff"] .toc-list:hover::-webkit-scrollbar-thumb {
-  background: #7d8590;               /* slightly darker on hover */
-}
-
-/* === TOC scrollbar — light page theme (same style as dark) === */
-/* Match your inline light value (--reader-page-bg: #ffffff) */
 .spread[style*="--reader-page-bg:#ffffff"] .toc-list,
 .spread[style*="--reader-page-bg: #ffffff"] .toc-list,
 .spread[style*="--reader-page-bg:#fff"] .toc-list,
 .spread[style*="--reader-page-bg: #fff"] .toc-list {
-  /* Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
 }
 
-/* WebKit (Chrome/Safari/Edge) */
 .spread[style*="--reader-page-bg:#ffffff"] .toc-list::-webkit-scrollbar,
 .spread[style*="--reader-page-bg: #ffffff"] .toc-list::-webkit-scrollbar,
 .spread[style*="--reader-page-bg:#fff"] .toc-list::-webkit-scrollbar,
 .spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar {
-  width: 8px; /* same as dark */
+  width: 8px; 
 }
 
 .spread[style*="--reader-page-bg:#ffffff"] .toc-list::-webkit-scrollbar-track,
 .spread[style*="--reader-page-bg: #ffffff"] .toc-list::-webkit-scrollbar-track,
 .spread[style*="--reader-page-bg:#fff"] .toc-list::-webkit-scrollbar-track,
 .spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-track {
-  background: transparent; /* same as dark */
+  background: transparent; 
 }
 
 .spread[style*="--reader-page-bg:#ffffff"] .toc-list::-webkit-scrollbar-thumb,
 .spread[style*="--reader-page-bg: #ffffff"] .toc-list::-webkit-scrollbar-thumb,
 .spread[style*="--reader-page-bg:#fff"] .toc-list::-webkit-scrollbar-thumb,
 .spread[style*="--reader-page-bg: #fff"] .toc-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.35); /* dark thumb for white bg */
-  border-radius: 8px;              /* same rounded feel */
+  background: rgba(0, 0, 0, 0.35); 
+  border-radius: 8px;               
 }
 
 
 .menu-list .menu-item { display: flex; align-items: center; text-decoration: none; color: inherit; }
 
 
-.book-inner { transform-style: preserve-3d; }
-.book-face  { backface-visibility: hidden; transform-style: preserve-3d; }
-.book-front { transform: rotateY(0deg); }
-.book-back  { transform: rotateY(180deg); }
-
-/* NEW: wrapper inside the back face to unmirror content */
 .book-back .back-cover {
-  width: 100%;
-  height: 100%;
-  transform: rotateY(180deg);   /* cancels the face rotation so image is upright */
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
+  width: 100%;
+  height: 100%;
+  transform: rotateY(180deg);   
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
 }
 
-/* Ensure fill always covers */
 .book-face .face-fill,
 .book-back .back-cover .face-fill {
-  width: 100%;
-  height: 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
-
-/* --- Preview 3D book hard overrides --- */
-.book { 
-  perspective: 1600px !important;
-}
-
-.book-inner{
-  position: relative !important;
-  width: 100% !important;
-  height: 100% !important;
-  transform-style: preserve-3d !important;
-  transition: transform 600ms ease !important;
-}
-
-.book-inner.is-flipped{
-  transform: rotateY(180deg) !important;
-}
-
-/* Each face must be an absolutely stacked plane with its back hidden */
-.book-face{
-  position: absolute !important;
-  inset: 0 !important;
-  transform-style: preserve-3d !important;
-  backface-visibility: hidden !important;
-  -webkit-backface-visibility: hidden !important;
-}
-
-.book-front{
-  transform: rotateY(0deg) !important;
-  z-index: 2 !important;
-}
-
-.book-back{
-  transform: rotateY(180deg) !important;
-  z-index: 1 !important;
-}
-
-/* Extra inner wrapper to unmirror the bitmap on the back cover */
-.book-back .back-cover{
-  width: 100% !important;
-  height: 100% !important;
-  transform: rotateY(180deg) !important; /* cancels the face’s 180° */
-  transform-style: preserve-3d !important;
-  backface-visibility: hidden !important;
-}
-
-/* Ensure the image fill always covers the plane */
-.book-face .face-fill,
-.book-back .back-cover .face-fill{
-  width: 100% !important;
-  height: 100% !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-size: cover !important;
-}
-
-/* --- Bulletproof 3D book fix --- */
-.book{
-  perspective:1600px !important;
-}
-
-/* the rotating hinge */
-.book-inner{
-  position:relative !important;
-  width:100% !important;
-  height:100% !important;
-  transform-style:preserve-3d !important;
-  transition:transform 600ms ease !important;
-  transform:translateZ(0); /* ensure a 3D context */
-}
-.book-inner.is-flipped{ transform:rotateY(180deg) !important; }
-
-/* faces = stacked planes */
-.book-face{
-  position:absolute !important;
-  inset:0 !important;
-  transform-style:preserve-3d !important;
-  /* CRITICAL: hide the back side of each face */
-  backface-visibility:hidden !important;
-  -webkit-backface-visibility:hidden !important;
-  transform:translateZ(0); /* triggers proper backface handling in some GPUs */
-}
-
-/* orient each plane */
-.book-front{ transform:rotateY(0deg) translateZ(0.01px) !important; z-index:2; }
-.book-back { transform:rotateY(180deg) translateZ(0.01px) !important; z-index:1; }
-
-/* your extra wrapper is fine—just don't rotate it again */
-.book-back .back-cover{
-  width:100%; height:100%;
-  /* no rotation here; the face already has 180deg */
-  transform:none !important;
-}
-
-/* image fill on both faces */
-.book-face .face-fill,
-.book-back .back-cover .face-fill{
-  width:100%; height:100%;
-  background-position:center;
-  background-repeat:no-repeat;
-  background-size:cover;
-}
-
-/* ---- Failsafe (prevents mirrored front during flip) ---- */
-.book-back{ opacity:0; }
-.book-inner.is-flipped .book-back{ opacity:1; }
-.book-inner.is-flipped .book-front{ opacity:0; pointer-events:none; }
-
-/* keep both faces visible while flipping */
-.book{
-  perspective:1600px;
-}
-.book-inner{
-  position:relative;
-  width:100%;
-  height:100%;
-  transform-style:preserve-3d;
-  transition:transform 600ms ease;
-  will-change: transform;
-}
-.book-inner.is-flipped{ transform: rotateY(180deg); }
 
 .book-face{
-  position:absolute;
-  inset:0;
-  transform-style:preserve-3d;
-  backface-visibility:hidden;
-  -webkit-backface-visibility:hidden;
-}
-.book-front{ transform: rotateY(0deg) translateZ(0.01px); z-index:2; }
-.book-back { transform: rotateY(180deg) translateZ(0.01px); z-index:1; }
-
-/* remove the old failsafe:
-.book-back{ opacity:0; }
-.book-inner.is-flipped .book-back{ opacity:1; }
-.book-inner.is-flipped .book-front{ opacity:0; }
-*/
-
-/* 3D container and flip */
-.book { perspective: 1600px; }
-.book-inner{
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 600ms ease;
-  will-change: transform;
-}
-.book-inner.is-flipped { transform: rotateY(180deg); }
-
-/* Faces must keep rendering when turning away */
-.book-face{
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-  backface-visibility: visible;           /* <- important */
-  -webkit-backface-visibility: visible;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  transform-style: preserve-3d !important;
 }
 
-/* Avoid z-fighting between the two planes */
-.book-front { transform: rotateY(0deg) translateZ(0.01px);  z-index: 2; }
-.book-back  { transform: rotateY(180deg) translateZ(0.01px); z-index: 1; }
-
-/* NEW: two physical layers per face.
-   We feed the image via the --face-url var set inline in TSX. */
-.book-face .face-layer{
-  position: absolute;
-  inset: 0;
-  background-image: var(--face-url);
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  will-change: transform;
-  /* Optional fallback color if no image was provided */
-  background-color: #2d2d2d;
-}
-
-/* Outside paint (toward the viewer on that face) */
-.book-face .face-layer.out{
-  transform: translateZ(0.06px);
-}
-
-/* Inside paint (visible when the face rotates past 90°) */
-.book-face .face-layer.in{
-  transform: rotateY(180deg) translateZ(0.06px);
-}
-
-/* Clean up any old flash-causing rules:
-   - Remove any .book-face { background: ... } color set during flip
-   - Remove .book-front/.book-back opacity toggles mid-flip
-   - Ensure no filter/blur gets applied mid-flip
-*/
-
-/* --- Un-mirror the FRONT cover (final overrides) --- */
-
-/* Keep physical backs hidden */
-.book-face{
-  backface-visibility: hidden !important;
-  -webkit-backface-visibility: hidden !important;
-  transform-style: preserve-3d !important;
-}
-
-/* Face orientations (tiny Z avoids z-fighting) */
-.book-front{ transform: rotateY(0deg) translateZ(0.01px) !important; }
 .book-back { transform: rotateY(180deg) translateZ(0.01px) !important; }
 
-/* Paint layers share your --face-url background */
 .book-face .face-layer{
-  position: absolute;
-  inset: 0;
-  background-image: var(--face-url);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  will-change: transform;
-  background-color: #2d2d2d;
+  position: absolute;
+  inset: 0;
+  background-image: var(--face-url);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  will-change: transform;
+  background-color: #2d2d2d;
 }
 
-/* FRONT:
-   Force the *outside* bitmap upright (no rotation at all).
-   Only the inside gets 180° so it’s readable past 90°. */
-.book-front .face-layer.out{
-  transform: rotateY(0deg) translateZ(0.06px) !important;
-}
-.book-front .face-layer.in{
-  transform: rotateY(180deg) translateZ(0.06px) !important;
-}
-
-/* BACK:
-   The face itself is already at 180°. To make its *outside* read upright,
-   add another 180°; inside stays at 0°. */
 .book-back .face-layer.out{
-  transform: rotateY(180deg) translateZ(0.06px) !important;
+  transform: rotateY(180deg) translateZ(0.06px) !important;
 }
 .book-back .face-layer.in{
-  transform: rotateY(0deg) translateZ(0.06px) !important;
+  transform: rotateY(0deg) translateZ(0.06px) !important;
 }
 
-/* Make sure only the hinge flips */
 .book-inner.is-flipped{ transform: rotateY(180deg) !important; }
 
-.book-front .face-layer.out{ transform: scaleX(-1) translateZ(0.06px) !important; }
-
-/* Hard fix: un-mirror the FRONT cover image */
 .book-front .face-layer.out { transform: scaleX(-1) translateZ(0.06px) !important; }
-.book-front .face-layer.in  { transform: rotateY(180deg) scaleX(-1) translateZ(0.06px) !important; }
-.book-front                  { transform: rotateY(0deg) translateZ(0.01px) !important; }
-
+.book-front .face-layer.in  { transform: rotateY(180deg) scaleX(-1) translateZ(0.06px) !important; }
+.book-front                  { transform: rotateY(0deg) translateZ(0.01px) !important; }
