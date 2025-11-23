@@ -1,0 +1,252 @@
+/* Home3D.css */
+
+/* Root: full viewport height */
+.home3d-root {
+  min-height: 100vh;
+}
+
+/* Override the old .carousel grid for this page */
+.home3d-main.carousel {
+  position: relative;
+  display: block;        /* kill the grid/2-column layout */
+  padding: 0;            /* remove page padding that shrinks the canvas */
+  margin: 0;
+}
+
+/* 3D stage takes all the space under the header */
+.home3d-stage {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 80px); /* adjust if your header is taller/shorter */
+  overflow: hidden;
+}
+
+/* Three.js root: fill the entire stage, no centering offsets */
+.three-root {
+  position: absolute;
+  inset: 0;              /* top:0; right:0; bottom:0; left:0 */
+  width: 100%;
+  height: 100%;
+}
+
+.three-root canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Metadata now overlays on top instead of reserving a column */
+.home3d-main .metadata {
+  position: absolute;
+  top: 96px;             /* sits below AppHeader – tweak if needed */
+  left: 40px;            /* your usual side padding */
+  max-width: 360px;
+  z-index: 5;
+}
+
+/* Keep your existing metadata typography etc. from Home.css */
+.home3d-main .metadata .meta-header,
+.home3d-main .metadata .meta-actions {
+  /* all your previous styles still apply */
+}
+
+/* Open book container – as in your HTML version */
+.open-book-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  z-index: 20;
+  transform: translate(-25%, -50%) scale(1.0);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.3s ease;
+  perspective: 1200px;
+}
+
+.open-book-container.is-open {
+  transform: translate(-50%, -50%) scale(1.0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.open-book-page {
+  height: 68vh;
+  width: 47.5vh;
+  background-color: #f5f5dc;
+  color: #1a1a1a;
+  padding: 30px 30px 31px;
+  box-sizing: border-box;
+  border: 1px solid #aaa;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#page-left {
+  border-right: 1px solid #ccc;
+  box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  transform-origin: right center;
+  transform: rotateY(0deg);
+}
+
+#page-right {
+  box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  transform-origin: left center;
+  transform: rotateY(-180deg);
+}
+
+.open-book-container.is-open #page-left {
+  transform: rotateY(0deg);
+}
+.open-book-container.is-open #page-right {
+  transform: rotateY(0deg);
+}
+
+/* Settings button + tray (unchanged from your HTML) */
+#settings-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  z-index: 25;
+  transition: background-color 0.2s;
+}
+
+#settings-btn:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.settings-menu {
+  position: absolute;
+  bottom: -120px;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background-color: #f0f0f0;
+  border-top: 1px solid #ccc;
+  z-index: 24;
+  transition: bottom 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 10px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #333;
+}
+
+.settings-menu.is-open {
+  bottom: 0;
+}
+
+.settings-menu .slider-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-menu label {
+  width: 80px;
+}
+
+.settings-menu input[type="range"] {
+  flex-grow: 1;
+}
+
+/* Nav arrows container as before */
+.nav-container {
+  position: absolute;
+  top: 50%;
+  left: calc(65% + 40px);
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 10;
+  opacity: 1;
+  transition:
+    opacity 0.3s ease,
+    left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.nav-container.is-open {
+  left: calc(50% + 47.5vh + 30px);
+}
+
+.nav-arrow {
+  width: 50px;
+  height: 50px;
+  background-color: rgba(50, 50, 50, 0.6);
+  color: #f0f0f0;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  z-index: 10;
+}
+
+.nav-arrow:hover {
+  background-color: rgba(80, 80, 80, 0.8);
+}
+
+.nav-arrow:active {
+  transform: scale(0.95);
+}
+
+/* Hide close button by default (only when book open) */
+#close-book-btn {
+  display: none;
+}
+
+.nav-container.is-open #close-book-btn {
+  display: flex;
+}
+
+/* Root: full viewport height */
+.home3d-root {
+  min-height: 100vh;
+  display: flex;          /* NEW */
+  flex-direction: column; /* NEW */
+}
+
+/* Override the old .carousel grid for this page */
+.home3d-main.carousel {
+  position: relative;
+  display: block;
+  padding: 0;
+  margin: 0;
+  flex: 1;                /* NEW: fill everything under the header */
+}
+
+/* 3D stage takes all the height of main */
+.home3d-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;           /* CHANGE: was calc(100vh - 80px) */
+  overflow: hidden;
+}

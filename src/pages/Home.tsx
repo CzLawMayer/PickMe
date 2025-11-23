@@ -1,1859 +1,1100 @@
-import { useRef, useState, useCallback, useEffect } from "react"
-import "./Home.css"
-import { sampleBooks } from "../booksData"
-
-import LikeButton from "@/components/LikeButton"
-import StarButton from "@/components/StarButton"
-import SaveButton from "@/components/SaveButton"
-
-import SideMenu from "@/components/SideMenu"
-
-import { Link } from "react-router-dom";
+// src/pages/Home.tsx
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 import AppHeader from "@/components/AppHeader";
+import { sampleBooks } from "@/booksData";
 
+import "./Home.css";
+import "./Home3D.css";
 
-// ---------- Types ----------
-type Book = {
-  id: string
-  title: string
-  author?: string
-  user?: string
-  coverUrl?: string
-  backCoverUrl?: string
-  tags?: string[]
-  rating?: string | number
-  ratingCount?: number
-  likes?: number
-  bookmarks?: number
-  currentChapter?: number
-  totalChapters?: number
-  dedication?: string
-  chapters?: string[]
-  chapterTexts?: string[] // optional full chapter texts
-}
+type BookSpread = { left: string; right: string };
 
-type BookView = "front" | "back" | "open"
-
-// ---------- Reader presets ----------
-export const FONT_SCALES = [0.85, 0.95, 1.0, 1.1, 1.25] as const
-
-export const FONT_STYLES = [
-  { name: "Serif (Georgia)", css: "Georgia, 'Times New Roman', serif" },
-  { name: "Sans-serif (Arial)", css: "Arial, Helvetica, sans-serif" },
-  { name: "Sans-serif (Roboto)", css: "'Roboto', sans-serif" },
-  { name: "Serif (Merriweather)", css: "'Merriweather', serif" },
-  { name: "Sans-serif (Open Sans)", css: "'Open Sans', sans-serif" },
-  { name: "Monospace (Courier)", css: "'Courier New', Courier, monospace" },
-] as const
-
-// ---------- helpers (module-level) ----------
-function mod(x: number, n: number) {
-  return n ? ((x % n) + n) % n : 0
-}
-function lastEven(n: number) {
-  if (!Number.isFinite(n)) return 0
-  const m = Math.max(0, Math.floor(n))
-  return m % 2 === 0 ? m : m - 1
-}
-function splitParagraphs(raw: string): string[] {
-  return raw
-    .replace(/\r\n/g, "\n")
-    .split(/\n\s*\n+/g)
-    .map((p) => p.trim())
-    .filter(Boolean)
-}
-
-function segmentText(text: string, target = 220): string[] {
-  const paras = text.split(/\n{2,}/).map(s => s.trim()).filter(Boolean)
-  const out: string[] = []
-  for (const p of paras) {
-    const sentences = p.split(/(?<=[.!?])\s+(?=[A-Z0-9"'])/g)
-    for (const s of sentences) {
-      if (s.length <= target) { out.push(s); continue }
-      const words = s.split(/\s+/)
-      let acc = ""
-      for (const w of words) {
-        const next = acc ? acc + " " + w : w
-        if (next.length > target && acc) {
-          out.push(acc)
-          acc = w
-        } else {
-          acc = next
-        }
-      }
-      if (acc) out.push(acc)
-    }
-  }
-  return out
-}
-
-function measureLineStepPx(el: HTMLElement): number {
-  // Measure the line *step* with two lines so we capture the real line box
-  const s = document.createElement("span");
-  s.style.visibility = "hidden";
-  s.style.whiteSpace = "pre";
-  s.textContent = "A\nA";
-  el.appendChild(s);
-  const r = s.getBoundingClientRect(); // fractional CSS px
-  el.removeChild(s);
-  return r.height / 2; // one line step in CSS px (fractional)
-}
-
-function snapToDeviceLineGrid(cssPixels: number, lineCssPx: number) {
-  if (cssPixels <= 0 || lineCssPx <= 0) return 0;
-  const SAFE_EPS = 0.5; // shave a tiny amount so we never sit *on* a rounding edge
-  const lines = Math.floor((cssPixels - SAFE_EPS) / lineCssPx);
-  return Math.max(0, lines) * lineCssPx;
-}
-
-const DPR =
-  typeof window !== "undefined" && window.devicePixelRatio
-    ? window.devicePixelRatio
-    : 1;
-
-function snapToDevicePixel(cssPx: number) {
-  if (cssPx <= 0) return 0;
-  return Math.floor(cssPx * DPR) / DPR;
-}
-
-
-// ---------- Component ----------
 export default function Home() {
-  // data
-  const [books] = useState<Book[]>(Array.isArray(sampleBooks) ? sampleBooks : [])
-  const count = books.length
-
-  // selection / ui
-  const [current, setCurrent] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  // book state
-  const [view, setView] = useState<BookView>("front")
-  const [isOpening, setIsOpening] = useState(false)
-  const [page, setPage] = useState(0)
-
-  // reader menu (bottom sheet)
-  const [readerMenuOpen, setReaderMenuOpen] = useState(false)
-
-  // Typography customization
-  const [fontPanelOpen, setFontPanelOpen] = useState(false)
-  const fontBtnRef = useRef<HTMLButtonElement | null>(null)
-  const fontPanelRef = useRef<HTMLDivElement | null>(null)
-  const [fontSizeIndex, setFontSizeIndex] = useState<0 | 1 | 2 | 3 | 4>(2)
-  const [lineHeight, setLineHeight] = useState(1.7)
-  const [readerLight, setReaderLight] = useState(false)
-  const [debouncedLH, setDebouncedLH] = useState(lineHeight)
-  const [bottomCushionPx, setBottomCushionPx] = useState(0)
-
-
-
-  // Font style popover
-  const [fontStylePanelOpen, setFontStylePanelOpen] = useState(false)
-  const fontStyleBtnRef = useRef<HTMLButtonElement | null>(null)
-  const fontStylePanelRef = useRef<HTMLDivElement | null>(null)
-  const [fontStyleIndex, setFontStyleIndex] = useState<0 | 1 | 2 | 3 | 4 | 5>(0)
-
-  // Dictionary (popover)
-  const [dictOpen, setDictOpen] = useState(false)
-  const dictBtnRef = useRef<HTMLButtonElement | null>(null)
-  const dictPanelRef = useRef<HTMLDivElement | null>(null)
-  const [dictQuery, setDictQuery] = useState("")
-  const [dictLoading, setDictLoading] = useState(false)
-  const [dictError, setDictError] = useState<string | null>(null)
-  type DictSense = { definition: string; example?: string }
-  type DictEntry = { word: string; phonetic?: string; partOfSpeech?: string; senses: DictSense[] }
-  const [dictResults, setDictResults] = useState<DictEntry[] | null>(null)
-  const dictInputRef = useRef<HTMLInputElement | null>(null)
-
-  // Notepad (popover)
-  const [notePanelOpen, setNotePanelOpen] = useState(false)
-  const noteBtnRef = useRef<HTMLButtonElement | null>(null)
-  const notePanelRef = useRef<HTMLDivElement | null>(null)
-  const [notes, setNotes] = useState("")
-  const noteTextareaRef = useRef<HTMLTextAreaElement | null>(null)
-
-  // TTS (popover)
-  const [ttsOpen, setTtsOpen] = useState(false)
-  const ttsBtnRef = useRef<HTMLButtonElement | null>(null)
-  const ttsPanelRef = useRef<HTMLDivElement | null>(null)
-  type TTSState = { speaking: boolean; paused: boolean; rate: number; pitch: number; voiceURI?: string }
-  const [tts, setTts] = useState<TTSState>({ speaking: false, paused: false, rate: 1.0, pitch: 1.0, voiceURI: undefined })
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const ttsUtterRef = useRef<SpeechSynthesisUtterance | null>(null); // current live utterance
-  const ttsTextRef = useRef<string>("");                              // full text we started speaking
-  const ttsLastCharRef = useRef<number>(0);                           // last boundary char index
-  const ttsWasPausedRef = useRef<boolean>(false);   
-
-  const ttsLiveApplyTimerRef = useRef<number | null>(null);
-  const LIVE_APPLY_DELAY = 150;
-
-  function restartFromProgress() {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-
-    const full = ttsTextRef.current || "";
-    if (!full.trim()) return;
-
-    // start from the last known boundary (safe-guard within range)
-    const start = Math.max(0, Math.min(ttsLastCharRef.current, Math.max(0, full.length - 1)));
-    const remaining = full.slice(start);
-    if (!remaining.trim()) return;
-
-    // Speak remaining with the *current* rate/pitch/voice
-    speakText(remaining, start);
-  }
-
+  const threeRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedLH(lineHeight), 120) // 120ms debounce
-    return () => clearTimeout(t)
-  }, [lineHeight])
+    const root = threeRootRef.current;
+    if (!root) return;
 
-  useEffect(() => {
-    const sp = new URLSearchParams(window.location.search);
-    const id = sp.get("book");
-    const title = sp.get("title");
-    if (!books.length) return;
+    /* ------------------------------------------------------------------
+       CORE STATE
+    ------------------------------------------------------------------ */
 
-    let idx = -1;
-    if (id) idx = books.findIndex(b => String(b.id) === String(id));
-    if (idx < 0 && title) {
-      const tnorm = title.toLowerCase();
-      idx = books.findIndex(b => (b.title || "").toLowerCase() === tnorm);
-    }
-    if (idx >= 0) setCurrent(idx);
-  }, [books, setCurrent]);
+    let scene: THREE.Scene;
+    let camera: THREE.PerspectiveCamera;
+    let renderer: THREE.WebGLRenderer;
+    let carouselGroup: THREE.Group;
+    let raycaster: THREE.Raycaster;
+    let mouse: THREE.Vector2;
 
+    // Books from data
+    const bookCovers =
+      sampleBooks.length > 0
+        ? sampleBooks.map((b, index) => ({
+            front:
+              b.coverUrl ||
+              `https://placehold.co/470x675/222222/f0f0f0?text=Book+${index + 1}`,
+            back:
+              (b.backCoverUrl as string | undefined) ||
+              `https://placehold.co/470x675/111111/f0f0f0?text=Back`,
+            title: b.title || `Book ${index + 1}`,
+          }))
+        : [
+            {
+              front:
+                "https://placehold.co/470x675/660000/f0f0f0?text=Book+1+Cover",
+              back: "https://placehold.co/470x675/4d0000/f0f0f0?text=Book+1+Back",
+              title: "The First Book",
+            },
+            {
+              front:
+                "https://placehold.co/470x675/003366/f0f0f0?text=Book+2+Cover",
+              back: "https://placehold.co/470x675/002244/f0f0f0?text=Book+2+Back",
+              title: "A Second Story",
+            },
+            {
+              front:
+                "https://placehold.co/470x675/004d00/f0f0f0?text=Book+3+Cover",
+              back: "https://placehold.co/470x675/003300/f0f0f0?text=Book+3+Back",
+              title: "Book 3: The Middle",
+            },
+            {
+              front:
+                "https://placehold.co/470x675/4d2600/f0f0f0?text=Book+4+Cover",
+              back: "https://placehold.co/470x675/331a00/f0f0f0?text=Book+4+Back",
+              title: "Everything to Get More",
+            },
+            {
+              front:
+                "https://placehold.co/470x675/330033/f0f0f0?text=Book+5+Cover",
+              back: "https://placehold.co/470x675/220022/f0f0f0?text=Book+5+Back",
+              title: "Book Five",
+            },
+          ];
 
-  // Close the reader menu any time we leave "open" view
-  useEffect(() => { if (view !== "open") setReaderMenuOpen(false) }, [view])
+    const numBooks = bookCovers.length;
+    if (numBooks === 0) return;
 
-  // Close popovers on outside click / Esc
-  useEffect(() => {
-    if (!fontPanelOpen) return
-    function onDocMouseDown(e: MouseEvent) {
-      const t = e.target as Node
-      if (fontPanelRef.current?.contains(t) || fontBtnRef.current?.contains(t)) return
-      setFontPanelOpen(false)
-    }
-    function onEsc(e: KeyboardEvent) { if (e.key === "Escape") setFontPanelOpen(false) }
-    document.addEventListener("mousedown", onDocMouseDown)
-    window.addEventListener("keydown", onEsc)
-    return () => { document.removeEventListener("mousedown", onDocMouseDown); window.removeEventListener("keydown", onEsc) }
-  }, [fontPanelOpen])
+    const INITIAL_CENTER_INDEX = 0;
+    let currentCenterIndex = Math.min(INITIAL_CENTER_INDEX, numBooks - 1);
+    let isCarouselMoving = false;
+    let targetCarouselX = 0;
 
-  useEffect(() => {
-    if (!fontStylePanelOpen) return
-    function onDocMouseDown(e: MouseEvent) {
-      const t = e.target as Node
-      if (fontStylePanelRef.current?.contains(t) || fontStyleBtnRef.current?.contains(t)) return
-      setFontStylePanelOpen(false)
-    }
-    function onEsc(e: KeyboardEvent) { if (e.key === "Escape") setFontStylePanelOpen(false) }
-    document.addEventListener("mousedown", onDocMouseDown)
-    window.addEventListener("keydown", onEsc)
-    return () => { document.removeEventListener("mousedown", onDocMouseDown); window.removeEventListener("keydown", onEsc) }
-  }, [fontStylePanelOpen])
+    // Your tuned dimensions
+    const bookWidth = 5.7;
+    const bookHeight = 8;
+    const bookDepth = 0.55;
+    const bookSpacing = 13.5;
 
-  useEffect(() => {
-    if (!dictOpen) return
-    function onDocMouseDown(e: MouseEvent) {
-      const t = e.target as Node
-      if (dictPanelRef.current?.contains(t) || dictBtnRef.current?.contains(t)) return
-      setDictOpen(false)
-    }
-    function onEsc(e: KeyboardEvent) { if (e.key === "Escape") setDictOpen(false) }
-    document.addEventListener("mousedown", onDocMouseDown)
-    window.addEventListener("keydown", onEsc)
-    return () => { document.removeEventListener("mousedown", onDocMouseDown); window.removeEventListener("keydown", onEsc) }
-  }, [dictOpen])
-  useEffect(() => { if (dictOpen) { setFontPanelOpen(false); setFontStylePanelOpen(false) } }, [dictOpen])
-  useEffect(() => { if (dictOpen) setTimeout(() => dictInputRef.current?.focus(), 0) }, [dictOpen])
+    let isBookOpen = false;
+    let currentPageSpread = 0;
+    let bookSpreads: BookSpread[] = [];
 
-  useEffect(() => {
-    if (!notePanelOpen) return
-    function onDocMouseDown(e: MouseEvent) {
-      const t = e.target as Node
-      if (notePanelRef.current?.contains(t) || noteBtnRef.current?.contains(t)) return
-      setNotePanelOpen(false)
-    }
-    function onEsc(e: KeyboardEvent) { if (e.key === "Escape") setNotePanelOpen(false) }
-    document.addEventListener("mousedown", onDocMouseDown)
-    window.addEventListener("keydown", onEsc)
-    return () => { document.removeEventListener("mousedown", onDocMouseDown); window.removeEventListener("keydown", onEsc) }
-  }, [notePanelOpen])
-  useEffect(() => {
-    if (notePanelOpen && noteTextareaRef.current) {
-      const ta = noteTextareaRef.current
-      ta.focus()
-      const end = ta.value.length
-      ta.setSelectionRange(end, end)
-    }
-  }, [notePanelOpen])
-  useEffect(() => {
-    if (!ttsOpen) return;
-    function onDocMouseDown(e: MouseEvent) {
-      const t = e.target as Node;
-      if (ttsPanelRef.current?.contains(t) || ttsBtnRef.current?.contains(t)) return;
-      setTtsOpen(false);
-    }
-    function onEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") setTtsOpen(false);
-    }
-    document.addEventListener("mousedown", onDocMouseDown);
-    window.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onDocMouseDown);
-      window.removeEventListener("keydown", onEsc);
-    };
-  }, [ttsOpen]);
+    const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
 
-  useEffect(() => {
-    if (ttsOpen) {
-      setFontPanelOpen(false);
-      setFontStylePanelOpen(false);
-      setDictOpen(false);
-      setNotePanelOpen(false);
-    }
-  }, [ttsOpen]);
+    // font settings
+    let currentFontSize = 14;
+    let currentLineHeight = 1.6;
 
-  // If any other popover opens, close TTS
-  useEffect(() => {
-    if (fontPanelOpen || fontStylePanelOpen || dictOpen || notePanelOpen) {
-      setTtsOpen(false);
-    }
-  }, [fontPanelOpen, fontStylePanelOpen, dictOpen, notePanelOpen]);
+    // Lazy-loading window:
+    const MAX_LOADED = 30;
+    const CHUNK = 10;
+    let windowStart = 0; // inclusive logical index
+    let windowEnd = Math.min(CHUNK - 1, numBooks - 1); // inclusive
+    let lastDirection: 1 | -1 | 0 = 0;
 
-  // Auto-close one popover when the other opens
-  useEffect(() => { if (fontPanelOpen) setFontStylePanelOpen(false) }, [fontPanelOpen])
-  useEffect(() => { if (fontStylePanelOpen) setFontPanelOpen(false) }, [fontStylePanelOpen])
+    // Mesh storage: by logical index + active list
+    const bookMeshesByIndex: (THREE.Mesh | null)[] = Array(numBooks).fill(null);
+    let activeBooks: THREE.Mesh[] = [];
 
-  // TTS: load voices
-  useEffect(() => {
-    function loadVoices() {
-      const v = typeof window !== "undefined" ? (window.speechSynthesis?.getVoices?.() ?? []) : []
-      setVoices(v)
-      if (!tts.voiceURI && v.length) {
-        setTts((s) => ({ ...s, voiceURI: v.find((x) => x.lang?.startsWith("en"))?.voiceURI || v[0]?.voiceURI }))
-      }
-    }
-    loadVoices()
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.onvoiceschanged = loadVoices
-    }
-    return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.onvoiceschanged = null
-    }
-  }, [tts.voiceURI])
-  useEffect(() => { if (view !== "open") setTtsOpen(false) }, [view])
-  useEffect(() => () => { try { window.speechSynthesis?.cancel() } catch {} }, [])
+    // Shared THREE helpers
+    const textureLoader = new THREE.TextureLoader();
+    const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
 
-  function getVisiblePageText() {
-    if (view !== "open") return ""
-    const root = document.querySelector(".spread.is-open") as HTMLElement | null
-    if (!root) return ""
-    const bodies = Array.from(root.querySelectorAll(".chapter-page .chapter-body")) as HTMLElement[]
-    const text = bodies.map((b) => b.innerText || "").join("\n\n").trim()
-    return text || "No readable chapter text on this spread."
-  }
+    /* ------------------------------------------------------------------
+       DOM refs (same ids as your HTML)
+    ------------------------------------------------------------------ */
 
-// Tracks "generation" of the active utterance; invalidates stale handlers.
-  const ttsSeqRef = useRef(0);
-  const ttsSegmentsRef = useRef<string[]>([]);
-  const ttsSegIndexRef = useRef(0);     // which segment we’re on
-  const ttsCharInSegRef = useRef(0);  
+    const openBookContainer = document.getElementById(
+      "open-book-container"
+    ) as HTMLDivElement | null;
+    const pageLeft = document.getElementById("page-left") as HTMLDivElement | null;
+    const pageRight = document.getElementById(
+      "page-right"
+    ) as HTMLDivElement | null;
+    const navContainer = document.getElementById(
+      "nav-container"
+    ) as HTMLDivElement | null;
+    const settingsBtn = document.getElementById(
+      "settings-btn"
+    ) as HTMLButtonElement | null;
+    const settingsMenu = document.getElementById(
+      "settings-menu"
+    ) as HTMLDivElement | null;
+    const fontSizeSlider = document.getElementById(
+      "font-size-slider"
+    ) as HTMLInputElement | null;
+    const lineHeightSlider = document.getElementById(
+      "line-height-slider"
+    ) as HTMLInputElement | null;
+    const leftArrowBtn = document.getElementById(
+      "left-arrow"
+    ) as HTMLDivElement | null;
+    const rightArrowBtn = document.getElementById(
+      "right-arrow"
+    ) as HTMLDivElement | null;
+    const closeBookBtn = document.getElementById(
+      "close-book-btn"
+    ) as HTMLDivElement | null;
 
-  function speakSegment(segIndex: number, charStart = 0) {
-    const synth = window.speechSynthesis;
-    const segs = ttsSegmentsRef.current;
-    const seg = segs[segIndex] || "";
-    if (!synth || !seg.trim()) return;
-
-    // Invalidate any in-flight handlers, then assign a fresh generation id
-    ++ttsSeqRef.current;
-    const mySeq = ++ttsSeqRef.current;
-
-    // If a previous utterance exists (paused or speaking), cancel it
-    try { synth.cancel(); } catch {}
-
-    const slice = seg.slice(charStart);
-    const u = new SpeechSynthesisUtterance(slice);
-    u.rate = tts.rate;
-    u.pitch = tts.pitch;
-    const v = voices.find(vv => vv.voiceURI === tts.voiceURI);
-    if (v) u.voice = v;
-
-    // Bookkeeping for this segment
-    ttsUtterRef.current = u;
-    ttsSegIndexRef.current = segIndex;
-    ttsCharInSegRef.current = charStart;
-
-    u.onboundary = (e: any) => {
-      if (ttsSeqRef.current !== mySeq) return;
-      if (typeof e.charIndex === "number") {
-        ttsCharInSegRef.current = charStart + e.charIndex;
-      }
-    };
-
-    u.onstart = () => {
-      if (ttsSeqRef.current !== mySeq) return;
-      setTts(s => ({ ...s, speaking: true, paused: false }));
-    };
-
-    u.onpause = () => {
-      if (ttsSeqRef.current !== mySeq) return;
-      ttsWasPausedRef.current = true;
-      setTts(s => ({ ...s, paused: true }));
-    };
-
-    u.onresume = () => {
-      if (ttsSeqRef.current !== mySeq) return;
-      setTts(s => ({ ...s, paused: false }));
-    };
-
-    const finish = () => {
-      if (ttsSeqRef.current !== mySeq) return;
-      ttsUtterRef.current = null;
-
-      // Auto-advance if we’re not paused/stopped and there are more segments
-      if (!window.speechSynthesis?.paused && !ttsWasPausedRef.current) {
-        const nextIdx = segIndex + 1;
-        if (nextIdx < ttsSegmentsRef.current.length) {
-          speakSegment(nextIdx, 0);
-          return;
-        }
-      }
-
-      // Finished
-      ttsWasPausedRef.current = false;
-      ttsCharInSegRef.current = 0;
-      setTts(s => ({ ...s, speaking: false, paused: false }));
-    };
-
-    u.onend = finish;
-    u.onerror = finish;
-
-    synth.speak(u);
-  }
-
-  function playTTS() {
-    const text = getVisiblePageText();
-    if (!text) return;
-
-    // Build chunks and reset progress
-    ttsSegmentsRef.current = segmentText(text, 220);
-    ttsSegIndexRef.current = 0;
-    ttsCharInSegRef.current = 0;
-
-    // Keep old refs up to date (not strictly needed now, but harmless)
-    ttsTextRef.current = text;
-    ttsLastCharRef.current = 0;
-    ttsWasPausedRef.current = false;
-
-    speakSegment(0, 0);
-  }
-
-  function pauseTTS() {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    if (ttsUtterRef.current && synth.speaking && !synth.paused) {
-      try { synth.pause(); } catch {}
-      ttsWasPausedRef.current = true;
-      setTts(s => ({ ...s, paused: true }));
-    }
-  }
-
-  function stopTTS() {
-    try { window.speechSynthesis?.cancel(); } catch {}
-    if (ttsLiveApplyTimerRef.current != null) {
-      clearTimeout(ttsLiveApplyTimerRef.current);
-      ttsLiveApplyTimerRef.current = null;
-    }
-    ++ttsSeqRef.current; // invalidate any in-flight handlers
-    ttsUtterRef.current = null;
-    ttsWasPausedRef.current = false;
-    ttsLastCharRef.current = 0;
-    ttsTextRef.current = "";
-    setTts((s) => ({ ...s, speaking: false, paused: false }));
-  }
-
-  function resumeTTS() {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-
-    // Case A: the engine is actually paused with a live utterance
-    if (ttsUtterRef.current && synth.paused) {
-      try { synth.resume(); } catch {}
-      setTts(s => ({ ...s, paused: false }));
+    if (!openBookContainer || !pageLeft || !pageRight || !navContainer) {
+      console.warn("Reader DOM elements not found.");
       return;
     }
 
-    // Case B: fallback — resume from our current segment
-    if (!ttsSegmentsRef.current.length) return; // nothing to resume
-    if (!ttsWasPausedRef.current) return;
+    /* ------------------------------------------------------------------
+       Chapter text (same as before)
+    ------------------------------------------------------------------ */
 
-    const segIdx = ttsSegIndexRef.current;
-    const charStart = Math.max(0, ttsCharInSegRef.current || 0); // if no boundary support, this will be 0
-    speakSegment(segIdx, charStart);
-  }
+    const chapter1Text = `My name is Names.
+I was found alone in the middle of a tulip field, with a name tag naming me “Names.” I was told my body was so cold that my skin was blue. Later, when I was four, I was adopted by a woman who wasn’t ready to have a daughter and whom I never called mother. We grew up in a silent house. There, I found that silence brings thinking into the human mind, and that thinking takes you to weird places.
+I was eighteen when I moved to Austria to study psychology, hoping I would learn something about myself. I learned nothing about myself, but learned everything about my three best friends, Archie, Kind, and Memory.
+Every night during the last month before our graduation, my friends, their friends, and I gathered in Memory’s apartment to try to hold on to our adolescence. We were terrified. One week before the announced date, we gathered to watch the video of the first presentation the four of us ever did together. We were supposed to talk about world hunger, but got so drunk the night prior that we had to present wearing sunglasses. We failed, but we were by far the coolest. As we laughed about it, I looked at my face in that video and I didn’t recognize myself. I didn’t know who I was then, and I still didn’t know who I was at that moment. I always worried I wouldn’t be able to make friends, but those videos made all of my friends cry and hug me tenderly. Still, somehow, I felt like I felt like I didn’t belong with those friends who knew everything about my past, my present, and my future.
+I didn’t know where my life was headed. I had spent the past year wishing for university to be over, just to be held as a coward the moment a date for graduation was announced. I was stuck in place as everyone fled away from me, because everyone somehow decided they were adults and that they could figure out how to get a job. Everyone except for Kind, who simply couldn’t find a job as an art major.
+Kind, no pun intended, was a kind man. He was a year younger than the rest of us, and we always treated him as such. Even though he was a silent person, as silent as one can be, everyone could notice that his heart was filled with passion and emotion. He loved movies more than anything, and he was always somehow invested in one of those “we are getting married and having babies” type of relationships with some poor girl who would get her heart irremediably broken by his lack of direction towards life. He never worried about anything, which I admired to a degree. Everyone always came to him for advice, despite his age, and even though his advice always came down to “don’t worry,” he said it with such confidence and earnestness that you couldn’t help not to stop worrying.
+“Are you having fun?” he asked me after I didn’t laugh when everyone else did. He had a comfortable soul; people always told him their deepest secrets and worries without even realizing it, and I was no different.
+“I think?” I said bluntly as my voice cracked. “I don’t know, Kind. I feel like I flew away with the millions of tons of cigarette ash that we covered the campus with over these four years. I feel like I’m going to disappear.”
+“You are not having fun,” he said.`;
 
-  useEffect(() => {
-    // Only when we're actively speaking (not paused/stopped)
-    if (!tts.speaking || tts.paused) return;
+    const chapter2Text = `My name is Memory.
+My mom died giving birth to me. I was told that she held me tightly, covered in her blood, and cried out, “Me morí,” which means “I died” in Spanish. Those were her last words. “Me morí” sounds like “Memory,” and that was the twisted reasoning my father had when choosing my name, right before clogging the exhaust of our car with a wet towel and attempting to suffocate us both. I was the only survivor.
+Growing up, I never had any friends. But at university, Kind became my first friend. I don’t think I was his best friend, but he for sure was mine. We met on the first day of classes when our Art History professor asked us to get in pairs and get to know each other. I’ll forever be thankful for that professor’s life, because God knows I would have spent the next four years of my life alone if it wasn’t for that one conversation. Kind was a silent person, as silent as one can be, but people just seemed to gravitate towards his indifference towards the world and its pain. Everything was simply better when he was around. He had such a comfortable soul.
+Kind yearned for romance, while I, myself, wasn’t really the relationship kind of guy. Every year, he would somehow survive a “we’re going to get married and have babies” relationship that would last about five or six months, tops. After the breakups, driven by grief and his relentless spirit to find love, we would spend the remaining months of the year hunting for romance, quite unsuccessfully most of the time.
+Regardless of how many girls we fell for every single week, my heart always belonged to Names. I caught glimpses of her eyes everywhere I went after I first saw them four years ago, and everywhere I went I thought she was beautiful. I somehow and somewhat belonged to her. Kind, trying to help me ask her out, joined us three and Archie to give a presentation about world hunger on our first week at university. However, that only chained me eternally to her as a friend. As the years passed by, my friendship with her grew larger, but the shyness of my love grew even larger as well, to the point I simply couldn’t endure the idea of her eventually treating me like a stranger when we’d inevitably break up after graduation.
+One terrible evening inside my apartment, one week before our graduation, her pretty laugh, coming from downstairs, woke me up.
+I hazily walked down the stairs in my pijamas. My three P.M. nap had turned my day into night, and Kind had taken the liberty of gathering the whole friend group inside my apartment to watch the video of our terrible first presentation and cry about it. As I stepped into the kitchen, Archie graciously and promptly pointed out that I was wearing pijamas at eight P.M. and brought the community together to ridicule me. But hey, at least they ordered pizza.
+“Guys? Guys! They are saying that aliens are real!” shouted Alex suddenly. “On the news!”
+Everyone turned their fingers away from my face as we all immediately turned our heads to see the news. All my friends saw pictures of UFOs, mass terror, and neon lights in the skies.
+I, myself, saw Kind kissing Names on the mouth.`;
 
-    // Nothing to restart from if we don't have the original text
-    if (!ttsTextRef.current) return;
+    /* ------------------------------------------------------------------
+       Helpers copied from your HTML
+    ------------------------------------------------------------------ */
 
-    if (ttsLiveApplyTimerRef.current != null) {
-      clearTimeout(ttsLiveApplyTimerRef.current);
-    }
-    ttsLiveApplyTimerRef.current = window.setTimeout(() => {
-      restartFromProgress();
-    }, LIVE_APPLY_DELAY) as unknown as number;
+    function createSpineTexture(
+      title: string,
+      width: number,
+      height: number,
+      color: string
+    ) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
 
-    return () => {
-      if (ttsLiveApplyTimerRef.current != null) {
-        clearTimeout(ttsLiveApplyTimerRef.current);
-        ttsLiveApplyTimerRef.current = null;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      let fontSize = 40;
+      ctx.font = `bold ${fontSize}px "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      const maxWidth = height - 20;
+      let textWidth = ctx.measureText(title).width;
+
+      while (textWidth > maxWidth && fontSize > 10) {
+        fontSize--;
+        ctx.font = `bold ${fontSize}px "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+        textWidth = ctx.measureText(title).width;
       }
-    };
-  }, [tts.rate, tts.pitch, tts.voiceURI, tts.speaking, tts.paused]);
 
-
-  useEffect(() => {
-    try { window.speechSynthesis?.cancel() } catch {}
-    if (ttsLiveApplyTimerRef.current != null) {
-      clearTimeout(ttsLiveApplyTimerRef.current);
-      ttsLiveApplyTimerRef.current = null;
+      ctx.fillText(title, 0, 0);
+      ctx.restore();
+      return new THREE.CanvasTexture(canvas);
     }
-    ttsUtterRef.current = null;
-    ttsWasPausedRef.current = false;
-    ttsLastCharRef.current = 0;
-    setTts((s) => ({ ...s, speaking: false, paused: false }));
-  }, [current, page]);
 
-
-
-  // Focus dictionary input when open
-  useEffect(() => { if (dictOpen) setTimeout(() => dictInputRef.current?.focus(), 0) }, [dictOpen])
-
-  // Dictionary fetch
-  async function lookupWord(q: string) {
-    const word = q.trim()
-    if (!word) return
-    setDictLoading(true); setDictError(null); setDictResults(null)
-    try {
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
-      if (!res.ok) throw new Error("Not found")
-      const data = await res.json()
-      const entries: DictEntry[] = (Array.isArray(data) ? data : []).slice(0, 3).map((e: any) => {
-        const phon = e.phonetic || e.phonetics?.[0]?.text || undefined
-        const firstPOS = e.meanings?.[0]?.partOfSpeech || undefined
-        const senses: DictSense[] =
-          (e.meanings || []).flatMap((m: any) =>
-            (m.definitions || []).slice(0, 2).map((d: any) => ({
-              definition: d.definition,
-              example: d.example,
-            }))
-          )
-        return { word: e.word, phonetic: phon, partOfSpeech: firstPOS, senses }
-      })
-      if (!entries.length) throw new Error("No results")
-      setDictResults(entries)
-    } catch {
-      setDictError("No definition found.")
-    } finally {
-      setDictLoading(false)
+    function cleanPage(html: string) {
+      if (!html) return "";
+      let cleaned = html.replace(/^(<br>\s*)+/i, "");
+      cleaned = cleaned.replace(/(\s*<br>)+$/i, "");
+      return cleaned.trim();
     }
-  }
-  function onDictSubmit(e: React.FormEvent) { e.preventDefault(); lookupWord(dictQuery) }
 
-  // Close both font popovers when leaving open-book view
-  useEffect(() => {
-    if (view !== "open") { setFontPanelOpen(false); setFontStylePanelOpen(false) }
-  }, [view])
+    /* ------------------------------------------------------------------
+       THREE setup + book creation
+    ------------------------------------------------------------------ */
 
-  const center: Book | null = count ? books[mod(current, count)] : null
-  const isOpenLayout = view === "open" || isOpening
+    function createBookMesh(index: number): THREE.Mesh {
+      const coverMeta = bookCovers[index];
+      const frontTexture = textureLoader.load(coverMeta.front);
+      const backTexture = textureLoader.load(coverMeta.back);
 
-  // when switching books, go back to the front cover
-  useEffect(() => { setView("front"); setPage(0) }, [current])
+      backTexture.wrapS = THREE.RepeatWrapping;
+      backTexture.repeat.x = -1;
+      backTexture.center.set(0.5, 0.5);
 
-  // ---------- Per-book toggles ----------
-  const [likedById, setLikedById] = useState<Record<string, boolean>>({})
-  const [savedById, setSavedById] = useState<Record<string, boolean>>({})
-  const [userRatingById, setUserRatingById] = useState<Record<string, number>>({})
-  const centerId = center?.id ?? ""
-  const liked = !!(centerId && likedById[centerId])
-  const saved = !!(centerId && savedById[centerId])
-  const userRating = centerId ? (userRatingById[centerId] ?? 0) : 0
-  const displayLikes = (center?.likes ?? 0) + (liked ? 1 : 0)
-  const displaySaves = (center?.bookmarks ?? 0) + (saved ? 1 : 0)
-  const baseRating = typeof center?.rating === "string" ? parseFloat(String(center?.rating).split("/")[0] || "0") : Number(center?.rating ?? 0)
-  const votesRaw = center?.ratingCount ?? 0
-  const votes = Number.isFinite(Number(votesRaw)) ? Number(votesRaw) : 0
-  const PRIOR_VOTES = 20
-  const combinedRating =
-    userRating > 0
-      ? votes > 0
-        ? (baseRating * votes + userRating) / (votes + 1)
-        : baseRating > 0
-        ? (baseRating * PRIOR_VOTES + userRating) / (PRIOR_VOTES + 1)
-        : userRating
-      : baseRating
+      const spineCanvasWidth = bookDepth * 100;
+      const spineCanvasHeight = bookHeight * 100;
+      const spineColor = spineColors[index % spineColors.length];
+      const spineTexture = createSpineTexture(
+        coverMeta.title,
+        spineCanvasWidth,
+        spineCanvasHeight,
+        spineColor
+      );
 
-  // ---------- Carousel nav (closed) ----------
-  const next = useCallback(() => { if (!count) return; setCurrent((c) => mod(c + 1, count)) }, [count])
-  const prev = useCallback(() => { if (!count) return; setCurrent((c) => mod(c - 1, count)) }, [count])
-
-  // ---------- Pagination state/refs ----------
-  const spreadRef = useRef<HTMLDivElement | null>(null)
-  const paneLeftRef = useRef<HTMLDivElement | null>(null)
-  const paneRightRef = useRef<HTMLDivElement | null>(null)
-  const probeRef = useRef<HTMLDivElement | null>(null)
-  const [pageBox, setPageBox] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
-  const [chapterPages, setChapterPages] = useState<React.ReactNode[][]>([])
-
-
-  // Measure the available content box inside a page (based on the open spread)
-  useEffect(() => {
-    if (!center) return;
-    if (view !== "open") return;
-
-    let raf1 = 0;
-    let raf2 = 0;
-
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        if (!probeRef.current) return;
-
-        // 1) Sync probe with current reader typography
-        const probeRoot = probeRef.current as HTMLElement;
-        probeRoot.style.setProperty("--reader-font-scale", String(FONT_SCALES[fontSizeIndex]));
-        probeRoot.style.setProperty("--reader-line", String(debouncedLH));
-        probeRoot.style.setProperty("--reader-font-family", FONT_STYLES[fontStyleIndex].css);
-
-        // 2) Measure exact visible page box (choose whichever pane is mounted)
-        const pane = paneLeftRef.current || paneRightRef.current;
-        if (!pane) return;
-        const paneRect = pane.getBoundingClientRect();
-        const pageW = snapToDevicePixel(paneRect.width);
-        const pageH = snapToDevicePixel(paneRect.height);
-        if (!pageW || !pageH) return;
-
-        // 3) Pull all chapter texts we actually have
-        const texts: string[] = Array.isArray(center.chapterTexts)
-          ? center.chapterTexts.map((t) => String(t ?? "")).filter((t) => t.trim().length > 0)
-          : [];
-        if (texts.length === 0) { setChapterPages([]); return; }
-
-        // 4) Probe DOM handles
-        const pageEl  = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
-        const titleEl = probeRef.current!.querySelector(".chapter-title") as HTMLElement;
-        const bodyEl  = probeRef.current!.querySelector(".chapter-body") as HTMLElement;
-
-        // Size probe page exactly like visible page
-        pageEl.style.width  = `${pageW}px`;
-        pageEl.style.height = `${pageH}px`;
-        pageEl.style.boxSizing = "border-box";
-
-        // Mirror real paddings from a visible page (so probe math matches)
-        let padTop = "6vmin", padRight = "6vmin", padBottom = "6vmin", padLeft = "6vmin";
-        const visiblePage = document.querySelector(".spread .chapter-page") as HTMLElement | null;
-        if (visiblePage) {
-          const cs = getComputedStyle(visiblePage);
-          padTop    = cs.paddingTop    || padTop;
-          padRight  = cs.paddingRight  || padRight;
-          padBottom = cs.paddingBottom || padBottom;
-          padLeft   = cs.paddingLeft   || padLeft;
-        }
-        pageEl.style.paddingTop = padTop;
-        pageEl.style.paddingRight = padRight;
-        pageEl.style.paddingBottom = padBottom;
-        pageEl.style.paddingLeft = padLeft;
-
-        // Body matches visible layout (no scrolling)
-        bodyEl.style.flex = "0 0 auto";
-        bodyEl.style.minHeight = "0";
-        bodyEl.style.overflow = "hidden";
-        bodyEl.style.boxSizing = "content-box";
-
-        // Force layout so computed rects are current
-        void pageEl.getBoundingClientRect();
-
-        // ---- LINE GRID & CONTENT BOX ----
-        const csPage = getComputedStyle(pageEl);
-        const pT = parseFloat(csPage.paddingTop) || 0;
-        const pB = parseFloat(csPage.paddingBottom) || 0;
-        const CONTENT_H = pageH - pT - pB;
-
-        const lineStepCss = measureLineStepPx(bodyEl);
-        const MIN_LINES = 3;
-
-        // Reserve a bottom cushion (e.g., 1 line)
-        const BOTTOM_CUSHION_LINES = 1;
-        const CUSHION_PX = BOTTOM_CUSHION_LINES * lineStepCss;
-        // push to CSS var for both probe + visible pages
-        probeRoot.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
-        bodyEl.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
-        setBottomCushionPx(CUSHION_PX);
-
-        // Account for .chapter-body vertical padding
-        const csBody = getComputedStyle(bodyEl);
-        const bodyPadTop = parseFloat(csBody.paddingTop) || 0;
-        const bodyPadBot = parseFloat(csBody.paddingBottom) || 0;
-
-        // Available content height for text lines (no title yet)
-        const CONTENT_H_FOR_BODY = Math.max(0, CONTENT_H - bodyPadTop - bodyPadBot);
-
-        // Snap the blank-page body CONTENT height (no title) to full line-boxes
-        const BLANK_BODY_H = Math.max(
-          lineStepCss * MIN_LINES,
-          snapToDeviceLineGrid(CONTENT_H_FOR_BODY, lineStepCss)
-        );
-        bodyEl.style.height = `${BLANK_BODY_H}px`;
-
-        // Overflow checker — scroll metric + margin-aware
-        const overflowed = () => {
-          if ((bodyEl.scrollHeight - bodyEl.clientHeight) > 0.5) return true;
-          const last = bodyEl.lastElementChild as HTMLElement | null;
-          if (!last) return false;
-          const bodyR = bodyEl.getBoundingClientRect();
-          const lastR = last.getBoundingClientRect();
-          const mb = parseFloat(getComputedStyle(last).marginBottom) || 0;
-          const EPS = 0.5;
-          return (lastR.bottom + mb) > (bodyR.bottom - bodyPadBot - EPS);
-        };
-
-        // Helpers
-        const makeP = () => document.createElement("p");
-        const setPText = (p: HTMLParagraphElement, t: string) => { p.textContent = t; };
-
-        // Compute body height for a page (depending on title presence)
-        const setBodyHeightFor = (withTitle: boolean) => {
-          const tH   = withTitle ? titleEl.getBoundingClientRect().height : 0;
-          const tGap = withTitle ? (parseFloat(getComputedStyle(titleEl).marginBottom) || 0) : 0;
-          const inter = withTitle ? tGap : 0;
-          const targetContent = Math.max(0, CONTENT_H_FOR_BODY - tH - inter);
-          const snappedContent = Math.max(
-            lineStepCss * MIN_LINES,
-            snapToDeviceLineGrid(targetContent, lineStepCss)
-          );
-          bodyEl.style.height = `${snappedContent}px`;
-          return snappedContent;
-        };
-
-        // Slice whole paragraph into blank pages (no title)
-        const sliceParagraphBlank = (parText: string): string[] => {
-          const out: string[] = [];
-          titleEl.textContent = "";
-          bodyEl.innerHTML = "";
-          bodyEl.style.height = `${BLANK_BODY_H}px`;
-
-          const p = makeP(); setPText(p, parText); bodyEl.appendChild(p);
-          if (!overflowed()) { out.push(parText); return out; }
-
-          const words = parText.split(/\s+/);
-          let start = 0;
-          while (start < words.length) {
-            let lo = 1, hi = words.length - start, best = 0;
-            while (lo <= hi) {
-              const mid  = (lo + hi) >> 1;
-              const cand = words.slice(start, start + mid).join(" ");
-              titleEl.textContent = ""; bodyEl.innerHTML = "";
-              const p2 = makeP(); setPText(p2, cand); bodyEl.appendChild(p2);
-              if (!overflowed()) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
-            }
-            if (best === 0) {
-              const word = words[start];
-              let loC = 1, hiC = word.length, bestC = 0;
-              while (loC <= hiC) {
-                const midC = (loC + hiC) >> 1;
-                titleEl.textContent = ""; bodyEl.innerHTML = "";
-                const p3 = makeP(); setPText(p3, word.slice(0, midC)); bodyEl.appendChild(p3);
-                if (!overflowed()) { bestC = midC; loC = midC + 1; } else { hiC = midC - 1; }
-              }
-              const slice = word.slice(0, Math.max(1, bestC));
-              out.push(slice);
-              const rest = word.slice(slice.length);
-              if (rest) words[start] = rest; else start++;
-            } else {
-              out.push(words.slice(start, start + best).join(" "));
-              start += best;
-            }
-          }
-          return out;
-        };
-
-        const fitPieceOnCurrentPage = (parText: string): { first: string; rest: string[] } => {
-          const quick = makeP(); setPText(quick, parText); bodyEl.appendChild(quick);
-          if (!overflowed()) { return { first: parText, rest: [] }; }
-          bodyEl.removeChild(quick);
-
-          const words = parText.split(/\s+/);
-          let lo = 1, hi = words.length, best = 0;
-          while (lo <= hi) {
-            const mid = (lo + hi) >> 1;
-            const probeP = makeP(); setPText(probeP, words.slice(0, mid).join(" "));
-            bodyEl.appendChild(probeP);
-            const ok = !overflowed();
-            bodyEl.removeChild(probeP);
-            if (ok) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
-          }
-
-          if (best > 0) {
-            const first = words.slice(0, best).join(" ");
-            const tail  = words.slice(best).join(" ");
-            const rest  = tail ? sliceParagraphBlank(tail) : [];
-            return { first, rest };
-          }
-
-          const firstWord = words[0] || "";
-          if (!firstWord) return { first: "", rest: [] };
-
-          let loC = 1, hiC = firstWord.length, bestC = 0;
-          while (loC <= hiC) {
-            const midC = (loC + hiC) >> 1;
-            const probeP = makeP(); setPText(probeP, firstWord.slice(0, midC));
-            bodyEl.appendChild(probeP);
-            const ok = !overflowed();
-            bodyEl.removeChild(probeP);
-            if (ok) { bestC = midC; loC = midC + 1; } else { hiC = midC - 1; }
-          }
-
-          if (bestC > 0) {
-            const first = firstWord.slice(0, bestC);
-            const tail  = firstWord.slice(bestC) + (words.length > 1 ? " " + words.slice(1).join(" ") : "");
-            const rest  = tail ? sliceParagraphBlank(tail) : [];
-            return { first, rest };
-          }
-
-          return { first: "", rest: [parText] };
-        };
-
-        // 5) Build pages for every chapter we have text for
-        const pagesByChapter: React.ReactNode[][] = [];
-
-        for (let chapIdx = 0; chapIdx < texts.length; chapIdx++) {
-          const title = (center.chapters && center.chapters[chapIdx]) ? center.chapters[chapIdx] : `Chapter ${chapIdx + 1}`;
-          const paragraphs = splitParagraphs(texts[chapIdx]);
-
-          const chapterOut: React.ReactNode[] = [];
-          let i = 0;
-          let firstPageOfChapter = true;
-
-          while (i < paragraphs.length) {
-            const withTitle = firstPageOfChapter;
-            titleEl.textContent = withTitle ? title : "";
-            bodyEl.innerHTML = "";
-
-            // Snap height for THIS page (depends on actual title height + margin)
-            const snappedBodyH = setBodyHeightFor(withTitle);
-
-            const bucket: (string | { SPLIT: string[] })[] = [];
-
-            while (i < paragraphs.length) {
-              const pEl = makeP(); setPText(pEl, paragraphs[i]); bodyEl.appendChild(pEl);
-              if (!overflowed()) {
-                bucket.push(paragraphs[i]);
-                i++;
-                continue;
-              }
-
-              bodyEl.removeChild(pEl);
-
-              if (bodyEl.childElementCount === 0) {
-                const parts = sliceParagraphBlank(paragraphs[i]);
-                if (parts.length) { bucket.push({ SPLIT: parts }); i++; }
-                break; // close page
-              } else {
-                const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
-                if (first) {
-                  bucket.push(first);
-                  if (rest.length) paragraphs.splice(i + 1, 0, ...rest);
-                  i++;
-                }
-                break; // close page
-              }
-            }
-
-            // Bucket -> nodes; only first piece of any split goes here
-            const nodes: React.ReactNode[] = [];
-            for (const item of bucket) {
-              if (typeof item === "string") {
-                nodes.push(<p key={nodes.length}>{item}</p>);
-              } else {
-                const [first, ...rest] = item.SPLIT;
-                nodes.push(<p key={nodes.length}>{first}</p>);
-                if (rest.length) paragraphs.splice(i, 0, ...rest);
-              }
-            }
-
-            chapterOut.push(
-              <div className="chapter-page" key={`${chapIdx}-${chapterOut.length}`}>
-                {withTitle && <h2 className="chapter-title">{title}</h2>}
-                <div
-                  className="chapter-body"
-                  style={{ height: `${snappedBodyH}px`, boxSizing: "content-box", overflow: "hidden" }}
-                >
-                  {nodes}
-                </div>
-              </div>
-            );
-
-            firstPageOfChapter = false;
-          }
-
-          // If the chapter text was empty, keep at least one placeholder page
-          if (chapterOut.length === 0) {
-            chapterOut.push(
-              <div className="chapter-page" key={`${chapIdx}-empty`}>
-                <h2 className="chapter-title">{title}</h2>
-                <div className="chapter-body" style={{ height: `${BLANK_BODY_H}px`, boxSizing: "content-box", overflow: "hidden" }}>
-                  <p>(No content)</p>
-                </div>
-              </div>
-            );
-          }
-
-          pagesByChapter.push(chapterOut);
-        }
-
-        setChapterPages(pagesByChapter);
-
-        // 6) Clamp spread if total changed (accounts for future chapters as single pages)
-        setTimeout(() => {
-          const claimedChapters   = Number(center?.totalChapters ?? 0) || (center?.chapters?.length ?? 0) || texts.length;
-          const materialized      = pagesByChapter.length;
-          const materializedPages = pagesByChapter.reduce((sum, arr) => sum + arr.length, 0);
-          const remainingChapters = Math.max(0, claimedChapters - materialized);
-          const newTotalPages     = 2 + materializedPages + remainingChapters;
-          const newMaxLeft        = Math.max(0, (newTotalPages - 1) & ~1);
-          setPage((p) => (p > newMaxLeft ? newMaxLeft : p));
-        }, 0);
+      const frontCoverMaterial = new THREE.MeshBasicMaterial({
+        map: frontTexture,
       });
+      const backCoverMaterial = new THREE.MeshBasicMaterial({
+        map: backTexture,
+      });
+      const spineMaterial = new THREE.MeshBasicMaterial({
+        map: spineTexture,
+      });
+
+      const materials = [
+        pageMaterial, // right
+        spineMaterial, // left (spine)
+        pageMaterial, // top
+        pageMaterial, // bottom
+        frontCoverMaterial, // front
+        backCoverMaterial, // back
+      ];
+
+      const geom = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
+      const book = new THREE.Mesh(geom, materials);
+
+      book.position.x = (index - INITIAL_CENTER_INDEX) * bookSpacing;
+      book.userData = {
+        logicalIndex: index,
+        isFlipping: false,
+        targetRotation: 0,
+        targetScale: 1,
+        isScaling: false,
+        targetVisibility: true,
+        isSlidingOut: false,
+        isSlidingIn: false,
+        targetSlideX: 0,
+        targetSlideScale: 1,
+      };
+
+      carouselGroup.add(book);
+      bookMeshesByIndex[index] = book;
+      activeBooks.push(book);
+
+      return book;
+    }
+
+    function ensureBookLoaded(index: number) {
+      if (index < 0 || index >= numBooks) return;
+      if (bookMeshesByIndex[index]) return;
+      createBookMesh(index);
+    }
+
+    function unloadBook(index: number) {
+      if (index < 0 || index >= numBooks) return;
+      const book = bookMeshesByIndex[index];
+      if (!book) return;
+      carouselGroup.remove(book);
+      activeBooks = activeBooks.filter((b) => b !== book);
+      // (optional) dispose geometry/materials here
+      bookMeshesByIndex[index] = null;
+    }
+
+    function ensureRangeLoaded(start: number, end: number) {
+      const s = Math.max(0, start);
+      const e = Math.min(numBooks - 1, end);
+      for (let i = s; i <= e; i++) {
+        ensureBookLoaded(i);
+      }
+    }
+
+    function trimWindowIfNeeded() {
+      const loadedCount = windowEnd - windowStart + 1;
+      if (loadedCount <= MAX_LOADED) return;
+
+      const over = loadedCount - MAX_LOADED;
+      const toDrop = Math.min(CHUNK, over);
+
+      // If moving right or neutral, drop from left.
+      // If moving left, drop from right.
+      if (lastDirection >= 0) {
+        const dropEnd = windowStart + toDrop - 1;
+        for (let i = windowStart; i <= dropEnd; i++) {
+          unloadBook(i);
+        }
+        windowStart = dropEnd + 1;
+      } else {
+        const dropStart = windowEnd - toDrop + 1;
+        for (let i = dropStart; i <= windowEnd; i++) {
+          unloadBook(i);
+        }
+        windowEnd = dropStart - 1;
+      }
+    }
+
+    function adjustWindow() {
+      // Always make sure center and its neighbors are loaded
+      ensureRangeLoaded(currentCenterIndex - 1, currentCenterIndex + 1);
+
+      // Moving near the right side of window: prefetch next CHUNK to the right
+      if (currentCenterIndex >= windowEnd - 3 && windowEnd < numBooks - 1) {
+        const newEnd = Math.min(windowEnd + CHUNK, numBooks - 1);
+        ensureRangeLoaded(windowEnd + 1, newEnd);
+        windowEnd = newEnd;
+      }
+
+      // Moving near the left side of window: prefetch previous CHUNK to the left
+      if (currentCenterIndex <= windowStart + 3 && windowStart > 0) {
+        const newStart = Math.max(windowStart - CHUNK, 0);
+        ensureRangeLoaded(newStart, windowStart - 1);
+        windowStart = newStart;
+      }
+
+      trimWindowIfNeeded();
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a1a);
+
+      const w = root.clientWidth || window.innerWidth;
+      const h = root.clientHeight || window.innerHeight;
+
+      camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+      camera.position.y = 0;
+      camera.position.z = 8;
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(w, h);
+      root.appendChild(renderer.domElement);
+
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      carouselGroup = new THREE.Group();
+      scene.add(carouselGroup);
+
+      // Initial lazy window: 10 books (0..9)
+      ensureRangeLoaded(windowStart, windowEnd);
+
+      targetCarouselX = carouselGroup.position.x;
+      updateBookProperties(true);
+    }
+
+    function onWindowResize() {
+      if (!renderer || !camera) return;
+      const w = root.clientWidth || window.innerWidth;
+      const h = root.clientHeight || window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    /* ------------------------------------------------------------------
+       Pagination
+    ------------------------------------------------------------------ */
+
+    function paginateChapter(fullText: string, titleHtml: string | null = null) {
+      const testPage = pageLeft!;
+      const computedStyle = window.getComputedStyle(testPage);
+      const pageHeight = parseFloat(computedStyle.height);
+      const contentAreaHeight =
+        pageHeight -
+        (parseFloat(computedStyle.paddingTop) +
+          parseFloat(computedStyle.paddingBottom));
+      const marginBuffer = 0;
+      const effectiveHeight = contentAreaHeight - marginBuffer;
+
+      const originalContent = testPage.innerHTML;
+      const pages: string[] = [];
+
+      const processedText = fullText.replace(/\n/g, " <br><br> ");
+      const words = processedText.split(" ");
+
+      let currentPageText = "";
+      if (titleHtml) currentPageText += titleHtml;
+
+      const measureDiv = document.createElement("div");
+      measureDiv.style.fontSize = `${currentFontSize}px`;
+      measureDiv.style.lineHeight = String(currentLineHeight);
+      measureDiv.style.overflow = "hidden";
+      measureDiv.style.visibility = "hidden";
+      measureDiv.style.height = "auto";
+      measureDiv.style.width = "100%";
+      testPage.appendChild(measureDiv);
+
+      for (const word of words) {
+        const testWord = word + " ";
+        const before = currentPageText;
+        const testText = currentPageText + testWord;
+        measureDiv.innerHTML = testText;
+
+        const isOverflowing = measureDiv.scrollHeight > effectiveHeight;
+        if (isOverflowing) {
+          pages.push(cleanPage(before));
+          currentPageText = testWord;
+        } else {
+          currentPageText = testText;
+        }
+      }
+
+      if (currentPageText.trim() !== "") {
+        pages.push(cleanPage(currentPageText));
+      }
+
+      testPage.removeChild(measureDiv);
+      testPage.innerHTML = originalContent;
+      return pages;
+    }
+
+    function buildBookSpreads(bookIndex: number): BookSpread[] {
+      const meta = bookCovers[bookIndex];
+      const bookTitle = meta.title;
+      const bookAuthor = sampleBooks[bookIndex]?.author || "A. Nonymous";
+      const isbn = "978-0-999999-99-9";
+      const copyright = "2024";
+
+      const staticSpreads: BookSpread[] = [
+        {
+          left: "",
+          right: `<div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; text-align:center; padding-top: 15vh; padding-bottom: 5vh; color:#1a1a1a;">
+              <div>
+                <h1 style="font-size: 2.5em; margin: 0; padding: 0;">${bookTitle}</h1>
+                <p style="font-size: 1.2em; margin-top: 20px;">By ${bookAuthor}</p>
+              </div>
+              <div style="font-size: 0.8em; color: #555;">
+                <p>ISBN: ${isbn}</p>
+                <p>&copy; Copyright ${copyright}</p>
+              </div>
+            </div>`,
+        },
+        {
+          left: "",
+          right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic; color:#333;">
+              <p>For everyone who reads<br>in a world of screens.</p>
+            </div>`,
+        },
+        {
+          left: `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em; color: #555;">
+              <p style="margin-bottom: 5px;">ISBN: ${isbn}</p>
+              <p>&copy; Copyright ${copyright}</p>
+            </div>`,
+          right: `<h3 style="text-align:center; margin-bottom: 20px;">Table of Contents</h3>
+            <ul style="line-height: 2.5; list-style-position: inside;">
+              <li>Chapter 1: The Beginning</li>
+              <li>Chapter 2: The Second Story</li>
+            </ul>`,
+        },
+      ];
+
+      const chapters = [
+        { title: "Chapter 1: The Beginning", text: chapter1Text },
+        { title: "Chapter 2: The Second Story", text: chapter2Text },
+      ];
+
+      let allPages: string[] = [];
+      for (const ch of chapters) {
+        const pages = paginateChapter(ch.text, `<h3>${ch.title}</h3>`);
+        allPages = allPages.concat(pages);
+      }
+
+      const chapterSpreads: BookSpread[] = [];
+      for (let i = 0; i < allPages.length; i += 2) {
+        chapterSpreads.push({
+          left: allPages[i] ?? "",
+          right: allPages[i + 1] ?? "",
+        });
+      }
+
+      return staticSpreads.concat(chapterSpreads);
+    }
+
+    function updatePageContent(index: number) {
+      const spread = bookSpreads[index];
+      if (!spread) return;
+      pageLeft!.innerHTML = spread.left;
+      pageRight!.innerHTML = spread.right;
+    }
+
+    function rePaginateBook() {
+      pageLeft!.style.fontSize = `${currentFontSize}px`;
+      pageRight!.style.fontSize = `${currentFontSize}px`;
+      pageLeft!.style.lineHeight = String(currentLineHeight);
+      pageRight!.style.lineHeight = String(currentLineHeight);
+
+      bookSpreads = buildBookSpreads(currentCenterIndex);
+      if (currentPageSpread >= bookSpreads.length) {
+        currentPageSpread = bookSpreads.length - 1;
+      }
+      if (currentPageSpread < 0) currentPageSpread = 0;
+      updatePageContent(currentPageSpread);
+    }
+
+    /* ------------------------------------------------------------------
+       Carousel movement + scaling
+    ------------------------------------------------------------------ */
+
+    function updateBookProperties(isInitial = false) {
+      const centerScale = 1.2;
+      const sideScale = 1.2;
+      const outerScale = 1.0;
+
+      // Wrap currentCenterIndex into [0, numBooks)
+      const wrappedCenter =
+        ((currentCenterIndex % numBooks) + numBooks) % numBooks;
+
+      for (let i = 0; i < numBooks; i++) {
+        const book = bookMeshesByIndex[i];
+        if (!book) continue; // not loaded yet / has been unloaded
+
+        // Circular distance on the ring of numBooks
+        const diff = Math.abs(i - wrappedCenter);
+        const distance = Math.min(diff, numBooks - diff);
+
+        let newScale = outerScale;
+        if (distance === 0) {
+          newScale = centerScale; // center book
+        } else if (distance === 1) {
+          newScale = sideScale; // immediate neighbours
+        }
+
+        // Any non-center book that was flipped → reset to front
+        if (distance !== 0 && book.rotation.y !== 0) {
+          book.userData.targetRotation = 0;
+          book.userData.isFlipping = true;
+        }
+
+        if (isInitial) {
+          // First frame: snap everything to correct scale, no animation
+          book.scale.set(newScale, newScale, newScale);
+          book.userData.targetScale = newScale;
+          book.userData.isScaling = false;
+        } else {
+          if (distance === 0) {
+            // Only the center book animates scale
+            book.userData.targetScale = newScale;
+            book.userData.isScaling = true;
+          } else {
+            // Side + outer: snap scale, no animation
+            book.scale.set(newScale, newScale, newScale);
+            book.userData.targetScale = newScale;
+            book.userData.isScaling = false;
+          }
+        }
+
+        // IMPORTANT: we NEVER touch book.visible here.
+        // Loaded books remain visible so they naturally slide out of frame
+        // as the carouselGroup moves, instead of popping away.
+      }
+    }
+
+    function moveCarouselLeft() {
+      if (isBookOpen) {
+        flipPageLeft();
+        return;
+      }
+      if (currentCenterIndex <= 0) return;
+
+      lastDirection = -1;
+      isCarouselMoving = true;
+      currentCenterIndex--;
+      targetCarouselX += bookSpacing;
+
+      adjustWindow();
+      updateBookProperties();
+    }
+
+    function moveCarouselRight() {
+      if (isBookOpen) {
+        flipPageRight();
+        return;
+      }
+      if (currentCenterIndex >= numBooks - 1) return;
+
+      lastDirection = 1;
+      isCarouselMoving = true;
+      currentCenterIndex++;
+      targetCarouselX -= bookSpacing;
+
+      adjustWindow();
+      updateBookProperties();
+    }
+
+    /* ------------------------------------------------------------------
+       Open / Close book
+    ------------------------------------------------------------------ */
+
+    function openBook() {
+      currentPageSpread = 0;
+
+      if (bookSpreads.length === 0) {
+        pageLeft!.innerHTML = "";
+        pageRight!.innerHTML = "";
+
+        setTimeout(() => {
+          bookSpreads = buildBookSpreads(currentCenterIndex);
+          updatePageContent(currentPageSpread);
+        }, 550);
+      } else {
+        updatePageContent(currentPageSpread);
+      }
+
+      const leftBookIndex =
+        currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
+      const rightBookIndex =
+        currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
+
+      for (let i = 0; i < numBooks; i++) {
+        const book = bookMeshesByIndex[i];
+        if (!book) continue;
+
+        if (i === currentCenterIndex) {
+          book.visible = false;
+          book.userData.isSlidingOut = false;
+        } else if (i === leftBookIndex && leftBookIndex !== -1) {
+          book.userData.isSlidingOut = true;
+          book.userData.targetSlideX = book.position.x - 20;
+          book.userData.targetSlideScale = 0;
+        } else if (i === rightBookIndex && rightBookIndex !== -1) {
+          book.userData.isSlidingOut = true;
+          book.userData.targetSlideX = book.position.x + 20;
+          book.userData.targetSlideScale = 0;
+        } else {
+          book.userData.isSlidingOut = false;
+        }
+      }
+
+      navContainer!.classList.add("is-open");
+      openBookContainer.classList.add("is-open");
+      isBookOpen = true;
+    }
+
+    function closeBook() {
+      settingsMenu?.classList.remove("is-open");
+
+      openBookContainer.style.transition = "none";
+      navContainer!.style.transition = "none";
+
+      openBookContainer.classList.remove("is-open");
+      navContainer!.classList.remove("is-open");
+
+      void openBookContainer.offsetWidth;
+
+      openBookContainer.style.transition =
+        "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease";
+      navContainer!.style.transition =
+        "opacity 0.3s ease, left 0.5s cubic-bezier(0.25, 1, 0.5, 1)";
+
+      carouselGroup.position.x = targetCarouselX;
+
+      const centerScale = 1.2;
+      const sideScale = 1.2;
+      const outerScale = 0.4;
+
+      for (let i = 0; i < numBooks; i++) {
+        const book = bookMeshesByIndex[i];
+        if (!book) continue;
+
+        book.userData.isSlidingOut = false;
+        book.userData.isScaling = false;
+        book.userData.isSlidingIn = false;
+
+        const distance = Math.abs(i - currentCenterIndex);
+        const finalX = (i - INITIAL_CENTER_INDEX) * bookSpacing;
+
+        if (distance === 0) {
+          book.userData.targetRotation = 0;
+          book.userData.isFlipping = true;
+
+          book.position.x = finalX;
+          book.scale.set(centerScale, centerScale, centerScale);
+          book.visible = true;
+        } else {
+          book.position.x = finalX;
+          book.rotation.y = 0;
+          book.userData.isFlipping = false;
+
+          if (distance === 1) {
+            book.scale.set(sideScale, sideScale, sideScale);
+            book.visible = true;
+          } else {
+            book.scale.set(outerScale, outerScale, outerScale);
+            const inWindow = i >= windowStart && i <= windowEnd;
+            book.visible = inWindow && book.userData.targetVisibility;
+          }
+        }
+      }
+
+      isBookOpen = false;
+      currentPageSpread = 0;
+    }
+
+    function flipPageLeft() {
+      if (currentPageSpread > 0) {
+        currentPageSpread--;
+        updatePageContent(currentPageSpread);
+      } else {
+        closeBook();
+      }
+    }
+
+    function flipPageRight() {
+      if (currentPageSpread < bookSpreads.length - 1) {
+        currentPageSpread++;
+        updatePageContent(currentPageSpread);
+      } else {
+        closeBook();
+      }
+    }
+
+    /* ------------------------------------------------------------------
+       Click to flip / open
+    ------------------------------------------------------------------ */
+
+    function onDocumentClick(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (
+        target.classList.contains("nav-arrow") ||
+        target.id === "nav-container" ||
+        target.closest(".settings-menu")
+      ) {
+        return;
+      }
+
+      if (openBookContainer.classList.contains("is-open")) {
+        return;
+      }
+
+      const canvasRect = renderer.domElement.getBoundingClientRect();
+      mouse.x =
+        ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+      mouse.y =
+        -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(activeBooks, false);
+
+      if (intersects.length > 0) {
+        const clickedBook = intersects[0].object as THREE.Mesh;
+        const clickedIndex =
+          (clickedBook.userData.logicalIndex as number) ?? -1;
+        if (clickedIndex < 0) return;
+
+        const leftIndex =
+          currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
+        const rightIndex =
+          currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
+
+        if (clickedIndex === currentCenterIndex) {
+          if (clickedBook.userData.isFlipping) {
+            openBook();
+            return;
+          }
+
+          const targetRotation = clickedBook.userData.targetRotation;
+          const atFront =
+            Math.abs(targetRotation % (2 * Math.PI)) < 0.01;
+          const atBack =
+            Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
+
+          if (atFront) {
+            clickedBook.userData.isFlipping = true;
+            clickedBook.userData.targetRotation += Math.PI;
+          } else if (atBack) {
+            openBook();
+          }
+        } else if (clickedIndex === leftIndex && leftIndex !== -1) {
+          moveCarouselLeft();
+        } else if (clickedIndex === rightIndex && rightIndex !== -1) {
+          moveCarouselRight();
+        }
+      }
+    }
+
+    /* ------------------------------------------------------------------
+       Settings menu
+    ------------------------------------------------------------------ */
+
+    settingsBtn?.addEventListener("click", () => {
+      settingsMenu?.classList.toggle("is-open");
     });
 
-    return () => {
-      if (raf1) cancelAnimationFrame(raf1);
-      if (raf2) cancelAnimationFrame(raf2);
-    };
-  }, [center, view, fontSizeIndex, debouncedLH, fontStyleIndex]);
+    fontSizeSlider?.addEventListener("input", (e: Event) => {
+      const val = (e.target as HTMLInputElement).value;
+      currentFontSize = Number(val);
+      rePaginateBook();
+    });
 
+    lineHeightSlider?.addEventListener("input", (e: Event) => {
+      const val = (e.target as HTMLInputElement).value;
+      currentLineHeight = Number(val);
+      rePaginateBook();
+    });
 
+    leftArrowBtn?.addEventListener("click", () => {
+      if (isBookOpen) flipPageLeft();
+      else moveCarouselLeft();
+    });
 
+    rightArrowBtn?.addEventListener("click", () => {
+      if (isBookOpen) flipPageRight();
+      else moveCarouselRight();
+    });
 
+    closeBookBtn?.addEventListener("click", () => {
+      closeBook();
+    });
 
+    /* ------------------------------------------------------------------
+       Drag-to-move
+    ------------------------------------------------------------------ */
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try { await (document as any).fonts?.ready; } catch {}
-      if (!cancelled) {
-        // nudge state to re-run the pagination effect using actual font metrics
-        setLineHeight((v) => v);
+    let dragStartX: number | null = null;
+    let dragged = false;
+
+    function onPointerDown(e: PointerEvent) {
+      dragStartX = e.clientX;
+      dragged = false;
+    }
+
+    function onPointerMove(e: PointerEvent) {
+      if (dragStartX === null) return;
+      const dx = e.clientX - dragStartX;
+      if (Math.abs(dx) > 10) {
+        dragged = true;
       }
-    })();
-    return () => { cancelled = true; };
+    }
+
+    function onPointerUp(e: PointerEvent) {
+      if (dragStartX === null) return;
+      const dx = e.clientX - dragStartX;
+      dragStartX = null;
+
+      if (!dragged) return;
+      const threshold = 40;
+      if (Math.abs(dx) < threshold) return;
+
+      if (!isBookOpen) {
+        if (dx < 0) moveCarouselRight();
+        else moveCarouselLeft();
+      } else {
+        if (dx < 0) flipPageRight();
+        else flipPageLeft();
+      }
+    }
+
+    /* ------------------------------------------------------------------
+       Animation loop
+    ------------------------------------------------------------------ */
+
+    const slowEase = 0.02;
+    const fastEase = 0.08;
+    let rafId: number;
+
+    function animate() {
+      rafId = requestAnimationFrame(animate);
+
+      if (isBookOpen) {
+        // Book opened → slide neighbours away (no carousel moves)
+        activeBooks.forEach((book) => {
+          if (!book) return;
+          if (book.userData.isSlidingOut) {
+            // Slide to target X
+            book.position.x +=
+              (book.userData.targetSlideX - book.position.x) * slowEase;
+
+            // Scale down to targetSlideScale
+            const s = book.scale.x;
+            const targetS = book.userData.targetSlideScale;
+            const newS = s + (targetS - s) * slowEase;
+            book.scale.set(newS, newS, newS);
+
+            if (Math.abs(targetS - newS) < 0.01) {
+              book.userData.isSlidingOut = false;
+            }
+          }
+        });
+      } else {
+        // --- CLOSED STATE: carousel + flip + center scale ---
+
+        // 1) Flip animation for any book with isFlipping
+        activeBooks.forEach((book) => {
+          if (!book) return;
+          if (book.userData.isFlipping) {
+            book.rotation.y +=
+              (book.userData.targetRotation - book.rotation.y) * fastEase;
+
+            if (
+              Math.abs(book.userData.targetRotation - book.rotation.y) < 0.01
+            ) {
+              book.rotation.y = book.userData.targetRotation;
+              book.userData.isFlipping = false;
+            }
+          }
+        });
+
+        // 2) Carousel movement
+        if (isCarouselMoving) {
+          carouselGroup.position.x +=
+            (targetCarouselX - carouselGroup.position.x) * fastEase;
+
+          if (Math.abs(targetCarouselX - carouselGroup.position.x) < 0.01) {
+            carouselGroup.position.x = targetCarouselX;
+            isCarouselMoving = false;
+
+            // (loop logic kept, but moveLeft/Right already clamp indexes)
+            if (currentCenterIndex < 0) {
+              currentCenterIndex = numBooks - 1;
+              targetCarouselX =
+                -(currentCenterIndex - INITIAL_CENTER_INDEX) * bookSpacing;
+              carouselGroup.position.x = targetCarouselX;
+            } else if (currentCenterIndex >= numBooks) {
+              currentCenterIndex = 0;
+              targetCarouselX =
+                -(currentCenterIndex - INITIAL_CENTER_INDEX) * bookSpacing;
+              carouselGroup.position.x = targetCarouselX;
+            }
+          }
+        }
+
+        // 3) Center-book scale animation
+        activeBooks.forEach((book) => {
+          if (!book) return;
+          if (book.userData.isScaling) {
+            const currentScale = book.scale.x;
+            const targetScale = book.userData.targetScale;
+            const newScale =
+              currentScale + (targetScale - currentScale) * fastEase;
+
+            book.scale.set(newScale, newScale, newScale);
+
+            if (Math.abs(targetScale - newScale) < 0.01) {
+              book.scale.set(targetScale, targetScale, targetScale);
+              book.userData.isScaling = false;
+            }
+          }
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* ------------------------------------------------------------------
+       Start + cleanup
+    ------------------------------------------------------------------ */
+
+    init();
+    window.addEventListener("resize", onWindowResize);
+    document.addEventListener("click", onDocumentClick);
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", onWindowResize);
+      document.removeEventListener("click", onDocumentClick);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      cancelAnimationFrame(rafId);
+      if (renderer) {
+        renderer.dispose();
+        if (renderer.domElement.parentNode === root) {
+          root.removeChild(renderer.domElement);
+        }
+      }
+    };
   }, []);
 
-
-
-
-  // ---------- Pages model (open) ----------
-  // page 0 = dedication (left)
-  // page 1 = table of contents (right)
-  // page 2.. = chapter 1 paginated pages
-  const chapterCount = (() => {
-    if (!center) return 0;
-    if (Array.isArray(center.chapters) && center.chapters.length > 0) return center.chapters.length;
-    const n = Number(center.totalChapters ?? 0);
-    return Number.isFinite(n) && n > 0 ? n : (Array.isArray(center.chapterTexts) ? center.chapterTexts.length : 0);
-  })();
-
-  const chapterTitles: string[] = (() => {
-    if (!center) return [];
-    if (Array.isArray(center.chapters) && center.chapters.length === chapterCount) {
-      return center.chapters.slice();
-    }
-    return Array.from({ length: chapterCount }, (_, i) => `Chapter ${i + 1}`);
-  })();
-
-  const claimedChapters = (() => {
-    const n = Number(center?.totalChapters ?? 0);
-    if (Number.isFinite(n) && n > 0) return n;
-    return chapterTitles.length;
-  })();
-
-  // Flattened pages for all materialized chapters
-  const flatPages: React.ReactNode[] = chapterPages.flat();
-
-  // Remaining chapters we don't have text for yet count as 1 page each
-  const remainingChapters = Math.max(0, claimedChapters - chapterPages.length);
-  const totalPages = 2 + flatPages.length + remainingChapters;
-  const maxLeftPage = lastEven(totalPages - 1);
-
-  // Compute the starting page number of each chapter (1-based pages)
-  const startPageOfChapter: number[] = (() => {
-    const starts: number[] = [];
-    let acc = 2; // first chapter starts at page 2 (right pane in your model)
-    for (let i = 0; i < claimedChapters; i++) {
-      starts.push(acc);
-      const len = i < chapterPages.length ? Math.max(1, chapterPages[i].length) : 1;
-      acc += len;
-    }
-    return starts;
-  })();
-
-  const clampToSpread = useCallback((p: number) => Math.max(0, Math.min(p, Math.max(0, maxLeftPage))), [maxLeftPage])
-  const turnPage = useCallback((dir: 1 | -1) => setPage((p) => clampToSpread(p + 2 * dir)), [clampToSpread])
-  const gotoChapter = useCallback((k: number) => {
-    // k is 1-based index (you pass i+1 from the TOC)
-    const idx = Math.max(0, k - 1);
-    const p = startPageOfChapter[idx] ?? 2;
-    const left = p % 2 === 0 ? p : p - 1;
-    setPage(clampToSpread(left));
-  }, [clampToSpread, startPageOfChapter]);
-
-  const atStart = page <= 0
-  const atEnd = page >= maxLeftPage
-
-  // ---------- Flip cross-fade / open choreography ----------
-  const [flipFading, setFlipFading] = useState(false)
-  const FLIP_FADE_MS = 260
-  const returnToCover = useCallback(() => {
-    setPage(0)
-    setFlipFading(true)
-    window.setTimeout(() => setFlipFading(false), FLIP_FADE_MS)
-    setView("front")
-  }, [])
-
-  // ---------- Keyboard ----------
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      const target = e.target as HTMLElement | null
-      const isEditableEl =
-        !!target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          (target as HTMLElement).isContentEditable ||
-          target.getAttribute("role") === "textbox")
-      if (isEditableEl) return
-
-      const anyPopoverOpen = dictOpen || notePanelOpen || fontPanelOpen || fontStylePanelOpen || ttsOpen
-      if (anyPopoverOpen) {
-        const navKeys = ["ArrowRight", "ArrowLeft", "PageDown", "PageUp", "a", "A", "d", "D"]
-        if (navKeys.includes(e.key)) return
-      }
-
-      switch (e.key) {
-        case "ArrowRight":
-        case "d":
-        case "D":
-        case "PageDown":
-          e.preventDefault()
-          if (view === "open") turnPage(1)
-          else next()
-          break
-        case "ArrowLeft":
-        case "a":
-        case "A":
-        case "PageUp":
-          e.preventDefault()
-          if (view === "open") turnPage(-1)
-          else prev()
-          break
-        case "Home":
-          e.preventDefault()
-          if (view === "open") setPage(0)
-          else if (count) setCurrent(0)
-          break
-        case "End":
-          e.preventDefault()
-          if (view === "open") setPage(maxLeftPage)
-          else if (count) setCurrent(count - 1)
-          break
-      }
-    }
-    window.addEventListener("keydown", onKey, { passive: false })
-    return () => window.removeEventListener("keydown", onKey)
-  }, [
-    count, view, next, prev, turnPage, maxLeftPage,
-    dictOpen, notePanelOpen, fontPanelOpen, fontStylePanelOpen, ttsOpen
-  ])
-
-  // ---------- Drag / swipe ----------
-  const [dragX, setDragX] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const dragActiveRef = useRef(false)
-  const dragStartXRef = useRef(0)
-  const wasDraggingRef = useRef(false as boolean)
-  const pointerIdRef = useRef<number | null>(null)
-
-  // suppress accidental clicks on spread after drag
-  const spreadDownRef = useRef<{ x: number; y: number } | null>(null)
-  const spreadDraggedRef = useRef(false)
-  const SPREAD_CLICK_MOVE_THRESH = 8
-
-  function onSpreadPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    spreadDownRef.current = { x: e.clientX, y: e.clientY }
-    spreadDraggedRef.current = false
-  }
-  function onSpreadPointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    const d = spreadDownRef.current
-    if (!d) return
-    const dx = Math.abs(e.clientX - d.x)
-    const dy = Math.abs(e.clientY - d.y)
-    spreadDraggedRef.current = dx > SPREAD_CLICK_MOVE_THRESH || dy > SPREAD_CLICK_MOVE_THRESH
-    setTimeout(() => { spreadDownRef.current = null; spreadDraggedRef.current = false }, 0)
-  }
-  function onSpreadClickCapture(e: React.MouseEvent<HTMLDivElement>) {
-    if (spreadDraggedRef.current) { e.preventDefault(); e.stopPropagation() }
-  }
-
-  const DRAG_START_THRESH = 6
-  const SWIPE_NAV_THRESH = 60
-
-  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (view === "open") return
-    dragActiveRef.current = true
-    dragStartXRef.current = e.clientX
-    pointerIdRef.current = e.pointerId
-    setIsDragging(false)
-    setDragX(0)
-  }
-  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (view === "open") return
-    if (!dragActiveRef.current) return
-    const dx = e.clientX - dragStartXRef.current
-    setDragX(dx)
-    if (!isDragging && Math.abs(dx) > DRAG_START_THRESH) {
-      wasDraggingRef.current = true
-      const pid = pointerIdRef.current
-      if (pid != null) (e.currentTarget as HTMLDivElement).setPointerCapture(pid)
-      setIsDragging(true)
-    }
-  }
-  function endDrag(e?: React.PointerEvent<HTMLDivElement>) {
-    if (view === "open") return
-    if (!dragActiveRef.current) return
-    dragActiveRef.current = false
-    const pid = pointerIdRef.current
-    if (pid != null && e?.currentTarget?.hasPointerCapture?.(pid)) {
-      e.currentTarget.releasePointerCapture(pid)
-    }
-    const dx = dragX
-    const didSwipe = Math.abs(dx) > SWIPE_NAV_THRESH
-    setIsDragging(false)
-    setDragX(0)
-    pointerIdRef.current = null
-    if (didSwipe) {
-      if (dx < 0) next()
-      else prev()
-    }
-    queueMicrotask(() => { wasDraggingRef.current = false })
-  }
-
-  // Center click (front → back → open → back …)
-  const onCenterClick = (e: React.MouseEvent | React.PointerEvent) => {
-    if (spreadDraggedRef.current) return
-    if (wasDraggingRef.current) return
-    e.stopPropagation()
-    setView((prev) => {
-      const nextView: BookView = prev === "front" ? "back" : prev === "back" ? "open" : "back"
-      if (prev === "back" && nextView === "open") {
-        setPage(0)
-        setIsOpening(true)
-        const OPEN_TOTAL_MS = 800
-        window.setTimeout(() => setIsOpening(false), OPEN_TOTAL_MS)
-      }
-      if ((prev === "front" && nextView === "back") || (prev === "back" && nextView === "front")) {
-        setFlipFading(true)
-        window.setTimeout(() => setFlipFading(false), FLIP_FADE_MS)
-      }
-      return nextView
-    })
-  }
-
-  const toggleLike = useCallback(() => { if (!centerId) return; setLikedById((m) => ({ ...m, [centerId]: !m[centerId] })) }, [centerId])
-  const toggleSave = useCallback(() => { if (!centerId) return; setSavedById((m) => ({ ...m, [centerId]: !m[centerId] })) }, [centerId])
-  const onRate = useCallback((val: number) => { if (!centerId) return; setUserRatingById((m) => ({ ...m, [centerId]: val })) }, [centerId])
-
-  // ---------- Render ----------
-  const canResume =
-    (!!ttsUtterRef.current && window.speechSynthesis?.paused) ||
-    (ttsWasPausedRef.current &&
-    (ttsCharInSegRef.current > 0 ||
-      ttsSegIndexRef.current < (ttsSegmentsRef.current.length || 0)));
   return (
-    <div className="app">
-      {/* Top bar */}
-      <AppHeader
-        menuOpen={menuOpen}
-        onToggleMenu={() => setMenuOpen((o) => !o)}
-        onClickWrite={() => { /* optional: open compose */ }}
-        onClickSearch={() => { /* optional: open search */ }}
-      />
+    <div className="app home3d-root">
+      <AppHeader />
 
-      {/* Stage */}
-      <main
-        className={"carousel" + (isOpenLayout ? " is-opened" : "") + (isOpening ? " is-opening" : "")}
-        role="region"
-        aria-roledescription="carousel"
-        aria-label="Book carousel"
-      >
-        {/* Metadata */}
-        <div className="metadata">
-          <div className="meta-header">
-            <div className="meta-avatar" aria-hidden="true">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-                <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <Link
-              to="/profile"
-              className="meta-username"
-              title={center?.user ?? ""}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {center?.user ?? "Unknown User"}
-            </Link>
-          </div>
-
-          <hr className="meta-hr" />
-
+      <main className="carousel home3d-main">
+        {/* LEFT: metadata – paste your exact old JSX here */}
+        <aside className="metadata">
+          {/* 🔁 REPLACE this block with your original metadata JSX */}
+          <header className="meta-header">
+            <h2 className="meta-title">Title from old metadata</h2>
+            <p className="meta-author">Author / user etc</p>
+          </header>
           <div className="meta-actions">
-            <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />
-            <StarButton rating={combinedRating} userRating={userRating} active={userRating > 0} onRate={onRate} />
-            <SaveButton count={displaySaves} active={saved} onToggle={toggleSave} />
+            <button className="meta-icon-btn like" type="button">
+              <span className="material-symbols-outlined meta-icon-glyph">
+                favorite
+              </span>
+            </button>
+            <button className="meta-icon-btn save" type="button">
+              <span className="material-symbols-outlined meta-icon-glyph">
+                bookmark
+              </span>
+            </button>
           </div>
+        </aside>
 
-          <hr className="meta-hr" />
+        {/* CENTER: 3D stage + reader */}
+        <section className="home3d-stage">
+          <div ref={threeRootRef} className="three-root" />
 
-          <p className="meta-chapters">
-            {(center?.currentChapter ?? 0)}/{center?.totalChapters ?? 0} Chapters
-          </p>
+          {/* Open book container – same IDs/classes as HTML */}
+          <div id="open-book-container" className="open-book-container">
+            <div className="open-book-page" id="page-left" />
+            <div className="open-book-page" id="page-right" />
 
-          <hr className="meta-hr" />
-
-          <ul className="meta-tags">
-            {(center?.tags ?? []).map((t) => <li key={t}>{t}</li>)}
-          </ul>
-        </div>
-
-        {/* Drag layer + cards */}
-        <div
-          className={`drag-layer${isDragging ? " dragging" : ""}` + (view === "open" ? " disabled" : "")}
-          style={{ transform: `translateX(${dragX}px)` }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-          onPointerLeave={endDrag}
-        >
-          {count > 0 && (() => {
-            const order = [
-              { cls: "book left-off-1",  idx: mod(current - 2, count) },
-              { cls: "book left-book",   idx: mod(current - 1, count) },
-              { cls: "book main-book",   idx: mod(current + 0, count) },
-              { cls: "book right-book",  idx: mod(current + 1, count) },
-              { cls: "book right-off-1", idx: mod(current + 2, count) },
-            ]
-            return order.map(({ cls, idx }) => {
-              const b = books[idx]
-              const isCenter = idx === mod(current, count)
-
-              const frontBg = b.coverUrl
-                ? `url("${b.coverUrl}") center/cover no-repeat, #2d2d2d`
-                : "#2d2d2d"
-              const backBg = b.backCoverUrl
-                ? `url("${b.backCoverUrl}") center/cover no-repeat, #2d2d2d`
-                : "#2d2d2d"
-
-              return (
-                <div key={b.id} className={cls} aria-hidden={!isCenter}>
-                  {/* Closed flipper: front/back */}
-                  <div
-                    className={
-                      "book-inner" +
-                      (isCenter && (view === "back" || view === "open") ? " is-flipped" : "") +
-                      (isCenter && view === "open" ? " is-open" : "") +
-                      (isCenter && flipFading ? " flip-fading" : "")
-                    }
-                    onClick={isCenter ? onCenterClick : undefined}
-                    role={isCenter ? "button" : undefined}
-                    aria-label={
-                      isCenter
-                        ? view === "front"
-                          ? "Show back cover"
-                          : view === "back"
-                          ? "Open book"
-                          : "Close book"
-                        : undefined
-                    }
-                    aria-pressed={isCenter ? (view !== "front") : undefined}
-                    tabIndex={-1}
-                  >
-                    {/* FRONT face */}
-                    <div className="book-face book-front">
-                      <div className="face-fill" style={{ background: frontBg }}>
-                        {!b.coverUrl ? b.title : null}
-                      </div>
-                    </div>
-
-                    {/* BACK face */}
-                    <div className="book-face book-back">
-                      <div className="face-fill" style={{ background: backBg }} />
-                    </div>
-                  </div>
-
-                  {/* OPEN spread */}
-                  {isCenter && (
-                    <div
-                      ref={spreadRef}
-                      className={
-                        "spread" +
-                        (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
-                      }
-                      lang="en"
-                      onPointerDown={onSpreadPointerDown}
-                      onPointerUp={onSpreadPointerUp}
-                      onClickCapture={onSpreadClickCapture}
-                      onClick={onCenterClick}
-                      aria-hidden={view !== "open"}
-                      aria-label={view === "open" ? "Close book" : undefined}
-                      style={{
-                        ["--reader-font-scale" as any]: String(FONT_SCALES[fontSizeIndex]),
-                        ["--reader-line" as any]: String(debouncedLH),
-                        ["--reader-font-family" as any]: FONT_STYLES[fontStyleIndex].css,
-                        ["--reader-page-bg" as any]: readerLight ? "#ffffff" : "#2d2d2d",
-                        ["--reader-page-fg" as any]: readerLight ? "#000000" : "#ffffff",
-                        ["--reader-cushion" as any]: `${bottomCushionPx}px`,
-                      }}
-                    >
-                      {/* LEFT pane (even index) */}
-                      <div
-                        ref={paneLeftRef}
-                        className="pane left"
-                        onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(-1) }}
-                      >
-                        {page === 0 ? (
-                          <div className="dedication">
-                            <div className="dedication-text">
-                              {typeof center?.dedication === "string" && center.dedication.trim()
-                                ? center.dedication
-                                : "— Dedication —"}
-                            </div>
-                          </div>
-                        ) : (
-                          (() => {
-                            const localIdx = page - 2
-                            if (localIdx >= 0) {
-                              if (localIdx < flatPages.length) {
-                                return flatPages[localIdx];
-                              }
-                              return (
-                                <div className="chapter-page">
-                                  <div className="chapter-body">
-                                    <p>(Next chapter…)</p>
-                                  </div>
-                                </div>
-                              )
-                            }
-                            return <div className="page-blank" aria-hidden="true" />
-                          })()
-                        )}
-                      </div>
-
-                      {/* RIGHT pane (odd index) */}
-                      <div
-                        ref={paneRightRef}
-                        className="pane right"
-                        onClick={(e) => { e.stopPropagation(); if (view === "open") turnPage(1) }}
-                      >
-                        {page === 0 ? (
-                          <div className="toc">
-                            <h3 className="toc-title">Contents</h3>
-                            <ol className="toc-list">
-                              {chapterTitles.map((t, i) => (
-                                <li key={i}>
-                                  <button
-                                    type="button"
-                                    className="toc-link"
-                                    onClick={(e) => { e.stopPropagation(); gotoChapter(i + 1) }}
-                                    aria-label={`Go to ${t}`}
-                                    title={`Go to ${t}`}
-                                  >
-                                    <span className="toc-chapter">{t}</span>
-                                    <span className="toc-dots" aria-hidden="true">…………………………………………</span>
-                                    <span className="toc-page">
-                                      {startPageOfChapter[i] ?? 2}
-                                    </span>
-                                  </button>
-                                </li>
-                              ))}
-                            </ol>
-                          </div>
-                        ) : (
-                          (() => {
-                            const rightPage = page + 1
-                            const localIdx = rightPage - 2
-                            if (localIdx >= 0) {
-                              if (localIdx < flatPages.length) {
-                                return flatPages[localIdx];
-                              }
-                              return (
-                                <div className="chapter-page">
-                                  <div className="chapter-body">
-                                    <p>(Next chapter…)</p>
-                                  </div>
-                                </div>
-                              )
-                            }
-                            return <div className="page-blank" aria-hidden="true" />
-                          })()
-                        )}
-                      </div>
-
-                      {/* Hidden measurer — must live INSIDE the spread to inherit variables */}
-                      <div ref={probeRef} className="pagination-probe" aria-hidden="true">
-                        <div className="chapter-page">
-                          <h2 className="chapter-title"></h2>
-                          <div className="chapter-body"></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })
-          })()}
-        </div>
-
-        {/* Arrows */}
-        <div className="vertical-arrows">
-          {/* TOP: Next / Page→ */}
-          <button
-            type="button"
-            className="arrow"
-            aria-label={view === "open" ? "Next page" : "Next book"}
-            aria-keyshortcuts="ArrowRight"
-            title={view === "open" ? (atEnd ? "Last page" : "Next page") : "Next"}
-            disabled={view === "open" && atEnd}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation()
-              if (view === "open") turnPage(1)
-              else next()
-              ;(e.currentTarget as HTMLButtonElement).blur()
-            }}
-          >
-            ›
-          </button>
-
-          {/* MIDDLE: Cover (only when OPEN) */}
-          {view === "open" && (
-            <button
-              type="button"
-              className="arrow arrow--cover"
-              aria-label="Return to cover"
-              title="Cover"
-              onMouseDown={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation()
-                returnToCover()
-                ;(e.currentTarget as HTMLButtonElement).blur()
-              }}
-            >
-              ⟲
+            <button id="settings-btn" title="Settings">
+              &#9881;
             </button>
-          )}
-
-          {/* BOTTOM: Prev / Page← */}
-          <button
-            type="button"
-            className="arrow"
-            aria-label={view === "open" ? "Previous page" : "Previous book"}
-            aria-keyshortcuts="ArrowLeft"
-            title={view === "open" ? (atStart ? "First page" : "Previous page") : "Previous"}
-            disabled={view === "open" && atStart}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation()
-              if (view === "open") turnPage(-1)
-              else prev()
-              ;(e.currentTarget as HTMLButtonElement).blur()
-            }}
-          >
-            ‹
-          </button>
-        </div>
-
-        {/* Reader menu (bottom sheet) */}
-        {view === "open" && (
-          <div className={"reader-menu" + (readerMenuOpen ? " is-open" : "")}>
-            <button
-              type="button"
-              className="reader-menu-toggle"
-              aria-label={readerMenuOpen ? "Hide reader menu" : "Show reader menu"}
-              aria-expanded={readerMenuOpen}
-              onClick={(e) => { e.stopPropagation(); setReaderMenuOpen((o) => !o) }}
-            >
-              <span className="reader-menu-chevron" aria-hidden="true">⌃</span>
-            </button>
-
-            <div
-              className="reader-menu-panel"
-              role="menu"
-              aria-hidden={!readerMenuOpen}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="reader-menu-grid">
-                {/* Font & line spacing */}
-                <button
-                  ref={fontBtnRef}
-                  type="button"
-                  className={"reader-menu-item" + (fontPanelOpen ? " is-active" : "")}
-                  role="menuitem"
-                  aria-label="Font & line spacing"
-                  aria-haspopup="dialog"
-                  aria-expanded={fontPanelOpen}
-                  onClick={(e) => { e.stopPropagation(); setFontPanelOpen((o) => !o) }}
-                  style={{ position: "relative" }}
-                >
-                  A
-                  {fontPanelOpen && (
-                    <div
-                      ref={fontPanelRef}
-                      className="reader-popover"
-                      role="dialog"
-                      aria-label="Reading appearance"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="font-size-row" role="radiogroup" aria-label="Font size">
-                        {FONT_SCALES.map((scale, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            className={"font-size-option" + (fontSizeIndex === idx ? " is-active" : "")}
-                            role="radio"
-                            aria-checked={fontSizeIndex === idx}
-                            onClick={() => setFontSizeIndex(idx as 0 | 1 | 2 | 3 | 4)}
-                            title={idx < 2 ? "Smaller" : idx === 2 ? "Default" : "Larger"}
-                          >
-                            <span style={{ fontSize: `${(14 * scale).toFixed(2)}px` }}>A</span>
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="line-height-wrap">
-                        <label className="lh-label" htmlFor="lh-range">Line spacing</label>
-                        <input
-                          id="lh-range"
-                          className="lh-range"
-                          type="range"
-                          min={1.2}
-                          max={2.0}
-                          step={0.05}
-                          value={lineHeight}
-                          onChange={(e) => setLineHeight(parseFloat(e.target.value))}
-                          aria-valuemin={1.2}
-                          aria-valuemax={2.0}
-                          aria-valuenow={lineHeight}
-                        />
-                        <div className="lh-value">{lineHeight.toFixed(2)}×</div>
-                      </div>
-                    </div>
-                  )}
-                </button>
-
-                {/* Font style */}
-                <button
-                  ref={fontStyleBtnRef}
-                  type="button"
-                  className={"reader-menu-item" + (fontStylePanelOpen ? " is-active" : "")}
-                  role="menuitem"
-                  aria-label="Font style"
-                  aria-haspopup="dialog"
-                  aria-expanded={fontStylePanelOpen}
-                  onClick={(e) => { e.stopPropagation(); setFontStylePanelOpen((o) => !o) }}
-                  style={{ position: "relative" }}
-                >
-                  F
-                  {fontStylePanelOpen && (
-                    <div
-                      ref={fontStylePanelRef}
-                      className="reader-popover reader-fontstyle-popover"
-                      role="dialog"
-                      aria-label="Font style"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="font-style-grid">
-                        {FONT_STYLES.map((f, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            className={"font-style-option" + (fontStyleIndex === idx ? " is-active" : "")}
-                            onClick={() => setFontStyleIndex(idx as 0 | 1 | 2 | 3 | 4 | 5)}
-                            title={f.name}
-                            style={{ fontFamily: f.css }}
-                          >
-                            Aa
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </button>
-
-                {/* Light/Dark page */}
-                <button
-                  type="button"
-                  className="reader-menu-item"
-                  role="menuitem"
-                  aria-label={readerLight ? "Switch to dark pages" : "Switch to light pages"}
-                  aria-pressed={readerLight}
-                  onClick={(e) => { e.stopPropagation(); setReaderLight((v) => !v) }}
-                  title={readerLight ? "Dark mode" : "Light mode"}
-                >
-                  {readerLight ? "🌙" : "☀︎"}
-                </button>
-
-                <button
-                  type="button"
-                  className="reader-menu-item"
-                  role="menuitem"
-                  aria-label="Close reader menu"
-                  title="Close"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setReaderMenuOpen(false)
-                  }}
-                >
-                  📖
-                </button>
-
-
-
-
-                {/* Dictionary (single, working) */}
-                <div className="reader-menu-item-wrap">
-                  <button
-                    ref={dictBtnRef}
-                    type="button"
-                    className={"reader-menu-item" + (dictOpen ? " is-active" : "")}
-                    role="menuitem"
-                    aria-label="Dictionary"
-                    aria-haspopup="dialog"
-                    aria-expanded={dictOpen}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setDictOpen((o) => !o)
-                      requestAnimationFrame(() => dictBtnRef.current?.blur())
-                    }}
-                    title="Dictionary"
-                  >
-                    ✍︎
-                  </button>
-
-                  {dictOpen && (
-                    <div
-                      ref={dictPanelRef}
-                      className="reader-popover reader-dict-popover"
-                      role="dialog"
-                      aria-label="Dictionary lookup"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <h3 className="dict-title">Dictionary</h3>
-                      <form className="dict-form" onSubmit={onDictSubmit}>
-                        <input
-                          ref={dictInputRef}
-                          className="dict-input"
-                          type="text"
-                          placeholder="Type a word…"
-                          value={dictQuery}
-                          onChange={(e) => setDictQuery(e.target.value)}
-                          onKeyDown={(e) => e.stopPropagation()}
-                          aria-label="Enter a word"
-                        />
-                        <button className="dict-go" type="submit" disabled={dictLoading || !dictQuery.trim()}>
-                          {dictLoading ? "…" : "Define"}
-                        </button>
-                      </form>
-
-                      <div className="dict-results">
-                        {dictError && <div className="dict-error">{dictError}</div>}
-                        {!dictError && dictResults?.map((en, i) => (
-                          <div key={i} className="dict-entry">
-                            <div className="dict-head">
-                              <span className="dict-word">{en.word}</span>
-                              {en.phonetic && <span className="dict-phon">{en.phonetic}</span>}
-                              {en.partOfSpeech && <span className="dict-pos">{en.partOfSpeech}</span>}
-                            </div>
-                            <ol className="dict-senses">
-                              {en.senses.slice(0, 4).map((s, j) => (
-                                <li key={j}>
-                                  <span className="dict-def">{s.definition}</span>
-                                  {s.example && <div className="dict-eg">“{s.example}”</div>}
-                                </li>
-                              ))}
-                            </ol>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Notepad */}
-                <div className="reader-menu-item-wrap">
-                  <button
-                    ref={noteBtnRef}
-                    type="button"
-                    className="reader-menu-item"
-                    role="menuitem"
-                    aria-label="Notepad"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setNotePanelOpen((o) => !o)
-                      requestAnimationFrame(() => noteBtnRef.current?.blur())
-                    }}
-                  >
-                    📝
-                  </button>
-
-                  {notePanelOpen && (
-                    <div
-                      ref={notePanelRef}
-                      className="reader-popover reader-note-popover"
-                      role="dialog"
-                      aria-label="Notepad"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <h3 className="note-title">Notepad</h3>
-                      <textarea
-                        ref={noteTextareaRef}
-                        className="note-textarea"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        placeholder="Write your notes here…"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* TTS */}
-                <div className="reader-menu-item-wrap">
-                  <button
-                    ref={ttsBtnRef}
-                    type="button"
-                    className={"reader-menu-item" + (ttsOpen ? " is-active" : "")}
-                    role="menuitem"
-                    aria-label="Read Aloud"
-                    aria-haspopup="dialog"
-                    aria-expanded={ttsOpen}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setTtsOpen((o) => !o)
-                      requestAnimationFrame(() => ttsBtnRef.current?.blur())
-                    }}
-                    title="Read Aloud"
-                  >
-                    🔊
-                  </button>
-
-                  {ttsOpen && (
-                    <div
-                      ref={ttsPanelRef}
-                      className="reader-popover reader-tts-popover"
-                      role="dialog"
-                      aria-label="Read Aloud controls"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <h3 className="tts-title">Read Aloud</h3>
-
-                      <div className="tts-controls">
-                        {!tts.speaking && (<button className="tts-btn tts-play" type="button" onClick={playTTS}>Play</button>)}
-                        {tts.speaking && !tts.paused && (<button className="tts-btn tts-pause" type="button" onClick={pauseTTS}>Pause</button>)}
-                        {tts.speaking && tts.paused && (
-                          <button
-                            className="tts-btn tts-resume"
-                            type="button"
-                            onClick={resumeTTS}
-                            disabled={!canResume}
-                            title={!canResume ? "Nothing to resume" : "Resume"}
-                          >
-                            Resume
-                          </button>
-                        )}
-                        <button className="tts-btn tts-stop" type="button" onClick={stopTTS}>Stop</button>
-                      </div>
-
-                      <div className="tts-row">
-                        <label className="tts-label" htmlFor="tts-voice">Voice</label>
-                        <select
-                          id="tts-voice"
-                          className="tts-select"
-                          value={tts.voiceURI || ""}
-                          onChange={(e) => setTts((s) => ({ ...s, voiceURI: e.target.value }))}
-                        >
-                          {voices.map((v) => (
-                            <option key={v.voiceURI} value={v.voiceURI}>
-                              {v.name} {v.lang ? `(${v.lang})` : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="tts-row">
-                        <label className="tts-label" htmlFor="tts-rate">Rate</label>
-                        <input
-                          id="tts-rate"
-                          className="tts-range"
-                          type="range"
-                          min={0.8}
-                          max={1.4}
-                          step={0.05}
-                          value={tts.rate}
-                          onChange={(e) => setTts((s) => ({ ...s, rate: parseFloat(e.target.value) }))}
-                        />
-                        <div className="tts-value">{tts.rate.toFixed(2)}×</div>
-                      </div>
-
-                      <div className="tts-row">
-                        <label className="tts-label" htmlFor="tts-pitch">Pitch</label>
-                        <input
-                          id="tts-pitch"
-                          className="tts-range"
-                          type="range"
-                          min={0.8}
-                          max={1.2}
-                          step={0.05}
-                          value={tts.pitch}
-                          onChange={(e) => setTts((s) => ({ ...s, pitch: parseFloat(e.target.value) }))}
-                        />
-                        <div className="tts-value">{tts.pitch.toFixed(2)}</div>
-                      </div>
-
-                      <p className="tts-hint">Reads the visible pages. Turning pages stops playback.</p>
-                    </div>
-                  )}
-                </div>
+            <div className="settings-menu" id="settings-menu">
+              <div className="slider-group">
+                <label htmlFor="font-size-slider">Font Size</label>
+                <input
+                  type="range"
+                  id="font-size-slider"
+                  min={12}
+                  max={18}
+                  step={1}
+                  defaultValue={14}
+                />
+              </div>
+              <div className="slider-group">
+                <label htmlFor="line-height-slider">Line Height</label>
+                <input
+                  type="range"
+                  id="line-height-slider"
+                  min={1.4}
+                  max={2.0}
+                  step={0.1}
+                  defaultValue={1.6}
+                />
               </div>
             </div>
           </div>
-        )}
+
+          {/* Nav arrows – same structure as HTML */}
+          <div className="nav-container" id="nav-container">
+            <div className="nav-arrow" id="right-arrow" title="Next Page">
+              &rsaquo;
+            </div>
+            <div className="nav-arrow" id="close-book-btn" title="Close Book">
+              &times;
+            </div>
+            <div className="nav-arrow" id="left-arrow" title="Previous Page">
+              &lsaquo;
+            </div>
+          </div>
+        </section>
       </main>
-
-
-      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
-  )
+  );
 }
