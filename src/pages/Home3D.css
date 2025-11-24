@@ -190,7 +190,9 @@
 }
 
 .nav-container.is-open {
-  left: calc(50% + 47.5vh + 30px);
+  left: calc(
+    50% + (var(--book-cover-height) * var(--book-cover-aspect)) + 40px
+  );
 }
 
 .nav-arrow {
@@ -249,4 +251,78 @@
   width: 100%;
   height: 100%;           /* CHANGE: was calc(100vh - 80px) */
   overflow: hidden;
+}
+
+/* Replace this block: */
+.open-book-page {
+  height: 68vh;
+  width: 47.5vh;
+  background-color: #f5f5dc;
+  color: #1a1a1a;
+  padding: 30px 30px 31px;
+  box-sizing: border-box;
+  border: 1px solid #aaa;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* With this: */
+.open-book-page {
+  /* match cover aspect ratio 470 x 675 */
+  height: 68vh;
+  width: calc(68vh * (470 / 675));
+  background-color: #f5f5dc;
+  color: #1a1a1a;
+  padding: 30px 30px 31px;
+  box-sizing: border-box;
+  border: 1px solid #aaa;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Before */
+.nav-container.is-open {
+  left: calc(50% + 47.5vh + 30px);
+}
+
+/* After – keep it in sync with .open-book-page width */
+.nav-container.is-open {
+  left: calc(
+    50% + (var(--book-cover-height) * var(--book-cover-aspect)) + 40px
+  );
+}
+
+/* Root: full viewport height */
+.home3d-root {
+  /* Book cover size controls for the open pages */
+  --book-cover-height: 75vh;      /* tweak this until it visually matches */
+  --book-cover-aspect: 5.7 / 8;   /* width / height (from Three.js bookWidth / bookHeight) */
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.open-book-page {
+  height: var(--book-cover-height);
+  width: calc(var(--book-cover-height) * var(--book-cover-aspect));
+  background-color: #f5f5dc;
+  color: #1a1a1a;
+  padding: 30px 30px 31px;
+  box-sizing: border-box;
+  border: 1px solid #aaa;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }

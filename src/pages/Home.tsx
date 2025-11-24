@@ -81,7 +81,7 @@ export default function Home() {
     let isCarouselMoving = false;
     let targetCarouselX = 0;
 
-    // Your tuned dimensions
+    // Book dimensions / spacing
     const bookWidth = 5.7;
     const bookHeight = 8;
     const bookDepth = 0.55;
@@ -93,13 +93,13 @@ export default function Home() {
 
     const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
 
-    // font settings
+    // font settings for reader
     let currentFontSize = 14;
     let currentLineHeight = 1.6;
 
     // Lazy-loading window:
-    const MAX_LOADED = 30;
-    const CHUNK = 10;
+    const MAX_LOADED = 30; // max number of book meshes kept in memory
+    const CHUNK = 10; // how many we prefetch when approaching an edge
     let windowStart = 0; // inclusive logical index
     let windowEnd = Math.min(CHUNK - 1, numBooks - 1); // inclusive
     let lastDirection: 1 | -1 | 0 = 0;
@@ -107,6 +107,10 @@ export default function Home() {
     // Mesh storage: by logical index + active list
     const bookMeshesByIndex: (THREE.Mesh | null)[] = Array(numBooks).fill(null);
     let activeBooks: THREE.Mesh[] = [];
+
+    // Queues for smooth loading/unloading
+    let loadQueue: number[] = [];
+    let unloadQueue: number[] = [];
 
     // Shared THREE helpers
     const textureLoader = new THREE.TextureLoader();
@@ -179,7 +183,7 @@ Everyone turned their fingers away from my face as we all immediately turned our
 I, myself, saw Kind kissing Names on the mouth.`;
 
     /* ------------------------------------------------------------------
-       Helpers copied from your HTML
+       Helpers
     ------------------------------------------------------------------ */
 
     function createSpineTexture(
@@ -227,7 +231,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
     }
 
     /* ------------------------------------------------------------------
-       THREE setup + book creation
+       THREE setup + book creation (queued)
     ------------------------------------------------------------------ */
 
     function createBookMesh(index: number): THREE.Mesh {
@@ -292,27 +296,40 @@ I, myself, saw Kind kissing Names on the mouth.`;
       return book;
     }
 
-    function ensureBookLoaded(index: number) {
+    function ensureBookLoaded(index: number, immediate = false) {
       if (index < 0 || index >= numBooks) return;
       if (bookMeshesByIndex[index]) return;
-      createBookMesh(index);
+
+      if (immediate) {
+        createBookMesh(index);
+      } else {
+        if (!loadQueue.includes(index)) {
+          loadQueue.push(index);
+        }
+      }
     }
 
     function unloadBook(index: number) {
       if (index < 0 || index >= numBooks) return;
       const book = bookMeshesByIndex[index];
       if (!book) return;
+
       carouselGroup.remove(book);
       activeBooks = activeBooks.filter((b) => b !== book);
-      // (optional) dispose geometry/materials here
+
+      // NOTE: disposing geometry/materials is optional; you can add it if needed.
+      // (Geometry/material disposal can also be queued if you see a hitch.)
+      // book.geometry.dispose();
+      // (book.material as THREE.Material | THREE.Material[]);
+
       bookMeshesByIndex[index] = null;
     }
 
-    function ensureRangeLoaded(start: number, end: number) {
+    function ensureRangeLoaded(start: number, end: number, immediate = false) {
       const s = Math.max(0, start);
       const e = Math.min(numBooks - 1, end);
       for (let i = s; i <= e; i++) {
-        ensureBookLoaded(i);
+        ensureBookLoaded(i, immediate);
       }
     }
 
@@ -341,17 +358,17 @@ I, myself, saw Kind kissing Names on the mouth.`;
     }
 
     function adjustWindow() {
-      // Always make sure center and its neighbors are loaded
+      // Always ensure center and its neighbors are loaded (queued)
       ensureRangeLoaded(currentCenterIndex - 1, currentCenterIndex + 1);
 
-      // Moving near the right side of window: prefetch next CHUNK to the right
+      // Approaching right edge → prefetch to the right (queued)
       if (currentCenterIndex >= windowEnd - 3 && windowEnd < numBooks - 1) {
         const newEnd = Math.min(windowEnd + CHUNK, numBooks - 1);
         ensureRangeLoaded(windowEnd + 1, newEnd);
         windowEnd = newEnd;
       }
 
-      // Moving near the left side of window: prefetch previous CHUNK to the left
+      // Approaching left edge → prefetch to the left (queued)
       if (currentCenterIndex <= windowStart + 3 && windowStart > 0) {
         const newStart = Math.max(windowStart - CHUNK, 0);
         ensureRangeLoaded(newStart, windowStart - 1);
@@ -383,8 +400,8 @@ I, myself, saw Kind kissing Names on the mouth.`;
       carouselGroup = new THREE.Group();
       scene.add(carouselGroup);
 
-      // Initial lazy window: 10 books (0..9)
-      ensureRangeLoaded(windowStart, windowEnd);
+      // Initial window: load immediately so first view is ready
+      ensureRangeLoaded(windowStart, windowEnd, true);
 
       targetCarouselX = carouselGroup.position.x;
       updateBookProperties(true);
@@ -548,52 +565,42 @@ I, myself, saw Kind kissing Names on the mouth.`;
       const sideScale = 1.2;
       const outerScale = 1.0;
 
-      // Wrap currentCenterIndex into [0, numBooks)
       const wrappedCenter =
         ((currentCenterIndex % numBooks) + numBooks) % numBooks;
 
       for (let i = 0; i < numBooks; i++) {
         const book = bookMeshesByIndex[i];
-        if (!book) continue; // not loaded yet / has been unloaded
+        if (!book) continue;
 
-        // Circular distance on the ring of numBooks
         const diff = Math.abs(i - wrappedCenter);
         const distance = Math.min(diff, numBooks - diff);
 
         let newScale = outerScale;
         if (distance === 0) {
-          newScale = centerScale; // center book
+          newScale = centerScale;
         } else if (distance === 1) {
-          newScale = sideScale; // immediate neighbours
+          newScale = sideScale;
         }
 
-        // Any non-center book that was flipped → reset to front
         if (distance !== 0 && book.rotation.y !== 0) {
           book.userData.targetRotation = 0;
           book.userData.isFlipping = true;
         }
 
         if (isInitial) {
-          // First frame: snap everything to correct scale, no animation
           book.scale.set(newScale, newScale, newScale);
           book.userData.targetScale = newScale;
           book.userData.isScaling = false;
         } else {
           if (distance === 0) {
-            // Only the center book animates scale
             book.userData.targetScale = newScale;
             book.userData.isScaling = true;
           } else {
-            // Side + outer: snap scale, no animation
             book.scale.set(newScale, newScale, newScale);
             book.userData.targetScale = newScale;
             book.userData.isScaling = false;
           }
         }
-
-        // IMPORTANT: we NEVER touch book.visible here.
-        // Loaded books remain visible so they naturally slide out of frame
-        // as the carouselGroup moves, instead of popping away.
       }
     }
 
@@ -609,6 +616,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
       currentCenterIndex--;
       targetCarouselX += bookSpacing;
 
+      // Only window adjustment & property updates here; heavy work is queued
       adjustWindow();
       updateBookProperties();
     }
@@ -893,7 +901,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
     }
 
     /* ------------------------------------------------------------------
-       Animation loop
+       Animation loop (with load/unload queue processing)
     ------------------------------------------------------------------ */
 
     const slowEase = 0.02;
@@ -903,16 +911,32 @@ I, myself, saw Kind kissing Names on the mouth.`;
     function animate() {
       rafId = requestAnimationFrame(animate);
 
+      // 0) Process queued loads/unloads in small batches to avoid frame spikes
+      const MAX_LOADS_PER_FRAME = 2;
+      const MAX_UNLOADS_PER_FRAME = 4;
+
+      let loadsThisFrame = 0;
+      while (loadsThisFrame < MAX_LOADS_PER_FRAME && loadQueue.length > 0) {
+        const idx = loadQueue.shift()!;
+        createBookMesh(idx);
+        loadsThisFrame++;
+      }
+
+      let unloadsThisFrame = 0;
+      while (unloadsThisFrame < MAX_UNLOADS_PER_FRAME && unloadQueue.length > 0) {
+        const idx = unloadQueue.shift()!;
+        unloadBook(idx);
+        unloadsThisFrame++;
+      }
+
       if (isBookOpen) {
         // Book opened → slide neighbours away (no carousel moves)
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
-            // Slide to target X
             book.position.x +=
               (book.userData.targetSlideX - book.position.x) * slowEase;
 
-            // Scale down to targetSlideScale
             const s = book.scale.x;
             const targetS = book.userData.targetSlideScale;
             const newS = s + (targetS - s) * slowEase;
@@ -926,7 +950,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
       } else {
         // --- CLOSED STATE: carousel + flip + center scale ---
 
-        // 1) Flip animation for any book with isFlipping
+        // 1) Flip animation
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isFlipping) {
@@ -950,19 +974,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
           if (Math.abs(targetCarouselX - carouselGroup.position.x) < 0.01) {
             carouselGroup.position.x = targetCarouselX;
             isCarouselMoving = false;
-
-            // (loop logic kept, but moveLeft/Right already clamp indexes)
-            if (currentCenterIndex < 0) {
-              currentCenterIndex = numBooks - 1;
-              targetCarouselX =
-                -(currentCenterIndex - INITIAL_CENTER_INDEX) * bookSpacing;
-              carouselGroup.position.x = targetCarouselX;
-            } else if (currentCenterIndex >= numBooks) {
-              currentCenterIndex = 0;
-              targetCarouselX =
-                -(currentCenterIndex - INITIAL_CENTER_INDEX) * bookSpacing;
-              carouselGroup.position.x = targetCarouselX;
-            }
           }
         }
 
@@ -1022,9 +1033,8 @@ I, myself, saw Kind kissing Names on the mouth.`;
       <AppHeader />
 
       <main className="carousel home3d-main">
-        {/* LEFT: metadata – paste your exact old JSX here */}
+        {/* LEFT: metadata – keep your real JSX here */}
         <aside className="metadata">
-          {/* 🔁 REPLACE this block with your original metadata JSX */}
           <header className="meta-header">
             <h2 className="meta-title">Title from old metadata</h2>
             <p className="meta-author">Author / user etc</p>
@@ -1047,7 +1057,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
         <section className="home3d-stage">
           <div ref={threeRootRef} className="three-root" />
 
-          {/* Open book container – same IDs/classes as HTML */}
           <div id="open-book-container" className="open-book-container">
             <div className="open-book-page" id="page-left" />
             <div className="open-book-page" id="page-right" />
@@ -1081,7 +1090,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
             </div>
           </div>
 
-          {/* Nav arrows – same structure as HTML */}
           <div className="nav-container" id="nav-container">
             <div className="nav-arrow" id="right-arrow" title="Next Page">
               &rsaquo;
