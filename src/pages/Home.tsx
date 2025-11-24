@@ -239,6 +239,10 @@ I, myself, saw Kind kissing Names on the mouth.`;
       const frontTexture = textureLoader.load(coverMeta.front);
       const backTexture = textureLoader.load(coverMeta.back);
 
+      // Make sure colors are correct, not washed/over-bright
+      frontTexture.colorSpace = THREE.SRGBColorSpace;
+      backTexture.colorSpace = THREE.SRGBColorSpace;
+
       backTexture.wrapS = THREE.RepeatWrapping;
       backTexture.repeat.x = -1;
       backTexture.center.set(0.5, 0.5);
@@ -252,6 +256,10 @@ I, myself, saw Kind kissing Names on the mouth.`;
         spineCanvasHeight,
         spineColor
       );
+
+      // Spine is also “color” (not lighting) so mark it as sRGB
+      spineTexture.colorSpace = THREE.SRGBColorSpace;
+
 
       const frontCoverMaterial = new THREE.MeshBasicMaterial({
         map: frontTexture,
@@ -391,6 +399,9 @@ I, myself, saw Kind kissing Names on the mouth.`;
       camera.lookAt(0, 0, 0);
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.NoToneMapping;
+      renderer.toneMappingExposure = 1;
       renderer.setSize(w, h);
       root.appendChild(renderer.domElement);
 
