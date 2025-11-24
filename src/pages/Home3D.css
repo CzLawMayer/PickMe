@@ -35,20 +35,8 @@
   height: 100%;
 }
 
-/* Metadata now overlays on top instead of reserving a column */
-.home3d-main .metadata {
-  position: absolute;
-  top: 96px;             /* sits below AppHeader – tweak if needed */
-  left: 40px;            /* your usual side padding */
-  max-width: 360px;
-  z-index: 5;
-}
 
-/* Keep your existing metadata typography etc. from Home.css */
-.home3d-main .metadata .meta-header,
-.home3d-main .metadata .meta-actions {
-  /* all your previous styles still apply */
-}
+
 
 /* Open book container – as in your HTML version */
 .open-book-container {
@@ -325,4 +313,56 @@
   font-size: 14px;
   line-height: 1.6;
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.open-book-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  z-index: 20;
+
+  /* Start a bit to the right and slightly smaller, like a book sliding in */
+  transform: translate(-20%, -50%) scale(0.9);
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    transform 0.55s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.35s ease-out;
+  perspective: 1200px;
+}
+
+.open-book-container.is-open {
+  /* Now perfectly centered and full size */
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.home3d-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #0f0f10; /* new */
+}
+
+.home3d-stage {
+  background-color: #0f0f10; /* so any gaps match the canvas */
+}
+
+/* Metadata pinned on the left, vertically centered */
+.home3d-main .metadata {
+  position: absolute;
+  top: 50%;
+  left: 410px; /* base position on the left side */
+  transform: translateY(-50%);
+  max-width: 360px;
+  z-index: 5;
+  transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* When the book opens, slide the metadata further left (out of the way) */
+.home3d-main .metadata.is-open {
+  left: -360px; /* pushes the whole panel off-screen to the left */
 }

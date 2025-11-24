@@ -1,5 +1,4 @@
-// src/pages/Home.tsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 import AppHeader from "@/components/AppHeader";
@@ -8,10 +7,30 @@ import { sampleBooks } from "@/booksData";
 import "./Home.css";
 import "./Home3D.css";
 
+import { Link } from "react-router-dom";
+import LikeButton from "@/components/LikeButton";
+import SaveButton from "@/components/SaveButton";
+import StarButton from "@/components/StarButton";
+
 type BookSpread = { left: string; right: string };
 
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
+
+  // 🔹 Minimal metadata state so the JSX works
+  const center = sampleBooks[0]; // just show the first book for now
+
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+
+  const combinedRating = 0;   // or center?.rating ?? 0 if you have it
+  const displayLikes = 0;     // you can wire real data later
+  const displaySaves = 0;
+
+  const toggleLike = () => setLiked(v => !v);
+  const toggleSave = () => setSaved(v => !v);
+  const onRate = (value: number) => setUserRating(value);
 
   useEffect(() => {
     const root = threeRootRef.current;
@@ -151,7 +170,9 @@ export default function Home() {
     const closeBookBtn = document.getElementById(
       "close-book-btn"
     ) as HTMLDivElement | null;
-
+    const metadataPanel = document.getElementById(
+      "metadata-panel"
+    ) as HTMLDivElement | null;
     if (!openBookContainer || !pageLeft || !pageRight || !navContainer) {
       console.warn("Reader DOM elements not found.");
       return;
@@ -388,7 +409,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
 
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x1a1a1a);
+      scene.background = new THREE.Color(0x0f0f10);
 
       const w = root.clientWidth || window.innerWidth;
       const h = root.clientHeight || window.innerHeight;
@@ -694,6 +715,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
 
       navContainer!.classList.add("is-open");
       openBookContainer.classList.add("is-open");
+      metadataPanel?.classList.add("is-open");
       isBookOpen = true;
     }
 
@@ -705,6 +727,8 @@ I, myself, saw Kind kissing Names on the mouth.`;
 
       openBookContainer.classList.remove("is-open");
       navContainer!.classList.remove("is-open");
+      metadataPanel?.classList.remove("is-open");
+
 
       void openBookContainer.offsetWidth;
 
@@ -1044,25 +1068,72 @@ I, myself, saw Kind kissing Names on the mouth.`;
       <AppHeader />
 
       <main className="carousel home3d-main">
-        {/* LEFT: metadata – keep your real JSX here */}
-        <aside className="metadata">
-          <header className="meta-header">
-            <h2 className="meta-title">Title from old metadata</h2>
-            <p className="meta-author">Author / user etc</p>
-          </header>
-          <div className="meta-actions">
-            <button className="meta-icon-btn like" type="button">
-              <span className="material-symbols-outlined meta-icon-glyph">
-                favorite
-              </span>
-            </button>
-            <button className="meta-icon-btn save" type="button">
-              <span className="material-symbols-outlined meta-icon-glyph">
-                bookmark
-              </span>
-            </button>
+        {/* Metadata */}
+        <div className="metadata" id="metadata-panel">
+          <div className="meta-header">
+            <div className="meta-avatar" aria-hidden="true">
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                <path
+                  d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+            <Link
+              to="/profile"
+              className="meta-username"
+              title={center?.user ?? ""}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {center?.user ?? "Unknown User"}
+            </Link>
           </div>
-        </aside>
+
+          <hr className="meta-hr" />
+
+          <div className="meta-actions">
+            <LikeButton
+              count={displayLikes}
+              active={liked}
+              onToggle={toggleLike}
+            />
+            <StarButton
+              rating={combinedRating}
+              userRating={userRating}
+              active={userRating > 0}
+              onRate={onRate}
+            />
+            <SaveButton
+              count={displaySaves}
+              active={saved}
+              onToggle={toggleSave}
+            />
+          </div>
+
+          <hr className="meta-hr" />
+
+          <p className="meta-chapters">
+            {(center?.currentChapter ?? 0)}/{center?.totalChapters ?? 0} Chapters
+          </p>
+
+          <hr className="meta-hr" />
+
+          <ul className="meta-tags">
+            {(center?.tags ?? []).map((t: string) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </div>
 
         {/* CENTER: 3D stage + reader */}
         <section className="home3d-stage">
