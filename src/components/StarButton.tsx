@@ -22,12 +22,15 @@ export default function StarButton({
   active = false,
   onRate,
 }: StarButtonProps) {
-  const [open, setOpen] = useState(false)
-  const [hoverValue, setHoverValue] = useState<number | null>(null)
-  const btnRef = useRef<HTMLButtonElement | null>(null)
-  const popRef = useRef<HTMLDivElement | null>(null)
+  const [open, setOpen] = useState(false);
+  const [hoverValue, setHoverValue] = useState<number | null>(null);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const popRef = useRef<HTMLDivElement | null>(null);
 
-  const displayRating = coerceRating(rating)
+  // 🔁 use userRating if present, otherwise fall back to book's rating
+  const displayRating = coerceRating(rating);
+
+
 
   useEffect(() => {
     if (!open) return

@@ -22,21 +22,79 @@ export default function Home() {
   const [centerIndex, setCenterIndex] = useState(0);
   const centerIndexRef = useRef(0);
 
+  // --- NEW: per-book UI state (one slot per book) ---
+  const [likesByBook, setLikesByBook] = useState<boolean[]>(() =>
+    sampleBooks.map(() => false)
+  );
+  const [savesByBook, setSavesByBook] = useState<boolean[]>(() =>
+    sampleBooks.map(() => false)
+  );
+  const [ratingsByBook, setRatingsByBook] = useState<number[]>(() =>
+    sampleBooks.map(() => 0)
+  );
+
   // Convenience: the "current" book data from booksData
   const centerBook = sampleBooks[centerIndex] ?? sampleBooks[0];
 
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [userRating, setUserRating] = useState(0);
+  // Derived UI state for the current center book
+  const liked = likesByBook[centerIndex] ?? false;
+  const saved = savesByBook[centerIndex] ?? false;
+  const userRating = ratingsByBook[centerIndex] ?? 0;
 
-  // All metadata numbers wired from booksData
-  const combinedRating = Number(centerBook?.rating ?? 0);
-  const displayLikes = centerBook?.likes ?? 0;
-  const displaySaves = centerBook?.bookmarks ?? 0;
+  // Base metadata from booksData
+  // Base metadata from booksData
+  const rawRating = centerBook?.rating;
+  const baseRating =
+    typeof rawRating === "string"
+      ? parseFloat(String(rawRating).split("/")[0] || "0")
+      : Number(rawRating ?? 0);
 
-  const toggleLike = () => setLiked(v => !v);
-  const toggleSave = () => setSaved(v => !v);
-  const onRate = (value: number) => setUserRating(value);
+  const votesRaw = centerBook?.ratingCount ?? 0;
+  const votes = Number.isFinite(Number(votesRaw)) ? Number(votesRaw) : 0;
+  const PRIOR_VOTES = 20;
+
+  // Blend the book's rating with your rating (per book)
+  const combinedRating =
+    userRating > 0
+      ? votes > 0
+        ? (baseRating * votes + userRating) / (votes + 1)
+        : baseRating > 0
+        ? (baseRating * PRIOR_VOTES + userRating) / (PRIOR_VOTES + 1)
+        : userRating
+      : baseRating;
+
+  const baseLikes = centerBook?.likes ?? 0;
+  const baseSaves = centerBook?.bookmarks ?? 0;
+
+  // What we actually display in the UI
+  const displayLikes = baseLikes + (liked ? 1 : 0);
+  const displaySaves = baseSaves + (saved ? 1 : 0);
+
+
+  // --- NEW: per-book handlers use the current index ---
+  const toggleLike = () => {
+    setLikesByBook(prev => {
+      const next = [...prev];
+      next[centerIndex] = !next[centerIndex];
+      return next;
+    });
+  };
+
+  const toggleSave = () => {
+    setSavesByBook(prev => {
+      const next = [...prev];
+      next[centerIndex] = !next[centerIndex];
+      return next;
+    });
+  };
+
+  const onRate = (value: number) => {
+    setRatingsByBook(prev => {
+      const next = [...prev];
+      next[centerIndex] = value;
+      return next;
+    });
+  };
 
   useEffect(() => {
     const root = threeRootRef.current;
