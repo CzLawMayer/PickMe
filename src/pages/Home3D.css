@@ -362,13 +362,13 @@
 /* Closed state: anchor to the left of the center book */
 .home3d-main .metadata {
   position: absolute;
-  top: 48%;
+  top: 45%;
   /* "left" is the X of the metadata's RIGHT edge because of translate(-100%, -50%) */
   left: calc(50% - var(--book-page-width) - var(--meta-gap-closed));
   transform: translate(-100%, -50%);
   z-index: 15;
   max-width: 360px;
-  width: auto;
+  width: 200px;
   box-sizing: border-box;
   transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -378,3 +378,21 @@
   left: calc(50% - var(--book-page-width) - var(--meta-gap-open));
 }
 
+.home3d-main .metadata {
+  position: absolute;
+  top: 48%;  /* desktop / tall screens */
+  /* "left" is the X of the metadata's RIGHT edge because of translate(-100%, -50%) */
+  left: calc(50% - var(--book-page-width) - var(--meta-gap-closed));
+  transform: translate(-100%, -50%);
+  z-index: 15;
+  width: 200px;           /* your fixed width */
+  box-sizing: border-box;
+  transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* On shorter viewports (typical laptops), move it slightly up */
+@media (max-height: 800px) {
+  .home3d-main .metadata {
+    top: 45%;
+  }
+}

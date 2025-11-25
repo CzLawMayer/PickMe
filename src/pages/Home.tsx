@@ -1,3 +1,4 @@
+// src/pages/Home.tsx
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -17,19 +18,24 @@ type BookSpread = { left: string; right: string };
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
-  // 🔹 Minimal metadata state so the JSX works
-  const center = sampleBooks[0]; // just show the first book for now
+  // Which book is currently in the center of the carousel
+  const [centerIndex, setCenterIndex] = useState(0);
+  const centerIndexRef = useRef(0);
+
+  // Convenience: the "current" book data from booksData
+  const centerBook = sampleBooks[centerIndex] ?? sampleBooks[0];
 
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [userRating, setUserRating] = useState(0);
 
-  const combinedRating = 0;   // or center?.rating ?? 0 if you have it
-  const displayLikes = 0;     // you can wire real data later
-  const displaySaves = 0;
+  // All metadata numbers wired from booksData
+  const combinedRating = Number(centerBook?.rating ?? 0);
+  const displayLikes = centerBook?.likes ?? 0;
+  const displaySaves = centerBook?.bookmarks ?? 0;
 
-  const toggleLike = () => setLiked(v => !v);
-  const toggleSave = () => setSaved(v => !v);
+  const toggleLike = () => setLiked((v) => !v);
+  const toggleSave = () => setSaved((v) => !v);
   const onRate = (value: number) => setUserRating(value);
 
   useEffect(() => {
@@ -47,7 +53,7 @@ export default function Home() {
     let raycaster: THREE.Raycaster;
     let mouse: THREE.Vector2;
 
-    // Books from data
+    // Books from booksData: covers + titles
     const bookCovers =
       sampleBooks.length > 0
         ? sampleBooks.map((b, index) => ({
@@ -55,50 +61,30 @@ export default function Home() {
               b.coverUrl ||
               `https://placehold.co/470x675/222222/f0f0f0?text=Book+${index + 1}`,
             back:
-              (b.backCoverUrl as string | undefined) ||
+              (b as any).backCoverUrl ||
               `https://placehold.co/470x675/111111/f0f0f0?text=Back`,
             title: b.title || `Book ${index + 1}`,
           }))
-        : [
-            {
-              front:
-                "https://placehold.co/470x675/660000/f0f0f0?text=Book+1+Cover",
-              back: "https://placehold.co/470x675/4d0000/f0f0f0?text=Book+1+Back",
-              title: "The First Book",
-            },
-            {
-              front:
-                "https://placehold.co/470x675/003366/f0f0f0?text=Book+2+Cover",
-              back: "https://placehold.co/470x675/002244/f0f0f0?text=Book+2+Back",
-              title: "A Second Story",
-            },
-            {
-              front:
-                "https://placehold.co/470x675/004d00/f0f0f0?text=Book+3+Cover",
-              back: "https://placehold.co/470x675/003300/f0f0f0?text=Book+3+Back",
-              title: "Book 3: The Middle",
-            },
-            {
-              front:
-                "https://placehold.co/470x675/4d2600/f0f0f0?text=Book+4+Cover",
-              back: "https://placehold.co/470x675/331a00/f0f0f0?text=Book+4+Back",
-              title: "Everything to Get More",
-            },
-            {
-              front:
-                "https://placehold.co/470x675/330033/f0f0f0?text=Book+5+Cover",
-              back: "https://placehold.co/470x675/220022/f0f0f0?text=Book+5+Back",
-              title: "Book Five",
-            },
-          ];
+        : [];
 
     const numBooks = bookCovers.length;
     if (numBooks === 0) return;
 
     const INITIAL_CENTER_INDEX = 0;
-    let currentCenterIndex = Math.min(INITIAL_CENTER_INDEX, numBooks - 1);
+    // Use ref-backed value so we can sync with React state
+    centerIndexRef.current = INITIAL_CENTER_INDEX;
+    let currentCenterIndex = centerIndexRef.current;
+
     let isCarouselMoving = false;
     let targetCarouselX = 0;
+
+    // Helper so any change to currentCenterIndex also updates React state
+    function setCenter(newIndex: number) {
+      const clamped = Math.max(0, Math.min(numBooks - 1, newIndex));
+      currentCenterIndex = clamped;
+      centerIndexRef.current = clamped;
+      setCenterIndex(clamped);
+    }
 
     // Book dimensions / spacing
     const bookWidth = 5.7;
@@ -117,10 +103,10 @@ export default function Home() {
     let currentLineHeight = 1.6;
 
     // Lazy-loading window:
-    const MAX_LOADED = 30; // max number of book meshes kept in memory
-    const CHUNK = 10; // how many we prefetch when approaching an edge
-    let windowStart = 0; // inclusive logical index
-    let windowEnd = Math.min(CHUNK - 1, numBooks - 1); // inclusive
+    const MAX_LOADED = 30;
+    const CHUNK = 10;
+    let windowStart = 0;
+    let windowEnd = Math.min(CHUNK - 1, numBooks - 1);
     let lastDirection: 1 | -1 | 0 = 0;
 
     // Mesh storage: by logical index + active list
@@ -136,7 +122,7 @@ export default function Home() {
     const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
 
     /* ------------------------------------------------------------------
-       DOM refs (same ids as your HTML)
+       DOM refs
     ------------------------------------------------------------------ */
 
     const openBookContainer = document.getElementById(
@@ -173,35 +159,11 @@ export default function Home() {
     const metadataPanel = document.getElementById(
       "metadata-panel"
     ) as HTMLDivElement | null;
+
     if (!openBookContainer || !pageLeft || !pageRight || !navContainer) {
       console.warn("Reader DOM elements not found.");
       return;
     }
-
-    /* ------------------------------------------------------------------
-       Chapter text (same as before)
-    ------------------------------------------------------------------ */
-
-    const chapter1Text = `My name is Names.
-I was found alone in the middle of a tulip field, with a name tag naming me “Names.” I was told my body was so cold that my skin was blue. Later, when I was four, I was adopted by a woman who wasn’t ready to have a daughter and whom I never called mother. We grew up in a silent house. There, I found that silence brings thinking into the human mind, and that thinking takes you to weird places.
-I was eighteen when I moved to Austria to study psychology, hoping I would learn something about myself. I learned nothing about myself, but learned everything about my three best friends, Archie, Kind, and Memory.
-Every night during the last month before our graduation, my friends, their friends, and I gathered in Memory’s apartment to try to hold on to our adolescence. We were terrified. One week before the announced date, we gathered to watch the video of the first presentation the four of us ever did together. We were supposed to talk about world hunger, but got so drunk the night prior that we had to present wearing sunglasses. We failed, but we were by far the coolest. As we laughed about it, I looked at my face in that video and I didn’t recognize myself. I didn’t know who I was then, and I still didn’t know who I was at that moment. I always worried I wouldn’t be able to make friends, but those videos made all of my friends cry and hug me tenderly. Still, somehow, I felt like I felt like I didn’t belong with those friends who knew everything about my past, my present, and my future.
-I didn’t know where my life was headed. I had spent the past year wishing for university to be over, just to be held as a coward the moment a date for graduation was announced. I was stuck in place as everyone fled away from me, because everyone somehow decided they were adults and that they could figure out how to get a job. Everyone except for Kind, who simply couldn’t find a job as an art major.
-Kind, no pun intended, was a kind man. He was a year younger than the rest of us, and we always treated him as such. Even though he was a silent person, as silent as one can be, everyone could notice that his heart was filled with passion and emotion. He loved movies more than anything, and he was always somehow invested in one of those “we are getting married and having babies” type of relationships with some poor girl who would get her heart irremediably broken by his lack of direction towards life. He never worried about anything, which I admired to a degree. Everyone always came to him for advice, despite his age, and even though his advice always came down to “don’t worry,” he said it with such confidence and earnestness that you couldn’t help not to stop worrying.
-“Are you having fun?” he asked me after I didn’t laugh when everyone else did. He had a comfortable soul; people always told him their deepest secrets and worries without even realizing it, and I was no different.
-“I think?” I said bluntly as my voice cracked. “I don’t know, Kind. I feel like I flew away with the millions of tons of cigarette ash that we covered the campus with over these four years. I feel like I’m going to disappear.”
-“You are not having fun,” he said.`;
-
-    const chapter2Text = `My name is Memory.
-My mom died giving birth to me. I was told that she held me tightly, covered in her blood, and cried out, “Me morí,” which means “I died” in Spanish. Those were her last words. “Me morí” sounds like “Memory,” and that was the twisted reasoning my father had when choosing my name, right before clogging the exhaust of our car with a wet towel and attempting to suffocate us both. I was the only survivor.
-Growing up, I never had any friends. But at university, Kind became my first friend. I don’t think I was his best friend, but he for sure was mine. We met on the first day of classes when our Art History professor asked us to get in pairs and get to know each other. I’ll forever be thankful for that professor’s life, because God knows I would have spent the next four years of my life alone if it wasn’t for that one conversation. Kind was a silent person, as silent as one can be, but people just seemed to gravitate towards his indifference towards the world and its pain. Everything was simply better when he was around. He had such a comfortable soul.
-Kind yearned for romance, while I, myself, wasn’t really the relationship kind of guy. Every year, he would somehow survive a “we’re going to get married and have babies” relationship that would last about five or six months, tops. After the breakups, driven by grief and his relentless spirit to find love, we would spend the remaining months of the year hunting for romance, quite unsuccessfully most of the time.
-Regardless of how many girls we fell for every single week, my heart always belonged to Names. I caught glimpses of her eyes everywhere I went after I first saw them four years ago, and everywhere I went I thought she was beautiful. I somehow and somewhat belonged to her. Kind, trying to help me ask her out, joined us three and Archie to give a presentation about world hunger on our first week at university. However, that only chained me eternally to her as a friend. As the years passed by, my friendship with her grew larger, but the shyness of my love grew even larger as well, to the point I simply couldn’t endure the idea of her eventually treating me like a stranger when we’d inevitably break up after graduation.
-One terrible evening inside my apartment, one week before our graduation, her pretty laugh, coming from downstairs, woke me up.
-I hazily walked down the stairs in my pijamas. My three P.M. nap had turned my day into night, and Kind had taken the liberty of gathering the whole friend group inside my apartment to watch the video of our terrible first presentation and cry about it. As I stepped into the kitchen, Archie graciously and promptly pointed out that I was wearing pijamas at eight P.M. and brought the community together to ridicule me. But hey, at least they ordered pizza.
-“Guys? Guys! They are saying that aliens are real!” shouted Alex suddenly. “On the news!”
-Everyone turned their fingers away from my face as we all immediately turned our heads to see the news. All my friends saw pictures of UFOs, mass terror, and neon lights in the skies.
-I, myself, saw Kind kissing Names on the mouth.`;
 
     /* ------------------------------------------------------------------
        Helpers
@@ -252,7 +214,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
     }
 
     /* ------------------------------------------------------------------
-       THREE setup + book creation (queued)
+       THREE setup + book creation
     ------------------------------------------------------------------ */
 
     function createBookMesh(index: number): THREE.Mesh {
@@ -260,7 +222,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
       const frontTexture = textureLoader.load(coverMeta.front);
       const backTexture = textureLoader.load(coverMeta.back);
 
-      // Make sure colors are correct, not washed/over-bright
       frontTexture.colorSpace = THREE.SRGBColorSpace;
       backTexture.colorSpace = THREE.SRGBColorSpace;
 
@@ -277,10 +238,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
         spineCanvasHeight,
         spineColor
       );
-
-      // Spine is also “color” (not lighting) so mark it as sRGB
       spineTexture.colorSpace = THREE.SRGBColorSpace;
-
 
       const frontCoverMaterial = new THREE.MeshBasicMaterial({
         map: frontTexture,
@@ -345,12 +303,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
 
       carouselGroup.remove(book);
       activeBooks = activeBooks.filter((b) => b !== book);
-
-      // NOTE: disposing geometry/materials is optional; you can add it if needed.
-      // (Geometry/material disposal can also be queued if you see a hitch.)
-      // book.geometry.dispose();
-      // (book.material as THREE.Material | THREE.Material[]);
-
       bookMeshesByIndex[index] = null;
     }
 
@@ -369,8 +321,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
       const over = loadedCount - MAX_LOADED;
       const toDrop = Math.min(CHUNK, over);
 
-      // If moving right or neutral, drop from left.
-      // If moving left, drop from right.
       if (lastDirection >= 0) {
         const dropEnd = windowStart + toDrop - 1;
         for (let i = windowStart; i <= dropEnd; i++) {
@@ -387,17 +337,14 @@ I, myself, saw Kind kissing Names on the mouth.`;
     }
 
     function adjustWindow() {
-      // Always ensure center and its neighbors are loaded (queued)
       ensureRangeLoaded(currentCenterIndex - 1, currentCenterIndex + 1);
 
-      // Approaching right edge → prefetch to the right (queued)
       if (currentCenterIndex >= windowEnd - 3 && windowEnd < numBooks - 1) {
         const newEnd = Math.min(windowEnd + CHUNK, numBooks - 1);
         ensureRangeLoaded(windowEnd + 1, newEnd);
         windowEnd = newEnd;
       }
 
-      // Approaching left edge → prefetch to the left (queued)
       if (currentCenterIndex <= windowStart + 3 && windowStart > 0) {
         const newStart = Math.max(windowStart - CHUNK, 0);
         ensureRangeLoaded(newStart, windowStart - 1);
@@ -432,7 +379,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
       carouselGroup = new THREE.Group();
       scene.add(carouselGroup);
 
-      // Initial window: load immediately so first view is ready
       ensureRangeLoaded(windowStart, windowEnd, true);
 
       targetCarouselX = carouselGroup.position.x;
@@ -449,7 +395,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
     }
 
     /* ------------------------------------------------------------------
-       Pagination
+       Pagination using booksData chapterTexts
     ------------------------------------------------------------------ */
 
     function paginateChapter(fullText: string, titleHtml: string | null = null) {
@@ -466,7 +412,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
       const originalContent = testPage.innerHTML;
       const pages: string[] = [];
 
-      const processedText = fullText.replace(/\n/g, " <br><br> ");
+      const processedText = (fullText || "").replace(/\n/g, " <br><br> ");
       const words = processedText.split(" ");
 
       let currentPageText = "";
@@ -505,12 +451,39 @@ I, myself, saw Kind kissing Names on the mouth.`;
       return pages;
     }
 
+    // Build spreads (title/dedication/ToC + chapters) from booksData
     function buildBookSpreads(bookIndex: number): BookSpread[] {
       const meta = bookCovers[bookIndex];
+      const bookData = sampleBooks[bookIndex] as any | undefined;
+
       const bookTitle = meta.title;
-      const bookAuthor = sampleBooks[bookIndex]?.author || "A. Nonymous";
-      const isbn = "978-0-999999-99-9";
-      const copyright = "2024";
+      const bookAuthor = bookData?.author || "A. Nonymous";
+      const isbn = "978-0-999999-99-9"; // you can move ISBN into booksData later
+      const copyright = (bookData?.year ?? 2024).toString();
+      const dedication =
+        bookData?.dedication ||
+        "For everyone who reads in a world of screens.";
+
+      const chapterTitles: string[] = Array.isArray(bookData?.chapters)
+        ? bookData.chapters
+        : [];
+      const chapterTexts: string[] = Array.isArray(bookData?.chapterTexts)
+        ? bookData.chapterTexts
+        : [];
+
+      // Build ToC list from chapters, with fallback
+      let tocItems = "";
+      if (chapterTitles.length > 0) {
+        tocItems = chapterTitles
+          .map((t, idx) => `<li>Chapter ${idx + 1}: ${t}</li>`)
+          .join("");
+      } else if (chapterTexts.length > 0) {
+        tocItems = chapterTexts
+          .map((_, idx) => `<li>Chapter ${idx + 1}</li>`)
+          .join("");
+      } else {
+        tocItems = "<li>Chapter 1</li>";
+      }
 
       const staticSpreads: BookSpread[] = [
         {
@@ -529,7 +502,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
         {
           left: "",
           right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic; color:#333;">
-              <p>For everyone who reads<br>in a world of screens.</p>
+              <p>${dedication}</p>
             </div>`,
         },
         {
@@ -539,21 +512,27 @@ I, myself, saw Kind kissing Names on the mouth.`;
             </div>`,
           right: `<h3 style="text-align:center; margin-bottom: 20px;">Table of Contents</h3>
             <ul style="line-height: 2.5; list-style-position: inside;">
-              <li>Chapter 1: The Beginning</li>
-              <li>Chapter 2: The Second Story</li>
+              ${tocItems}
             </ul>`,
         },
       ];
 
-      const chapters = [
-        { title: "Chapter 1: The Beginning", text: chapter1Text },
-        { title: "Chapter 2: The Second Story", text: chapter2Text },
-      ];
-
       let allPages: string[] = [];
-      for (const ch of chapters) {
-        const pages = paginateChapter(ch.text, `<h3>${ch.title}</h3>`);
+
+      if (chapterTexts.length === 0) {
+        // Fallback if no chapter content is defined for this book
+        const fallbackText =
+          "This book doesn’t have any chapters loaded yet. Check back soon.";
+        const pages = paginateChapter(fallbackText, `<h3>${bookTitle}</h3>`);
         allPages = allPages.concat(pages);
+      } else {
+        for (let i = 0; i < chapterTexts.length; i++) {
+          const text = chapterTexts[i];
+          if (!text) continue;
+          const title = chapterTitles[i] ?? `Chapter ${i + 1}`;
+          const pages = paginateChapter(text, `<h3>${title}</h3>`);
+          allPages = allPages.concat(pages);
+        }
       }
 
       const chapterSpreads: BookSpread[] = [];
@@ -608,11 +587,8 @@ I, myself, saw Kind kissing Names on the mouth.`;
         const distance = Math.min(diff, numBooks - diff);
 
         let newScale = outerScale;
-        if (distance === 0) {
-          newScale = centerScale;
-        } else if (distance === 1) {
-          newScale = sideScale;
-        }
+        if (distance === 0) newScale = centerScale;
+        else if (distance === 1) newScale = sideScale;
 
         if (distance !== 0 && book.rotation.y !== 0) {
           book.userData.targetRotation = 0;
@@ -645,10 +621,9 @@ I, myself, saw Kind kissing Names on the mouth.`;
 
       lastDirection = -1;
       isCarouselMoving = true;
-      currentCenterIndex--;
+      setCenter(currentCenterIndex - 1);
       targetCarouselX += bookSpacing;
 
-      // Only window adjustment & property updates here; heavy work is queued
       adjustWindow();
       updateBookProperties();
     }
@@ -662,7 +637,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
 
       lastDirection = 1;
       isCarouselMoving = true;
-      currentCenterIndex++;
+      setCenter(currentCenterIndex + 1);
       targetCarouselX -= bookSpacing;
 
       adjustWindow();
@@ -728,7 +703,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
       openBookContainer.classList.remove("is-open");
       navContainer!.classList.remove("is-open");
       metadataPanel?.classList.remove("is-open");
-
 
       void openBookContainer.offsetWidth;
 
@@ -936,7 +910,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
     }
 
     /* ------------------------------------------------------------------
-       Animation loop (with load/unload queue processing)
+       Animation loop
     ------------------------------------------------------------------ */
 
     const slowEase = 0.02;
@@ -946,7 +920,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
     function animate() {
       rafId = requestAnimationFrame(animate);
 
-      // 0) Process queued loads/unloads in small batches to avoid frame spikes
       const MAX_LOADS_PER_FRAME = 2;
       const MAX_UNLOADS_PER_FRAME = 4;
 
@@ -958,14 +931,16 @@ I, myself, saw Kind kissing Names on the mouth.`;
       }
 
       let unloadsThisFrame = 0;
-      while (unloadsThisFrame < MAX_UNLOADS_PER_FRAME && unloadQueue.length > 0) {
+      while (
+        unloadsThisFrame < MAX_UNLOADS_PER_FRAME &&
+        unloadQueue.length > 0
+      ) {
         const idx = unloadQueue.shift()!;
         unloadBook(idx);
         unloadsThisFrame++;
       }
 
       if (isBookOpen) {
-        // Book opened → slide neighbours away (no carousel moves)
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
@@ -983,9 +958,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
           }
         });
       } else {
-        // --- CLOSED STATE: carousel + flip + center scale ---
-
-        // 1) Flip animation
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isFlipping) {
@@ -1001,7 +973,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
           }
         });
 
-        // 2) Carousel movement
         if (isCarouselMoving) {
           carouselGroup.position.x +=
             (targetCarouselX - carouselGroup.position.x) * fastEase;
@@ -1012,7 +983,6 @@ I, myself, saw Kind kissing Names on the mouth.`;
           }
         }
 
-        // 3) Center-book scale animation
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isScaling) {
@@ -1068,7 +1038,7 @@ I, myself, saw Kind kissing Names on the mouth.`;
       <AppHeader />
 
       <main className="carousel home3d-main">
-        {/* Metadata */}
+        {/* LEFT: Metadata tied to the current center book */}
         <div className="metadata" id="metadata-panel">
           <div className="meta-header">
             <div className="meta-avatar" aria-hidden="true">
@@ -1092,10 +1062,10 @@ I, myself, saw Kind kissing Names on the mouth.`;
             <Link
               to="/profile"
               className="meta-username"
-              title={center?.user ?? ""}
+              title={centerBook?.user ?? ""}
               onClick={(e) => e.stopPropagation()}
             >
-              {center?.user ?? "Unknown User"}
+              {centerBook?.user ?? "Unknown User"}
             </Link>
           </div>
 
@@ -1123,13 +1093,14 @@ I, myself, saw Kind kissing Names on the mouth.`;
           <hr className="meta-hr" />
 
           <p className="meta-chapters">
-            {(center?.currentChapter ?? 0)}/{center?.totalChapters ?? 0} Chapters
+            {(centerBook?.currentChapter ?? 0)}/{centerBook?.totalChapters ?? 0}{" "}
+            Chapters
           </p>
 
           <hr className="meta-hr" />
 
           <ul className="meta-tags">
-            {(center?.tags ?? []).map((t: string) => (
+            {(centerBook?.tags ?? []).map((t: string) => (
               <li key={t}>{t}</li>
             ))}
           </ul>
