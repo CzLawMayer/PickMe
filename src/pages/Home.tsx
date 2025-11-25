@@ -564,17 +564,34 @@ export default function Home() {
       if (chapterTexts.length === 0) {
         const fallbackText =
           "This book doesn’t have any chapters loaded yet. Check back soon.";
-        const pages = paginateChapter(fallbackText, `<h3>${bookTitle}</h3>`);
+
+        const chapterTitleHtml = `
+          <div style="text-align:center; margin: 0 0 12px 0;">
+            <span style="font-weight:700; font-size:1.4em;">${bookTitle}</span>
+          </div>
+        `;
+
+        const pages = paginateChapter(fallbackText, chapterTitleHtml);
         allPages = allPages.concat(pages);
       } else {
         for (let i = 0; i < chapterTexts.length; i++) {
           const text = chapterTexts[i];
           if (!text) continue;
           const title = chapterTitles[i] ?? `Chapter ${i + 1}`;
-          const pages = paginateChapter(text, `<h3>${title}</h3>`);
+
+          // NEW: styled chapter title (centered, bold, larger) + separator line
+          const chapterTitleHtml = `
+            <div style="text-align:center; margin: 0 0 12px 0;">
+              <span style="font-weight:700; font-size:1.4em;">${title}</span>
+            </div>
+          `;
+
+          const pages = paginateChapter(text, chapterTitleHtml);
           allPages = allPages.concat(pages);
         }
       }
+
+
 
       const chapterSpreads: BookSpread[] = [];
       for (let i = 0; i < allPages.length; i += 2) {
@@ -599,6 +616,10 @@ export default function Home() {
       pageRight!.style.fontSize = `${currentFontSize}px`;
       pageLeft!.style.lineHeight = String(currentLineHeight);
       pageRight!.style.lineHeight = String(currentLineHeight);
+
+      // NEW: justify text on both pages
+      pageLeft!.style.textAlign = "justify";
+      pageRight!.style.textAlign = "justify";
 
       bookSpreads = buildBookSpreads(currentCenterIndex);
       if (currentPageSpread >= bookSpreads.length) {
