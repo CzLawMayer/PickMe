@@ -351,18 +351,30 @@
   background-color: #0f0f10; /* so any gaps match the canvas */
 }
 
-/* Metadata pinned on the left, vertically centered */
+/* Reuse the same visual width as your open-page: 47.5vh */
+.home3d-root {
+  --book-page-width: 47.5vh;
+  --meta-gap-closed: calc(-16vh + 20px);
+  --meta-gap-open: 12vh;   /* distance from the left page when open */
+  --meta-y-offset: -20vh;
+}
+
+/* Closed state: anchor to the left of the center book */
 .home3d-main .metadata {
   position: absolute;
-  top: 50%;
-  left: 410px; /* base position on the left side */
-  transform: translateY(-50%);
+  top: 48%;
+  /* "left" is the X of the metadata's RIGHT edge because of translate(-100%, -50%) */
+  left: calc(50% - var(--book-page-width) - var(--meta-gap-closed));
+  transform: translate(-100%, -50%);
+  z-index: 15;
   max-width: 360px;
-  z-index: 5;
+  width: auto;
+  box-sizing: border-box;
   transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* When the book opens, slide the metadata further left (out of the way) */
+/* Open state: slide a bit further left, still using vh relative to the page width */
 .home3d-main .metadata.is-open {
-  left: -360px; /* pushes the whole panel off-screen to the left */
+  left: calc(50% - var(--book-page-width) - var(--meta-gap-open));
 }
+
