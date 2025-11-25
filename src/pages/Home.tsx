@@ -18,42 +18,37 @@ type BookSpread = { left: string; right: string };
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
-  // Which book is currently in the center of the carousel
+  // Which book is currently in the center of the carousel (3D side)
   const [centerIndex, setCenterIndex] = useState(0);
   const centerIndexRef = useRef(0);
 
-  // --- NEW: per-book UI state (one slot per book) ---
-  const [likesByBook, setLikesByBook] = useState<boolean[]>(() =>
-    sampleBooks.map(() => false)
-  );
-  const [savesByBook, setSavesByBook] = useState<boolean[]>(() =>
-    sampleBooks.map(() => false)
-  );
-  const [ratingsByBook, setRatingsByBook] = useState<number[]>(() =>
-    sampleBooks.map(() => 0)
-  );
+  // When a book is open, we "lock" metadata to the book we opened
+  const [lockedIndex, setLockedIndex] = useState<number | null>(null);
 
-  // Convenience: the "current" book data from booksData
-  const centerBook = sampleBooks[centerIndex] ?? sampleBooks[0];
+  const effectiveIndex = lockedIndex ?? centerIndex;
+  const centerBook = sampleBooks[effectiveIndex] ?? sampleBooks[0];
 
-  // Derived UI state for the current center book
-  const liked = likesByBook[centerIndex] ?? false;
-  const saved = savesByBook[centerIndex] ?? false;
-  const userRating = ratingsByBook[centerIndex] ?? 0;
+  // ---------- Per-book like/save/rating ----------
 
-  // Base metadata from booksData
-  // Base metadata from booksData
-  const rawRating = centerBook?.rating;
+  const [likedById, setLikedById] = useState<Record<string, boolean>>({});
+  const [savedById, setSavedById] = useState<Record<string, boolean>>({});
+  const [userRatingById, setUserRatingById] = useState<Record<string, number>>({});
+
+  const centerId = (centerBook as any)?.id ?? "";
+
+  const liked = centerId ? !!likedById[centerId] : false;
+  const saved = centerId ? !!savedById[centerId] : false;
+  const userRating = centerId ? userRatingById[centerId] ?? 0 : 0;
+
   const baseRating =
-    typeof rawRating === "string"
-      ? parseFloat(String(rawRating).split("/")[0] || "0")
-      : Number(rawRating ?? 0);
+    typeof centerBook?.rating === "string"
+      ? parseFloat(String(centerBook.rating).split("/")[0] || "0")
+      : Number(centerBook?.rating ?? 0);
 
-  const votesRaw = centerBook?.ratingCount ?? 0;
+  const votesRaw = (centerBook as any)?.ratingCount ?? 0;
   const votes = Number.isFinite(Number(votesRaw)) ? Number(votesRaw) : 0;
   const PRIOR_VOTES = 20;
 
-  // Blend the book's rating with your rating (per book)
   const combinedRating =
     userRating > 0
       ? votes > 0
@@ -63,37 +58,22 @@ export default function Home() {
         : userRating
       : baseRating;
 
-  const baseLikes = centerBook?.likes ?? 0;
-  const baseSaves = centerBook?.bookmarks ?? 0;
+  const displayLikes = (centerBook?.likes ?? 0) + (liked ? 1 : 0);
+  const displaySaves = (centerBook?.bookmarks ?? 0) + (saved ? 1 : 0);
 
-  // What we actually display in the UI
-  const displayLikes = baseLikes + (liked ? 1 : 0);
-  const displaySaves = baseSaves + (saved ? 1 : 0);
-
-
-  // --- NEW: per-book handlers use the current index ---
   const toggleLike = () => {
-    setLikesByBook(prev => {
-      const next = [...prev];
-      next[centerIndex] = !next[centerIndex];
-      return next;
-    });
+    if (!centerId) return;
+    setLikedById((m) => ({ ...m, [centerId]: !m[centerId] }));
   };
 
   const toggleSave = () => {
-    setSavesByBook(prev => {
-      const next = [...prev];
-      next[centerIndex] = !next[centerIndex];
-      return next;
-    });
+    if (!centerId) return;
+    setSavedById((m) => ({ ...m, [centerId]: !m[centerId] }));
   };
 
   const onRate = (value: number) => {
-    setRatingsByBook(prev => {
-      const next = [...prev];
-      next[centerIndex] = value;
-      return next;
-    });
+    if (!centerId) return;
+    setUserRatingById((m) => ({ ...m, [centerId]: value }));
   };
 
   useEffect(() => {
@@ -116,7 +96,7 @@ export default function Home() {
       sampleBooks.length > 0
         ? sampleBooks.map((b, index) => ({
             front:
-              b.coverUrl ||
+              (b as any).coverUrl ||
               `https://placehold.co/470x675/222222/f0f0f0?text=Book+${index + 1}`,
             back:
               (b as any).backCoverUrl ||
@@ -135,6 +115,14 @@ export default function Home() {
     let isCarouselMoving = false;
     let targetCarouselX = 0;
 
+    // Helper so any change to currentCenterIndex also updates React state
+    function setCenter(newIndex: number) {
+      const clamped = Math.max(0, Math.min(numBooks - 1, newIndex));
+      currentCenterIndex = clamped;
+      centerIndexRef.current = clamped;
+      setCenterIndex(clamped);
+    }
+
     // Book dimensions / spacing
     const bookWidth = 5.7;
     const bookHeight = 8;
@@ -148,7 +136,7 @@ export default function Home() {
     const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
 
     // font settings for reader
-    let currentFontSize = 18;
+    let currentFontSize = 14;
     let currentLineHeight = 1.6;
 
     // Lazy-loading window:
@@ -178,7 +166,9 @@ export default function Home() {
       "open-book-container"
     ) as HTMLDivElement | null;
     const pageLeft = document.getElementById("page-left") as HTMLDivElement | null;
-    const pageRight = document.getElementById("page-right") as HTMLDivElement | null;
+    const pageRight = document.getElementById(
+      "page-right"
+    ) as HTMLDivElement | null;
     const navContainer = document.getElementById(
       "nav-container"
     ) as HTMLDivElement | null;
@@ -349,7 +339,7 @@ export default function Home() {
       if (!book) return;
 
       carouselGroup.remove(book);
-      activeBooks = activeBooks.filter(b => b !== book);
+      activeBooks = activeBooks.filter((b) => b !== book);
       bookMeshesByIndex[index] = null;
     }
 
@@ -399,14 +389,6 @@ export default function Home() {
       }
 
       trimWindowIfNeeded();
-    }
-
-    // Helper so any change to currentCenterIndex also updates React state
-    function setCenter(newIndex: number) {
-      const clamped = Math.max(0, Math.min(numBooks - 1, newIndex));
-      currentCenterIndex = clamped;
-      centerIndexRef.current = clamped;
-      setCenterIndex(clamped);
     }
 
     function init() {
@@ -467,15 +449,15 @@ export default function Home() {
       const originalContent = testPage.innerHTML;
       const pages: string[] = [];
 
-      // 🔧 Normalize newlines so we don't get giant gaps
-      const processedText = (fullText || "")
-        .replace(/\r\n/g, "\n")
-        // 2+ newlines = paragraph break → one visual blank line
-        .replace(/\n{2,}/g, " <br><br> ")
-        // single newline = just a space (no blank line)
+      // normalize newlines so paragraph breaks use exactly ONE blank line
+      let normalized = (fullText || "").replace(/\r\n/g, "\n");
+      normalized = normalized.replace(/\n{3,}/g, "\n\n"); // collapse huge gaps
+      const processedText = normalized
+        .replace(/\n{2}/g, " <br><br> ")
         .replace(/\n/g, " ");
 
-      const words = processedText.split(/\s+/).filter(Boolean);
+      const words = processedText.split(" ");
+
       let currentPageText = "";
       if (titleHtml) currentPageText += titleHtml;
 
@@ -512,7 +494,6 @@ export default function Home() {
       return pages;
     }
 
-
     // Build spreads (title/dedication/ToC + chapters) from booksData
     function buildBookSpreads(bookIndex: number): BookSpread[] {
       const meta = bookCovers[bookIndex];
@@ -520,7 +501,7 @@ export default function Home() {
 
       const bookTitle = meta.title;
       const bookAuthor = bookData?.author || "A. Nonymous";
-      const isbn = "978-0-999999-99-9"; // you can move ISBN into booksData later
+      const isbn = "978-0-999999-99-9"; // placeholder
       const copyright = (bookData?.year ?? 2024).toString();
       const dedication =
         bookData?.dedication ||
@@ -549,32 +530,24 @@ export default function Home() {
 
       const staticSpreads: BookSpread[] = [
         {
-          // TITLE SPREAD
+          // Title page (right only, centred title + author)
           left: "",
-          right: `<div style="
-              display:flex;
-              flex-direction:column;
-              justify-content:center;
-              align-items:center;
-              height:100%;
-              text-align:center;
-              color:#1a1a1a;
-            ">
+          right: `<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center; color:#1a1a1a;">
               <div>
-                <h1 style="font-size: 2.5em; margin: 0; padding: 0;">${bookTitle}</h1>
-                <p style="font-size: 1.2em; margin-top: 20px;">By ${bookAuthor}</p>
+                <h1 style="font-size: 2.4em; margin: 0; padding: 0;">${bookTitle}</h1>
+                <p style="font-size: 1.3em; margin-top: 16px;">By ${bookAuthor}</p>
               </div>
             </div>`,
         },
         {
-          // DEDICATION
+          // Dedication (right only)
           left: "",
           right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic; color:#333;">
               <p>${dedication}</p>
             </div>`,
         },
         {
-          // CONTENTS SPREAD – LEFT PAGE KEEPS ISBN + COPYRIGHT
+          // Contents spread; ISBN/copyright on the left page only
           left: `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em; color: #555;">
               <p style="margin-bottom: 5px;">ISBN: ${isbn}</p>
               <p>&copy; Copyright ${copyright}</p>
@@ -585,7 +558,6 @@ export default function Home() {
             </ul>`,
         },
       ];
-
 
       let allPages: string[] = [];
 
@@ -623,25 +595,18 @@ export default function Home() {
     }
 
     function rePaginateBook() {
-      // Apply current font settings to both pages
       pageLeft!.style.fontSize = `${currentFontSize}px`;
       pageRight!.style.fontSize = `${currentFontSize}px`;
       pageLeft!.style.lineHeight = String(currentLineHeight);
       pageRight!.style.lineHeight = String(currentLineHeight);
 
-      // Rebuild spreads for the CURRENT center book using these metrics
       bookSpreads = buildBookSpreads(currentCenterIndex);
-
-      // Clamp the current spread index just in case page count changed
       if (currentPageSpread >= bookSpreads.length) {
         currentPageSpread = bookSpreads.length - 1;
       }
       if (currentPageSpread < 0) currentPageSpread = 0;
-
-      // Paint the correct spread into the DOM
       updatePageContent(currentPageSpread);
     }
-
 
     /* ------------------------------------------------------------------
        Carousel movement + scaling
@@ -689,10 +654,8 @@ export default function Home() {
     }
 
     function moveCarouselLeft() {
-      if (isBookOpen) {
-        flipPageLeft();
-        return;
-      }
+      // Do not move the 3D carousel when a book is open
+      if (isBookOpen) return;
       if (currentCenterIndex <= 0) return;
 
       lastDirection = -1;
@@ -705,10 +668,8 @@ export default function Home() {
     }
 
     function moveCarouselRight() {
-      if (isBookOpen) {
-        flipPageRight();
-        return;
-      }
+      // Do not move the 3D carousel when a book is open
+      if (isBookOpen) return;
       if (currentCenterIndex >= numBooks - 1) return;
 
       lastDirection = 1;
@@ -727,10 +688,21 @@ export default function Home() {
     function openBook() {
       currentPageSpread = 0;
 
-      // Always paginate freshly for the current center book
-      rePaginateBook();
+      // Freeze metadata on the book we're opening
+      setLockedIndex(currentCenterIndex);
 
-      // Figure out neighbours for slide-out animation
+      if (bookSpreads.length === 0) {
+        pageLeft!.innerHTML = "";
+        pageRight!.innerHTML = "";
+
+        setTimeout(() => {
+          bookSpreads = buildBookSpreads(currentCenterIndex);
+          updatePageContent(currentPageSpread);
+        }, 550);
+      } else {
+        updatePageContent(currentPageSpread);
+      }
+
       const leftBookIndex =
         currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
       const rightBookIndex =
@@ -741,7 +713,6 @@ export default function Home() {
         if (!book) continue;
 
         if (i === currentCenterIndex) {
-          // Hide the center physical mesh (we show the 2D reader instead)
           book.visible = false;
           book.userData.isSlidingOut = false;
         } else if (i === leftBookIndex && leftBookIndex !== -1) {
@@ -762,7 +733,6 @@ export default function Home() {
       metadataPanel?.classList.add("is-open");
       isBookOpen = true;
     }
-
 
     function closeBook() {
       settingsMenu?.classList.remove("is-open");
@@ -823,6 +793,10 @@ export default function Home() {
 
       isBookOpen = false;
       currentPageSpread = 0;
+
+      // Unfreeze metadata and ensure React's index matches the real center
+      setLockedIndex(null);
+      setCenter(currentCenterIndex);
     }
 
     function flipPageLeft() {
@@ -1011,7 +985,7 @@ export default function Home() {
       }
 
       if (isBookOpen) {
-        activeBooks.forEach(book => {
+        activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
             book.position.x +=
@@ -1028,7 +1002,7 @@ export default function Home() {
           }
         });
       } else {
-        activeBooks.forEach(book => {
+        activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isFlipping) {
             book.rotation.y +=
@@ -1053,7 +1027,7 @@ export default function Home() {
           }
         }
 
-        activeBooks.forEach(book => {
+        activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isScaling) {
             const currentScale = book.scale.x;
@@ -1101,14 +1075,14 @@ export default function Home() {
         }
       }
     };
-  }, []);
+  }, [setCenterIndex, setLockedIndex]);
 
   return (
     <div className="app home3d-root">
       <AppHeader />
 
       <main className="carousel home3d-main">
-        {/* LEFT: Metadata tied to the current center book */}
+        {/* LEFT: Metadata tied to the current (effective) center book */}
         <div className="metadata" id="metadata-panel">
           <div className="meta-header">
             <div className="meta-avatar" aria-hidden="true">
@@ -1133,7 +1107,7 @@ export default function Home() {
               to="/profile"
               className="meta-username"
               title={centerBook?.user ?? ""}
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               {centerBook?.user ?? "Unknown User"}
             </Link>
