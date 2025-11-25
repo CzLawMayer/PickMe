@@ -12,8 +12,25 @@ import { Link } from "react-router-dom";
 import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
 import StarButton from "@/components/StarButton";
+import ReaderMenu from "@/components/ReaderMenu";
 
 type BookSpread = { left: string; right: string };
+
+type ReaderTheme = "cream" | "dark" | "white";
+
+type ReaderControls = {
+  setFontSize: (px: number) => void;
+  setLineHeight: (lh: number) => void;
+  setFontFamily: (family: string) => void;
+  setTheme: (theme: ReaderTheme) => void;
+};
+
+type TypographyOptions = {
+  fontSize?: number;
+  lineHeight?: number;
+  fontFamily?: string;
+  theme?: ReaderTheme;
+};
 
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
@@ -25,6 +42,12 @@ export default function Home() {
   // When a book is open, we "lock" metadata to the book we opened
   const [lockedIndex, setLockedIndex] = useState<number | null>(null);
 
+  // Is the reader (open book) currently visible
+  const [isBookOpen, setIsBookOpen] = useState(false);
+
+  // API from the pagination layer to ReaderMenu
+  const readerControlsRef = useRef<ReaderControls | null>(null);
+
   const effectiveIndex = lockedIndex ?? centerIndex;
   const centerBook = sampleBooks[effectiveIndex] ?? sampleBooks[0];
 
@@ -32,7 +55,9 @@ export default function Home() {
 
   const [likedById, setLikedById] = useState<Record<string, boolean>>({});
   const [savedById, setSavedById] = useState<Record<string, boolean>>({});
-  const [userRatingById, setUserRatingById] = useState<Record<string, number>>({});
+  const [userRatingById, setUserRatingById] = useState<Record<string, number>>(
+    {}
+  );
 
   const centerId = (centerBook as any)?.id ?? "";
 
@@ -129,15 +154,20 @@ export default function Home() {
     const bookDepth = 0.55;
     const bookSpacing = 13.5;
 
-    let isBookOpen = false;
+    let isBookOpenLocal = false;
     let currentPageSpread = 0;
     let bookSpreads: BookSpread[] = [];
 
     const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
 
-    // font settings for reader
+    // font & theme settings for reader (DOM-level; driven by ReaderMenu)
     let currentFontSize = 14;
     let currentLineHeight = 1.6;
+    let currentFontFamily = "Georgia, 'Times New Roman', serif";
+    let currentTheme: ReaderTheme = "cream"; // default: light/cream
+
+    // Debounce handle for heavy pagination
+    let paginationTimer: number | null = null;
 
     // Lazy-loading window:
     const MAX_LOADED = 30;
@@ -147,7 +177,9 @@ export default function Home() {
     let lastDirection: 1 | -1 | 0 = 0;
 
     // Mesh storage: by logical index + active list
-    const bookMeshesByIndex: (THREE.Mesh | null)[] = Array(numBooks).fill(null);
+    const bookMeshesByIndex: (THREE.Mesh | null)[] = Array(numBooks).fill(
+      null
+    );
     let activeBooks: THREE.Mesh[] = [];
 
     // Queues for smooth loading/unloading
@@ -165,25 +197,15 @@ export default function Home() {
     const openBookContainer = document.getElementById(
       "open-book-container"
     ) as HTMLDivElement | null;
-    const pageLeft = document.getElementById("page-left") as HTMLDivElement | null;
+    const pageLeft = document.getElementById(
+      "page-left"
+    ) as HTMLDivElement | null;
     const pageRight = document.getElementById(
       "page-right"
     ) as HTMLDivElement | null;
     const navContainer = document.getElementById(
       "nav-container"
     ) as HTMLDivElement | null;
-    const settingsBtn = document.getElementById(
-      "settings-btn"
-    ) as HTMLButtonElement | null;
-    const settingsMenu = document.getElementById(
-      "settings-menu"
-    ) as HTMLDivElement | null;
-    const fontSizeSlider = document.getElementById(
-      "font-size-slider"
-    ) as HTMLInputElement | null;
-    const lineHeightSlider = document.getElementById(
-      "line-height-slider"
-    ) as HTMLInputElement | null;
     const leftArrowBtn = document.getElementById(
       "left-arrow"
     ) as HTMLDivElement | null;
@@ -532,7 +554,7 @@ export default function Home() {
         {
           // Title page (right only, centred title + author)
           left: "",
-          right: `<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center; color:#1a1a1a;">
+          right: `<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center;">
               <div>
                 <h1 style="font-size: 2.4em; margin: 0; padding: 0;">${bookTitle}</h1>
                 <p style="font-size: 1.3em; margin-top: 16px;">By ${bookAuthor}</p>
@@ -542,13 +564,13 @@ export default function Home() {
         {
           // Dedication (right only)
           left: "",
-          right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic; color:#333;">
+          right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic;">
               <p>${dedication}</p>
             </div>`,
         },
         {
           // Contents spread; ISBN/copyright on the left page only
-          left: `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em; color: #555;">
+          left: `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em;">
               <p style="margin-bottom: 5px;">ISBN: ${isbn}</p>
               <p>&copy; Copyright ${copyright}</p>
             </div>`,
@@ -579,7 +601,7 @@ export default function Home() {
           if (!text) continue;
           const title = chapterTitles[i] ?? `Chapter ${i + 1}`;
 
-          // NEW: styled chapter title (centered, bold, larger) + separator line
+          // styled chapter title (centered, bold, larger) + spacing
           const chapterTitleHtml = `
             <div style="text-align:center; margin: 0 0 12px 0;">
               <span style="font-weight:700; font-size:1.4em;">${title}</span>
@@ -590,8 +612,6 @@ export default function Home() {
           allPages = allPages.concat(pages);
         }
       }
-
-
 
       const chapterSpreads: BookSpread[] = [];
       for (let i = 0; i < allPages.length; i += 2) {
@@ -604,23 +624,59 @@ export default function Home() {
       return staticSpreads.concat(chapterSpreads);
     }
 
+    function applyThemeColors() {
+      if (!pageLeft || !pageRight) return;
+
+      let bg: string;
+      let fg: string;
+
+      if (currentTheme === "cream") {
+        bg = "#fdf6e3";
+        fg = "#111111";
+      } else if (currentTheme === "dark") {
+        bg = "#181717";
+        fg = "#f5f0e6";
+      } else {
+        // "white"
+        bg = "#ffffff";
+        fg = "#111111";
+      }
+
+      pageLeft.style.backgroundColor = bg;
+      pageRight.style.backgroundColor = bg;
+      pageLeft.style.color = fg;
+      pageRight.style.color = fg;
+    }
+
+    function applyTypographyStyles() {
+      if (!pageLeft || !pageRight) return;
+
+      pageLeft.style.fontSize = `${currentFontSize}px`;
+      pageRight.style.fontSize = `${currentFontSize}px`;
+      pageLeft.style.lineHeight = String(currentLineHeight);
+      pageRight.style.lineHeight = String(currentLineHeight);
+      pageLeft.style.fontFamily = currentFontFamily;
+      pageRight.style.fontFamily = currentFontFamily;
+
+      pageLeft.style.textAlign = "justify";
+      pageRight.style.textAlign = "justify";
+
+      applyThemeColors();
+    }
+
     function updatePageContent(index: number) {
       const spread = bookSpreads[index];
-      if (!spread) return;
-      pageLeft!.innerHTML = spread.left;
-      pageRight!.innerHTML = spread.right;
+      if (!spread || !pageLeft || !pageRight) return;
+
+      pageLeft.innerHTML = spread.left;
+      pageRight.innerHTML = spread.right;
+
+      // justify paragraphs & apply theme/colors
+      applyTypographyStyles();
     }
 
     function rePaginateBook() {
-      pageLeft!.style.fontSize = `${currentFontSize}px`;
-      pageRight!.style.fontSize = `${currentFontSize}px`;
-      pageLeft!.style.lineHeight = String(currentLineHeight);
-      pageRight!.style.lineHeight = String(currentLineHeight);
-
-      // NEW: justify text on both pages
-      pageLeft!.style.textAlign = "justify";
-      pageRight!.style.textAlign = "justify";
-
+      // rebuild all spreads for the current book with current typography
       bookSpreads = buildBookSpreads(currentCenterIndex);
       if (currentPageSpread >= bookSpreads.length) {
         currentPageSpread = bookSpreads.length - 1;
@@ -628,6 +684,42 @@ export default function Home() {
       if (currentPageSpread < 0) currentPageSpread = 0;
       updatePageContent(currentPageSpread);
     }
+
+    // Debounced heavy pagination
+    function scheduleRepaginate(layoutChanged: boolean) {
+      if (!layoutChanged) return;
+      if (paginationTimer !== null) {
+        window.clearTimeout(paginationTimer);
+      }
+      paginationTimer = window.setTimeout(() => {
+        if (!isBookOpenLocal) return;
+        rePaginateBook();
+      }, 80);
+    }
+
+    // Expose DOM-based typography controls to React (ReaderMenu)
+    readerControlsRef.current = {
+      setFontSize: (px: number) => {
+        currentFontSize = px;
+        applyTypographyStyles(); // instant visual
+        scheduleRepaginate(true);
+      },
+      setLineHeight: (lh: number) => {
+        currentLineHeight = lh;
+        applyTypographyStyles(); // instant visual
+        scheduleRepaginate(true);
+      },
+      setFontFamily: (family: string) => {
+        currentFontFamily = family;
+        applyTypographyStyles(); // instant visual
+        scheduleRepaginate(true);
+      },
+      setTheme: (theme: ReaderTheme) => {
+        currentTheme = theme;
+        applyTypographyStyles(); // instant visual, static layout
+        scheduleRepaginate(false);
+      },
+    };
 
     /* ------------------------------------------------------------------
        Carousel movement + scaling
@@ -676,7 +768,7 @@ export default function Home() {
 
     function moveCarouselLeft() {
       // Do not move the 3D carousel when a book is open
-      if (isBookOpen) return;
+      if (isBookOpenLocal) return;
       if (currentCenterIndex <= 0) return;
 
       lastDirection = -1;
@@ -690,7 +782,7 @@ export default function Home() {
 
     function moveCarouselRight() {
       // Do not move the 3D carousel when a book is open
-      if (isBookOpen) return;
+      if (isBookOpenLocal) return;
       if (currentCenterIndex >= numBooks - 1) return;
 
       lastDirection = 1;
@@ -711,18 +803,12 @@ export default function Home() {
 
       // Freeze metadata on the book we're opening
       setLockedIndex(currentCenterIndex);
+      setIsBookOpen(true);
+      isBookOpenLocal = true;
 
-      if (bookSpreads.length === 0) {
-        pageLeft!.innerHTML = "";
-        pageRight!.innerHTML = "";
-
-        setTimeout(() => {
-          bookSpreads = buildBookSpreads(currentCenterIndex);
-          updatePageContent(currentPageSpread);
-        }, 550);
-      } else {
-        updatePageContent(currentPageSpread);
-      }
+      // Always rebuild spreads for the specific book we are opening
+      bookSpreads = buildBookSpreads(currentCenterIndex);
+      updatePageContent(currentPageSpread);
 
       const leftBookIndex =
         currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
@@ -752,12 +838,9 @@ export default function Home() {
       navContainer!.classList.add("is-open");
       openBookContainer.classList.add("is-open");
       metadataPanel?.classList.add("is-open");
-      isBookOpen = true;
     }
 
     function closeBook() {
-      settingsMenu?.classList.remove("is-open");
-
       openBookContainer.style.transition = "none";
       navContainer!.style.transition = "none";
 
@@ -812,12 +895,13 @@ export default function Home() {
         }
       }
 
-      isBookOpen = false;
+      isBookOpenLocal = false;
       currentPageSpread = 0;
 
       // Unfreeze metadata and ensure React's index matches the real center
       setLockedIndex(null);
       setCenter(currentCenterIndex);
+      setIsBookOpen(false);
     }
 
     function flipPageLeft() {
@@ -846,8 +930,7 @@ export default function Home() {
       const target = event.target as HTMLElement;
       if (
         target.classList.contains("nav-arrow") ||
-        target.id === "nav-container" ||
-        target.closest(".settings-menu")
+        target.id === "nav-container"
       ) {
         return;
       }
@@ -903,32 +986,16 @@ export default function Home() {
     }
 
     /* ------------------------------------------------------------------
-       Settings menu
+       Nav arrows
     ------------------------------------------------------------------ */
 
-    settingsBtn?.addEventListener("click", () => {
-      settingsMenu?.classList.toggle("is-open");
-    });
-
-    fontSizeSlider?.addEventListener("input", (e: Event) => {
-      const val = (e.target as HTMLInputElement).value;
-      currentFontSize = Number(val);
-      rePaginateBook();
-    });
-
-    lineHeightSlider?.addEventListener("input", (e: Event) => {
-      const val = (e.target as HTMLInputElement).value;
-      currentLineHeight = Number(val);
-      rePaginateBook();
-    });
-
     leftArrowBtn?.addEventListener("click", () => {
-      if (isBookOpen) flipPageLeft();
+      if (isBookOpenLocal) flipPageLeft();
       else moveCarouselLeft();
     });
 
     rightArrowBtn?.addEventListener("click", () => {
-      if (isBookOpen) flipPageRight();
+      if (isBookOpenLocal) flipPageRight();
       else moveCarouselRight();
     });
 
@@ -965,7 +1032,7 @@ export default function Home() {
       const threshold = 40;
       if (Math.abs(dx) < threshold) return;
 
-      if (!isBookOpen) {
+      if (!isBookOpenLocal) {
         if (dx < 0) moveCarouselRight();
         else moveCarouselLeft();
       } else {
@@ -1005,7 +1072,7 @@ export default function Home() {
         unloadsThisFrame++;
       }
 
-      if (isBookOpen) {
+      if (isBookOpenLocal) {
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
@@ -1030,7 +1097,8 @@ export default function Home() {
               (book.userData.targetRotation - book.rotation.y) * fastEase;
 
             if (
-              Math.abs(book.userData.targetRotation - book.rotation.y) < 0.01
+              Math.abs(book.userData.targetRotation - book.rotation.y) <
+              0.01
             ) {
               book.rotation.y = book.userData.targetRotation;
               book.userData.isFlipping = false;
@@ -1088,6 +1156,10 @@ export default function Home() {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
+      if (paginationTimer !== null) {
+        window.clearTimeout(paginationTimer);
+      }
+      readerControlsRef.current = null;
       cancelAnimationFrame(rafId);
       if (renderer) {
         renderer.dispose();
@@ -1096,7 +1168,16 @@ export default function Home() {
         }
       }
     };
-  }, [setCenterIndex, setLockedIndex]);
+  }, [setCenterIndex, setLockedIndex, setIsBookOpen]);
+
+  // Helper for TTS: read the visible pages
+  const getVisiblePageText = () => {
+    const left = document.getElementById("page-left");
+    const right = document.getElementById("page-right");
+    const lt = left?.innerText ?? "";
+    const rt = right?.innerText ?? "";
+    return `${lt}\n\n${rt}`.trim();
+  };
 
   return (
     <div className="app home3d-root">
@@ -1178,34 +1259,6 @@ export default function Home() {
           <div id="open-book-container" className="open-book-container">
             <div className="open-book-page" id="page-left" />
             <div className="open-book-page" id="page-right" />
-
-            <button id="settings-btn" title="Settings">
-              &#9881;
-            </button>
-            <div className="settings-menu" id="settings-menu">
-              <div className="slider-group">
-                <label htmlFor="font-size-slider">Font Size</label>
-                <input
-                  type="range"
-                  id="font-size-slider"
-                  min={12}
-                  max={18}
-                  step={1}
-                  defaultValue={14}
-                />
-              </div>
-              <div className="slider-group">
-                <label htmlFor="line-height-slider">Line Height</label>
-                <input
-                  type="range"
-                  id="line-height-slider"
-                  min={1.4}
-                  max={2.0}
-                  step={0.1}
-                  defaultValue={1.6}
-                />
-              </div>
-            </div>
           </div>
 
           <div className="nav-container" id="nav-container">
@@ -1219,6 +1272,33 @@ export default function Home() {
               &lsaquo;
             </div>
           </div>
+
+          {/* Reader menu (bottom sheet) */}
+          <ReaderMenu
+            visible={isBookOpen}
+            getVisiblePageText={getVisiblePageText}
+            onApplyTypography={({
+              fontSize,
+              lineHeight,
+              fontFamily,
+              theme,
+            }: TypographyOptions) => {
+              const controls = readerControlsRef.current;
+              if (!controls) return;
+              if (typeof fontSize === "number") {
+                controls.setFontSize(fontSize);
+              }
+              if (typeof lineHeight === "number") {
+                controls.setLineHeight(lineHeight);
+              }
+              if (typeof fontFamily === "string") {
+                controls.setFontFamily(fontFamily);
+              }
+              if (typeof theme === "string") {
+                controls.setTheme(theme);
+              }
+            }}
+          />
         </section>
       </main>
     </div>
