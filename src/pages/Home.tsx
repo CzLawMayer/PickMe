@@ -148,7 +148,7 @@ export default function Home() {
     const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
 
     // font settings for reader
-    let currentFontSize = 14;
+    let currentFontSize = 18;
     let currentLineHeight = 1.6;
 
     // Lazy-loading window:
@@ -467,9 +467,15 @@ export default function Home() {
       const originalContent = testPage.innerHTML;
       const pages: string[] = [];
 
-      const processedText = (fullText || "").replace(/\n/g, " <br><br> ");
-      const words = processedText.split(" ");
+      // 🔧 Normalize newlines so we don't get giant gaps
+      const processedText = (fullText || "")
+        .replace(/\r\n/g, "\n")
+        // 2+ newlines = paragraph break → one visual blank line
+        .replace(/\n{2,}/g, " <br><br> ")
+        // single newline = just a space (no blank line)
+        .replace(/\n/g, " ");
 
+      const words = processedText.split(/\s+/).filter(Boolean);
       let currentPageText = "";
       if (titleHtml) currentPageText += titleHtml;
 
@@ -505,6 +511,7 @@ export default function Home() {
       testPage.innerHTML = originalContent;
       return pages;
     }
+
 
     // Build spreads (title/dedication/ToC + chapters) from booksData
     function buildBookSpreads(bookIndex: number): BookSpread[] {
@@ -542,25 +549,32 @@ export default function Home() {
 
       const staticSpreads: BookSpread[] = [
         {
+          // TITLE SPREAD
           left: "",
-          right: `<div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; text-align:center; padding-top: 15vh; padding-bottom: 5vh; color:#1a1a1a;">
+          right: `<div style="
+              display:flex;
+              flex-direction:column;
+              justify-content:center;
+              align-items:center;
+              height:100%;
+              text-align:center;
+              color:#1a1a1a;
+            ">
               <div>
                 <h1 style="font-size: 2.5em; margin: 0; padding: 0;">${bookTitle}</h1>
                 <p style="font-size: 1.2em; margin-top: 20px;">By ${bookAuthor}</p>
               </div>
-              <div style="font-size: 0.8em; color: #555;">
-                <p>ISBN: ${isbn}</p>
-                <p>&copy; Copyright ${copyright}</p>
-              </div>
             </div>`,
         },
         {
+          // DEDICATION
           left: "",
           right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic; color:#333;">
               <p>${dedication}</p>
             </div>`,
         },
         {
+          // CONTENTS SPREAD – LEFT PAGE KEEPS ISBN + COPYRIGHT
           left: `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em; color: #555;">
               <p style="margin-bottom: 5px;">ISBN: ${isbn}</p>
               <p>&copy; Copyright ${copyright}</p>
@@ -571,6 +585,7 @@ export default function Home() {
             </ul>`,
         },
       ];
+
 
       let allPages: string[] = [];
 
@@ -608,18 +623,25 @@ export default function Home() {
     }
 
     function rePaginateBook() {
+      // Apply current font settings to both pages
       pageLeft!.style.fontSize = `${currentFontSize}px`;
       pageRight!.style.fontSize = `${currentFontSize}px`;
       pageLeft!.style.lineHeight = String(currentLineHeight);
       pageRight!.style.lineHeight = String(currentLineHeight);
 
+      // Rebuild spreads for the CURRENT center book using these metrics
       bookSpreads = buildBookSpreads(currentCenterIndex);
+
+      // Clamp the current spread index just in case page count changed
       if (currentPageSpread >= bookSpreads.length) {
         currentPageSpread = bookSpreads.length - 1;
       }
       if (currentPageSpread < 0) currentPageSpread = 0;
+
+      // Paint the correct spread into the DOM
       updatePageContent(currentPageSpread);
     }
+
 
     /* ------------------------------------------------------------------
        Carousel movement + scaling
@@ -703,20 +725,12 @@ export default function Home() {
     ------------------------------------------------------------------ */
 
     function openBook() {
-      // Always rebuild pages for the *current* center book
       currentPageSpread = 0;
 
-      // Clear pages immediately so we don't flash old content
-      pageLeft!.innerHTML = "";
-      pageRight!.innerHTML = "";
+      // Always paginate freshly for the current center book
+      rePaginateBook();
 
-      // Keep your 550ms sync with the flip animation, but always rebuild
-      setTimeout(() => {
-        bookSpreads = buildBookSpreads(currentCenterIndex);
-        currentPageSpread = 0;
-        updatePageContent(currentPageSpread);
-      }, 550);
-
+      // Figure out neighbours for slide-out animation
       const leftBookIndex =
         currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
       const rightBookIndex =
@@ -727,6 +741,7 @@ export default function Home() {
         if (!book) continue;
 
         if (i === currentCenterIndex) {
+          // Hide the center physical mesh (we show the 2D reader instead)
           book.visible = false;
           book.userData.isSlidingOut = false;
         } else if (i === leftBookIndex && leftBookIndex !== -1) {
@@ -747,6 +762,7 @@ export default function Home() {
       metadataPanel?.classList.add("is-open");
       isBookOpen = true;
     }
+
 
     function closeBook() {
       settingsMenu?.classList.remove("is-open");
