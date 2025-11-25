@@ -34,8 +34,8 @@ export default function Home() {
   const displayLikes = centerBook?.likes ?? 0;
   const displaySaves = centerBook?.bookmarks ?? 0;
 
-  const toggleLike = () => setLiked((v) => !v);
-  const toggleSave = () => setSaved((v) => !v);
+  const toggleLike = () => setLiked(v => !v);
+  const toggleSave = () => setSaved(v => !v);
   const onRate = (value: number) => setUserRating(value);
 
   useEffect(() => {
@@ -71,20 +71,11 @@ export default function Home() {
     if (numBooks === 0) return;
 
     const INITIAL_CENTER_INDEX = 0;
-    // Use ref-backed value so we can sync with React state
     centerIndexRef.current = INITIAL_CENTER_INDEX;
     let currentCenterIndex = centerIndexRef.current;
 
     let isCarouselMoving = false;
     let targetCarouselX = 0;
-
-    // Helper so any change to currentCenterIndex also updates React state
-    function setCenter(newIndex: number) {
-      const clamped = Math.max(0, Math.min(numBooks - 1, newIndex));
-      currentCenterIndex = clamped;
-      centerIndexRef.current = clamped;
-      setCenterIndex(clamped);
-    }
 
     // Book dimensions / spacing
     const bookWidth = 5.7;
@@ -129,9 +120,7 @@ export default function Home() {
       "open-book-container"
     ) as HTMLDivElement | null;
     const pageLeft = document.getElementById("page-left") as HTMLDivElement | null;
-    const pageRight = document.getElementById(
-      "page-right"
-    ) as HTMLDivElement | null;
+    const pageRight = document.getElementById("page-right") as HTMLDivElement | null;
     const navContainer = document.getElementById(
       "nav-container"
     ) as HTMLDivElement | null;
@@ -302,7 +291,7 @@ export default function Home() {
       if (!book) return;
 
       carouselGroup.remove(book);
-      activeBooks = activeBooks.filter((b) => b !== book);
+      activeBooks = activeBooks.filter(b => b !== book);
       bookMeshesByIndex[index] = null;
     }
 
@@ -352,6 +341,14 @@ export default function Home() {
       }
 
       trimWindowIfNeeded();
+    }
+
+    // Helper so any change to currentCenterIndex also updates React state
+    function setCenter(newIndex: number) {
+      const clamped = Math.max(0, Math.min(numBooks - 1, newIndex));
+      currentCenterIndex = clamped;
+      centerIndexRef.current = clamped;
+      setCenterIndex(clamped);
     }
 
     function init() {
@@ -520,7 +517,6 @@ export default function Home() {
       let allPages: string[] = [];
 
       if (chapterTexts.length === 0) {
-        // Fallback if no chapter content is defined for this book
         const fallbackText =
           "This book doesn’t have any chapters loaded yet. Check back soon.";
         const pages = paginateChapter(fallbackText, `<h3>${bookTitle}</h3>`);
@@ -649,19 +645,19 @@ export default function Home() {
     ------------------------------------------------------------------ */
 
     function openBook() {
+      // Always rebuild pages for the *current* center book
       currentPageSpread = 0;
 
-      if (bookSpreads.length === 0) {
-        pageLeft!.innerHTML = "";
-        pageRight!.innerHTML = "";
+      // Clear pages immediately so we don't flash old content
+      pageLeft!.innerHTML = "";
+      pageRight!.innerHTML = "";
 
-        setTimeout(() => {
-          bookSpreads = buildBookSpreads(currentCenterIndex);
-          updatePageContent(currentPageSpread);
-        }, 550);
-      } else {
+      // Keep your 550ms sync with the flip animation, but always rebuild
+      setTimeout(() => {
+        bookSpreads = buildBookSpreads(currentCenterIndex);
+        currentPageSpread = 0;
         updatePageContent(currentPageSpread);
-      }
+      }, 550);
 
       const leftBookIndex =
         currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
@@ -941,7 +937,7 @@ export default function Home() {
       }
 
       if (isBookOpen) {
-        activeBooks.forEach((book) => {
+        activeBooks.forEach(book => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
             book.position.x +=
@@ -958,7 +954,7 @@ export default function Home() {
           }
         });
       } else {
-        activeBooks.forEach((book) => {
+        activeBooks.forEach(book => {
           if (!book) return;
           if (book.userData.isFlipping) {
             book.rotation.y +=
@@ -983,7 +979,7 @@ export default function Home() {
           }
         }
 
-        activeBooks.forEach((book) => {
+        activeBooks.forEach(book => {
           if (!book) return;
           if (book.userData.isScaling) {
             const currentScale = book.scale.x;
@@ -1063,7 +1059,7 @@ export default function Home() {
               to="/profile"
               className="meta-username"
               title={centerBook?.user ?? ""}
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
               {centerBook?.user ?? "Unknown User"}
             </Link>
