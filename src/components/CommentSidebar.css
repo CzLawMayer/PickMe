@@ -1,0 +1,996 @@
+/* CommentSidebar.css – minimal, just scrollbars */
+
+.comment-list-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.comment-list-scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+
+.comment-list-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.comment-list-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+}
+
+.comment-input-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.comment-input-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+}
+
+/* src/components/CommentSidebar.css */
+
+/* -------- Root layout -------- */
+
+.cs-sidebar-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* panel itself will re-enable */
+  z-index: 50;
+}
+
+.cs-sidebar-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  max-width: 384px; /* ~w-96 */
+  background-color: #0f0f10;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  pointer-events: auto;
+}
+
+.cs-sidebar-panel--open {
+  transform: translateX(0);
+}
+
+.cs-sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  padding: 1rem;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-color: #ef5623;
+  color: #e0e0e0;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.cs-sidebar-toggle:hover {
+  color: #fafafa;
+}
+
+/* -------- Header -------- */
+
+.cs-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #424242;
+  background-color: #111111;
+}
+
+.cs-sidebar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cs-tab {
+  border-radius: 999px;
+  padding: 0.25rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  background-color: #000000;
+  color: #bdbdbd;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cs-tab--active {
+  color: #ffffff;
+}
+
+.cs-tab--comments {
+  background-color: #e41f6c;
+}
+
+.cs-tab--reviews {
+  background-color: #6a1b9a;
+}
+
+.cs-tab:not(.cs-tab--active):hover {
+  background-color: #212121;
+  color: #e0e0e0;
+}
+
+.cs-filter-wrap {
+  position: relative;
+  margin-left: 0.25rem;
+}
+
+.cs-sidebar-header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Generic icon button */
+
+.cs-icon-btn {
+  border: none;
+  background: transparent;
+  color: #9e9e9e;
+  border-radius: 999px;
+  padding: 0.35rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cs-icon-btn:hover {
+  background-color: #212121;
+  color: #ffffff;
+}
+
+/* -------- Filter menu -------- */
+
+.cs-filter-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  width: 10rem;
+  background-color: #212121;
+  border-radius: 0.5rem;
+  border: 1px solid #424242;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.cs-filter-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e0e0e0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cs-filter-item--active {
+  color: #ffffff;
+}
+
+.cs-filter-item:hover {
+  color: #ffffff;
+}
+
+/* -------- Content -------- */
+
+.cs-sidebar-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cs-sidebar-empty {
+  font-size: 0.9rem;
+  color: #9e9e9e;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* Scrollbar styling */
+
+.comment-list-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.comment-list-scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+
+.comment-list-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.comment-list-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+}
+
+.comment-input-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.comment-input-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+}
+
+/* -------- Footer -------- */
+
+.cs-sidebar-footer {
+  border-top: 1px solid #424242;
+  background-color: #111111;
+  padding: 0.5rem;
+}
+
+.cs-sidebar-footer--reviews {
+  padding: 1rem;
+}
+
+.cs-btn {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cs-btn-full {
+  width: 100%;
+}
+
+.cs-btn-review-new {
+  background-color: #ffa000;
+  color: #ffffff;
+}
+
+.cs-btn-review-new:hover {
+  background-color: #fb8c00;
+}
+
+.cs-btn-review-edit {
+  background-color: #6a1b9a;
+  color: #ffffff;
+}
+
+.cs-btn-review-edit:hover {
+  background-color: #4a148c;
+}
+
+/* Small generic buttons & links */
+
+.cs-btn-small {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.cs-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #1e88e5;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.15s ease, text-decoration 0.15s ease;
+}
+
+.cs-link:hover {
+  text-decoration: underline;
+}
+
+.cs-link-small {
+  font-size: 0.75rem;
+}
+
+.cs-link-danger {
+  color: #ef5350;
+}
+
+/* -------- Comment form -------- */
+
+.cs-comment-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.cs-comment-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid #616161;
+  outline: none;
+  background-color: #424242;
+  color: #ffffff;
+  resize: none;
+}
+
+.cs-comment-input::placeholder {
+  color: #bdbdbd;
+}
+
+.cs-comment-input:focus {
+  border-color: #bdbdbd;
+}
+
+.cs-comment-send-btn {
+  border-radius: 999px;
+  border: none;
+  padding: 0.5rem;
+  background-color: #1e88e5;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.cs-comment-send-btn:hover {
+  background-color: #1565c0;
+}
+
+/* -------- Comment card -------- */
+
+.cs-comment {
+  position: relative;
+}
+
+.cs-comment--root {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: #212121;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.cs-comment-main-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cs-comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.cs-comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cs-comment-header-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  justify-content: space-between;
+}
+
+.cs-comment-user-wrap {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.cs-comment-username {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #f5f5f5;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-comment-time {
+  font-size: 0.7rem;
+  color: #9e9e9e;
+}
+
+/* Badges */
+
+.cs-badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.cs-badge--author {
+  background-color: #1e88e5;
+  color: #ffffff;
+}
+
+.cs-badge--admin {
+  background-color: #8e24aa;
+  color: #ffffff;
+}
+
+/* Comment text */
+
+.cs-comment-rating-row {
+  margin-top: 0.25rem;
+}
+
+.cs-comment-text {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.cs-comment-show-more {
+  margin-top: 0.15rem;
+}
+
+/* Actions */
+
+.cs-comment-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cs-comment-reaction-area {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+}
+
+.cs-comment-reaction-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  position: relative;
+}
+
+.cs-reaction-picker-wrap {
+  position: relative;
+}
+
+.cs-reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: -12px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  background-color: #424242;
+  border: 1px solid #616161;
+  border-radius: 999px;
+  padding: 0.25rem;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.cs-reaction-picker-emoji {
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  padding: 0.25rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.1s ease, transform 0.1s ease;
+}
+
+.cs-reaction-picker-emoji:hover {
+  background-color: #555555;
+  transform: scale(1.15);
+}
+
+.cs-reaction-summary-wrap {
+  position: relative;
+}
+
+/* Reaction summary */
+
+.cs-reaction-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid #616161;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  background-color: #424242;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.cs-reaction-summary--active {
+  background-color: #1e88e5;
+  border-color: #1e88e5;
+  color: #ffffff;
+}
+
+.cs-reaction-summary-emojis {
+  display: inline-flex;
+}
+
+.cs-reaction-summary-emoji {
+  margin-left: -2px;
+}
+
+.cs-reaction-summary-count {
+  font-weight: 600;
+}
+
+/* Reaction popover */
+
+.cs-reaction-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 0.5rem;
+  z-index: 60;
+}
+
+.cs-reaction-popover-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+  width: 160px;
+  background-color: #212121;
+  border-radius: 0.5rem;
+  border: 1px solid #424242;
+  padding: 0.5rem;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
+}
+
+.cs-reaction-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  border-radius: 999px;
+  border: none;
+  padding: 0.15rem 0.4rem;
+  background-color: transparent;
+  color: #f5f5f5;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.cs-reaction-chip:hover {
+  background-color: #424242;
+}
+
+.cs-reaction-chip-emoji {
+  font-size: 1.05rem;
+}
+
+.cs-reaction-chip-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.cs-reaction-popover-empty {
+  font-size: 0.7rem;
+  color: #bdbdbd;
+}
+
+/* Comment reply / menu */
+
+.cs-comment-reply-btn {
+  padding: 0.25rem;
+}
+
+.cs-comment-menu-wrap {
+  position: relative;
+  margin-left: 0.25rem;
+}
+
+.cs-comment-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  width: 7.5rem;
+  background-color: #212121;
+  border: 1px solid #424242;
+  border-radius: 0.4rem;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.cs-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  border: none;
+  background: transparent;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cs-menu-item:hover {
+  background-color: #424242;
+}
+
+.cs-menu-item--danger {
+  color: #ef5350;
+}
+
+/* Replies */
+
+.cs-comment-toggle-replies {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.35rem;
+}
+
+.cs-icon-inline {
+  vertical-align: middle;
+}
+
+.cs-comment-replies {
+  margin-top: 1rem;
+  margin-left: 2.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid #1e88e5;
+}
+
+.cs-comment-replies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cs-comment-reply-form-top {
+  margin-left: 2.5rem;
+  margin-top: 0.75rem;
+}
+
+.cs-comment-reply-form-bottom {
+  margin-top: 0.75rem;
+}
+
+.cs-comment-reply-bottom-btn {
+  margin-top: 0.5rem;
+}
+
+/* Edit mode */
+
+.cs-comment-edit-form {
+  margin-top: 0.5rem;
+}
+
+.cs-comment-edit-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #616161;
+  background-color: #424242;
+  color: #ffffff;
+  resize: none;
+  font-size: 0.85rem;
+}
+
+.cs-comment-edit-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* -------- Stars -------- */
+
+.cs-star-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.cs-star-input {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.cs-star-input-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.cs-star {
+  color: #ffffff;
+}
+
+.cs-star--full,
+.cs-star--half {
+  color: #ffa000;
+}
+
+/* -------- Skeleton -------- */
+
+.cs-comment-skeleton {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: #212121;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  animation: cs-pulse 1.5s ease-in-out infinite;
+}
+
+.cs-comment-skeleton-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cs-comment-skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background-color: #424242;
+}
+
+.cs-comment-skeleton-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cs-comment-skeleton-line {
+  height: 0.75rem;
+  border-radius: 999px;
+  background-color: #424242;
+}
+
+.cs-comment-skeleton-line.short {
+  width: 30%;
+}
+
+.cs-comment-skeleton-line.medium {
+  width: 75%;
+}
+
+@keyframes cs-pulse {
+  0% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+/* -------- Modal -------- */
+
+.cs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.cs-modal {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background-color: #000000;
+  border-radius: 0.5rem;
+  border: 1px solid #424242;
+  padding: 1.5rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+.cs-modal--review {
+  max-width: 480px;
+}
+
+.cs-modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.cs-modal-text {
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  margin-bottom: 1rem;
+}
+
+.cs-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.cs-btn-secondary {
+  background-color: #616161;
+  color: #ffffff;
+}
+
+.cs-btn-secondary:hover {
+  background-color: #757575;
+}
+
+.cs-btn-danger {
+  background-color: #e53935;
+  color: #ffffff;
+}
+
+.cs-btn-danger:hover {
+  background-color: #c62828;
+}
+
+.cs-btn-success {
+  background-color: #43a047;
+  color: #ffffff;
+}
+
+.cs-btn-success:hover {
+  background-color: #2e7d32;
+}
+
+/* Review modal parts */
+
+.cs-modal-close-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  border: none;
+  background: transparent;
+  color: #9e9e9e;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 0.25rem;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.cs-modal-close-btn:hover {
+  color: #ffffff;
+  background-color: #212121;
+}
+
+.cs-modal-section {
+  margin-bottom: 1rem;
+}
+
+.cs-modal-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #e0e0e0;
+  margin-bottom: 0.4rem;
+}
+
+.cs-modal-textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #616161;
+  background-color: #424242;
+  color: #ffffff;
+  font-size: 0.85rem;
+  resize: none;
+}
+
+.cs-modal-textarea::placeholder {
+  color: #bdbdbd;
+}
+
+.cs-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.cs-modal-left {
+  display: flex;
+  align-items: center;
+}
+
+/* -------- Toast -------- */
+
+.cs-toast {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 6rem;
+  padding: 0.75rem 1rem;
+  background-color: #e53935;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 0.4rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.cs-toast--visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.cs-toast--hidden {
+  transform: translateY(10px);
+  opacity: 0;
+}
+
+.cs-sidebar-root {
+  position: fixed;
+  top: var(--app-header-h, 64px); /* BELOW header */
+  right: 0;
+  bottom: 0;
+  width: auto;
+
+  /* Allow toggle button clicks, block the empty space */
+  pointer-events: none;
+
+  z-index: 40; /* header is 50 */
+}
+
+.cs-sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: 100%;     /* place to the left of the panel */
+  transform: translateY(-50%);
+  pointer-events: auto; /* <-- IMPORTANT */
+}
+
+.cs-sidebar-shell {
+  position: absolute;
+  inset: 0;
+  width: 380px;
+
+  margin-left: auto;
+  background: #0f0f10;
+
+  display: flex;
+  flex-direction: column;
+
+  transform: translateX(100%);        /* closed */
+  transition: transform 0.25s ease;
+  pointer-events: auto;               /* <-- IMPORTANT */
+}
+
+.cs-sidebar-root.is-open .cs-sidebar-shell {
+  transform: translateX(0);
+}
+

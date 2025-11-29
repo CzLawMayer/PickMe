@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import AppHeader from "@/components/AppHeader";
@@ -13,6 +13,9 @@ import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
 import StarButton from "@/components/StarButton";
 import ReaderMenu from "@/components/ReaderMenu";
+
+import CommentSidebar from "@/components/CommentSidebar";
+import "@/components/CommentSidebar.css";
 
 type BookSpread = { left: string; right: string };
 
@@ -31,6 +34,33 @@ type TypographyOptions = {
   fontFamily?: string;
   theme?: ReaderTheme;
 };
+
+// ---- Comment system types ----
+type CommentItem = {
+  id: number;
+  username: string;
+  pfpUrl: string;
+  date: number | string;
+  text: string;
+  reactions: Record<string, number>;
+  replies: CommentItem[];
+  rating?: number;
+};
+
+type ThreadState = {
+  comments: CommentItem[];
+  reviews: CommentItem[];
+};
+
+type FilterSort =
+  | "newest"
+  | "oldest"
+  | "mostLiked"
+  | "mostReplies"
+  | "highestRating"
+  | "lowestRating";
+
+const CURRENT_USER_ID = "CurrentUser";
 
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
@@ -52,7 +82,6 @@ export default function Home() {
   const centerBook = sampleBooks[effectiveIndex] ?? sampleBooks[0];
 
   // ---------- Per-book like/save/rating ----------
-
   const [likedById, setLikedById] = useState<Record<string, boolean>>({});
   const [savedById, setSavedById] = useState<Record<string, boolean>>({});
   const [userRatingById, setUserRatingById] = useState<Record<string, number>>(
@@ -100,6 +129,20 @@ export default function Home() {
     if (!centerId) return;
     setUserRatingById((m) => ({ ...m, [centerId]: value }));
   };
+
+  // ----- COMMENT SECTION STATE (per book) -----
+  const [activeBookId, setActiveBookId] = useState<string | null>(null);
+  const [commentThreads, setCommentThreads] = useState<
+    Record<string, ThreadState>
+  >({});
+
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [filterSort, setFilterSort] = useState<FilterSort>("newest");
+  const [isLoading, setIsLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const toastTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const root = threeRootRef.current;
@@ -164,7 +207,7 @@ export default function Home() {
     let currentFontSize = 14;
     let currentLineHeight = 1.6;
     let currentFontFamily = "Georgia, 'Times New Roman', serif";
-    let currentTheme: ReaderTheme = "cream"; // default: light/cream
+    let currentTheme: ReaderTheme = "cream";
 
     // Debounce handle for heavy pagination
     let paginationTimer: number | null = null;
@@ -471,9 +514,8 @@ export default function Home() {
       const originalContent = testPage.innerHTML;
       const pages: string[] = [];
 
-      // normalize newlines so paragraph breaks use exactly ONE blank line
       let normalized = (fullText || "").replace(/\r\n/g, "\n");
-      normalized = normalized.replace(/\n{3,}/g, "\n\n"); // collapse huge gaps
+      normalized = normalized.replace(/\n{3,}/g, "\n\n");
       const processedText = normalized
         .replace(/\n{2}/g, " <br><br> ")
         .replace(/\n/g, " ");
@@ -523,7 +565,7 @@ export default function Home() {
 
       const bookTitle = meta.title;
       const bookAuthor = bookData?.author || "A. Nonymous";
-      const isbn = "978-0-999999-99-9"; // placeholder
+      const isbn = "978-0-999999-99-9";
       const copyright = (bookData?.year ?? 2024).toString();
       const dedication =
         bookData?.dedication ||
@@ -536,7 +578,6 @@ export default function Home() {
         ? bookData.chapterTexts
         : [];
 
-      // Build ToC list from chapters, with fallback
       let tocItems = "";
       if (chapterTitles.length > 0) {
         tocItems = chapterTitles
@@ -552,7 +593,6 @@ export default function Home() {
 
       const staticSpreads: BookSpread[] = [
         {
-          // Title page (right only, centred title + author)
           left: "",
           right: `<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center;">
               <div>
@@ -562,14 +602,12 @@ export default function Home() {
             </div>`,
         },
         {
-          // Dedication (right only)
           left: "",
           right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic;">
               <p>${dedication}</p>
             </div>`,
         },
         {
-          // Contents spread; ISBN/copyright on the left page only
           left: `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em;">
               <p style="margin-bottom: 5px;">ISBN: ${isbn}</p>
               <p>&copy; Copyright ${copyright}</p>
@@ -601,7 +639,6 @@ export default function Home() {
           if (!text) continue;
           const title = chapterTitles[i] ?? `Chapter ${i + 1}`;
 
-          // styled chapter title (centered, bold, larger) + spacing
           const chapterTitleHtml = `
             <div style="text-align:center; margin: 0 0 12px 0;">
               <span style="font-weight:700; font-size:1.4em;">${title}</span>
@@ -637,7 +674,6 @@ export default function Home() {
         bg = "#181717";
         fg = "#f5f0e6";
       } else {
-        // "white"
         bg = "#ffffff";
         fg = "#111111";
       }
@@ -671,12 +707,10 @@ export default function Home() {
       pageLeft.innerHTML = spread.left;
       pageRight.innerHTML = spread.right;
 
-      // justify paragraphs & apply theme/colors
       applyTypographyStyles();
     }
 
     function rePaginateBook() {
-      // rebuild all spreads for the current book with current typography
       bookSpreads = buildBookSpreads(currentCenterIndex);
       if (currentPageSpread >= bookSpreads.length) {
         currentPageSpread = bookSpreads.length - 1;
@@ -685,7 +719,6 @@ export default function Home() {
       updatePageContent(currentPageSpread);
     }
 
-    // Debounced heavy pagination
     function scheduleRepaginate(layoutChanged: boolean) {
       if (!layoutChanged) return;
       if (paginationTimer !== null) {
@@ -697,26 +730,25 @@ export default function Home() {
       }, 80);
     }
 
-    // Expose DOM-based typography controls to React (ReaderMenu)
     readerControlsRef.current = {
       setFontSize: (px: number) => {
         currentFontSize = px;
-        applyTypographyStyles(); // instant visual
+        applyTypographyStyles();
         scheduleRepaginate(true);
       },
       setLineHeight: (lh: number) => {
         currentLineHeight = lh;
-        applyTypographyStyles(); // instant visual
+        applyTypographyStyles();
         scheduleRepaginate(true);
       },
       setFontFamily: (family: string) => {
         currentFontFamily = family;
-        applyTypographyStyles(); // instant visual
+        applyTypographyStyles();
         scheduleRepaginate(true);
       },
       setTheme: (theme: ReaderTheme) => {
         currentTheme = theme;
-        applyTypographyStyles(); // instant visual, static layout
+        applyTypographyStyles();
         scheduleRepaginate(false);
       },
     };
@@ -767,7 +799,6 @@ export default function Home() {
     }
 
     function moveCarouselLeft() {
-      // Do not move the 3D carousel when a book is open
       if (isBookOpenLocal) return;
       if (currentCenterIndex <= 0) return;
 
@@ -781,7 +812,6 @@ export default function Home() {
     }
 
     function moveCarouselRight() {
-      // Do not move the 3D carousel when a book is open
       if (isBookOpenLocal) return;
       if (currentCenterIndex >= numBooks - 1) return;
 
@@ -801,12 +831,19 @@ export default function Home() {
     function openBook() {
       currentPageSpread = 0;
 
-      // Freeze metadata on the book we're opening
       setLockedIndex(currentCenterIndex);
       setIsBookOpen(true);
       isBookOpenLocal = true;
 
-      // Always rebuild spreads for the specific book we are opening
+      // NEW: set per-book comment thread key
+      const openedBook = sampleBooks[currentCenterIndex] as any;
+      if (openedBook?.id) {
+        setActiveBookId(openedBook.id);
+      } else {
+        setActiveBookId(`book-${currentCenterIndex}`);
+      }
+      setIsCommentsOpen(false);
+
       bookSpreads = buildBookSpreads(currentCenterIndex);
       updatePageContent(currentPageSpread);
 
@@ -898,10 +935,10 @@ export default function Home() {
       isBookOpenLocal = false;
       currentPageSpread = 0;
 
-      // Unfreeze metadata and ensure React's index matches the real center
       setLockedIndex(null);
       setCenter(currentCenterIndex);
       setIsBookOpen(false);
+      setIsCommentsOpen(false);
     }
 
     function flipPageLeft() {
@@ -1097,8 +1134,7 @@ export default function Home() {
               (book.userData.targetRotation - book.rotation.y) * fastEase;
 
             if (
-              Math.abs(book.userData.targetRotation - book.rotation.y) <
-              0.01
+              Math.abs(book.userData.targetRotation - book.rotation.y) < 0.01
             ) {
               book.rotation.y = book.userData.targetRotation;
               book.userData.isFlipping = false;
@@ -1168,7 +1204,266 @@ export default function Home() {
         }
       }
     };
-  }, [setCenterIndex, setLockedIndex, setIsBookOpen]);
+  }, []);
+
+  // ----- COMMENT THREAD HELPERS -----
+  const ensureThread = (bookId: string): ThreadState => {
+    return commentThreads[bookId] ?? { comments: [], reviews: [] };
+  };
+
+  const updateCurrentThread = (updater: (prev: ThreadState) => ThreadState) => {
+    if (!activeBookId) return;
+    setCommentThreads((prev) => {
+      const previous = prev[activeBookId] ?? { comments: [], reviews: [] };
+      return {
+        ...prev,
+        [activeBookId]: updater(previous),
+      };
+    });
+  };
+
+  const createDataObject = (
+    text: string,
+    rating: number | null = null
+  ): CommentItem => ({
+    id: Date.now(),
+    username: CURRENT_USER_ID,
+    pfpUrl: "https://placehold.co/40x40/7A86B6/FFF?text=Me",
+    date: Date.now(),
+    text,
+    reactions: {},
+    replies: [],
+    ...(rating !== null ? { rating } : {}),
+  });
+
+  const triggerToast = (message: string) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    setToastMessage(message);
+    setIsToastVisible(true);
+    toastTimerRef.current = window.setTimeout(() => {
+      setIsToastVisible(false);
+      toastTimerRef.current = null;
+    }, 3000);
+  };
+
+  const handleToggleComments = () => {
+    if (!isBookOpen || !activeBookId) return;
+    if (!isCommentsOpen) {
+      setIsLoading(true);
+      setTimeout(() => setIsLoading(false), 800);
+    }
+    setIsCommentsOpen((open) => !open);
+  };
+
+  const currentThread = activeBookId
+    ? ensureThread(activeBookId)
+    : { comments: [], reviews: [] };
+  const commentsForBook = currentThread.comments;
+  const reviewsForBook = currentThread.reviews;
+
+  const handleAddComment = (text: string) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: [createDataObject(text), ...prev.comments],
+    }));
+  };
+
+  const handleAddReply = (parentId: number, text: string) => {
+    const reply = createDataObject(text);
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: prev.comments.map((c) =>
+        c.id === parentId
+          ? { ...c, replies: [...(c.replies ?? []), reply] }
+          : c
+      ),
+    }));
+  };
+
+  const handleAddReviewReply = (parentId: number, text: string) => {
+    const reply = createDataObject(text);
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews.map((r) =>
+        r.id === parentId
+          ? { ...r, replies: [...(r.replies ?? []), reply] }
+          : r
+      ),
+    }));
+  };
+
+  const handleEditComment = (commentId: number, newText: string) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: prev.comments.map((comment) => {
+        if (comment.id === commentId) {
+          return { ...comment, text: newText, date: "Edited" };
+        }
+        if (comment.replies) {
+          return {
+            ...comment,
+            replies: comment.replies.map((reply) =>
+              reply.id === commentId
+                ? { ...reply, text: newText, date: "Edited" }
+                : reply
+            ),
+          };
+        }
+        return comment;
+      }),
+    }));
+  };
+
+  const handleEditReview = (reviewId: number, newText: string) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews.map((review) => {
+        if (review.id === reviewId) {
+          return { ...review, text: newText, date: "Edited" };
+        }
+        if (review.replies) {
+          return {
+            ...review,
+            replies: review.replies.map((reply) =>
+              reply.id === reviewId
+                ? { ...reply, text: newText, date: "Edited" }
+                : reply
+            ),
+          };
+        }
+        return review;
+      }),
+    }));
+  };
+
+  const handleDeleteComment = (commentId: number) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: prev.comments
+        .filter((c) => c.id !== commentId)
+        .map((c) => ({
+          ...c,
+          replies: c.replies.filter((r) => r.id !== commentId),
+        })),
+    }));
+  };
+
+  const handleDeleteReview = (reviewId: number) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews
+        .filter((r) => r.id !== reviewId)
+        .map((r) => ({
+          ...r,
+          replies: r.replies.filter((rr) => rr.id !== reviewId),
+        })),
+    }));
+  };
+
+  const handleSubmitReview = ({
+    rating,
+    text,
+  }: {
+    rating: number;
+    text: string;
+  }) => {
+    if (!activeBookId) return;
+    updateCurrentThread((prev) => {
+      const existing = prev.reviews.find(
+        (r) => r.username === CURRENT_USER_ID
+      );
+      if (existing) {
+        return {
+          ...prev,
+          reviews: prev.reviews.map((r) =>
+            r.username === CURRENT_USER_ID
+              ? { ...r, rating, text, date: Date.now() }
+              : r
+          ),
+        };
+      }
+      const newReview = createDataObject(text, rating);
+      return {
+        ...prev,
+        reviews: [newReview, ...prev.reviews],
+      };
+    });
+  };
+
+  const handleDeleteOwnReview = () => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews.filter((r) => r.username !== CURRENT_USER_ID),
+    }));
+  };
+
+  const usersReview = reviewsForBook.find(
+    (r) => r.username === CURRENT_USER_ID
+  );
+  const hasUserReviewed = Boolean(usersReview);
+
+  const getDateVal = (d: number | string) =>
+    typeof d === "number" ? d : 0;
+
+  const sortedComments = useMemo(() => {
+    const sorted = [...commentsForBook];
+    switch (filterSort) {
+      case "oldest":
+        return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
+      case "mostLiked":
+        return sorted.sort((a, b) => {
+          const likesA = Object.values(a.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          const likesB = Object.values(b.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          return likesB - likesA;
+        });
+      case "mostReplies":
+        return sorted.sort(
+          (a, b) => (b.replies?.length || 0) - (a.replies?.length || 0)
+        );
+      case "newest":
+      default:
+        return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
+    }
+  }, [commentsForBook, filterSort]);
+
+  const sortedReviews = useMemo(() => {
+    const sorted = [...reviewsForBook];
+    switch (filterSort) {
+      case "oldest":
+        return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
+      case "mostLiked":
+        return sorted.sort((a, b) => {
+          const likesA = Object.values(a.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          const likesB = Object.values(b.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          return likesB - likesA;
+        });
+      case "highestRating":
+        return sorted.sort(
+          (a, b) => (b.rating || 0) - (a.rating || 0)
+        );
+      case "lowestRating":
+        return sorted.sort(
+          (a, b) => (a.rating || 0) - (b.rating || 0)
+        );
+      case "newest":
+      default:
+        return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
+    }
+  }, [reviewsForBook, filterSort]);
 
   // Helper for TTS: read the visible pages
   const getVisiblePageText = () => {
@@ -1299,6 +1594,36 @@ export default function Home() {
               }
             }}
           />
+
+          {/* COMMENTS: only available when a book is open */}
+          {isBookOpen && activeBookId && (
+            <CommentSidebar
+              isOpen={isCommentsOpen}
+              onToggle={handleToggleComments}
+              comments={sortedComments}
+              reviews={sortedReviews}
+              onAddComment={handleAddComment}
+              onAddReply={handleAddReply}
+              onAddReviewReply={handleAddReviewReply}
+              onOpenReviewModal={() => setIsReviewModalOpen(true)}
+              hasUserReviewed={hasUserReviewed}
+              filterSort={filterSort}
+              onFilterChange={setFilterSort}
+              onEditComment={handleEditComment}
+              onEditReview={handleEditReview}
+              onDeleteComment={handleDeleteComment}
+              onDeleteReview={handleDeleteReview}
+              isLoading={isLoading}
+              onReport={triggerToast}
+              toastMessage={toastMessage}
+              isToastVisible={isToastVisible}
+              // If your CommentSidebar still expects these:
+              onSubmitReview={handleSubmitReview}
+              onDeleteOwnReview={handleDeleteOwnReview}
+              isReviewModalOpen={isReviewModalOpen}
+              usersReview={usersReview}
+            />
+          )}
         </section>
       </main>
     </div>
