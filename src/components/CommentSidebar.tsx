@@ -1007,7 +1007,7 @@ export default function CommentSidebar({
 
   return (
     <div className="cs-sidebar-root">
-      <div className={sidebarPanelClass}>
+
         {/* Toggle button sitting outside the panel */}
         <button
           onClick={onToggle}
@@ -1016,7 +1016,7 @@ export default function CommentSidebar({
         >
           <MessageSquare size={24} />
         </button>
-
+      <div className={sidebarPanelClass}>
         {/* Header: tabs + filter + close button */}
         <div className="cs-sidebar-header">
           <div className="cs-sidebar-tabs">
