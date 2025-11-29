@@ -994,3 +994,21 @@
   transform: translateX(0);
 }
 
+/* Make the entire comment sidebar fully black */
+
+.cs-sidebar-panel {
+  background-color: #000000 !important;
+}
+
+.cs-sidebar-header {
+  background-color: #000000 !important;
+}
+
+.cs-sidebar-footer,
+.cs-sidebar-footer--reviews {
+  background-color: #000000 !important;
+}
+
+.cs-sidebar-content {
+  background-color: #000000 !important;
+}
