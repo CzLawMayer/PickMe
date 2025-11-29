@@ -1047,3 +1047,14 @@
 .cs-sidebar-toggle:hover {
   background-color: #ff6930;
 }
+
+/* Make sure review modal always appears on top of everything */
+.cs-modal-backdrop {
+  z-index: 99999 !important;
+  position: fixed !important;
+  pointer-events: auto !important;
+}
+
+.cs-modal {
+  z-index: 999999 !important;
+}

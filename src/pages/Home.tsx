@@ -1,6 +1,7 @@
 // src/pages/Home.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { Link } from "react-router-dom";
 
 import AppHeader from "@/components/AppHeader";
 import { sampleBooks } from "@/booksData";
@@ -8,13 +9,14 @@ import { sampleBooks } from "@/booksData";
 import "./Home.css";
 import "./Home3D.css";
 
-import { Link } from "react-router-dom";
 import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
 import StarButton from "@/components/StarButton";
 import ReaderMenu from "@/components/ReaderMenu";
 
-import CommentSidebar from "@/components/CommentSidebar";
+import CommentSidebar, {
+  ReviewModal,
+} from "@/components/CommentSidebar";
 import "@/components/CommentSidebar.css";
 
 type BookSpread = { left: string; right: string };
@@ -65,19 +67,16 @@ const CURRENT_USER_ID = "CurrentUser";
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
-  // Which book is currently in the center of the carousel (3D side)
+  // 3D carousel state
   const [centerIndex, setCenterIndex] = useState(0);
   const centerIndexRef = useRef(0);
-
-  // When a book is open, we "lock" metadata to the book we opened
   const [lockedIndex, setLockedIndex] = useState<number | null>(null);
-
-  // Is the reader (open book) currently visible
   const [isBookOpen, setIsBookOpen] = useState(false);
 
-  // API from the pagination layer to ReaderMenu
+  // Reader typography controls
   const readerControlsRef = useRef<ReaderControls | null>(null);
 
+  // Effective book in the center (if locked by open-book)
   const effectiveIndex = lockedIndex ?? centerIndex;
   const centerBook = sampleBooks[effectiveIndex] ?? sampleBooks[0];
 
@@ -130,7 +129,7 @@ export default function Home() {
     setUserRatingById((m) => ({ ...m, [centerId]: value }));
   };
 
-  // ----- COMMENT SECTION STATE (per book) -----
+  // ---------- COMMENT / REVIEW STATE (per book) ----------
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
   const [commentThreads, setCommentThreads] = useState<
     Record<string, ThreadState>
@@ -144,13 +143,10 @@ export default function Home() {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
 
+  // ---------- 3D + Reader setup ----------
   useEffect(() => {
     const root = threeRootRef.current;
     if (!root) return;
-
-    /* ------------------------------------------------------------------
-       CORE STATE
-    ------------------------------------------------------------------ */
 
     let scene: THREE.Scene;
     let camera: THREE.PerspectiveCamera;
@@ -159,7 +155,7 @@ export default function Home() {
     let raycaster: THREE.Raycaster;
     let mouse: THREE.Vector2;
 
-    // Books from booksData: covers + titles
+    // Books from data
     const bookCovers =
       sampleBooks.length > 0
         ? sampleBooks.map((b, index) => ({
@@ -183,7 +179,6 @@ export default function Home() {
     let isCarouselMoving = false;
     let targetCarouselX = 0;
 
-    // Helper so any change to currentCenterIndex also updates React state
     function setCenter(newIndex: number) {
       const clamped = Math.max(0, Math.min(numBooks - 1, newIndex));
       currentCenterIndex = clamped;
@@ -191,7 +186,6 @@ export default function Home() {
       setCenterIndex(clamped);
     }
 
-    // Book dimensions / spacing
     const bookWidth = 5.7;
     const bookHeight = 8;
     const bookDepth = 0.55;
@@ -203,40 +197,32 @@ export default function Home() {
 
     const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
 
-    // font & theme settings for reader (DOM-level; driven by ReaderMenu)
     let currentFontSize = 14;
     let currentLineHeight = 1.6;
     let currentFontFamily = "Georgia, 'Times New Roman', serif";
     let currentTheme: ReaderTheme = "cream";
 
-    // Debounce handle for heavy pagination
     let paginationTimer: number | null = null;
 
-    // Lazy-loading window:
+    // Lazy-loading
     const MAX_LOADED = 30;
     const CHUNK = 10;
     let windowStart = 0;
     let windowEnd = Math.min(CHUNK - 1, numBooks - 1);
     let lastDirection: 1 | -1 | 0 = 0;
 
-    // Mesh storage: by logical index + active list
     const bookMeshesByIndex: (THREE.Mesh | null)[] = Array(numBooks).fill(
       null
     );
     let activeBooks: THREE.Mesh[] = [];
 
-    // Queues for smooth loading/unloading
     let loadQueue: number[] = [];
     let unloadQueue: number[] = [];
 
-    // Shared THREE helpers
     const textureLoader = new THREE.TextureLoader();
     const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
 
-    /* ------------------------------------------------------------------
-       DOM refs
-    ------------------------------------------------------------------ */
-
+    // ---- DOM refs ----
     const openBookContainer = document.getElementById(
       "open-book-container"
     ) as HTMLDivElement | null;
@@ -267,10 +253,7 @@ export default function Home() {
       return;
     }
 
-    /* ------------------------------------------------------------------
-       Helpers
-    ------------------------------------------------------------------ */
-
+    // ---- Helpers ----
     function createSpineTexture(
       title: string,
       width: number,
@@ -315,10 +298,7 @@ export default function Home() {
       return cleaned.trim();
     }
 
-    /* ------------------------------------------------------------------
-       THREE setup + book creation
-    ------------------------------------------------------------------ */
-
+    // ---- THREE init ----
     function createBookMesh(index: number): THREE.Mesh {
       const coverMeta = bookCovers[index];
       const frontTexture = textureLoader.load(coverMeta.front);
@@ -353,12 +333,12 @@ export default function Home() {
       });
 
       const materials = [
-        pageMaterial, // right
-        spineMaterial, // left (spine)
-        pageMaterial, // top
-        pageMaterial, // bottom
-        frontCoverMaterial, // front
-        backCoverMaterial, // back
+        pageMaterial,
+        spineMaterial,
+        pageMaterial,
+        pageMaterial,
+        frontCoverMaterial,
+        backCoverMaterial,
       ];
 
       const geom = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
@@ -371,9 +351,7 @@ export default function Home() {
         targetRotation: 0,
         targetScale: 1,
         isScaling: false,
-        targetVisibility: true,
         isSlidingOut: false,
-        isSlidingIn: false,
         targetSlideX: 0,
         targetSlideScale: 1,
       };
@@ -388,7 +366,6 @@ export default function Home() {
     function ensureBookLoaded(index: number, immediate = false) {
       if (index < 0 || index >= numBooks) return;
       if (bookMeshesByIndex[index]) return;
-
       if (immediate) {
         createBookMesh(index);
       } else {
@@ -402,7 +379,6 @@ export default function Home() {
       if (index < 0 || index >= numBooks) return;
       const book = bookMeshesByIndex[index];
       if (!book) return;
-
       carouselGroup.remove(book);
       activeBooks = activeBooks.filter((b) => b !== book);
       bookMeshesByIndex[index] = null;
@@ -419,7 +395,6 @@ export default function Home() {
     function trimWindowIfNeeded() {
       const loadedCount = windowEnd - windowStart + 1;
       if (loadedCount <= MAX_LOADED) return;
-
       const over = loadedCount - MAX_LOADED;
       const toDrop = Math.min(CHUNK, over);
 
@@ -496,10 +471,7 @@ export default function Home() {
       renderer.setSize(w, h);
     }
 
-    /* ------------------------------------------------------------------
-       Pagination using booksData chapterTexts
-    ------------------------------------------------------------------ */
-
+    // ---- Pagination / pages ----
     function paginateChapter(fullText: string, titleHtml: string | null = null) {
       const testPage = pageLeft!;
       const computedStyle = window.getComputedStyle(testPage);
@@ -508,8 +480,7 @@ export default function Home() {
         pageHeight -
         (parseFloat(computedStyle.paddingTop) +
           parseFloat(computedStyle.paddingBottom));
-      const marginBuffer = 0;
-      const effectiveHeight = contentAreaHeight - marginBuffer;
+      const effectiveHeight = contentAreaHeight;
 
       const originalContent = testPage.innerHTML;
       const pages: string[] = [];
@@ -522,9 +493,6 @@ export default function Home() {
 
       const words = processedText.split(" ");
 
-      let currentPageText = "";
-      if (titleHtml) currentPageText += titleHtml;
-
       const measureDiv = document.createElement("div");
       measureDiv.style.fontSize = `${currentFontSize}px`;
       measureDiv.style.lineHeight = String(currentLineHeight);
@@ -533,6 +501,9 @@ export default function Home() {
       measureDiv.style.height = "auto";
       measureDiv.style.width = "100%";
       testPage.appendChild(measureDiv);
+
+      let currentPageText = "";
+      if (titleHtml) currentPageText += titleHtml;
 
       for (const word of words) {
         const testWord = word + " ";
@@ -558,7 +529,6 @@ export default function Home() {
       return pages;
     }
 
-    // Build spreads (title/dedication/ToC + chapters) from booksData
     function buildBookSpreads(bookIndex: number): BookSpread[] {
       const meta = bookCovers[bookIndex];
       const bookData = sampleBooks[bookIndex] as any | undefined;
@@ -630,7 +600,6 @@ export default function Home() {
             <span style="font-weight:700; font-size:1.4em;">${bookTitle}</span>
           </div>
         `;
-
         const pages = paginateChapter(fallbackText, chapterTitleHtml);
         allPages = allPages.concat(pages);
       } else {
@@ -644,7 +613,6 @@ export default function Home() {
               <span style="font-weight:700; font-size:1.4em;">${title}</span>
             </div>
           `;
-
           const pages = paginateChapter(text, chapterTitleHtml);
           allPages = allPages.concat(pages);
         }
@@ -663,7 +631,6 @@ export default function Home() {
 
     function applyThemeColors() {
       if (!pageLeft || !pageRight) return;
-
       let bg: string;
       let fg: string;
 
@@ -693,7 +660,6 @@ export default function Home() {
       pageRight.style.lineHeight = String(currentLineHeight);
       pageLeft.style.fontFamily = currentFontFamily;
       pageRight.style.fontFamily = currentFontFamily;
-
       pageLeft.style.textAlign = "justify";
       pageRight.style.textAlign = "justify";
 
@@ -703,10 +669,8 @@ export default function Home() {
     function updatePageContent(index: number) {
       const spread = bookSpreads[index];
       if (!spread || !pageLeft || !pageRight) return;
-
       pageLeft.innerHTML = spread.left;
       pageRight.innerHTML = spread.right;
-
       applyTypographyStyles();
     }
 
@@ -730,6 +694,7 @@ export default function Home() {
       }, 80);
     }
 
+    // Expose reader controls
     readerControlsRef.current = {
       setFontSize: (px: number) => {
         currentFontSize = px;
@@ -753,10 +718,7 @@ export default function Home() {
       },
     };
 
-    /* ------------------------------------------------------------------
-       Carousel movement + scaling
-    ------------------------------------------------------------------ */
-
+    // ---- Carousel scaling ----
     function updateBookProperties(isInitial = false) {
       const centerScale = 1.2;
       const sideScale = 1.2;
@@ -801,12 +763,10 @@ export default function Home() {
     function moveCarouselLeft() {
       if (isBookOpenLocal) return;
       if (currentCenterIndex <= 0) return;
-
       lastDirection = -1;
       isCarouselMoving = true;
       setCenter(currentCenterIndex - 1);
       targetCarouselX += bookSpacing;
-
       adjustWindow();
       updateBookProperties();
     }
@@ -814,20 +774,15 @@ export default function Home() {
     function moveCarouselRight() {
       if (isBookOpenLocal) return;
       if (currentCenterIndex >= numBooks - 1) return;
-
       lastDirection = 1;
       isCarouselMoving = true;
       setCenter(currentCenterIndex + 1);
       targetCarouselX -= bookSpacing;
-
       adjustWindow();
       updateBookProperties();
     }
 
-    /* ------------------------------------------------------------------
-       Open / Close book
-    ------------------------------------------------------------------ */
-
+    // ---- Open / Close book ----
     function openBook() {
       currentPageSpread = 0;
 
@@ -835,7 +790,7 @@ export default function Home() {
       setIsBookOpen(true);
       isBookOpenLocal = true;
 
-      // NEW: set per-book comment thread key
+      // Per-book comment thread key
       const openedBook = sampleBooks[currentCenterIndex] as any;
       if (openedBook?.id) {
         setActiveBookId(openedBook.id);
@@ -843,6 +798,7 @@ export default function Home() {
         setActiveBookId(`book-${currentCenterIndex}`);
       }
       setIsCommentsOpen(false);
+      setIsReviewModalOpen(false);
 
       bookSpreads = buildBookSpreads(currentCenterIndex);
       updatePageContent(currentPageSpread);
@@ -904,7 +860,6 @@ export default function Home() {
 
         book.userData.isSlidingOut = false;
         book.userData.isScaling = false;
-        book.userData.isSlidingIn = false;
 
         const distance = Math.abs(i - currentCenterIndex);
         const finalX = (i - INITIAL_CENTER_INDEX) * bookSpacing;
@@ -912,7 +867,6 @@ export default function Home() {
         if (distance === 0) {
           book.userData.targetRotation = 0;
           book.userData.isFlipping = true;
-
           book.position.x = finalX;
           book.scale.set(centerScale, centerScale, centerScale);
           book.visible = true;
@@ -927,7 +881,7 @@ export default function Home() {
           } else {
             book.scale.set(outerScale, outerScale, outerScale);
             const inWindow = i >= windowStart && i <= windowEnd;
-            book.visible = inWindow && book.userData.targetVisibility;
+            book.visible = inWindow;
           }
         }
       }
@@ -939,6 +893,8 @@ export default function Home() {
       setCenter(currentCenterIndex);
       setIsBookOpen(false);
       setIsCommentsOpen(false);
+      setIsReviewModalOpen(false);
+      setActiveBookId(null);
     }
 
     function flipPageLeft() {
@@ -959,10 +915,7 @@ export default function Home() {
       }
     }
 
-    /* ------------------------------------------------------------------
-       Click to flip / open
-    ------------------------------------------------------------------ */
-
+    // ---- Click handling ----
     function onDocumentClick(event: MouseEvent) {
       const target = event.target as HTMLElement;
       if (
@@ -1022,10 +975,7 @@ export default function Home() {
       }
     }
 
-    /* ------------------------------------------------------------------
-       Nav arrows
-    ------------------------------------------------------------------ */
-
+    // ---- Nav arrows ----
     leftArrowBtn?.addEventListener("click", () => {
       if (isBookOpenLocal) flipPageLeft();
       else moveCarouselLeft();
@@ -1040,10 +990,7 @@ export default function Home() {
       closeBook();
     });
 
-    /* ------------------------------------------------------------------
-       Drag-to-move
-    ------------------------------------------------------------------ */
-
+    // ---- Drag to navigate ----
     let dragStartX: number | null = null;
     let dragged = false;
 
@@ -1064,7 +1011,6 @@ export default function Home() {
       if (dragStartX === null) return;
       const dx = e.clientX - dragStartX;
       dragStartX = null;
-
       if (!dragged) return;
       const threshold = 40;
       if (Math.abs(dx) < threshold) return;
@@ -1078,10 +1024,7 @@ export default function Home() {
       }
     }
 
-    /* ------------------------------------------------------------------
-       Animation loop
-    ------------------------------------------------------------------ */
-
+    // ---- Animation loop ----
     const slowEase = 0.02;
     const fastEase = 0.08;
     let rafId: number;
@@ -1173,10 +1116,7 @@ export default function Home() {
       renderer.render(scene, camera);
     }
 
-    /* ------------------------------------------------------------------
-       Start + cleanup
-    ------------------------------------------------------------------ */
-
+    // ---- Start + cleanup ----
     init();
     window.addEventListener("resize", onWindowResize);
     document.addEventListener("click", onDocumentClick);
@@ -1206,7 +1146,7 @@ export default function Home() {
     };
   }, []);
 
-  // ----- COMMENT THREAD HELPERS -----
+  // ---------- COMMENT / REVIEW HELPERS ----------
   const ensureThread = (bookId: string): ThreadState => {
     return commentThreads[bookId] ?? { comments: [], reviews: [] };
   };
@@ -1465,7 +1405,7 @@ export default function Home() {
     }
   }, [reviewsForBook, filterSort]);
 
-  // Helper for TTS: read the visible pages
+  // Helper for Text-to-Speech etc.
   const getVisiblePageText = () => {
     const left = document.getElementById("page-left");
     const right = document.getElementById("page-right");
@@ -1479,7 +1419,7 @@ export default function Home() {
       <AppHeader />
 
       <main className="carousel home3d-main">
-        {/* LEFT: Metadata tied to the current (effective) center book */}
+        {/* LEFT: Metadata */}
         <div className="metadata" id="metadata-panel">
           <div className="meta-header">
             <div className="meta-avatar" aria-hidden="true">
@@ -1534,7 +1474,8 @@ export default function Home() {
           <hr className="meta-hr" />
 
           <p className="meta-chapters">
-            {(centerBook?.currentChapter ?? 0)}/{centerBook?.totalChapters ?? 0}{" "}
+            {(centerBook?.currentChapter ?? 0)}/
+            {centerBook?.totalChapters ?? 0}{" "}
             Chapters
           </p>
 
@@ -1547,7 +1488,7 @@ export default function Home() {
           </ul>
         </div>
 
-        {/* CENTER: 3D stage + reader */}
+        {/* CENTER: 3D + Reader */}
         <section className="home3d-stage">
           <div ref={threeRootRef} className="three-root" />
 
@@ -1568,7 +1509,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Reader menu (bottom sheet) */}
+          {/* Reader menu */}
           <ReaderMenu
             visible={isBookOpen}
             getVisiblePageText={getVisiblePageText}
@@ -1595,7 +1536,7 @@ export default function Home() {
             }}
           />
 
-          {/* COMMENTS: only available when a book is open */}
+          {/* Comments sidebar – only when book open */}
           {isBookOpen && activeBookId && (
             <CommentSidebar
               isOpen={isCommentsOpen}
@@ -1617,11 +1558,23 @@ export default function Home() {
               onReport={triggerToast}
               toastMessage={toastMessage}
               isToastVisible={isToastVisible}
-              // If your CommentSidebar still expects these:
-              onSubmitReview={handleSubmitReview}
-              onDeleteOwnReview={handleDeleteOwnReview}
-              isReviewModalOpen={isReviewModalOpen}
-              usersReview={usersReview}
+            />
+          )}
+
+          {/* Review modal – global overlay (choice A) */}
+          {isReviewModalOpen && (
+            <ReviewModal
+              isOpen={isReviewModalOpen}
+              onClose={() => setIsReviewModalOpen(false)}
+              onSubmit={(data: { rating: number; text: string }) => {
+                handleSubmitReview(data);
+                setIsReviewModalOpen(false);
+              }}
+              onDelete={() => {
+                handleDeleteOwnReview();
+                setIsReviewModalOpen(false);
+              }}
+              initialReview={usersReview ?? null}
             />
           )}
         </section>
