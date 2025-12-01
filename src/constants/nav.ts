@@ -8,6 +8,7 @@ export const menuItems = [
   { label: "Stories", ariaLabel: "Your stories", link: "/stories" },
   { label: "Read", ariaLabel: "Continue reading", link: "/read" },
   { label: "Reviews", ariaLabel: "Your reviews", link: "/reviews" },
+  { label: "Forum", ariaLabel: "Public Forum", link: "/forum" },
 
 ];
 

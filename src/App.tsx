@@ -10,6 +10,7 @@ import SearchPage from "@/pages/Search";
 import SubmitPage from "@/pages/Submit";
 import WritePage from "@/pages/Write";
 import PreviewPage from "@/pages/Preview"; // <-- ADD
+import ForumPage from "@/pages/Forum";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
       <Route path="/submit" element={<SubmitPage />} />
       <Route path="/write" element={<WritePage />} />
       <Route path="/preview" element={<PreviewPage />} /> {/* <-- ADD */}
+      <Route path="/forum" element={<ForumPage />} />
     </Routes>
   );
 }
