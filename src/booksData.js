@@ -6,6 +6,7 @@ export const sampleBooks = [
     author: "Diego Ballesteros",
     user: "Names Brooklyn",
     coverUrl: "/public/covers/balls.png",
+    backCoverUrl: "/public/covers/balls.png",
     tags: ["Sci-Fi", "Young Adult", "Drama", "Balls", "Big Juicy Balls"],
     rating: "4.5",
     year: 2023,

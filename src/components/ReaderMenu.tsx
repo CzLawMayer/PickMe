@@ -49,7 +49,7 @@ export default function ReaderMenu({
   getVisiblePageText,
 }: ReaderMenuProps) {
   // bottom sheet open/closed
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   // typography controls
   const [fontSizeIndex, setFontSizeIndex] = useState<0 | 1 | 2 | 3 | 4>(2);
