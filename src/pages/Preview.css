@@ -1,0 +1,29 @@
+/* Extra styling for the open-book reader in Preview */
+
+.open-book-page {
+  /* Let JS keep text-align: justify if you want; this is just reinforcement */
+  text-align: justify;
+}
+
+/* Give paragraphs breathing room so they don't look like a solid block */
+.open-book-page p {
+  margin: 0 0 1.1em;
+}
+
+/* Avoid extra gap at bottom */
+.open-book-page p:last-child {
+  margin-bottom: 0;
+}
+
+/* Optional: slight first-line indent for a book-like feel */
+.open-book-page p {
+  text-indent: 1.5em;
+}
+
+/* But don't indent if paragraph starts with a heading block we injected */
+.open-book-page div > span,
+.open-book-page h1,
+.open-book-page h2,
+.open-book-page h3 {
+  text-indent: 0;
+}

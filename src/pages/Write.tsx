@@ -24,10 +24,11 @@ type CaseMode = "none" | "upper" | "lower";
 // Snapshot of what we care about from the submission modal
 type SubmissionSnapshot = {
   title?: string;
+  author?: string;              // <-- NEW
   mainGenre?: string;
   coverFile?: File | null;
-  backCoverFile?: File | null;  // <-- ADD
-  dedication?: string;          // <-- ADD
+  backCoverFile?: File | null;
+  dedication?: string;
 };
 
 export default function WritePage() {
@@ -705,8 +706,8 @@ export default function WritePage() {
                       book: {
                         id: "preview",
                         title: submission?.title?.trim() || "Untitled Project",
-                        user: "You",
-                        // pass the FILES directly:
+                        author: submission?.author?.trim() || "",          // <-- use author from modal
+                        // user: "You",                                    // <-- REMOVE this
                         coverFile: submission?.coverFile ?? null,
                         backCoverFile: submission?.backCoverFile ?? null,
                         dedication: submission?.dedication || "",
@@ -1046,10 +1047,11 @@ export default function WritePage() {
           onSave={(data: any) => {
             setSubmission({
               title: data.title,
+              author: data.author,                            // <-- NEW
               mainGenre: data.mainGenre,
               coverFile: data.coverFile ?? null,
-              backCoverFile: data.backCoverFile ?? null,   // <-- ADD
-              dedication: data.dedication ?? "",           // <-- ADD
+              backCoverFile: data.backCoverFile ?? null,
+              dedication: data.dedication ?? "",
             });
             setShowSubmission(false);
           }}

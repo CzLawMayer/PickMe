@@ -1,16 +1,18 @@
 // src/pages/Preview.tsx
 import {
+  useEffect,
   useRef,
   useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
   type CSSProperties,
 } from "react";
-import "./Home.css";
+import { useLocation, useNavigate } from "react-router-dom";
+import * as THREE from "three";
+
 import AppHeader from "@/components/AppHeader";
-import { sampleBooks } from "@/booksData";
-import { useLocation, useNavigate } from "react-router-dom"; // ⬅️ added useNavigate
+
+import "./Home.css";
+import "./Home3D.css";
+import "./Preview.css";
 
 // ---------- Types ----------
 type Book = {
@@ -30,6 +32,8 @@ type Book = {
   dedication?: string;
   chapters?: string[];
   chapterTexts?: string[];
+  year?: number;
+  copyright?: string;
 };
 
 type IncomingBook = Book & {
@@ -37,80 +41,39 @@ type IncomingBook = Book & {
   backCoverFile?: File | null;
 };
 
-type BookView = "front" | "back" | "open";
-
-// ---------- Reader presets ----------
-const FONT_SCALES = [0.85, 0.95, 1.0, 1.1, 1.25] as const;
-const FONT_STYLES = [
-  { name: "Serif (Georgia)", css: "Georgia, 'Times New Roman', serif" },
-  { name: "Sans-serif (Arial)", css: "Arial, Helvetica, sans-serif" },
-  { name: "Sans-serif (Roboto)", css: "'Roboto', sans-serif" },
-  { name: "Serif (Merriweather)", css: "'Merriweather', serif" },
-  { name: "Sans-serif (Open Sans)", css: "'Open Sans', sans-serif" },
-  { name: "Monospace (Courier)", css: "'Courier New', Courier, monospace" },
-] as const;
-
-// ---------- Helpers ----------
-function lastEven(n: number) {
-  if (!Number.isFinite(n)) return 0;
-  const m = Math.max(0, Math.floor(n));
-  return m % 2 === 0 ? m : m - 1;
-}
-function splitParagraphs(raw: string): string[] {
-  return raw
-    .replace(/\r\n/g, "\n")
-    .split(/\n\s*\n+/g)
-    .map((p) => p.trim())
-    .filter(Boolean);
-}
-function measureLineStepPx(el: HTMLElement): number {
-  const s = document.createElement("span");
-  s.style.visibility = "hidden";
-  s.style.whiteSpace = "pre";
-  s.textContent = "A\nA";
-  el.appendChild(s);
-  const r = s.getBoundingClientRect();
-  el.removeChild(s);
-  return r.height / 2;
-}
-const DPR =
-  typeof window !== "undefined" && window.devicePixelRatio
-    ? window.devicePixelRatio
-    : 1;
-function snapToDevicePixel(cssPx: number) {
-  if (cssPx <= 0) return 0;
-  return Math.floor(cssPx * DPR) / DPR;
-}
-function snapToDeviceLineGrid(cssPixels: number, lineCssPx: number) {
-  if (cssPixels <= 0 || lineCssPx <= 0) return 0;
-  const SAFE_EPS = 0.5;
-  const lines = Math.floor((cssPixels - SAFE_EPS) / lineCssPx);
-  return Math.max(0, lines) * lineCssPx;
-}
+type BookSpread = { left: string; right: string };
+type ReaderTheme = "cream" | "dark" | "white";
 
 export default function Preview() {
   const location = useLocation() as any;
+  const navigate = useNavigate();
+
   const injected: IncomingBook | null = location?.state?.book || null;
-  const navigate = useNavigate(); // ⬅️ added
+  const center: Book | null = injected ?? null;
 
-  const [center] = useState<Book | null>(() =>
-    injected
-      ? injected
-      : Array.isArray(sampleBooks) && sampleBooks.length
-      ? sampleBooks[0]
-      : null
-  );
+  const threeRootRef = useRef<HTMLDivElement | null>(null);
 
+  const [isBookOpen, setIsBookOpen] = useState(false);
+  const [isRightOpen, setRightOpen] = useState(true);
+
+  // Resolved URLs for covers (only from injected book; no fallbacks)
   const [frontUrl, setFrontUrl] = useState<string | undefined>(undefined);
   const [backUrl, setBackUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    if (!injected) {
+      setFrontUrl(undefined);
+      setBackUrl(undefined);
+      return;
+    }
+
     let revokeFront: string | undefined;
     let revokeBack: string | undefined;
 
-    if (injected?.coverUrl && injected.coverUrl.trim()) {
+    // Front cover – only from submission modal
+    if (injected.coverUrl && injected.coverUrl.trim()) {
       setFrontUrl(injected.coverUrl);
-    } else if (injected?.coverFile instanceof File) {
+    } else if (injected.coverFile instanceof File) {
       const u = URL.createObjectURL(injected.coverFile);
       setFrontUrl(u);
       revokeFront = u;
@@ -118,9 +81,10 @@ export default function Preview() {
       setFrontUrl(undefined);
     }
 
-    if (injected?.backCoverUrl && injected.backCoverUrl.trim()) {
+    // Back cover – only from submission modal
+    if (injected.backCoverUrl && injected.backCoverUrl.trim()) {
       setBackUrl(injected.backCoverUrl);
-    } else if (injected?.backCoverFile instanceof File) {
+    } else if (injected.backCoverFile instanceof File) {
       const u = URL.createObjectURL(injected.backCoverFile);
       setBackUrl(u);
       revokeBack = u;
@@ -129,940 +93,812 @@ export default function Preview() {
     }
 
     return () => {
-      try {
-        if (revokeFront) URL.revokeObjectURL(revokeFront);
-      } catch {}
-      try {
-        if (revokeBack) URL.revokeObjectURL(revokeBack);
-      } catch {}
+      if (revokeFront) {
+        try {
+          URL.revokeObjectURL(revokeFront);
+        } catch {}
+      }
+      if (revokeBack) {
+        try {
+          URL.revokeObjectURL(revokeBack);
+        } catch {}
+      }
     };
   }, [injected]);
 
-  const [view, setView] = useState<BookView>("front");
-  const [isOpening, setIsOpening] = useState(false);
-  const [page, setPage] = useState(0);
-
-  const [fontSizeIndex] = useState<0 | 1 | 2 | 3 | 4>(2);
-  const [lineHeight, setLineHeight] = useState(1.7);
-  const [debouncedLH, setDebouncedLH] = useState(lineHeight);
-  const [readerLight] = useState(false);
-  const [bottomCushionPx, setBottomCushionPx] = useState(0);
-  const [fontStyleIndex] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedLH(lineHeight), 120);
-    return () => clearTimeout(t);
-  }, [lineHeight]);
-
-  const spreadRef = useRef<HTMLDivElement | null>(null);
-  const paneLeftRef = useRef<HTMLDivElement | null>(null);
-  const paneRightRef = useRef<HTMLDivElement | null>(null);
-  const probeRef = useRef<HTMLDivElement | null>(null);
-  const [chapterPages, setChapterPages] = useState<ReactNode[][]>([]);
-
-  const [flipFading, setFlipFading] = useState(false);
-  const FLIP_FADE_MS = 260;
-
-  const [frontReady, setFrontReady] = useState(false);
-  const [backReady, setBackReady] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-
-    const loadOne = (url?: string, setReady?: (v: boolean) => void) => {
-      if (!url) {
-        setReady?.(true);
-        return Promise.resolve();
-      }
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = url;
-      const p = (img.decode ? img.decode() : Promise.resolve()).catch(() => {});
-      return p.then(() => {
-        if (alive) setReady?.(true);
-      });
-    };
-
-    setFrontReady(false);
-    setBackReady(false);
-
-    Promise.all([loadOne(frontUrl, setFrontReady), loadOne(backUrl, setBackReady)]).catch(
-      () => {}
-    );
-
-    return () => {
-      alive = false;
-    };
-  }, [frontUrl, backUrl]);
-
-  useEffect(() => {
-    if (!center) return;
-    if (view !== "open") return;
-
-    let raf1 = 0;
-    let raf2 = 0;
-
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        if (!probeRef.current) return;
-
-        const probeRoot = probeRef.current as HTMLElement;
-        probeRoot.style.setProperty("--reader-font-scale", String(FONT_SCALES[fontSizeIndex]));
-        probeRoot.style.setProperty("--reader-line", String(debouncedLH));
-        probeRoot.style.setProperty("--reader-font-family", FONT_STYLES[fontStyleIndex].css);
-
-        const pane = paneLeftRef.current || paneRightRef.current;
-        if (!pane) return;
-        const paneRect = pane.getBoundingClientRect();
-        const pageW = snapToDevicePixel(paneRect.width);
-        const pageH = snapToDevicePixel(paneRect.height);
-        if (!pageW || !pageH) return;
-
-        const texts: string[] = Array.isArray(center.chapterTexts)
-          ? center.chapterTexts.map((t) => String(t ?? "")).filter((t) => t.trim().length > 0)
-          : [];
-        if (texts.length === 0) {
-          setChapterPages([]);
-          return;
-        }
-
-        const pageEl = probeRef.current!.querySelector(".chapter-page") as HTMLElement;
-        const titleEl = probeRef.current!.querySelector(".chapter-title") as HTMLElement;
-        const bodyEl = probeRef.current!.querySelector(".chapter-body") as HTMLElement;
-
-        pageEl.style.width = `${pageW}px`;
-        pageEl.style.height = `${pageH}px`;
-        pageEl.style.boxSizing = "border-box";
-
-        let padTop = "6vmin",
-          padRight = "6vmin",
-          padBottom = "6vmin",
-          padLeft = "6vmin";
-        const visiblePage = document.querySelector(".spread .chapter-page") as HTMLElement | null;
-        if (visiblePage) {
-          const cs = getComputedStyle(visiblePage);
-          padTop = cs.paddingTop || padTop;
-          padRight = cs.paddingRight || padRight;
-          padBottom = cs.paddingBottom || padBottom;
-          padLeft = cs.paddingLeft || padLeft;
-        }
-        pageEl.style.paddingTop = padTop;
-        pageEl.style.paddingRight = padRight;
-        pageEl.style.paddingBottom = padBottom;
-        pageEl.style.paddingLeft = padLeft;
-
-        bodyEl.style.flex = "0 0 auto";
-        bodyEl.style.minHeight = "0";
-        bodyEl.style.overflow = "hidden";
-        bodyEl.style.boxSizing = "content-box";
-
-        void pageEl.getBoundingClientRect();
-
-        const csPage = getComputedStyle(pageEl);
-        const pT = parseFloat(csPage.paddingTop) || 0;
-        const pB = parseFloat(csPage.paddingBottom) || 0;
-        const CONTENT_H = pageH - pT - pB;
-
-        const lineStepCss = measureLineStepPx(bodyEl);
-        const MIN_LINES = 3;
-
-        const BOTTOM_CUSHION_LINES = 1;
-        const CUSHION_PX = BOTTOM_CUSHION_LINES * lineStepCss;
-        probeRoot.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
-        bodyEl.style.setProperty("--reader-cushion", `${CUSHION_PX}px`);
-        setBottomCushionPx(CUSHION_PX);
-
-        const csBody = getComputedStyle(bodyEl);
-        const bodyPadTop = parseFloat(csBody.paddingTop) || 0;
-        const bodyPadBot = parseFloat(csBody.paddingBottom) || 0;
-
-        const CONTENT_H_FOR_BODY = Math.max(0, CONTENT_H - bodyPadTop - bodyPadBot);
-
-        const BLANK_BODY_H = Math.max(
-          lineStepCss * MIN_LINES,
-          snapToDeviceLineGrid(CONTENT_H_FOR_BODY, lineStepCss)
-        );
-        bodyEl.style.height = `${BLANK_BODY_H}px`;
-
-        const overflowed = () => {
-          if (bodyEl.scrollHeight - bodyEl.clientHeight > 0.5) return true;
-          const last = bodyEl.lastElementChild as HTMLElement | null;
-          if (!last) return false;
-          const bodyR = bodyEl.getBoundingClientRect();
-          const lastR = last.getBoundingClientRect();
-          const mb = parseFloat(getComputedStyle(last).marginBottom) || 0;
-          const EPS = 0.5;
-          return lastR.bottom + mb > bodyR.bottom - bodyPadBot - EPS;
-        };
-
-        const makeP = () => document.createElement("p");
-        const setPText = (p: HTMLParagraphElement, t: string) => {
-          p.textContent = t;
-        };
-
-        const setBodyHeightFor = (withTitle: boolean) => {
-          const tH = withTitle ? titleEl.getBoundingClientRect().height : 0;
-          const tGap =
-            withTitle ? parseFloat(getComputedStyle(titleEl).marginBottom) || 0 : 0;
-          const inter = withTitle ? tGap : 0;
-          const targetContent = Math.max(0, CONTENT_H_FOR_BODY - tH - inter);
-          const snappedContent = Math.max(
-            lineStepCss * MIN_LINES,
-            snapToDeviceLineGrid(targetContent, lineStepCss)
-          );
-          bodyEl.style.height = `${snappedContent}px`;
-          return snappedContent;
-        };
-
-        const sliceParagraphBlank = (parText: string): string[] => {
-          const out: string[] = [];
-          titleEl.textContent = "";
-          bodyEl.innerHTML = "";
-          bodyEl.style.height = `${BLANK_BODY_H}px`;
-
-          const p = makeP();
-          setPText(p, parText);
-          bodyEl.appendChild(p);
-          if (!overflowed()) {
-            out.push(parText);
-            return out;
-          }
-
-          const words = parText.split(/\s+/);
-          let start = 0;
-          while (start < words.length) {
-            let lo = 1,
-              hi = words.length - start,
-              best = 0;
-            while (lo <= hi) {
-              const mid = (lo + hi) >> 1;
-              const cand = words.slice(start, start + mid).join(" ");
-              titleEl.textContent = "";
-              bodyEl.innerHTML = "";
-              const p2 = makeP();
-              setPText(p2, cand);
-              bodyEl.appendChild(p2);
-              if (!overflowed()) {
-                best = mid;
-                lo = mid + 1;
-              } else {
-                hi = mid - 1;
-              }
-            }
-            if (best === 0) {
-              const word = words[start];
-              let loC = 1,
-                hiC = word.length,
-                bestC = 0;
-              while (loC <= hiC) {
-                const midC = (loC + hiC) >> 1;
-                const p3 = makeP();
-                setPText(p3, word.slice(0, midC));
-                bodyEl.appendChild(p3);
-                if (!overflowed()) {
-                  bestC = midC;
-                  loC = midC + 1;
-                } else {
-                  hiC = midC - 1;
-                }
-              }
-              const slice = word.slice(0, Math.max(1, bestC));
-              out.push(slice);
-              const rest = word.slice(slice.length);
-              if (rest) words[start] = rest;
-              else start++;
-            } else {
-              out.push(words.slice(start, start + best).join(" "));
-              start += best;
-            }
-          }
-          return out;
-        };
-
-        const fitPieceOnCurrentPage = (
-          parText: string
-        ): { first: string; rest: string[] } => {
-          const quick = makeP();
-          setPText(quick, parText);
-          bodyEl.appendChild(quick);
-          if (!overflowed()) {
-            return { first: parText, rest: [] };
-          }
-          bodyEl.removeChild(quick);
-
-          const words = parText.split(/\s+/);
-          let lo = 1,
-            hi = words.length,
-            best = 0;
-          while (lo <= hi) {
-            const mid = (lo + hi) >> 1;
-            const probeP = makeP();
-            setPText(probeP, words.slice(0, mid).join(" "));
-            bodyEl.appendChild(probeP);
-            const ok = !overflowed();
-            bodyEl.removeChild(probeP);
-            if (ok) {
-              best = mid;
-              lo = mid + 1;
-            } else {
-              hi = mid - 1;
-            }
-          }
-
-          if (best > 0) {
-            const first = words.slice(0, best).join(" ");
-            const tail = words.slice(best).join(" ");
-            const rest = tail ? sliceParagraphBlank(tail) : [];
-            return { first, rest };
-          }
-
-          const firstWord = words[0] || "";
-          if (!firstWord) return { first: "", rest: [] };
-
-          let loC = 1,
-            hiC = firstWord.length,
-            bestC = 0;
-          while (loC <= hiC) {
-            const midC = (loC + hiC) >> 1;
-            const probeP = makeP();
-            setPText(probeP, firstWord.slice(0, midC));
-            bodyEl.appendChild(probeP);
-            const ok = !overflowed();
-            bodyEl.removeChild(probeP);
-            if (ok) {
-              bestC = midC;
-              loC = midC + 1;
-            } else {
-              hiC = midC - 1;
-            }
-          }
-
-          if (bestC > 0) {
-            const first = firstWord.slice(0, bestC);
-            const tail =
-              firstWord.slice(bestC) +
-              (words.length > 1 ? " " + words.slice(1).join(" ") : "");
-            const rest = tail ? sliceParagraphBlank(tail) : [];
-            return { first, rest };
-          }
-
-          return { first: "", rest: [parText] };
-        };
-
-        const pagesByChapter: ReactNode[][] = [];
-
-        for (let chapIdx = 0; chapIdx < texts.length; chapIdx++) {
-          const title =
-            center.chapters && center.chapters[chapIdx]
-              ? center.chapters[chapIdx]
-              : `Chapter ${chapIdx + 1}`;
-          const paragraphs = splitParagraphs(texts[chapIdx]);
-
-          const chapterOut: ReactNode[] = [];
-          let i = 0;
-          let firstPageOfChapter = true;
-
-          while (i < paragraphs.length) {
-            const withTitle = firstPageOfChapter;
-            titleEl.textContent = withTitle ? title : "";
-            bodyEl.innerHTML = "";
-
-            const snappedBodyH = setBodyHeightFor(withTitle);
-            const bucket: (string | { SPLIT: string[] })[] = [];
-
-            while (i < paragraphs.length) {
-              const pEl = makeP();
-              setPText(pEl, paragraphs[i]);
-              bodyEl.appendChild(pEl);
-              if (!overflowed()) {
-                bucket.push(paragraphs[i]);
-                i++;
-                continue;
-              }
-
-              bodyEl.removeChild(pEl);
-
-              if (bodyEl.childElementCount === 0) {
-                const parts = sliceParagraphBlank(paragraphs[i]);
-                if (parts.length) {
-                  bucket.push({ SPLIT: parts });
-                  i++;
-                }
-                break;
-              } else {
-                const { first, rest } = fitPieceOnCurrentPage(paragraphs[i]);
-                if (first) {
-                  bucket.push(first);
-                  if (rest.length) paragraphs.splice(i + 1, 0, ...rest);
-                  i++;
-                }
-                break;
-              }
-            }
-
-            const nodes: ReactNode[] = [];
-            for (const item of bucket) {
-              if (typeof item === "string") {
-                nodes.push(<p key={nodes.length}>{item}</p>);
-              } else {
-                const [first, ...rest] = item.SPLIT;
-                nodes.push(<p key={nodes.length}>{first}</p>);
-                if (rest.length) paragraphs.splice(i, 0, ...rest);
-              }
-            }
-
-            chapterOut.push(
-              <div className="chapter-page" key={`${chapIdx}-${chapterOut.length}`}>
-                {withTitle && <h2 className="chapter-title">{title}</h2>}
-                <div
-                  className="chapter-body"
-                  style={{
-                    height: `${snappedBodyH}px`,
-                    boxSizing: "content-box",
-                    overflow: "hidden",
-                  }}
-                >
-                  {nodes}
-                </div>
-              </div>
-            );
-
-            firstPageOfChapter = false;
-          }
-
-          if (chapterOut.length === 0) {
-            chapterOut.push(
-              <div className="chapter-page" key={`${chapIdx}-empty`}>
-                <h2 className="chapter-title">{title}</h2>
-                <div
-                  className="chapter-body"
-                  style={{
-                    height: `${BLANK_BODY_H}px`,
-                    boxSizing: "content-box",
-                    overflow: "hidden",
-                  }}
-                >
-                  <p>(No content)</p>
-                </div>
-              </div>
-            );
-          }
-
-          pagesByChapter.push(chapterOut);
-        }
-
-        setChapterPages(pagesByChapter);
-
-        setTimeout(() => {
-          const claimedChapters =
-            Number(center?.totalChapters ?? 0) ||
-            center?.chapters?.length ||
-            texts.length;
-          const materialized = pagesByChapter.length;
-          const materializedPages = pagesByChapter.reduce(
-            (sum, arr) => sum + arr.length,
-            0
-          );
-          const remainingChapters = Math.max(0, claimedChapters - materialized);
-          const newTotalPages = 2 + materializedPages + remainingChapters;
-          const newMaxLeft = Math.max(0, (newTotalPages - 1) & ~1);
-          setPage((p) => (p > newMaxLeft ? newMaxLeft : p));
-        }, 0);
-      });
-    });
-
-    return () => {
-      if (raf1) cancelAnimationFrame(raf1);
-      if (raf2) cancelAnimationFrame(raf2);
-    };
-  }, [center, view, fontSizeIndex, debouncedLH, fontStyleIndex]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        // @ts-ignore
-        await (document as any).fonts?.ready;
-      } catch {}
-      if (!cancelled) setLineHeight((v) => v);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const chapterCount = (() => {
-    if (!center) return 0;
-    if (Array.isArray(center.chapters) && center.chapters.length > 0)
-      return center.chapters.length;
-    const n = Number(center.totalChapters ?? 0);
-    return Number.isFinite(n) && n > 0
-      ? n
-      : Array.isArray(center.chapterTexts)
-      ? center.chapterTexts.length
-      : 0;
-  })();
-
-  const chapterTitles: string[] = (() => {
-    if (!center) return [];
-    if (Array.isArray(center.chapters) && center.chapters.length === chapterCount) {
-      return center.chapters.slice();
-    }
-    return Array.from({ length: chapterCount }, (_, i) => `Chapter ${i + 1}`);
-  })();
-
-  const claimedChapters = (() => {
-    const n = Number(center?.totalChapters ?? 0);
-    if (Number.isFinite(n) && n > 0) return n;
-    return chapterTitles.length;
-  })();
-
-  const flatPages: ReactNode[] = chapterPages.flat();
-  const remainingChapters = Math.max(0, claimedChapters - chapterPages.length);
-  const totalPages = 2 + flatPages.length + remainingChapters;
-  const maxLeftPage = lastEven(totalPages - 1);
-
-  const startPageOfChapter: number[] = (() => {
-    const starts: number[] = [];
-    let acc = 2; // first chapter starts at page 2 (right pane)
-    for (let i = 0; i < claimedChapters; i++) {
-      starts.push(acc);
-      const len = i < chapterPages.length ? Math.max(1, chapterPages[i].length) : 1;
-      acc += len;
-    }
-    return starts;
-  })();
-
-  const clampToSpread = useCallback(
-    (p: number) => Math.max(0, Math.min(p, Math.max(0, maxLeftPage))),
-    [maxLeftPage]
-  );
-  const turnPage = useCallback(
-    (dir: 1 | -1) => setPage((p) => clampToSpread(p + 2 * dir)),
-    [clampToSpread]
-  );
-  const gotoChapter = useCallback(
-    (k: number) => {
-      const idx = Math.max(0, k - 1);
-      const p = startPageOfChapter[idx] ?? 2;
-      const left = p % 2 === 0 ? p : p - 1;
-      setPage(clampToSpread(left));
-    },
-    [clampToSpread, startPageOfChapter]
-  );
-
-  const atStart = page <= 0;
-  const atEnd = page >= maxLeftPage;
-
-  const returnToCover = useCallback(() => {
-    setPage(0);
-    setFlipFading(true);
-    window.setTimeout(() => setFlipFading(false), FLIP_FADE_MS);
-    setView("front");
-  }, []);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      const target = e.target as HTMLElement | null;
-      const isEditableEl =
-        !!target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          (target as HTMLElement).isContentEditable ||
-          target.getAttribute("role") === "textbox");
-      if (isEditableEl) return;
-
-      switch (e.key) {
-        case "ArrowRight":
-        case "d":
-        case "D":
-        case "PageDown":
-          e.preventDefault();
-          if (view === "open") turnPage(1);
-          break;
-        case "ArrowLeft":
-        case "a":
-        case "A":
-        case "PageUp":
-          e.preventDefault();
-          if (view === "open") turnPage(-1);
-          break;
-        case "Home":
-          e.preventDefault();
-          if (view === "open") setPage(0);
-          break;
-        case "End":
-          e.preventDefault();
-          if (view === "open") setPage(maxLeftPage);
-          break;
-      }
-    }
-    window.addEventListener("keydown", onKey, { passive: false });
-    return () => window.removeEventListener("keydown", onKey);
-  }, [view, turnPage, maxLeftPage]);
-
-  const onCenterClick = (e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-    setView((prev) => {
-      const nextView: BookView = prev === "front" ? "back" : prev === "back" ? "open" : "back";
-
-      if (prev === "front" && (nextView === "back" || nextView === "open") && !backReady) {
-        const tryFlip = () => setView(nextView);
-        Promise.resolve().then(() => {
-          if (backReady) tryFlip();
-          else {
-            const i = new Image();
-            if (backUrl) {
-              i.src = backUrl;
-              (i.decode ? i.decode() : Promise.resolve()).catch(() => {}).then(tryFlip);
-            } else {
-              tryFlip();
-            }
-          }
-        });
-        return prev;
-      }
-
-      if (prev === "back" && nextView === "open") {
-        setPage(0);
-        setIsOpening(true);
-        window.setTimeout(() => setIsOpening(false), 800);
-      }
-      if ((prev === "front" && nextView === "back") || (prev === "back" && nextView === "front")) {
-        setFlipFading(true);
-        window.setTimeout(() => setFlipFading(false), 260);
-      }
-      return nextView;
-    });
-  };
-
   if (!center) {
+    // No submission data at all → nothing about the book is shown
     return (
-      <div className="app">
+      <div className="app home3d-root">
         <AppHeader />
-        <main className="carousel">
-          <div style={{ padding: 24, opacity: 0.7 }}>No book data.</div>
+        <main className="carousel home3d-main">
+          {/* intentionally minimal when there is no injected book */}
         </main>
       </div>
     );
   }
 
-  const frontFillStyle: CSSProperties = {
-    backgroundColor: "#2d2d2d",
-    backgroundPosition: "center",
-    backgroundSize: "cover",
-    backgroundRepeat: "no-repeat",
-    ...(frontUrl ? { backgroundImage: `url(${frontUrl})` } : {}),
-  };
-
-  const backFillStyle: CSSProperties = {
-    backgroundColor: "#2d2d2d",
-    backgroundPosition: "center",
-    backgroundSize: "cover",
-    backgroundRepeat: "no-repeat",
-    ...(backUrl ? { backgroundImage: `url(${backUrl})` } : {}),
-  };
-
-  const [isRightOpen, setRightOpen] = useState(true);
-  const projectTitle = (center?.title || "Project title not set").trim();
+  const projectTitle = (center.title ?? "").trim();
   const mainGenreLabel =
-    (Array.isArray(center?.tags) && center!.tags!.length > 0
-      ? center!.tags![0]
-      : "Main genre not selected");
+    Array.isArray(center.tags) && center.tags.length > 0
+      ? center.tags[0]
+      : "";
 
+  const chapterCount = (() => {
+    if (Array.isArray(center.chapters) && center.chapters.length > 0) {
+      return center.chapters.length;
+    }
+    const n = Number(center.totalChapters ?? 0);
+    if (Number.isFinite(n) && n > 0) return n;
+    if (Array.isArray(center.chapterTexts)) return center.chapterTexts.length;
+    return 0;
+  })();
+
+  // ---------- 3D + Reader setup (single-book version) ----------
+  useEffect(() => {
+    const root = threeRootRef.current;
+    if (!root || !center) return;
+
+    let scene: THREE.Scene;
+    let camera: THREE.PerspectiveCamera;
+    let renderer: THREE.WebGLRenderer;
+    let raycaster: THREE.Raycaster;
+    let mouse: THREE.Vector2;
+    let bookMesh: THREE.Mesh | null = null;
+
+    let isBookOpenLocal = false;
+    let currentPageSpread = 0;
+    let bookSpreads: BookSpread[] = [];
+    let pendingOpenAfterFlip = false;
+
+    // typography + theme
+    let currentFontSize = 14;
+    let currentLineHeight = 1.6;
+    let currentFontFamily = "Georgia, 'Times New Roman', serif";
+    let currentTheme: ReaderTheme = "cream";
+
+    let paginationTimer: number | null = null;
+    let animationId: number;
+
+    const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
+
+    // DOM elements for reader
+    const openBookContainer = document.getElementById(
+      "open-book-container"
+    ) as HTMLDivElement | null;
+    const pageLeft = document.getElementById(
+      "page-left"
+    ) as HTMLDivElement | null;
+    const pageRight = document.getElementById(
+      "page-right"
+    ) as HTMLDivElement | null;
+    const navContainer = document.getElementById(
+      "nav-container"
+    ) as HTMLDivElement | null;
+    const leftArrowBtn = document.getElementById(
+      "left-arrow"
+    ) as HTMLDivElement | null;
+    const rightArrowBtn = document.getElementById(
+      "right-arrow"
+    ) as HTMLDivElement | null;
+    const closeBookBtn = document.getElementById(
+      "close-book-btn"
+    ) as HTMLDivElement | null;
+
+    if (!openBookContainer || !pageLeft || !pageRight || !navContainer) {
+      console.warn("Reader DOM elements not found for Preview.");
+      return;
+    }
+
+    // ------------ helpers for spine + pages ------------
+    function createSpineTexture(
+      title: string,
+      width: number,
+      height: number,
+      color: string
+    ) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      let fontSize = 40;
+      ctx.font = `bold ${fontSize}px "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      const maxWidth = height - 20;
+      let textWidth = ctx.measureText(title).width;
+
+      while (textWidth > maxWidth && fontSize > 10) {
+        fontSize--;
+        ctx.font = `bold ${fontSize}px "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+        textWidth = ctx.measureText(title).width;
+      }
+
+      ctx.fillText(title, 0, 0);
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function cleanPage(html: string) {
+      if (!html) return "";
+      let cleaned = html.replace(/^(<br>\s*)+/i, "");
+      cleaned = cleaned.replace(/(\s*<br>)+$/i, "");
+      return cleaned.trim();
+    }
+
+    // --- Paragraph-aware pagination: preserve paragraph breaks ---
+    function paginateChapter(fullText: string, titleHtml: string | null = null) {
+      const testPage = pageLeft!;
+      const computedStyle = window.getComputedStyle(testPage);
+      const pageHeight = parseFloat(computedStyle.height);
+      const contentAreaHeight =
+        pageHeight -
+        (parseFloat(computedStyle.paddingTop) +
+          parseFloat(computedStyle.paddingBottom));
+      const effectiveHeight = contentAreaHeight;
+
+      const originalContent = testPage.innerHTML;
+      const pages: string[] = [];
+
+      const raw = fullText || "";
+
+      let processedText: string;
+
+      // If content already looks like HTML (editor HTML), keep it as-is for pagination.
+      if (raw.includes("<") && !raw.includes("\n")) {
+        processedText = raw;
+      } else {
+        // Plain text with newlines → convert to <p> + <br> so paragraphs are preserved.
+        let normalized = raw.replace(/\r\n/g, "\n");
+        normalized = normalized.replace(/\n{3,}/g, "\n\n"); // collapse 3+ into 2
+
+        // Turn newlines into <br>, then separate paragraphs on blank lines
+        const withBr = normalized.replace(/\n/g, "<br>");
+        const withParagraphs = `<p>${withBr.replace(
+          /(<br>\s*){2,}/g,
+          "</p><p>"
+        )}</p>`;
+
+        processedText = withParagraphs;
+      }
+
+      const measureDiv = document.createElement("div");
+      measureDiv.style.fontSize = `${currentFontSize}px`;
+      measureDiv.style.lineHeight = String(currentLineHeight);
+      measureDiv.style.overflow = "hidden";
+      measureDiv.style.visibility = "hidden";
+      measureDiv.style.height = "auto";
+      measureDiv.style.width = "100%";
+      testPage.appendChild(measureDiv);
+
+      // Keep the original pagination behaviour: grow by “words” and measure scrollHeight
+      const words = processedText.split(" ");
+
+      let currentPageText = "";
+      if (titleHtml) currentPageText += titleHtml;
+
+      for (const word of words) {
+        if (!word && word !== "") continue;
+        const testWord = word + " ";
+        const before = currentPageText;
+        const testText = currentPageText + testWord;
+
+        measureDiv.innerHTML = testText;
+        const isOverflowing = measureDiv.scrollHeight > effectiveHeight;
+
+        if (isOverflowing) {
+          pages.push(cleanPage(before));
+          currentPageText = testWord;
+        } else {
+          currentPageText = testText;
+        }
+      }
+
+      if (currentPageText.trim() !== "") {
+        pages.push(cleanPage(currentPageText));
+      }
+
+      testPage.removeChild(measureDiv);
+      testPage.innerHTML = originalContent;
+      return pages;
+    }
+
+
+
+    function buildBookSpreads(): BookSpread[] {
+      const bookData = center as any;
+
+      const bookTitle = center.title ?? "";
+      const authorRaw = (bookData?.author as string | undefined) ?? "";
+      const bookAuthor = authorRaw.trim(); // no "you" fallback, exactly what you typed
+
+      const yearVal =
+        typeof bookData?.year === "number" ? String(bookData.year) : "";
+      const dedicationText =
+        typeof bookData?.dedication === "string"
+          ? bookData.dedication.trim()
+          : "";
+
+      const chapterTitles: string[] = Array.isArray(bookData?.chapters)
+        ? bookData.chapters
+            .map((t: string) => String(t ?? ""))
+            .filter((t) => t.trim().length > 0)
+        : [];
+      const chapterTexts: string[] = Array.isArray(bookData?.chapterTexts)
+        ? bookData.chapterTexts
+            .map((t: string) => String(t ?? ""))
+            .filter((t) => t.trim().length > 0)
+        : [];
+
+      let tocItems = "";
+      if (chapterTitles.length > 0) {
+        tocItems = chapterTitles
+          .map((t: string, idx: number) => `<li>Chapter ${idx + 1}: ${t}</li>`)
+          .join("");
+      }
+
+      const spreads: BookSpread[] = [];
+
+      // Front page: title + byline
+      if (bookTitle) {
+        const authorBlock = bookAuthor
+          ? `<p style="font-size: 1.3em; margin-top: 16px;">by ${bookAuthor}</p>`
+          : "";
+        spreads.push({
+          left: "",
+          right: `<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center;">
+              <div>
+                <h1 style="font-size: 2.4em; margin: 0; padding: 0;">${bookTitle}</h1>
+                ${authorBlock}
+              </div>
+            </div>`,
+        });
+      }
+
+      // Dedication spread – only if we actually have a dedication
+      if (dedicationText) {
+        spreads.push({
+          left: "",
+          right: `<div style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; font-style:italic;">
+              <p>${dedicationText}</p>
+            </div>`,
+        });
+      }
+
+      // Copyright / TOC spread – only if either year or TOC items exist
+      if (yearVal || tocItems) {
+        const leftHtml = yearVal
+          ? `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em;">
+              <p style="margin-bottom: 5px;">&copy; Copyright ${yearVal}</p>
+            </div>`
+          : "";
+
+        const rightHtml = tocItems
+          ? `<h3 style="text-align:center; margin-bottom: 20px;">Table of Contents</h3>
+            <ul style="line-height: 2.5; list-style-position: inside;">
+              ${tocItems}
+            </ul>`
+          : "";
+
+        spreads.push({
+          left: leftHtml,
+          right: rightHtml,
+        });
+      }
+
+      // Chapter content pages – only from submission data
+      let allPages: string[] = [];
+
+      if (chapterTexts.length > 0) {
+        for (let i = 0; i < chapterTexts.length; i++) {
+          const text = chapterTexts[i];
+          if (!text) continue;
+          const title = chapterTitles[i] ?? `Chapter ${i + 1}`;
+
+          const chapterTitleHtml = `
+            <div style="text-align:center; margin: 0 0 12px 0;">
+              <span style="font-weight:700; font-size:1.4em;">${title}</span>
+            </div>
+          `;
+          const pages = paginateChapter(text, chapterTitleHtml);
+          allPages = allPages.concat(pages);
+        }
+      }
+
+      const chapterSpreads: BookSpread[] = [];
+      for (let i = 0; i < allPages.length; i += 2) {
+        chapterSpreads.push({
+          left: allPages[i] ?? "",
+          right: allPages[i + 1] ?? "",
+        });
+      }
+
+      return spreads.concat(chapterSpreads);
+    }
+
+
+    function applyThemeColors() {
+      if (!pageLeft || !pageRight) return;
+      let bg: string;
+      let fg: string;
+
+      if (currentTheme === "cream") {
+        bg = "#fdf6e3";
+        fg = "#111111";
+      } else if (currentTheme === "dark") {
+        bg = "#181717";
+        fg = "#f5f0e6";
+      } else {
+        bg = "#ffffff";
+        fg = "#111111";
+      }
+
+      pageLeft.style.backgroundColor = bg;
+      pageRight.style.backgroundColor = bg;
+      pageLeft.style.color = fg;
+      pageRight.style.color = fg;
+    }
+
+    function applyTypographyStyles() {
+      if (!pageLeft || !pageRight) return;
+
+      pageLeft.style.fontSize = `${currentFontSize}px`;
+      pageRight.style.fontSize = `${currentFontSize}px`;
+      pageLeft.style.lineHeight = String(currentLineHeight);
+      pageRight.style.lineHeight = String(currentLineHeight);
+      pageLeft.style.fontFamily = currentFontFamily;
+      pageRight.style.fontFamily = currentFontFamily;
+      pageLeft.style.textAlign = "justify";
+      pageRight.style.textAlign = "justify";
+
+      applyThemeColors();
+    }
+
+    function updatePageContent(index: number) {
+      const spread = bookSpreads[index];
+      if (!spread || !pageLeft || !pageRight) return;
+      pageLeft.innerHTML = spread.left;
+      pageRight.innerHTML = spread.right;
+      applyTypographyStyles();
+    }
+
+    function rePaginateBook() {
+      bookSpreads = buildBookSpreads();
+      if (currentPageSpread >= bookSpreads.length) {
+        currentPageSpread = bookSpreads.length - 1;
+      }
+      if (currentPageSpread < 0) currentPageSpread = 0;
+      updatePageContent(currentPageSpread);
+    }
+
+    function scheduleRepaginate() {
+      if (paginationTimer !== null) {
+        window.clearTimeout(paginationTimer);
+      }
+      paginationTimer = window.setTimeout(() => {
+        if (!isBookOpenLocal) return;
+        rePaginateBook();
+      }, 80);
+    }
+
+    // ------------ THREE init ------------
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f0f10);
+
+      const w = root.clientWidth || window.innerWidth;
+      const h = root.clientHeight || window.innerHeight;
+
+      camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+      camera.position.set(0, 0, 8);
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.NoToneMapping;
+      renderer.setSize(w, h);
+      root.appendChild(renderer.domElement);
+
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      const bookWidth = 5.7;
+      const bookHeight = 8;
+      const bookDepth = 0.55;
+
+      const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
+
+      // Front cover material – only uses submission cover if provided
+      let frontCoverMaterial: THREE.MeshBasicMaterial;
+      if (frontUrl) {
+        const frontTexture = new THREE.TextureLoader().load(frontUrl);
+        frontTexture.colorSpace = THREE.SRGBColorSpace;
+        frontCoverMaterial = new THREE.MeshBasicMaterial({ map: frontTexture });
+      } else {
+        frontCoverMaterial = new THREE.MeshBasicMaterial({ color: 0x222222 });
+      }
+
+      // Back cover material – only uses submission cover if provided
+      let backCoverMaterial: THREE.MeshBasicMaterial;
+      if (backUrl) {
+        const backTexture = new THREE.TextureLoader().load(backUrl);
+        backTexture.colorSpace = THREE.SRGBColorSpace;
+        backTexture.wrapS = THREE.RepeatWrapping;
+        backTexture.repeat.x = -1;
+        backTexture.center.set(0.5, 0.5);
+        backCoverMaterial = new THREE.MeshBasicMaterial({ map: backTexture });
+      } else {
+        backCoverMaterial = new THREE.MeshBasicMaterial({ color: 0x222222 });
+      }
+
+      const spineCanvasWidth = bookDepth * 100;
+      const spineCanvasHeight = bookHeight * 100;
+      const spineColor = spineColors[0];
+      const spineTexture = createSpineTexture(
+        center.title ?? "",
+        spineCanvasWidth,
+        spineCanvasHeight,
+        spineColor
+      );
+
+      const spineMaterial = new THREE.MeshBasicMaterial({
+        map: spineTexture,
+      });
+
+      const materials = [
+        pageMaterial, // right side
+        spineMaterial, // left side (spine)
+        pageMaterial, // top
+        pageMaterial, // bottom
+        frontCoverMaterial, // front
+        backCoverMaterial, // back
+      ];
+
+      const geom = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
+      bookMesh = new THREE.Mesh(geom, materials);
+      bookMesh.position.set(0, 0, 0);
+      bookMesh.scale.set(1.2, 1.2, 1.2);
+      bookMesh.userData = {
+        isFlipping: false,
+        targetRotation: 0,
+      };
+
+      scene.add(bookMesh);
+    }
+
+    function onWindowResize() {
+      if (!renderer || !camera) return;
+      const w = root.clientWidth || window.innerWidth;
+      const h = root.clientHeight || window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      scheduleRepaginate();
+    }
+
+    // ------------ open / close / page flip ------------
+    function openBook() {
+      if (!bookMesh) return;
+
+      currentPageSpread = 0;
+      isBookOpenLocal = true;
+      setIsBookOpen(true);
+
+      bookSpreads = buildBookSpreads();
+      updatePageContent(currentPageSpread);
+
+      bookMesh.visible = false;
+
+      openBookContainer.classList.add("is-open");
+      navContainer.classList.add("is-open");
+    }
+
+    function closeBook() {
+      if (!bookMesh) return;
+
+      isBookOpenLocal = false;
+      setIsBookOpen(false);
+
+      // Instantly hide the open-book UI (no fading) but keep flip-back animation on the 3D book
+      openBookContainer.style.transition = "none";
+      navContainer.style.transition = "none";
+
+      openBookContainer.classList.remove("is-open");
+      navContainer.classList.remove("is-open");
+
+      // force reflow so the removal is immediate
+      void openBookContainer.offsetWidth;
+
+      // restore original transitions for future openings
+      openBookContainer.style.transition =
+        "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease";
+      navContainer.style.transition =
+        "opacity 0.3s ease, left 0.5s cubic-bezier(0.25, 1, 0.5, 1)";
+
+      // Book appears on its back cover and rotates back to the front
+      bookMesh.visible = true;
+      bookMesh.rotation.y = Math.PI;
+      bookMesh.userData.targetRotation = 0;
+      bookMesh.userData.isFlipping = true;
+
+      currentPageSpread = 0;
+      pendingOpenAfterFlip = false;
+    }
+
+    function flipPageLeft() {
+      if (currentPageSpread > 0) {
+        currentPageSpread--;
+        updatePageContent(currentPageSpread);
+      } else {
+        closeBook();
+      }
+    }
+
+    function flipPageRight() {
+      if (currentPageSpread < bookSpreads.length - 1) {
+        currentPageSpread++;
+        updatePageContent(currentPageSpread);
+      } else {
+        closeBook();
+      }
+    }
+
+    // ------------ click handling on the canvas ------------
+    function onCanvasClick(event: MouseEvent) {
+      if (!renderer || !camera || !bookMesh) return;
+
+      const target = event.target as HTMLElement;
+      if (
+        target.classList.contains("nav-arrow") ||
+        target.id === "nav-container"
+      ) {
+        return;
+      }
+
+      // When book is open, arrows handle navigation; clicking canvas does nothing.
+      if (openBookContainer.classList.contains("is-open")) {
+        return;
+      }
+
+      const canvasRect = renderer.domElement.getBoundingClientRect();
+      mouse.x =
+        ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+      mouse.y =
+        -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(bookMesh, false);
+
+      if (intersects.length > 0) {
+        const currentRotation = bookMesh.rotation.y;
+        const targetRotation = bookMesh.userData.targetRotation ?? 0;
+
+        const atFront = Math.abs(currentRotation) < 0.01;
+        const atBack = Math.abs(currentRotation - Math.PI) < 0.01;
+        const goingToBack = Math.abs(targetRotation - Math.PI) < 0.01;
+
+        // If user clicks while it's flipping to the back, schedule an open
+        if (bookMesh.userData.isFlipping && goingToBack) {
+          pendingOpenAfterFlip = true;
+          return;
+        }
+
+        if (atFront && !bookMesh.userData.isFlipping) {
+          // flip to back
+          bookMesh.userData.targetRotation = Math.PI;
+          bookMesh.userData.isFlipping = true;
+        } else if (atBack && !bookMesh.userData.isFlipping) {
+          // back side visible, open book
+          openBook();
+        } else if (!bookMesh.userData.isFlipping) {
+          // default: send it to the back if in-between somehow
+          bookMesh.userData.targetRotation = Math.PI;
+          bookMesh.userData.isFlipping = true;
+        }
+      }
+    }
+
+    // ------------ nav arrows (DOM) ------------
+    rightArrowBtn?.addEventListener("click", () => {
+      if (isBookOpenLocal) flipPageRight();
+    });
+
+    leftArrowBtn?.addEventListener("click", () => {
+      if (isBookOpenLocal) flipPageLeft();
+    });
+
+    closeBookBtn?.addEventListener("click", () => {
+      if (isBookOpenLocal) closeBook();
+    });
+
+    // ------------ animation loop ------------
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+
+      if (bookMesh && bookMesh.userData.isFlipping) {
+        const targetRotation = bookMesh.userData.targetRotation ?? 0;
+        const diff = targetRotation - bookMesh.rotation.y;
+        const ease = 0.08;
+        bookMesh.rotation.y += diff * ease;
+
+        if (Math.abs(diff) < 0.01) {
+          bookMesh.rotation.y = targetRotation;
+          bookMesh.userData.isFlipping = false;
+
+          // If user clicked during the flip to back, open automatically once finished
+          if (
+            pendingOpenAfterFlip &&
+            Math.abs(targetRotation - Math.PI) < 0.01
+          ) {
+            pendingOpenAfterFlip = false;
+            openBook();
+          }
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // ------------ init + listeners ------------
+    initThree();
+    applyTypographyStyles();
+    window.addEventListener("resize", onWindowResize);
+    if (threeRootRef.current && (threeRootRef.current as any).firstChild) {
+      const canvas = (threeRootRef.current as HTMLDivElement)
+        .firstChild as HTMLCanvasElement;
+      canvas.addEventListener("click", onCanvasClick);
+    }
+
+    animate();
+
+    // cleanup
+    return () => {
+      window.removeEventListener("resize", onWindowResize);
+      if (threeRootRef.current && (threeRootRef.current as any).firstChild) {
+        const canvas = (threeRootRef.current as HTMLDivElement)
+          .firstChild as HTMLCanvasElement;
+        canvas.removeEventListener("click", onCanvasClick);
+      }
+      if (paginationTimer !== null) {
+        window.clearTimeout(paginationTimer);
+      }
+      cancelAnimationFrame(animationId);
+      if (renderer) {
+        renderer.dispose();
+        if (renderer.domElement.parentNode === root) {
+          root.removeChild(renderer.domElement);
+        }
+      }
+    };
+  }, [center, frontUrl, backUrl]);
+
+  // ---------- Render ----------
   return (
-    <div className="app">
+    <div className="app home3d-root">
       <AppHeader />
 
-      <main
-        className={
-          "carousel" +
-          (view === "open" || isOpening ? " is-opened" : "") +
-          (isOpening ? " is-opening" : "")
-        }
-        role="region"
-        aria-roledescription="carousel"
-        aria-label="Book preview"
-      >
-        {/* Single center book */}
-        <div className="book main-book" aria-hidden={false}>
-          <div
-            className={
-              "book-inner" +
-              (view === "back" || view === "open" ? " is-flipped" : "") +
-              (view === "open" ? " is-open" : "") +
-              (flipFading ? " flip-fading" : "")
-            }
-            onClick={onCenterClick}
-            role="button"
-            aria-label={
-              view === "front" ? "Show back cover" : view === "back" ? "Open book" : "Close book"
-            }
-            aria-pressed={view !== "front"}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onCenterClick(e);
-              }
-            }}
-          >
-            <div
-              className="book-face book-front"
-              style={
-                { ["--face-url" as any]: frontUrl ? `url(${frontUrl})` : "" } as React.CSSProperties
-              }
-            >
-              <div className="face-layer out" />
-              <div className="face-layer in" />
-            </div>
+      <main className="carousel home3d-main">
+        {/* CENTER: 3D + Reader */}
+        <section className="home3d-stage">
+          <div ref={threeRootRef} className="three-root" />
 
-            <div
-              className="book-face book-back"
-              style={
-                { ["--face-url" as any]: backUrl ? `url(${backUrl})` : "" } as React.CSSProperties
-              }
-            >
-              <div className="face-layer out" />
-              <div className="face-layer in" />
-            </div>
+          <div id="open-book-container" className="open-book-container">
+            <div className="open-book-page" id="page-left" />
+            <div className="open-book-page" id="page-right" />
           </div>
 
           <div
-            ref={spreadRef}
-            className={
-              "spread" +
-              (view === "open" ? " will-open is-open" : view === "back" ? " will-open" : "")
-            }
-            lang="en"
-            onClick={onCenterClick}
-            aria-hidden={view !== "open"}
-            aria-label={view === "open" ? "Close book" : undefined}
-            style={{
-              ["--reader-font-scale" as any]: String(FONT_SCALES[fontSizeIndex]),
-              ["--reader-line" as any]: String(debouncedLH),
-              ["--reader-font-family" as any]: FONT_STYLES[fontStyleIndex].css,
-              ["--reader-page-bg" as any]: readerLight ? "#ffffff" : "#2d2d2d",
-              ["--reader-page-fg" as any]: readerLight ? "#000000" : "#ffffff",
-              ["--reader-cushion" as any]: `${bottomCushionPx}px`,
-            }}
+            className="nav-container"
+            id="nav-container"
+            // Arrows only visible when book is open
+            style={{ display: isBookOpen ? "flex" : "none" }}
           >
-            <div
-              ref={paneLeftRef}
-              className="pane left"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (view === "open") turnPage(-1);
-              }}
-            >
-              {page === 0 ? (
-                <div className="dedication">
-                  <div className="dedication-text">
-                    {typeof center?.dedication === "string" && center.dedication?.trim()
-                      ? center.dedication
-                      : "— Dedication —"}
-                  </div>
-                </div>
-              ) : (
-                (() => {
-                  const localIdx = page - 2;
-                  if (localIdx >= 0) {
-                    if (localIdx < flatPages.length) {
-                      return flatPages[localIdx];
-                    }
-                    return (
-                      <div className="chapter-page">
-                        <div className="chapter-body">
-                          <p>(Next chapter…)</p>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return <div className="page-blank" aria-hidden="true" />;
-                })()
-              )}
+            <div className="nav-arrow" id="right-arrow" title="Next Page">
+              &rsaquo;
             </div>
-
-            <div
-              ref={paneRightRef}
-              className="pane right"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (view === "open") turnPage(1);
-              }}
-            >
-              {page === 0 ? (
-                <div className="toc">
-                  <h3 className="toc-title">Contents</h3>
-                  <ol className="toc-list">
-                    {chapterTitles.map((t, i) => (
-                      <li key={i}>
-                        <button
-                          type="button"
-                          className="toc-link"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            gotoChapter(i + 1);
-                          }}
-                          aria-label={`Go to ${t}`}
-                          title={`Go to ${t}`}
-                        >
-                          <span className="toc-chapter">{t}</span>
-                          <span className="toc-dots" aria-hidden="true">
-                            …………………………………………
-                          </span>
-                          <span className="toc-page">{startPageOfChapter[i] ?? 2}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ) : (
-                (() => {
-                  const rightPage = page + 1;
-                  const localIdx = rightPage - 2;
-                  if (localIdx >= 0) {
-                    if (localIdx < flatPages.length) {
-                      return flatPages[localIdx];
-                    }
-                    return (
-                      <div className="chapter-page">
-                        <div className="chapter-body">
-                          <p>(Next chapter…)</p>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return <div className="page-blank" aria-hidden="true" />;
-                })()
-              )}
+            <div className="nav-arrow" id="close-book-btn" title="Close Book">
+              &times;
             </div>
-
-            <div ref={probeRef} className="pagination-probe" aria-hidden="true">
-              <div className="chapter-page">
-                <h2 className="chapter-title"></h2>
-                <div className="chapter-body"></div>
-              </div>
+            <div className="nav-arrow" id="left-arrow" title="Previous Page">
+              &lsaquo;
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="vertical-arrows">
-          <button
-            type="button"
-            className="arrow"
-            aria-label={view === "open" ? "Next page" : "Next"}
-            aria-keyshortcuts="ArrowRight"
-            title={view === "open" ? (atEnd ? "Last page" : "Next page") : "Next"}
-            disabled={view === "open" && atEnd}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (view === "open") turnPage(1);
-              (e.currentTarget as HTMLButtonElement).blur();
-            }}
-          >
-            ›
-          </button>
-
-          {view === "open" && (
-            <button
-              type="button"
-              className="arrow arrow--cover"
-              aria-label="Return to cover"
-              title="Cover"
-              onMouseDown={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                returnToCover();
-                (e.currentTarget as HTMLButtonElement).blur();
-              }}
-            >
-              ⟲
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="arrow"
-            aria-label={view === "open" ? "Previous page" : "Previous"}
-            aria-keyshortcuts="ArrowLeft"
-            title={view === "open" ? (atStart ? "First page" : "Previous page") : "Previous"}
-            disabled={view === "open" && atStart}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (view === "open") turnPage(-1);
-              (e.currentTarget as HTMLButtonElement).blur();
-            }}
-          >
-            ‹
-          </button>
-        </div>
-      </main>
-
-      {/* --- RIGHT SLIDE MENU: lowered z-index so header stays above --- */}
-      <aside
-        className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
-        aria-hidden={!isRightOpen}
-        style={{ zIndex: 10 }} // ⬅️ ensures AppHeader (higher z-index) sits above
-      >
-        <div className="slide-inner">
-          <div className="rm-shell">
-            <h2 className="rm-title">{projectTitle}</h2>
-
-            <div className="rm-middle">
-              <button
-                type="button"
-                className="rm-cover-btn"
-                onClick={(e) => e.preventDefault()}
-                title="Cover"
-              >
-                <div className="rm-cover-box">
-                  {frontUrl ? <img src={frontUrl} alt="Project cover" /> : <span className="rm-cover-plus">+</span>}
-                </div>
-              </button>
-
-              <div className="rm-meta">
-                <div className="rm-chapters">
-                  {chapterCount} chapter{chapterCount === 1 ? "" : "s"}
-                </div>
-                <div className="rm-separator" />
-                <div className="rm-genre">{mainGenreLabel}</div>
-              </div>
-            </div>
-
-            <div className="rm-actions">
-              {/* ⬅️ Added requested button */}
-              <button
-                type="button"
-                className="rm-btn rm-btn-preview"
-                onClick={() => navigate("/write")}
-              >
-                Back to editor
-              </button>
-
-              <button type="button" className="rm-btn rm-btn-save" disabled>
-                Save
-              </button>
-              <button type="button" className="rm-btn rm-btn-publish" disabled>
-                Publish
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <button
-          className="slide-tab tab-right"
-          onClick={() => setRightOpen((v) => !v)}
-          aria-expanded={isRightOpen}
+        {/* --- RIGHT SLIDE MENU --- */}
+        <aside
+          className={`slide-panel slide-right ${
+            isRightOpen ? "is-open" : "is-closed"
+          }`}
+          aria-hidden={!isRightOpen}
+          style={{ zIndex: 10 }}
         >
-          Notes
-        </button>
-      </aside>
+          <div className="slide-inner">
+            <div className="rm-shell">
+              <h2 className="rm-title">{projectTitle}</h2>
+
+              <div className="rm-middle">
+                <button
+                  type="button"
+                  className="rm-cover-btn"
+                  title="Edit submission"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Navigate back to write page and ask it to open the submission modal
+                    navigate("/write", {
+                      state: {
+                        book: center,
+                        openSubmissionModal: true,
+                      },
+                    });
+                  }}
+                >
+                  <div className="rm-cover-box">
+                    {frontUrl ? (
+                      <img src={frontUrl} alt="Project cover" />
+                    ) : (
+                      // If no cover was provided, we show an empty placeholder (no text fallback)
+                      <span className="rm-cover-plus"></span>
+                    )}
+                  </div>
+                </button>
+
+                <div className="rm-meta">
+                  <div className="rm-chapters">
+                    {chapterCount
+                      ? `${chapterCount} chapter${
+                          chapterCount === 1 ? "" : "s"
+                        }`
+                      : ""}
+                  </div>
+                  <div className="rm-separator" />
+                  <div className="rm-genre">{mainGenreLabel}</div>
+                </div>
+              </div>
+
+              <div className="rm-actions">
+                <button
+                  type="button"
+                  className="rm-btn rm-btn-preview"
+                  onClick={() => navigate("/write")}
+                >
+                  Back to editor
+                </button>
+
+                <button type="button" className="rm-btn rm-btn-save" disabled>
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="rm-btn rm-btn-publish"
+                  disabled
+                >
+                  Publish
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button
+            className="slide-tab tab-right"
+            onClick={() => setRightOpen((v) => !v)}
+            aria-expanded={isRightOpen}
+          >
+            Notes
+          </button>
+        </aside>
+      </main>
     </div>
   );
 }

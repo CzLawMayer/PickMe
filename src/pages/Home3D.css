@@ -397,3 +397,16 @@
   }
 }
 
+/* Paragraph styling inside the open book pages */
+.open-book-page p {
+  margin: 0 0 0.9em;
+}
+
+.open-book-page p:last-child {
+  margin-bottom: 0;
+}
+
+/* Make sure text behaves like normal book text */
+.open-book-page {
+  white-space: normal; /* default, but explicit for safety */
+}
