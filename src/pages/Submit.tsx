@@ -10,6 +10,8 @@ import { inProgressBooks, publishedBooks } from "@/SubmitData";
 
 import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
+import SubmitFeaturePanel from "@/components/SubmitFeaturePanel";
+
 
 import "./Library.css";
 import "./Submit.css";
@@ -452,23 +454,11 @@ export default function SubmitPage() {
         </div>
 
         {/* RIGHT: Feature panel, exactly like Library */}
-        <aside className="library-feature" aria-label="Featured">
-          <FeaturePanel
-            book={activeBook || undefined}
-            liked={activeState?.liked ?? false}
-            saved={activeState?.saved ?? false}
-            userRating={activeBook?.userRating ?? 0}
-            onToggleLike={() => {
-              if (activeBook) toggleLike(activeBook.id);
-            }}
-            onToggleSave={() => {
-              if (activeBook) toggleSave(activeBook.id);
-            }}
-            onRate={(val) => {
-              console.log("rate", activeBook?.id, val);
-            }}
-          />
+        {/* RIGHT: Submit-style feature panel (Write page right menu look) */}
+        <aside className="library-feature" aria-label="Project details">
+          <SubmitFeaturePanel book={activeBook || undefined} />
         </aside>
+
       </main>
 
       {/* Submission modal – opened by hero button and plus card */}
