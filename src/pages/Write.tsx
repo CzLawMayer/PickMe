@@ -9,7 +9,7 @@ import {
 import AppHeader from "@/components/AppHeader";
 import SubmissionModal from "@/components/SubmissionModal";
 import "./Write.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 type Chapter = {
   id: string;
@@ -31,9 +31,16 @@ type SubmissionSnapshot = {
   dedication?: string;
 };
 
+type ProjectState = {
+  submission: SubmissionSnapshot | null;
+  chapters: Chapter[];
+};
+
+
 export default function WritePage() {
   const [isLeftOpen, setLeftOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
+  const location = useLocation() as any;
 
   // chapters
   const [chapters, setChapters] = useState<Chapter[]>([
@@ -88,6 +95,27 @@ export default function WritePage() {
   // Submission data for right menu
   const [submission, setSubmission] = useState<SubmissionSnapshot | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+
+
+  // Hydrate from incoming project (from Submit or Preview)
+  useEffect(() => {
+    const incoming = location.state?.project as ProjectState | undefined;
+    if (!incoming) return;
+
+    if (incoming.submission) {
+      setSubmission(incoming.submission);
+    }
+    if (incoming.chapters && incoming.chapters.length > 0) {
+      setChapters(incoming.chapters);
+      setActiveId(incoming.chapters[0].id);
+    }
+  }, [location.state]);
+
+  const buildProject = (): ProjectState => ({
+    submission,
+    chapters,
+  });
+
 
   // active chapter helper
   const active = useMemo(
@@ -663,14 +691,11 @@ export default function WritePage() {
               <button
                 type="button"
                 className="rm-btn rm-btn-preview"
-// inside WritePage, replace onClick of the Preview button:
-
                 onClick={() => {
-                  // Safe helper: returns string | undefined
                   const toUrl = (v: unknown): string | undefined => {
                     try {
                       if (v instanceof Blob) return URL.createObjectURL(v);
-                      if (typeof v === "string" && v.trim()) return v; // already a URL/path
+                      if (typeof v === "string" && v.trim()) return v;
                     } catch {}
                     return undefined;
                   };
@@ -678,57 +703,103 @@ export default function WritePage() {
                   const coverUrlSafe = toUrl(submission?.coverFile);
                   const backCoverUrlSafe = toUrl(submission?.backCoverFile);
 
-                  const chapterTitles = chapters.map(c => c.title?.trim() || "Untitled Chapter");
-                  const chapterTexts  = chapters.map(c => {
-                    // convert editor HTML to paragraph text (you already have htmlToParagraphText)
-                    return htmlToParagraphText(c.content || "");
-                  });
+                  const chapterTitles = chapters.map(
+                    c => c.title?.trim() || "Untitled Chapter"
+                  );
+                  const chapterTexts = chapters.map(c => htmlToParagraphText(c.content || ""));
 
-                  const book = {
-                    id: "preview",
-                    title: submission?.title?.trim() || "Untitled Project",
-                    user: "You",
-                    coverUrl: coverUrlSafe,
-                    backCoverUrl: backCoverUrlSafe,
-                    dedication: submission?.dedication || "",
-                    chapters: chapterTitles,
-                    chapterTexts,
-                    totalChapters: chapterTitles.length,
-                    currentChapter: 0,
-                    tags: submission?.mainGenre ? [submission.mainGenre] : [],
-                  };
-
-                  // If you want to be extra safe, ensure at least one chapter has text:
-                  // if (!chapterTexts.some(t => t.trim())) { /* show a toast */ return; }
+                  const project = buildProject();
 
                   navigate("/preview", {
                     state: {
                       book: {
                         id: "preview",
                         title: submission?.title?.trim() || "Untitled Project",
-                        author: submission?.author?.trim() || "",          // <-- use author from modal
-                        // user: "You",                                    // <-- REMOVE this
+                        author: submission?.author?.trim() || "",
                         coverFile: submission?.coverFile ?? null,
                         backCoverFile: submission?.backCoverFile ?? null,
                         dedication: submission?.dedication || "",
-                        chapters: chapters.map(c => c.title?.trim() || "Untitled Chapter"),
-                        chapterTexts: chapters.map(c => htmlToParagraphText(c.content || "")),
+                        chapters: chapterTitles,
+                        chapterTexts,
                         totalChapters: chapters.length,
                         tags: submission?.mainGenre ? [submission.mainGenre] : [],
-                      }
-                    }
+                      },
+                      project,
+                    },
                   });
                 }}
-
               >
                 Preview
               </button>
-              <button type="button" className="rm-btn rm-btn-save">
+
+              <button
+                type="button"
+                className="rm-btn rm-btn-save"
+                onClick={() => {
+                  const project = buildProject();
+
+                  const id = crypto.randomUUID();
+                  const title = submission?.title?.trim() || "Untitled Project";
+
+                  const shelfBook = {
+                    id,
+                    title,
+                    author: submission?.author?.trim() || "",
+                    year: "", // could derive from a date when you wire it in
+                    coverUrl: coverUrl ?? undefined,
+                    likes: 0,
+                    bookmarks: 0,
+                    rating: 0,
+                    userRating: 0,
+                    tags: submission?.mainGenre ? [submission.mainGenre] : [],
+                  };
+
+                  navigate("/submit", {
+                    state: {
+                      shelfBook,
+                      status: "inProgress",
+                      project,
+                    },
+                  });
+                }}
+              >
                 Save
               </button>
-              <button type="button" className="rm-btn rm-btn-publish">
+
+              <button
+                type="button"
+                className="rm-btn rm-btn-publish"
+                onClick={() => {
+                  const project = buildProject();
+
+                  const id = crypto.randomUUID();
+                  const title = submission?.title?.trim() || "Untitled Project";
+
+                  const shelfBook = {
+                    id,
+                    title,
+                    author: submission?.author?.trim() || "",
+                    year: "",
+                    coverUrl: coverUrl ?? undefined,
+                    likes: 0,
+                    bookmarks: 0,
+                    rating: 0,
+                    userRating: 0,
+                    tags: submission?.mainGenre ? [submission.mainGenre] : [],
+                  };
+
+                  navigate("/submit", {
+                    state: {
+                      shelfBook,
+                      status: "published",
+                      project,
+                    },
+                  });
+                }}
+              >
                 Publish
               </button>
+
             </div>
           </div>
         </div>

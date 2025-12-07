@@ -50,6 +50,8 @@ export default function Preview() {
 
   const injected: IncomingBook | null = location?.state?.book || null;
   const center: Book | null = injected ?? null;
+  const project = (location?.state?.project as any) || null;
+
 
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -871,10 +873,17 @@ export default function Preview() {
                 <button
                   type="button"
                   className="rm-btn rm-btn-preview"
-                  onClick={() => navigate("/write")}
+                  onClick={() =>
+                    navigate("/write", {
+                      state: {
+                        project,
+                      },
+                    })
+                  }
                 >
                   Back to editor
                 </button>
+
 
                 <button type="button" className="rm-btn rm-btn-save" disabled>
                   Save
