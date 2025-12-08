@@ -17,8 +17,8 @@ type SubmitPanelBook = {
       author?: string;
       mainGenre?: string;
       dedication?: string;
-      coverFile?: File | null;
-      backCoverFile?: File | null;
+      coverUrl?: string | null;
+      backCoverUrl?: string | null;
     };
     chapters?: { id: string; title: string; content: string }[];
   };
@@ -26,18 +26,9 @@ type SubmitPanelBook = {
 
 function getCoverSrcFromBook(book?: SubmitPanelBook | null): string | null {
   if (!book) return null;
-  if (book.coverUrl) return book.coverUrl;
-
-  const file = book.project?.submission?.coverFile;
-  if (file instanceof File) {
-    // cache on project so we don't recreate repeatedly
-    const cached = (book.project as any).__coverUrl as string | undefined;
-    if (cached) return cached;
-
-    const url = URL.createObjectURL(file);
-    (book.project as any).__coverUrl = url;
-    return url;
-  }
+  if (book.coverUrl) return book.coverUrl || null;
+  const submission = book.project?.submission;
+  if (submission?.coverUrl) return submission.coverUrl || null;
   return null;
 }
 
@@ -47,27 +38,28 @@ interface SubmitFeaturePanelProps {
 
 const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
   const navigate = useNavigate();
-
-  // Single place where we decide what cover to show
   const coverSrc = useMemo(() => getCoverSrcFromBook(book), [book]);
 
-  // Empty state (no book selected)
   if (!book) {
     return (
       <div className="submit-feature-shell">
         <div className="rm-shell">
           <h3 className="brand-mark">
-            <span className="brand-p">P</span>ic<span className="brand-k">k</span>
-            <span className="brand-m">M</span>e<span className="brand-bang">!</span>
+            <span className="brand-p">P</span>ic
+            <span className="brand-k">k</span>
+            <span className="brand-m">M</span>e
+            <span className="brand-bang">!</span>
           </h3>
         </div>
       </div>
     );
   }
 
-  const chapterCount = book.project?.chapters?.length ?? 0;
+  const chapters = book.project?.chapters ?? [];
+  const submission = book.project?.submission ?? {};
+  const chapterCount = chapters.length;
   const mainGenre =
-    book.project?.submission?.mainGenre ??
+    submission.mainGenre ??
     (book.tags && book.tags.length > 0 ? book.tags[0] : "");
 
   const isPublished = book.status === "published";
@@ -76,23 +68,13 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
     navigate("/write", {
       state: {
         project: book.project ?? null,
-        shelfBook: {
-          id: book.id,
-          title: book.title,
-          author: book.author ?? "",
-          tags: book.tags ?? [],
-          coverUrl: null, // let Write/Preview recreate from project if needed
-        },
-        status: book.status,
       },
     });
   };
 
   const handlePreview = () => {
-    if (!book.project) return;
-
-    const chapters = book.project.chapters ?? [];
-    const submission = book.project.submission ?? {};
+    const project = book.project;
+    if (!project) return;
 
     navigate("/preview", {
       state: {
@@ -104,16 +86,18 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
           dedication: submission.dedication ?? "",
           chapters: chapters.map((c) => c.title),
           chapterTexts: chapters.map((c) => c.content),
-          totalChapters: chapters.length,
-          coverFile: submission.coverFile ?? null,
-          backCoverFile: submission.backCoverFile ?? null,
+          totalChapters: chapterCount,
+          coverUrl:
+            submission.coverUrl ?? book.coverUrl ?? undefined,
+          backCoverUrl: submission.backCoverUrl ?? undefined,
         },
+        project,
       },
     });
   };
 
   const handlePublishToggle = () => {
-    // no-op for now — SubmitPage will eventually own the status change
+    // future: toggle status from here
   };
 
   return (
