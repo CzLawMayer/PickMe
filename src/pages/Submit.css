@@ -399,3 +399,25 @@
 }
 
 
+/* --- Make Submit feature panel fill the full right column --- */
+
+aside.library-feature {
+  display: flex;
+  align-items: stretch;
+}
+
+/* Root of the Submit feature panel inside the right column */
+aside.library-feature .submit-feature-shell {
+  flex: 1 1 auto;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Just in case older styles centered/narrowed rm-shell somewhere */
+aside.library-feature .rm-shell {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
