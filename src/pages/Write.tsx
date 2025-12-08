@@ -759,10 +759,8 @@ export default function WritePage() {
                 className="rm-btn rm-btn-publish"
                 onClick={() => {
                   const project = buildProject();
-
                   const id = crypto.randomUUID();
-                  const title =
-                    submission?.title?.trim() || "Untitled Project";
+                  const title = submission?.title?.trim() || "Untitled Project";
 
                   const shelfBook = {
                     id,
@@ -774,22 +772,24 @@ export default function WritePage() {
                     bookmarks: 0,
                     rating: 0,
                     userRating: 0,
-                    tags: submission?.mainGenre
-                      ? [submission.mainGenre]
-                      : [],
+                    tags: submission?.mainGenre ? [submission.mainGenre] : [],
                   };
+
+                  const nextStatus =
+                    statusFromLocation === "published" ? "inProgress" : "published";
 
                   navigate("/submit", {
                     state: {
                       shelfBook,
-                      status: "published",
+                      status: nextStatus,
                       project,
                     },
                   });
                 }}
               >
-                Publish
+                {statusFromLocation === "published" ? "Unpublish" : "Publish"}
               </button>
+
             </div>
           </div>
         </div>

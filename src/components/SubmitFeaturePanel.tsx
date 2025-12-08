@@ -110,6 +110,8 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
   const handlePublish = () => {
     if (!book.project) return;
 
+    const newStatus = isPublished ? "inProgress" : "published";
+
     navigate("/submit", {
       state: {
         shelfBook: {
@@ -117,18 +119,19 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
           title: book.title,
           author: book.author ?? "",
           year: "",
-          coverUrl: null, // Submit will rebuild from File
+          coverUrl: null,
           likes: book.likes ?? 0,
           bookmarks: book.bookmarks ?? 0,
           rating: book.rating ?? 0,
           userRating: book.userRating ?? 0,
           tags: book.tags ?? [],
         },
-        status: "published" as Status,
+        status: newStatus,
         project: book.project,
       },
     });
   };
+
 
   return (
     <div className="submit-feature-shell">
@@ -174,10 +177,10 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
             type="button"
             className="rm-btn rm-btn-publish"
             onClick={handlePublish}
-            disabled={isPublished}
           >
-            Publish
+            {isPublished ? "Unpublish" : "Publish"}
           </button>
+
         </div>
       </div>
     </div>

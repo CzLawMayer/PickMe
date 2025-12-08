@@ -946,10 +946,16 @@ export default function Preview() {
                 <button
                   type="button"
                   className="rm-btn rm-btn-publish"
-                  onClick={handlePublishFromPreview}
+                  onClick={() => {
+                    const nextStatus =
+                      previousStatus === "published" ? "inProgress" : "published";
+                    const payload = makeShelfBook(nextStatus);
+                    navigate("/submit", { state: payload });
+                  }}
                 >
-                  Publish
+                  {previousStatus === "published" ? "Unpublish" : "Publish"}
                 </button>
+
               </div>
             </div>
           </div>
