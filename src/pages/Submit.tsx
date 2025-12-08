@@ -33,9 +33,19 @@ type LibBook = {
 
 type Status = "inProgress" | "published";
 
-type BookWithStatus = LibBook & {
+export type BookWithStatus = LibBook & {
   status: Status;
-  project?: any;
+  project?: {
+    submission?: {
+      title?: string;
+      author?: string;
+      mainGenre?: string;
+      dedication?: string;
+      coverFile?: File | null;
+      backCoverFile?: File | null;
+    };
+    chapters?: { id: string; title: string; content: string }[];
+  };
 };
 
 function toLibBook(b: any): LibBook {
@@ -77,14 +87,21 @@ function colorFromString(seed: string) {
 }
 
 /**
- * Resolve the correct cover src for a book:
- * 1) book.coverUrl (for static + saved projects)
- * 2) project.submission.coverUrl (string baked by Write.tsx)
+ * Build a usable cover URL for both static and user-created books.
+ * For static books, we use b.coverUrl as-is.
+ * For user-created books, we generate an object URL from project.submission.coverFile.
  */
 function getCoverSrcForBook(b: BookWithStatus): string | null {
-  if (b.coverUrl) return b.coverUrl || null;
-  const submission = b.project?.submission;
-  if (submission?.coverUrl) return submission.coverUrl || null;
+  if (b.coverUrl) return b.coverUrl;
+
+  const file = b.project?.submission?.coverFile;
+  if (file instanceof File) {
+    const cached = (b.project as any).__coverUrl as string | undefined;
+    if (cached) return cached;
+    const url = URL.createObjectURL(file);
+    (b.project as any).__coverUrl = url;
+    return url;
+  }
   return null;
 }
 
@@ -92,8 +109,10 @@ export default function SubmitPage() {
   const navigate = useNavigate();
   const location = useLocation() as any;
 
+  // User-created books saved from Write / Preview
   const [userBooks, setUserBooks] = useState<BookWithStatus[]>([]);
 
+  // merge both lists but tag them with status so we can filter by tab
   const allBooks = useMemo<BookWithStatus[]>(() => {
     const staticBooks: BookWithStatus[] = [
       ...inProgressBooks.map((b: any) => ({
@@ -105,6 +124,7 @@ export default function SubmitPage() {
         status: "published" as const,
       })),
     ];
+
     return [...userBooks, ...staticBooks];
   }, [userBooks]);
 
@@ -112,7 +132,7 @@ export default function SubmitPage() {
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [activeBook, setActiveBook] = useState<BookWithStatus | null>(null);
 
-  // pick up saved/published project from Write
+  // pick up saved/published project from Write or Preview
   useEffect(() => {
     const incoming = location.state as any;
     if (!incoming || !incoming.shelfBook) return;
@@ -123,11 +143,12 @@ export default function SubmitPage() {
     const raw = incoming.shelfBook as LibBook;
     const project = incoming.project;
 
+    // For user-created books, ignore raw.coverUrl (it may be a revoked object URL)
     const base: BookWithStatus = {
-      ...raw,
+      ...toLibBook(raw),
       status,
       project,
-      coverUrl: raw.coverUrl ?? null,
+      coverUrl: null, // let getCoverSrcForBook rebuild from File
     };
 
     setUserBooks((prev) => {
@@ -142,6 +163,9 @@ export default function SubmitPage() {
     setSelectedBookId(String(base.id));
     setActiveBook(base);
     setActiveTab(status);
+
+    // Optional: clear state so refresh doesn't re-add
+    // navigate(location.pathname, { replace: true });
   }, [location.state]);
 
   const visibleBooks = useMemo(
@@ -167,6 +191,7 @@ export default function SubmitPage() {
     setActiveBook(sel || null);
   };
 
+  // per-book like/save local state
   type BookState = {
     liked: boolean;
     saved: boolean;
@@ -227,7 +252,7 @@ export default function SubmitPage() {
     ? bookStates[String(activeBook.id)]
     : undefined;
 
-  // submission modal (for Add book)
+  // submission modal
   const [showModal, setShowModal] = useState(false);
   const openSubmission = () => setShowModal(true);
   const closeSubmission = () => setShowModal(false);
@@ -238,11 +263,8 @@ export default function SubmitPage() {
         title: data.title,
         author: data.author,
         mainGenre: data.mainGenre,
-        coverFile: (data.coverFile as File | null) ?? null,
-        backCoverFile: (data.backCoverFile as File | null) ?? null,
-        coverUrl: (data.coverUrl as string | undefined) ?? null,
-        backCoverUrl:
-          (data.backCoverUrl as string | undefined) ?? null,
+        coverFile: data.coverFile ?? null,
+        backCoverFile: data.backCoverFile ?? null,
         dedication: data.dedication ?? "",
       },
       chapters: [
@@ -257,6 +279,7 @@ export default function SubmitPage() {
     navigate("/write", {
       state: {
         project,
+        status: "inProgress" as const,
       },
     });
   };
@@ -266,14 +289,13 @@ export default function SubmitPage() {
       <AppHeader onClickWrite={() => {}} onClickSearch={() => {}} />
 
       <main className="library-layout">
-        {/* LEFT side */}
+        {/* LEFT: hero + scroll */}
         <div className="library-left">
           <section className="lib-hero" aria-label="Submit header">
             <div className="identity-cell" style={{ minWidth: 0 }}>
               <ProfileIdentity compact />
             </div>
 
-            {/* tabs */}
             <nav className="lib-tabs" aria-label="Submission sections">
               <button
                 type="button"
@@ -295,7 +317,6 @@ export default function SubmitPage() {
               </button>
             </nav>
 
-            {/* add book */}
             <div className="lib-hero-cta">
               <button
                 className="add-book-btn"
@@ -307,7 +328,6 @@ export default function SubmitPage() {
             </div>
           </section>
 
-          {/* grid of books */}
           <section
             className="lib-scroll"
             aria-label={
@@ -502,6 +522,7 @@ export default function SubmitPage() {
                 );
               })}
 
+              {/* plus card to create a new project – only in In progress tab */}
               {activeTab === "inProgress" && (
                 <div className="lib-col">
                   <button
@@ -523,44 +544,9 @@ export default function SubmitPage() {
           </section>
         </div>
 
-        {/* RIGHT side feature panel */}
-        {/* RIGHT: Submit-style feature panel (Write page right menu look) */}
         <aside className="library-feature" aria-label="Project details">
-          <SubmitFeaturePanel
-            book={activeBook || undefined}
-            onPublish={(panelBook) => {
-              const idStr = String(panelBook.id);
-
-              setUserBooks((prev) => {
-                const exists = prev.some((b) => String(b.id) === idStr);
-                if (exists) {
-                  // flip an existing user book to published
-                  return prev.map((b) =>
-                    String(b.id) === idStr
-                      ? { ...b, status: "published" as const }
-                      : b
-                  );
-                }
-
-                // if it wasn't in userBooks yet, create a user copy as published
-                const asBook = {
-                  ...(panelBook as BookWithStatus),
-                  status: "published" as const,
-                };
-                return [asBook, ...prev];
-              });
-
-              // switch UI to Published tab and keep selection
-              setActiveTab("published");
-              setSelectedBookId(idStr);
-              setActiveBook({
-                ...(panelBook as BookWithStatus),
-                status: "published",
-              });
-            }}
-          />
+          <SubmitFeaturePanel book={activeBook || undefined} />
         </aside>
-
       </main>
 
       <SubmissionModal

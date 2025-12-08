@@ -22,15 +22,10 @@ type Chapter = {
 type ListMode = "none" | "ordered" | "unordered";
 type CaseMode = "none" | "upper" | "lower";
 
-// Snapshot of what we care about from the submission modal
 type SubmissionSnapshot = {
   title?: string;
   author?: string;
   mainGenre?: string;
-  // we will persist a *string* URL in here
-  coverUrl?: string | null;
-  backCoverUrl?: string | null;
-  // we still keep the File reference while on this page
   coverFile?: File | null;
   backCoverFile?: File | null;
   dedication?: string;
@@ -45,6 +40,14 @@ export default function WritePage() {
   const [isLeftOpen, setLeftOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
   const location = useLocation() as any;
+  const navigate = useNavigate();
+
+  // status coming from Submit / Preview (default inProgress)
+  const statusFromLocation: "inProgress" | "published" =
+    (location.state?.status as "inProgress" | "published" | undefined) ===
+    "published"
+      ? "published"
+      : "inProgress";
 
   // chapters
   const [chapters, setChapters] = useState<Chapter[]>([
@@ -56,7 +59,6 @@ export default function WritePage() {
 
   const [showSubmission, setShowSubmission] = useState(false);
 
-  // toolbar state
   const [listMode, setListMode] = useState<ListMode>("none");
   const [caseState, setCaseState] = useState<{
     mode: CaseMode;
@@ -66,25 +68,12 @@ export default function WritePage() {
     original: "",
   });
 
-  const navigate = useNavigate();
-
-  function htmlToParagraphText(html: string): string {
-    if (!html) return "";
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    const txt = (div.innerText || "").replace(/\u200B/g, "").trim();
-    return txt.replace(/\n/g, "\n\n");
-  }
-
-  // Theme + font size
   const [isLightMode, setIsLightMode] = useState(false);
   const [fontScale, setFontScale] = useState(1);
 
-  // Notes (global for the project; persists across chapters)
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState("");
 
-  // Toolbar drag state
   const [toolbarPos, setToolbarPos] = useState<{ top: number; left: number }>({
     top: 84,
     left: -140,
@@ -97,10 +86,7 @@ export default function WritePage() {
     left: number;
   } | null>(null);
 
-  // Submission data for right menu
   const [submission, setSubmission] = useState<SubmissionSnapshot | null>(null);
-
-  // This is the URL we actually use for <img src>; always a string
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   // Hydrate from incoming project (from Submit or Preview)
@@ -117,50 +103,35 @@ export default function WritePage() {
     }
   }, [location.state]);
 
-  // Whenever submission changes, recompute a visible coverUrl (string)
-  useEffect(() => {
-    if (!submission) {
-      setCoverUrl(null);
-      return;
-    }
+  const buildProject = (): ProjectState => ({
+    submission,
+    chapters,
+  });
 
-    // 1) If we already have a string URL, just use that
-    if (submission.coverUrl) {
-      setCoverUrl(submission.coverUrl);
-      return;
-    }
-
-    // 2) Otherwise, if we have a File (from modal), build a blob URL
-    if (submission.coverFile instanceof File) {
-      const url = URL.createObjectURL(submission.coverFile);
-      setCoverUrl(url);
-      // we intentionally DO NOT revoke here so it survives navigation
-      return;
-    }
-
-    setCoverUrl(null);
-  }, [submission]);
-
-  // Build the project object, *always* embedding the current string URL
-  const buildProject = (): ProjectState => {
-    const snap: SubmissionSnapshot | null = submission
-      ? {
-          ...submission,
-          coverUrl: coverUrl ?? submission.coverUrl ?? null,
-        }
-      : null;
-
-    return {
-      submission: snap,
-      chapters,
-    };
+  const htmlToParagraphText = (html: string): string => {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const txt = (div.innerText || "").replace(/\u200B/g, "").trim();
+    return txt.replace(/\n/g, "\n\n");
   };
 
-  // active chapter helper
   const active = useMemo(
     () => chapters.find((c) => c.id === activeId) ?? chapters[0],
     [chapters, activeId]
   );
+
+  useEffect(() => {
+    if (!submission?.coverFile) {
+      setCoverUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(submission.coverFile);
+    setCoverUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [submission?.coverFile]);
 
   const addChapter = () =>
     setChapters((list) => {
@@ -211,7 +182,6 @@ export default function WritePage() {
     document.execCommand(command, false, value);
   };
 
-  // list: none -> ordered -> unordered -> none
   const cycleListMode = () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -241,7 +211,6 @@ export default function WritePage() {
     }
   };
 
-  // Aa button: original -> UPPER -> lower -> original
   const cycleCase = () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -296,7 +265,6 @@ export default function WritePage() {
     );
   };
 
-  // separator: one dot between paragraphs max
   const insertSectionDivider = () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -408,11 +376,14 @@ export default function WritePage() {
       editor.appendChild(p);
     }
 
-    const range = document.createRange();
-    range.setStart(p, 0);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const sel2 = window.getSelection();
+    if (sel2) {
+      const range = document.createRange();
+      range.setStart(p, 0);
+      range.collapse(true);
+      sel2.removeAllRanges();
+      sel2.addRange(range);
+    }
 
     const html = editor.innerHTML;
     setChapters((list) =>
@@ -420,7 +391,6 @@ export default function WritePage() {
     );
   };
 
-  // PASTE: convert text to HTML paragraphs, respecting double line breaks
   const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     const editor = editorRef.current;
@@ -456,7 +426,6 @@ export default function WritePage() {
     );
   };
 
-  // When the editor gains focus and is empty, seed it with a <p><br></p>
   const handleEditorFocus = () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -478,7 +447,6 @@ export default function WritePage() {
     }
   };
 
-  // ESC closes modal / panels
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -492,7 +460,6 @@ export default function WritePage() {
     return () => document.removeEventListener("keydown", onKey);
   }, [isLeftOpen, isRightOpen, showSubmission, showNotes]);
 
-  // sync editor with active chapter
   useEffect(() => {
     if (!editorRef.current) return;
     editorRef.current.innerHTML = active?.content ?? "";
@@ -500,7 +467,6 @@ export default function WritePage() {
     setCaseState({ mode: "none", original: "" });
   }, [active?.id]);
 
-  // toolbar drag global listeners
   useEffect(() => {
     if (!isDraggingToolbar) return;
 
@@ -704,7 +670,7 @@ export default function WritePage() {
             </div>
 
             <div className="rm-actions">
-              {/* PREVIEW */}
+              {/* Preview → Preview page, preserving status */}
               <button
                 type="button"
                 className="rm-btn rm-btn-preview"
@@ -725,6 +691,8 @@ export default function WritePage() {
                         title:
                           submission?.title?.trim() || "Untitled Project",
                         author: submission?.author?.trim() || "",
+                        coverFile: submission?.coverFile ?? null,
+                        backCoverFile: submission?.backCoverFile ?? null,
                         dedication: submission?.dedication || "",
                         chapters: chapterTitles,
                         chapterTexts,
@@ -732,10 +700,9 @@ export default function WritePage() {
                         tags: submission?.mainGenre
                           ? [submission.mainGenre]
                           : [],
-                        coverUrl: coverUrl ?? undefined,
-                        backCoverUrl: submission?.backCoverUrl ?? undefined,
                       },
                       project,
+                      status: statusFromLocation,
                     },
                   });
                 }}
@@ -743,7 +710,7 @@ export default function WritePage() {
                 Preview
               </button>
 
-              {/* SAVE (in progress) */}
+              {/* Save → Submit (keep published if already published) */}
               <button
                 type="button"
                 className="rm-btn rm-btn-save"
@@ -769,10 +736,15 @@ export default function WritePage() {
                       : [],
                   };
 
+                  const effectiveStatus =
+                    statusFromLocation === "published"
+                      ? "published"
+                      : "inProgress";
+
                   navigate("/submit", {
                     state: {
                       shelfBook,
-                      status: "inProgress",
+                      status: effectiveStatus,
                       project,
                     },
                   });
@@ -781,7 +753,7 @@ export default function WritePage() {
                 Save
               </button>
 
-              {/* PUBLISH */}
+              {/* Publish → Submit (always published) */}
               <button
                 type="button"
                 className="rm-btn rm-btn-publish"
@@ -836,7 +808,7 @@ export default function WritePage() {
         <section className="editor-wrap" aria-label="Writing editor">
           <div className="editor-inner">
             <div className="editor-body">
-              {/* TOOLBAR (floating, draggable, with notes button) */}
+              {/* TOOLBAR */}
               <div
                 className="editor-toolbar-shell"
                 style={{ top: toolbarPos.top, left: toolbarPos.left }}
@@ -855,7 +827,6 @@ export default function WritePage() {
                   className="editor-toolbar"
                   aria-label="Text formatting tools"
                 >
-                  {/* 0. Undo & Redo */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -875,7 +846,6 @@ export default function WritePage() {
                     ↻
                   </button>
 
-                  {/* 1. Bold & Italic */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -893,7 +863,6 @@ export default function WritePage() {
                     I
                   </button>
 
-                  {/* 2. Underline & Caps/lowercase */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -912,7 +881,6 @@ export default function WritePage() {
                     Aa
                   </button>
 
-                  {/* 3. Center & Justify */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -930,7 +898,6 @@ export default function WritePage() {
                     J
                   </button>
 
-                  {/* 4. Left & Right */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -948,7 +915,6 @@ export default function WritePage() {
                     R
                   </button>
 
-                  {/* 5. Numbers & Separator */}
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -970,7 +936,6 @@ export default function WritePage() {
                   </button>
                 </div>
 
-                {/* Notes toggle button */}
                 <button
                   type="button"
                   className={
@@ -994,7 +959,6 @@ export default function WritePage() {
                 )}
               </div>
 
-              {/* SCROLLS: title + text together */}
               <div className="editor-scroll">
                 <header className="editor-header">
                   <h1 className="editor-title">
@@ -1041,7 +1005,6 @@ export default function WritePage() {
           +
         </button>
 
-        {/* THEME TOGGLE */}
         <label
           className="switch"
           aria-label="Toggle editor light mode"
@@ -1054,8 +1017,8 @@ export default function WritePage() {
             onChange={(e) => setIsLightMode(!e.target.checked)}
           />
           <span className="slider round">
-            {/* your SVGs unchanged */}
             <span className="sun-moon">
+              {/* SVGs omitted for brevity, keep your existing ones */}
               <svg id="moon-dot-1" className="moon-dot" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
@@ -1065,7 +1028,6 @@ export default function WritePage() {
               <svg id="moon-dot-3" className="moon-dot" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-
               <svg
                 id="light-ray-1"
                 className="light-ray"
@@ -1087,7 +1049,6 @@ export default function WritePage() {
               >
                 <circle cx="50" cy="50" r="50" />
               </svg>
-
               <svg id="cloud-1" className="cloud-dark" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
@@ -1097,7 +1058,6 @@ export default function WritePage() {
               <svg id="cloud-3" className="cloud-dark" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-
               <svg id="cloud-4" className="cloud-light" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
@@ -1137,11 +1097,8 @@ export default function WritePage() {
               title: data.title,
               author: data.author,
               mainGenre: data.mainGenre,
-              coverFile: (data.coverFile as File | null) ?? null,
-              backCoverFile: (data.backCoverFile as File | null) ?? null,
-              coverUrl: (data.coverUrl as string | undefined) ?? null,
-              backCoverUrl:
-                (data.backCoverUrl as string | undefined) ?? null,
+              coverFile: data.coverFile ?? null,
+              backCoverFile: data.backCoverFile ?? null,
               dedication: data.dedication ?? "",
             });
             setShowSubmission(false);

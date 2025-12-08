@@ -44,16 +44,20 @@ type IncomingBook = Book & {
 type BookSpread = { left: string; right: string };
 type ReaderTheme = "cream" | "dark" | "white";
 
+type SubmissionSnapshot = {
+  title?: string;
+  author?: string;
+  mainGenre?: string;
+  dedication?: string;
+  coverFile?: File | null;
+  backCoverFile?: File | null;
+};
+
+type Chapter = { id: string; title: string; content: string };
+
 type ProjectState = {
-  submission?: {
-    title?: string;
-    author?: string;
-    mainGenre?: string;
-    coverFile?: File | null;
-    backCoverFile?: File | null;
-    dedication?: string;
-  };
-  chapters?: { id: string; title: string; content: string }[];
+  submission: SubmissionSnapshot | null;
+  chapters: Chapter[];
 };
 
 export default function Preview() {
@@ -61,106 +65,59 @@ export default function Preview() {
   const navigate = useNavigate();
 
   const injected: IncomingBook | null = location?.state?.book || null;
-  const center: IncomingBook | null = injected ?? null;
+  const center: Book | null = injected ?? null;
 
-  const projectFromLocation =
-    (location.state?.project as ProjectState | undefined) ?? null;
+  const projectFromState: ProjectState | undefined =
+    location.state?.project || undefined;
+
+  const previousStatus: "inProgress" | "published" =
+    (location.state?.status as "inProgress" | "published" | undefined) ===
+    "published"
+      ? "published"
+      : "inProgress";
 
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
   const [isBookOpen, setIsBookOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(true);
 
-  // Resolved URLs for covers (only for display in this page)
   const [frontUrl, setFrontUrl] = useState<string | undefined>(undefined);
   const [backUrl, setBackUrl] = useState<string | undefined>(undefined);
 
-  // Derive some simple labels for the right panel
-  const projectTitle = (center?.title ?? "").trim();
-  const mainGenreLabel =
-    Array.isArray(center?.tags) && center.tags.length > 0
-      ? center.tags[0]
-      : "";
-
-  const chapterCount = (() => {
-    if (!center) return 0;
-    if (Array.isArray(center.chapters) && center.chapters.length > 0) {
-      return center.chapters.length;
-    }
-    const n = Number(center.totalChapters ?? 0);
-    if (Number.isFinite(n) && n > 0) return n;
-    if (Array.isArray(center.chapterTexts)) return center.chapterTexts.length;
-    return 0;
-  })();
-
-  // ---------- build / reuse project state ----------
+  // Build an effective project state from injected book + project
   function buildEffectiveProject(): ProjectState {
-    if (projectFromLocation) return projectFromLocation;
-    if (!center) return { submission: {}, chapters: [] };
+    if (projectFromState) {
+      return projectFromState;
+    }
 
-    const chaptersArr = Array.isArray(center.chapterTexts)
-      ? center.chapterTexts
-      : [];
-    const titlesArr = Array.isArray(center.chapters) ? center.chapters : [];
+    const submission: SubmissionSnapshot = {
+      title: center?.title,
+      author: center?.author,
+      mainGenre:
+        center?.tags && center.tags.length > 0 ? center.tags[0] : undefined,
+      dedication: center?.dedication,
+      coverFile: injected?.coverFile ?? null,
+      backCoverFile: injected?.backCoverFile ?? null,
+    };
+
+    const chapters: Chapter[] = [];
+    if (Array.isArray(center?.chapters) && Array.isArray(center?.chapterTexts)) {
+      const n = Math.min(center!.chapters!.length, center!.chapterTexts!.length);
+      for (let i = 0; i < n; i++) {
+        chapters.push({
+          id: `ch-${i}`,
+          title: center!.chapters![i],
+          content: center!.chapterTexts![i],
+        });
+      }
+    }
 
     return {
-      submission: {
-        title: center.title,
-        author: center.author,
-        mainGenre:
-          Array.isArray(center.tags) && center.tags.length > 0
-            ? center.tags[0]
-            : "",
-        coverFile: (center as any).coverFile ?? null,
-        backCoverFile: (center as any).backCoverFile ?? null,
-        dedication: center.dedication ?? "",
-      },
-      chapters: chaptersArr.map((content, idx) => ({
-        id: `ch-${idx + 1}`,
-        title: titlesArr[idx] || `Chapter ${idx + 1}`,
-        content,
-      })),
+      submission,
+      chapters,
     };
   }
 
-  function makeShelfBook(status: "inProgress" | "published") {
-    const project = buildEffectiveProject();
-    const submission = project.submission ?? {};
-
-    return {
-      shelfBook: {
-        id: String(center?.id ?? crypto.randomUUID()),
-        title: submission.title?.trim() || center?.title || "Untitled Project",
-        author: submission.author?.trim() || center?.author || "",
-        year: "",
-        // IMPORTANT: let Submit recreate the cover from coverFile
-        coverUrl: null,
-        likes: 0,
-        bookmarks: 0,
-        rating: 0,
-        userRating: 0,
-        tags: submission.mainGenre
-          ? [submission.mainGenre]
-          : Array.isArray(center?.tags)
-          ? center!.tags
-          : [],
-      },
-      project,
-      status,
-    };
-  }
-
-  function handleSaveFromPreview() {
-    const payload = makeShelfBook("inProgress");
-    navigate("/submit", { state: payload });
-  }
-
-  function handlePublishFromPreview() {
-    const payload = makeShelfBook("published");
-    navigate("/submit", { state: payload });
-  }
-
-  // ---------- Resolve cover URLs for this page only ----------
   useEffect(() => {
     if (!injected) {
       setFrontUrl(undefined);
@@ -171,7 +128,6 @@ export default function Preview() {
     let revokeFront: string | undefined;
     let revokeBack: string | undefined;
 
-    // Front cover – from URL or File
     if (injected.coverUrl && injected.coverUrl.trim()) {
       setFrontUrl(injected.coverUrl);
     } else if (injected.coverFile instanceof File) {
@@ -182,7 +138,6 @@ export default function Preview() {
       setFrontUrl(undefined);
     }
 
-    // Back cover – from URL or File
     if (injected.backCoverUrl && injected.backCoverUrl.trim()) {
       setBackUrl(injected.backCoverUrl);
     } else if (injected.backCoverFile instanceof File) {
@@ -207,14 +162,68 @@ export default function Preview() {
     };
   }, [injected]);
 
-  // If we somehow reach Preview with no book at all → minimal shell
   if (!center) {
     return (
       <div className="app home3d-root">
         <AppHeader />
-        <main className="carousel home3d-main">{/* empty state */}</main>
+        <main className="carousel home3d-main"></main>
       </div>
     );
+  }
+
+  const projectTitle = (center.title ?? "").trim();
+  const mainGenreLabel =
+    Array.isArray(center.tags) && center.tags.length > 0
+      ? center.tags[0]
+      : "";
+
+  const chapterCount = (() => {
+    if (Array.isArray(center.chapters) && center.chapters.length > 0) {
+      return center.chapters.length;
+    }
+    const n = Number(center.totalChapters ?? 0);
+    if (Number.isFinite(n) && n > 0) return n;
+    if (Array.isArray(center.chapterTexts)) return center.chapterTexts.length;
+    return 0;
+  })();
+
+  // ---- status-aware helper to build payload for Submit
+  function makeShelfBook(status: "inProgress" | "published") {
+    const project = buildEffectiveProject();
+    const submission = project.submission ?? {};
+
+    return {
+      shelfBook: {
+        id: String(center?.id ?? crypto.randomUUID()),
+        title: submission.title?.trim() || center?.title || "Untitled Project",
+        author: submission.author?.trim() || center?.author || "",
+        year: "",
+        coverUrl: null, // let Submit rebuild from File
+        likes: 0,
+        bookmarks: 0,
+        rating: 0,
+        userRating: 0,
+        tags: submission.mainGenre
+          ? [submission.mainGenre]
+          : Array.isArray(center?.tags)
+          ? center!.tags
+          : [],
+      },
+      project,
+      status,
+    };
+  }
+
+  function handleSaveFromPreview() {
+    const effectiveStatus =
+      previousStatus === "published" ? "published" : "inProgress";
+    const payload = makeShelfBook(effectiveStatus);
+    navigate("/submit", { state: payload });
+  }
+
+  function handlePublishFromPreview() {
+    const payload = makeShelfBook("published");
+    navigate("/submit", { state: payload });
   }
 
   // ---------- 3D + Reader setup (single-book version) ----------
@@ -234,7 +243,6 @@ export default function Preview() {
     let bookSpreads: BookSpread[] = [];
     let pendingOpenAfterFlip = false;
 
-    // typography + theme
     let currentFontSize = 14;
     let currentLineHeight = 1.6;
     let currentFontFamily = "Georgia, 'Times New Roman', serif";
@@ -245,7 +253,6 @@ export default function Preview() {
 
     const spineColors = ["#ef5623", "#e41f6c", "#6a1b9a", "#1e88e5"];
 
-    // DOM elements for reader
     const openBookContainer = document.getElementById(
       "open-book-container"
     ) as HTMLDivElement | null;
@@ -273,7 +280,6 @@ export default function Preview() {
       return;
     }
 
-    // ------------ helpers for spine + pages ------------
     function createSpineTexture(
       title: string,
       width: number,
@@ -320,7 +326,6 @@ export default function Preview() {
       return cleaned.trim();
     }
 
-    // --- Paragraph-aware pagination: preserve paragraph breaks ---
     function paginateChapter(fullText: string, titleHtml: string | null = null) {
       const testPage = pageLeft!;
       const computedStyle = window.getComputedStyle(testPage);
@@ -332,23 +337,22 @@ export default function Preview() {
       const effectiveHeight = contentAreaHeight;
 
       const originalContent = testPage.innerHTML;
+      const pages: string[] = [];
+
       const raw = fullText || "";
+
       let processedText: string;
 
-      // If content already looks like HTML, keep as-is for pagination
       if (raw.includes("<") && !raw.includes("\n")) {
         processedText = raw;
       } else {
-        // Plain text with newlines → convert to <p> + <br> so paragraphs are preserved.
         let normalized = raw.replace(/\r\n/g, "\n");
         normalized = normalized.replace(/\n{3,}/g, "\n\n");
-
         const withBr = normalized.replace(/\n/g, "<br>");
         const withParagraphs = `<p>${withBr.replace(
           /(<br>\s*){2,}/g,
           "</p><p>"
         )}</p>`;
-
         processedText = withParagraphs;
       }
 
@@ -362,7 +366,6 @@ export default function Preview() {
       testPage.appendChild(measureDiv);
 
       const words = processedText.split(" ");
-      const pages: string[] = [];
 
       let currentPageText = "";
       if (titleHtml) currentPageText += titleHtml;
@@ -427,7 +430,6 @@ export default function Preview() {
 
       const spreads: BookSpread[] = [];
 
-      // Front page: title + byline
       if (bookTitle) {
         const authorBlock = bookAuthor
           ? `<p style="font-size: 1.3em; margin-top: 16px;">by ${bookAuthor}</p>`
@@ -443,7 +445,6 @@ export default function Preview() {
         });
       }
 
-      // Dedication spread – only if we actually have a dedication
       if (dedicationText) {
         spreads.push({
           left: "",
@@ -453,7 +454,6 @@ export default function Preview() {
         });
       }
 
-      // Copyright / TOC spread – only if either year or TOC items exist
       if (yearVal || tocItems) {
         const leftHtml = yearVal
           ? `<div style="display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; font-size: 0.7em;">
@@ -474,7 +474,6 @@ export default function Preview() {
         });
       }
 
-      // Chapter content pages – only from submission data
       let allPages: string[] = [];
 
       if (chapterTexts.length > 0) {
@@ -568,7 +567,6 @@ export default function Preview() {
       }, 80);
     }
 
-    // ------------ THREE init ------------
     function initThree() {
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x0f0f10);
@@ -595,7 +593,6 @@ export default function Preview() {
 
       const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
 
-      // Front cover material – only uses submission cover if provided
       let frontCoverMaterial: THREE.MeshBasicMaterial;
       if (frontUrl) {
         const frontTexture = new THREE.TextureLoader().load(frontUrl);
@@ -605,7 +602,6 @@ export default function Preview() {
         frontCoverMaterial = new THREE.MeshBasicMaterial({ color: 0x222222 });
       }
 
-      // Back cover material – only uses submission cover if provided
       let backCoverMaterial: THREE.MeshBasicMaterial;
       if (backUrl) {
         const backTexture = new THREE.TextureLoader().load(backUrl);
@@ -633,12 +629,12 @@ export default function Preview() {
       });
 
       const materials = [
-        pageMaterial, // right side
-        spineMaterial, // left side (spine)
-        pageMaterial, // top
-        pageMaterial, // bottom
-        frontCoverMaterial, // front
-        backCoverMaterial, // back
+        pageMaterial,
+        spineMaterial,
+        pageMaterial,
+        pageMaterial,
+        frontCoverMaterial,
+        backCoverMaterial,
       ];
 
       const geom = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
@@ -663,7 +659,6 @@ export default function Preview() {
       scheduleRepaginate();
     }
 
-    // ------------ open / close / page flip ------------
     function openBook() {
       if (!bookMesh) return;
 
@@ -726,7 +721,6 @@ export default function Preview() {
       }
     }
 
-    // ------------ click handling on the canvas ------------
     function onCanvasClick(event: MouseEvent) {
       if (!renderer || !camera || !bookMesh) return;
 
@@ -738,7 +732,6 @@ export default function Preview() {
         return;
       }
 
-      // When book is open, arrows handle navigation; clicking canvas does nothing.
       if (openBookContainer.classList.contains("is-open")) {
         return;
       }
@@ -760,7 +753,6 @@ export default function Preview() {
         const atBack = Math.abs(currentRotation - Math.PI) < 0.01;
         const goingToBack = Math.abs(targetRotation - Math.PI) < 0.01;
 
-        // If user clicks while it's flipping to the back, schedule an open
         if (bookMesh.userData.isFlipping && goingToBack) {
           pendingOpenAfterFlip = true;
           return;
@@ -778,7 +770,6 @@ export default function Preview() {
       }
     }
 
-    // ------------ nav arrows (DOM) ------------
     rightArrowBtn?.addEventListener("click", () => {
       if (isBookOpenLocal) flipPageRight();
     });
@@ -791,7 +782,6 @@ export default function Preview() {
       if (isBookOpenLocal) closeBook();
     });
 
-    // ------------ animation loop ------------
     function animate() {
       animationId = requestAnimationFrame(animate);
 
@@ -818,7 +808,6 @@ export default function Preview() {
       renderer.render(scene, camera);
     }
 
-    // ------------ init + listeners ------------
     initThree();
     applyTypographyStyles();
     window.addEventListener("resize", onWindowResize);
@@ -830,7 +819,6 @@ export default function Preview() {
 
     animate();
 
-    // cleanup
     return () => {
       window.removeEventListener("resize", onWindowResize);
       if (threeRootRef.current && (threeRootRef.current as any).firstChild) {
@@ -851,18 +839,11 @@ export default function Preview() {
     };
   }, [center, frontUrl, backUrl]);
 
-  // ---------- Render ----------
-  const backToEditor = () => {
-    const project = buildEffectiveProject();
-    navigate("/write", { state: { project } });
-  };
-
   return (
     <div className="app home3d-root">
       <AppHeader />
 
       <main className="carousel home3d-main">
-        {/* CENTER: 3D + Reader */}
         <section className="home3d-stage">
           <div ref={threeRootRef} className="three-root" />
 
@@ -904,8 +885,17 @@ export default function Preview() {
                 <button
                   type="button"
                   className="rm-cover-btn"
-                  title="Back to editor"
-                  onClick={backToEditor}
+                  title="Edit submission"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const project = buildEffectiveProject();
+                    navigate("/write", {
+                      state: {
+                        project,
+                        status: previousStatus,
+                      },
+                    });
+                  }}
                 >
                   <div className="rm-cover-box">
                     {frontUrl ? (
@@ -933,7 +923,15 @@ export default function Preview() {
                 <button
                   type="button"
                   className="rm-btn rm-btn-preview"
-                  onClick={backToEditor}
+                  onClick={() => {
+                    const project = buildEffectiveProject();
+                    navigate("/write", {
+                      state: {
+                        project,
+                        status: previousStatus,
+                      },
+                    });
+                  }}
                 >
                   Back to editor
                 </button>
