@@ -141,6 +141,7 @@ export default function SubmitPage() {
 
     setSelectedBookId(String(base.id));
     setActiveBook(base);
+    setActiveTab(status);
   }, [location.state]);
 
   const visibleBooks = useMemo(
@@ -523,9 +524,43 @@ export default function SubmitPage() {
         </div>
 
         {/* RIGHT side feature panel */}
+        {/* RIGHT: Submit-style feature panel (Write page right menu look) */}
         <aside className="library-feature" aria-label="Project details">
-          <SubmitFeaturePanel book={activeBook || undefined} />
+          <SubmitFeaturePanel
+            book={activeBook || undefined}
+            onPublish={(panelBook) => {
+              const idStr = String(panelBook.id);
+
+              setUserBooks((prev) => {
+                const exists = prev.some((b) => String(b.id) === idStr);
+                if (exists) {
+                  // flip an existing user book to published
+                  return prev.map((b) =>
+                    String(b.id) === idStr
+                      ? { ...b, status: "published" as const }
+                      : b
+                  );
+                }
+
+                // if it wasn't in userBooks yet, create a user copy as published
+                const asBook = {
+                  ...(panelBook as BookWithStatus),
+                  status: "published" as const,
+                };
+                return [asBook, ...prev];
+              });
+
+              // switch UI to Published tab and keep selection
+              setActiveTab("published");
+              setSelectedBookId(idStr);
+              setActiveBook({
+                ...(panelBook as BookWithStatus),
+                status: "published",
+              });
+            }}
+          />
         </aside>
+
       </main>
 
       <SubmissionModal
