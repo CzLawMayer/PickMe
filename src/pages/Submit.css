@@ -421,3 +421,19 @@ aside.library-feature .rm-shell {
   max-width: none !important;
   margin: 0 !important;
 }
+
+/* ACTIVE TAB STYLING OVERRIDE ------------------------------------ */
+
+/* In progress = orange */
+.lib-tab.is-active:nth-child(1) {
+  background-color: #ef5623 !important;   /* your standard orange */
+  color: white !important;
+  border-color: #ef5623 !important;
+}
+
+/* Published = keep the purple (already correct) */
+.lib-tab.is-active:nth-child(2) {
+  background-color: #d81b60 !important;   /* your purple */
+  color: white !important;
+  border-color: #d81b60 !important;
+}

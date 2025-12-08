@@ -41,6 +41,18 @@ type IncomingBook = Book & {
   backCoverFile?: File | null;
 };
 
+type ProjectState = {
+  submission?: {
+    title?: string;
+    author?: string;
+    mainGenre?: string;
+    dedication?: string;
+    coverFile?: File | null;
+    backCoverFile?: File | null;
+  };
+  chapters?: { id: string; title: string; content: string }[];
+};
+
 type BookSpread = { left: string; right: string };
 type ReaderTheme = "cream" | "dark" | "white";
 
@@ -49,9 +61,9 @@ export default function Preview() {
   const navigate = useNavigate();
 
   const injected: IncomingBook | null = location?.state?.book || null;
-  const center: Book | null = injected ?? null;
-  const project = (location?.state?.project as any) || null;
+  const project: ProjectState | null = location?.state?.project || null;
 
+  const center: Book | null = injected ?? null;
 
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -135,6 +147,43 @@ export default function Preview() {
     if (Array.isArray(center.chapterTexts)) return center.chapterTexts.length;
     return 0;
   })();
+
+  // ---------- helper: Save/Publish to Submit ----------
+  type Status = "inProgress" | "published";
+
+  const saveToSubmit = (status: Status) => {
+    // Build the shelf book shape Submit expects
+    const shelfId =
+      center.id && center.id !== "preview"
+        ? center.id
+        : crypto.randomUUID();
+
+    const shelfBook = {
+      id: shelfId,
+      title: center.title?.trim() || "Untitled Project",
+      author: center.author?.trim() || "",
+      year: center.year ?? "",
+      coverUrl: frontUrl ?? center.coverUrl ?? undefined,
+      likes: center.likes ?? 0,
+      bookmarks: center.bookmarks ?? 0,
+      rating: center.rating ?? 0,
+      userRating: 0,
+      tags:
+        Array.isArray(center.tags) && center.tags.length > 0
+          ? center.tags
+          : project?.submission?.mainGenre
+          ? [project.submission.mainGenre]
+          : [],
+    };
+
+    navigate("/submit", {
+      state: {
+        shelfBook,
+        status,
+        project,
+      },
+    });
+  };
 
   // ---------- 3D + Reader setup (single-book version) ----------
   useEffect(() => {
@@ -316,14 +365,12 @@ export default function Preview() {
       return pages;
     }
 
-
-
     function buildBookSpreads(): BookSpread[] {
       const bookData = center as any;
 
       const bookTitle = center.title ?? "";
       const authorRaw = (bookData?.author as string | undefined) ?? "";
-      const bookAuthor = authorRaw.trim(); // no "you" fallback, exactly what you typed
+      const bookAuthor = authorRaw.trim();
 
       const yearVal =
         typeof bookData?.year === "number" ? String(bookData.year) : "";
@@ -428,7 +475,6 @@ export default function Preview() {
 
       return spreads.concat(chapterSpreads);
     }
-
 
     function applyThemeColors() {
       if (!pageLeft || !pageRight) return;
@@ -837,11 +883,10 @@ export default function Preview() {
                   title="Edit submission"
                   onClick={(e) => {
                     e.preventDefault();
-                    // Navigate back to write page and ask it to open the submission modal
+                    // Navigate back to write page with the same project
                     navigate("/write", {
                       state: {
-                        book: center,
-                        openSubmissionModal: true,
+                        project,
                       },
                     });
                   }}
@@ -850,7 +895,6 @@ export default function Preview() {
                     {frontUrl ? (
                       <img src={frontUrl} alt="Project cover" />
                     ) : (
-                      // If no cover was provided, we show an empty placeholder (no text fallback)
                       <span className="rm-cover-plus"></span>
                     )}
                   </div>
@@ -875,23 +919,24 @@ export default function Preview() {
                   className="rm-btn rm-btn-preview"
                   onClick={() =>
                     navigate("/write", {
-                      state: {
-                        project,
-                      },
+                      state: { project },
                     })
                   }
                 >
                   Back to editor
                 </button>
 
-
-                <button type="button" className="rm-btn rm-btn-save" disabled>
+                <button
+                  type="button"
+                  className="rm-btn rm-btn-save"
+                  onClick={() => saveToSubmit("inProgress")}
+                >
                   Save
                 </button>
                 <button
                   type="button"
                   className="rm-btn rm-btn-publish"
-                  disabled
+                  onClick={() => saveToSubmit("published")}
                 >
                   Publish
                 </button>
