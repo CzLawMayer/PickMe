@@ -1,11 +1,43 @@
 // src/components/SubmitFeaturePanel.tsx
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import type { BookWithStatus } from "@/pages/Submit";
 
 type Status = "inProgress" | "published";
 
-type SubmitPanelBook = BookWithStatus;
+type SubmitPanelBook = {
+  id: string | number;
+  title: string;
+  author?: string;
+  coverUrl?: string | null;
+  tags?: string[];
+  status: Status;
+  project?: {
+    submission?: {
+      title?: string;
+      author?: string;
+      mainGenre?: string;
+      dedication?: string;
+      coverFile?: File | null;
+      backCoverFile?: File | null;
+    };
+    chapters?: { id: string; title: string; content: string }[];
+  };
+};
+
+function getCoverSrcFromBook(book?: SubmitPanelBook | null): string | null {
+  if (!book) return null;
+  if (book.coverUrl) return book.coverUrl;
+
+  const file = book.project?.submission?.coverFile;
+  if (file instanceof File) {
+    const cached = (book.project as any).__coverUrl as string | undefined;
+    if (cached) return cached;
+    const url = URL.createObjectURL(file);
+    (book.project as any).__coverUrl = url;
+    return url;
+  }
+  return null;
+}
 
 interface SubmitFeaturePanelProps {
   book?: SubmitPanelBook | null;
@@ -13,39 +45,12 @@ interface SubmitFeaturePanelProps {
 
 const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
   const navigate = useNavigate();
-  const [coverSrc, setCoverSrc] = useState<string | null>(null);
+  const coverSrc = useMemo(() => getCoverSrcFromBook(book), [book]);
 
-  // Build a usable cover URL for both static and user-created books
-  useEffect(() => {
-    let revokeUrl: string | null = null;
-
-    if (!book) {
-      setCoverSrc(null);
-      return;
-    }
-
-    if (book.coverUrl) {
-      setCoverSrc(book.coverUrl);
-    } else if (book.project?.submission?.coverFile instanceof File) {
-      const url = URL.createObjectURL(book.project.submission.coverFile);
-      setCoverSrc(url);
-      revokeUrl = url;
-    } else {
-      setCoverSrc(null);
-    }
-
-    return () => {
-      if (revokeUrl) {
-        try {
-          URL.revokeObjectURL(revokeUrl);
-        } catch {}
-      }
-    };
-  }, [book]);
-
+  // ✅ Empty state: special class "is-empty"
   if (!book) {
     return (
-      <div className="submit-feature-shell">
+      <div className="submit-feature-shell is-empty">
         <div className="rm-shell">
           <h3 className="brand-mark">
             <span className="brand-p">P</span>ic
@@ -74,7 +79,7 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
           title: book.title,
           author: book.author ?? "",
           tags: book.tags ?? [],
-          coverUrl: null, // let Write/Preview rebuild from project if needed
+          coverUrl: book.coverUrl ?? null,
         },
         status: book.status,
       },
@@ -102,36 +107,14 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
           backCoverFile: submission.backCoverFile ?? null,
         },
         project: book.project,
-        status: book.status,
+        originStatus: book.status,
       },
     });
   };
 
-  const handlePublish = () => {
-    if (!book.project) return;
-
-    const newStatus = isPublished ? "inProgress" : "published";
-
-    navigate("/submit", {
-      state: {
-        shelfBook: {
-          id: book.id,
-          title: book.title,
-          author: book.author ?? "",
-          year: "",
-          coverUrl: null,
-          likes: book.likes ?? 0,
-          bookmarks: book.bookmarks ?? 0,
-          rating: book.rating ?? 0,
-          userRating: book.userRating ?? 0,
-          tags: book.tags ?? [],
-        },
-        status: newStatus,
-        project: book.project,
-      },
-    });
+  const handlePublishToggle = () => {
+    // no-op here; SubmitPage owns status via navigation
   };
-
 
   return (
     <div className="submit-feature-shell">
@@ -176,11 +159,10 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
           <button
             type="button"
             className="rm-btn rm-btn-publish"
-            onClick={handlePublish}
+            onClick={handlePublishToggle}
           >
             {isPublished ? "Unpublish" : "Publish"}
           </button>
-
         </div>
       </div>
     </div>
