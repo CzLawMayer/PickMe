@@ -1690,41 +1690,35 @@ function Forum({
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowPollCreator((prev) => !prev)}
-                className="forum-btn"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  columnGap: "0.5rem",
-                  padding: "0.5rem 0.75rem",
-                  borderRadius: "0.5rem",
-                  backgroundColor: "rgba(255,255,255,0.08)",
-                  color: "#ffffff",
-                  fontSize: "0.875rem",
-                }}
-              >
-                <CheckSquare size={18} />
-                <span>{showPollCreator ? "Remove Poll" : "Add Poll"}</span>
-              </button>
+              <div className="forum-newtopic-buttons">
+                <button
+                  type="button"
+                  onClick={() => setShowPollCreator((prev) => !prev)}
+                  className="forum-btn"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    columnGap: "0.5rem",
+                    padding: "0.5rem 0.75rem",
+                    borderRadius: "0.5rem",
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    color: "#ffffff",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <CheckSquare size={18} />
+                  <span>{showPollCreator ? "Remove Poll" : "Add Poll"}</span>
+                </button>
 
-              {showPollCreator && (
-                <PollCreator
-                  pollQuestion={pollQuestion}
-                  setPollQuestion={setPollQuestion}
-                  pollOptions={pollOptions}
-                  setPollOptions={setPollOptions}
-                />
-              )}
+                <button
+                  type="submit"
+                  className="forum-btn forum-btn-primary"
+                  disabled={!newTopicTitle.trim() || !newTopicContent.trim()}
+                >
+                  Post Topic
+                </button>
+              </div>
 
-              <button
-                type="submit"
-                className="forum-btn forum-btn-primary"
-                disabled={!newTopicTitle.trim() || !newTopicContent.trim()}
-              >
-                Post Topic
-              </button>
             </div>
           </form>
         )}

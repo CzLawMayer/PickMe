@@ -1535,3 +1535,11 @@
 .chat-message-card {
   align-items: flex-start;
 }
+
+/* New Topic form – button row styling */
+.forum-newtopic-buttons {
+  display: flex;
+  flex-direction: row;
+  column-gap: 4px;        /* ← your 4px space */
+  align-items: center;    
+}
