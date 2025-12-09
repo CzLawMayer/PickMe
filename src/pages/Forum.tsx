@@ -298,61 +298,59 @@ function Sidebar({
       <div>
         <div className="forum-sidebar-view-label">View</div>
 
-        <button
-          type="button"
-          onClick={() => setCurrentView("Forum")}
-          className={[
-            "forum-sidebar-view-btn",
-            currentView === "Forum"
-              ? "forum-sidebar-view-btn-active forum-sidebar-view-btn-forum"
-              : "",
-          ].join(" ")}
-        >
-          <BookOpen size={20} />
-          <span>Forum</span>
-        </button>
+      <button
+        type="button"
+        onClick={() => setCurrentView("Forum")}
+        className={[
+          "forum-sidebar-view-btn",
+          "forum-sidebar-view-btn-forum",                     // theme identifier
+          currentView === "Forum" ? "is-active-view" : "",    // NOT the colored class
+        ].join(" ")}
+      >
+        <BookOpen size={20} />
+        <span>Forum</span>
+      </button>
 
-        <button
-          type="button"
-          onClick={() => setCurrentView("BookClub")}
-          className={[
-            "forum-sidebar-view-btn",
-            currentView === "BookClub"
-              ? "forum-sidebar-view-btn-active forum-sidebar-view-btn-bookclub"
-              : "",
-          ].join(" ")}
-        >
-          <Star size={20} />
-          <span>Book Club</span>
-        </button>
+      <button
+        type="button"
+        onClick={() => setCurrentView("BookClub")}
+        className={[
+          "forum-sidebar-view-btn",
+          "forum-sidebar-view-btn-bookclub",
+          currentView === "BookClub" ? "is-active-view" : "",
+        ].join(" ")}
+      >
+        <Star size={20} />
+        <span>Book Club</span>
+      </button>
 
-        <button
-          type="button"
-          onClick={() => setCurrentView("WritingCorner")}
-          className={[
-            "forum-sidebar-view-btn",
-            currentView === "WritingCorner"
-              ? "forum-sidebar-view-btn-active forum-sidebar-view-btn-writing"
-              : "",
-          ].join(" ")}
-        >
-          <PenSquare size={20} />
-          <span>Writing Corner</span>
-        </button>
+      <button
+        type="button"
+        onClick={() => setCurrentView("WritingCorner")}
+        className={[
+          "forum-sidebar-view-btn",
+          "forum-sidebar-view-btn-writing",
+          currentView === "WritingCorner" ? "is-active-view" : "",
+        ].join(" ")}
+      >
+        <PenSquare size={20} />
+        <span>Writing Corner</span>
+      </button>
 
-        <button
-          type="button"
-          onClick={() => setCurrentView("Chat")}
-          className={[
-            "forum-sidebar-view-btn",
-            currentView === "Chat"
-              ? "forum-sidebar-view-btn-active forum-sidebar-view-btn-chat"
-              : "",
-          ].join(" ")}
-        >
-          <MessageSquare size={20} />
-          <span>Chat</span>
-        </button>
+      <button
+        type="button"
+        onClick={() => setCurrentView("Chat")}
+        className={[
+          "forum-sidebar-view-btn",
+          "forum-sidebar-view-btn-chat",
+          currentView === "Chat" ? "is-active-view" : "",
+        ].join(" ")}
+      >
+        <MessageSquare size={20} />
+        <span>Chat</span>
+      </button>
+
+
       </div>
 
       {/* Channels (for Chat) */}

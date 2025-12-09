@@ -103,7 +103,6 @@
   display: flex;
   height: 6px;
   overflow: hidden;
-  border-radius: 999px;
 }
 
 .forum-sidebar-underline span {
@@ -1180,4 +1179,292 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.6);
+}
+
+.forum-input,
+.forum-select,
+.forum-textarea {
+  width: 100%;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.3); /* changed */
+  color: #f9fafb;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.forum-search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 2rem;
+  border-radius: 0.55rem;
+  background: rgba(0, 0, 0, 0.3); /* changed */
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.forum-btn-pill {
+  border-radius: 999px;
+  padding-inline: 0.75rem;
+  padding-block: 0.25rem;
+  font-size: 0.8rem;
+  background: rgba(0, 0, 0, 0.3); /* changed */
+  color: #9ca3af;
+}
+
+.forum-btn {
+  border: none;
+  cursor: pointer;
+  background: rgba(55, 65, 81, 0.8);
+  color: #ffffff; /* was #e5e7eb */
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.3rem;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
+}
+
+.forum-btn-pill {
+  border-radius: 999px;
+  padding-inline: 0.75rem;
+  padding-block: 0.25rem;
+  font-size: 0.8rem;
+  background: rgba(0, 0, 0, 0.3); /* pure black @ 30% */
+  color: #ffffff; /* was #9ca3af */
+}
+
+/* Default active pill = ORANGE (used by All / Filter buttons) */
+.forum-btn-pill-active {
+  background: linear-gradient(to right, #ef6c00, #d96200);
+  color: #ffffff;
+}
+
+/* Sort pills active state = lighter gray, not orange */
+.forum-sort-group .forum-btn-pill-active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.forum-filter-menu button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  color: #ffffff; /* was #e5e7eb */
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+/* =======================================================
+   FINAL OVERRIDES – make key surfaces pure black @ 30%
+   (paste this at the very bottom of Forum.css)
+======================================================= */
+
+/* Forum panels (e.g. "Create New Topic") */
+.forum-panel {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Opened topic main card (single topic view) */
+.topic-main-card {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Writing Corner posts */
+.writing-post-card,
+.writing-post-card-wide {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* User profile popover/modal */
+.profile-modal {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Individual text blocks inside profile modal (poems, stories, etc.) */
+.profile-prose-card {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* =======================================================
+   Search bar height, icon color, New Topic styling fixes
+======================================================= */
+
+/* Make the search bar match the height of the New Topic button */
+.forum-search-wrapper {
+  height: 2.6rem !important;   /* same visual height as New Topic */
+  display: flex;
+  align-items: center;
+}
+
+/* Make search input fill the wrapper height */
+.forum-input-search {
+  height: 100% !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Magnifying glass icon: pure white */
+.forum-search-wrapper > svg {
+  color: #ffffff !important;
+}
+
+/* Make New Topic button always ORANGE */
+.forum-btn-primary {
+  background: linear-gradient(to right, #ef6c00, #d96200) !important;
+  color: #ffffff !important;
+}
+
+/* Keep it orange on hover too */
+.forum-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(to right, #ef6c00, #c55800) !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================
+   Make search bar match New Topic button height
+========================================== */
+
+/* Increase search bar height without touching the button */
+.forum-search-wrapper {
+  height: 2.45rem !important;   /* perfect match for your current orange button */
+  padding-left: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Ensure the input stretches fully inside the wrapper */
+.forum-input-search {
+  height: 100% !important;
+  display: flex;
+  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Magnifying glass icon pure white */
+.forum-search-wrapper > svg {
+  color: #ffffff !important;
+}
+
+/* ==========================================
+   Fix search bar icon alignment
+========================================== */
+
+/* Make search bar a simple flex row: [icon][input] */
+.forum-search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex !important;
+  align-items: center;
+  padding: 0 0.75rem;        /* equal padding left/right */
+  height: 2.45rem;           /* same as before so it matches New Topic */
+  border-radius: 0.55rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+/* Icon: inline inside the flex row, no absolute positioning */
+.forum-search-wrapper > svg {
+  position: static !important;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+  color: #ffffff !important;  /* pure white */
+}
+
+/* Input fills the rest, no extra inner padding messing with centering */
+.forum-input-search {
+  border: none;
+  background: transparent;
+  padding: 0;
+  height: 100%;
+  border-radius: 0;           /* keep it square inside */
+}
+
+/* ========================================================================
+   Sidebar buttons — default dark, hover colored, active colored
+========================================================================= */
+
+/* Base buttons: always dark */
+.forum-sidebar-view-btn {
+  background: rgba(0, 0, 0, 0.3) !important;
+  color: #ffffff;
+}
+
+/* ------------------------------------
+   HOVER STATES (show the theme color)
+------------------------------------ */
+.forum-sidebar-view-btn-forum:hover {
+  background: linear-gradient(to right, #ef6c00, #d96200) !important;
+}
+
+.forum-sidebar-view-btn-bookclub:hover {
+  background: linear-gradient(to right, #d81b60, #c21855) !important;
+}
+
+.forum-sidebar-view-btn-writing:hover {
+  background: linear-gradient(to right, #6a1b9a, #5a168a) !important;
+}
+
+.forum-sidebar-view-btn-chat:hover {
+  background: linear-gradient(to right, #1e88e5, #1976d2) !important;
+}
+
+/* ------------------------------------
+   ACTIVE STATE (current selected tab)
+------------------------------------ */
+.is-active-view.forum-sidebar-view-btn-forum {
+  background: linear-gradient(to right, #ef6c00, #d96200) !important;
+}
+
+.is-active-view.forum-sidebar-view-btn-bookclub {
+  background: linear-gradient(to right, #d81b60, #c21855) !important;
+}
+
+.is-active-view.forum-sidebar-view-btn-writing {
+  background: linear-gradient(to right, #6a1b9a, #5a168a) !important;
+}
+
+.is-active-view.forum-sidebar-view-btn-chat {
+  background: linear-gradient(to right, #1e88e5, #1976d2) !important;
+}
+
+/* Spacing between sidebar view buttons */
+.forum-sidebar-view-btn {
+  margin-bottom: 4px !important;
+}
+
+/* Remove the extra margin after the last one */
+.forum-sidebar-view-btn:last-of-type {
+  margin-bottom: 0 !important;
+}
+
+/* Ensure header icons and text stay aligned horizontally */
+.forum-header-title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 0.5rem;
 }
