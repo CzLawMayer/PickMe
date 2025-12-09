@@ -1468,3 +1468,70 @@
   align-items: center;
   column-gap: 0.5rem;
 }
+
+/* Image attachments */
+.forum-image-attachment {
+  margin-top: 0.5rem;
+  max-width: 100%;
+  border-radius: 0.6rem;
+  display: block;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+}
+
+.forum-image-attachment-small {
+  margin-top: 0.4rem;
+  max-width: 140px;
+  max-height: 90px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+}
+
+.forum-attach-btn {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.forum-image-preview-row {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+.forum-image-preview-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.forum-image-preview-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-message-card {
+  display: flex;
+  column-gap: 1rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+  align-items: flex-start; /* <- ensure avatar sits at the top */
+}
+
+/* -----------------------------------------
+   Ensure avatars sit at the TOP of cards
+------------------------------------------*/
+
+/* Forum topic list cards (with or without images) */
+.forum-topic-card {
+  align-items: flex-start;
+}
+
+/* Chat / Book Club / comments that use this card */
+.chat-message-card {
+  align-items: flex-start;
+}

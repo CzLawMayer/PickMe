@@ -4,14 +4,14 @@ import React, {
   useRef,
   useMemo,
   FormEvent,
-  MouseEvent,
+  MouseEvent as ReactMouseEvent,
+  ChangeEvent,
 } from "react";
 import {
   BookOpen,
   Send,
   Plus,
   ArrowLeft,
-  User,
   Hash,
   MessageCircle,
   MessageSquare,
@@ -26,6 +26,7 @@ import {
   Clock,
   TrendingUp,
   MessageSquarePlus,
+  Image as ImageIcon,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import "./Forum.css";
@@ -185,58 +186,58 @@ export default function ForumPage() {
       {/* Global header */}
       <AppHeader />
 
-        <div className="forum-root">
+      <div className="forum-root">
         {/* Sidebar */}
         <Sidebar
-            userId={userId}
-            channels={channels}
-            currentChannel={currentChannel}
-            setCurrentChannel={setCurrentChannel}
-            currentView={currentView}
-            setCurrentView={setCurrentView}
-            onViewProfile={handleViewProfile}
+          userId={userId}
+          channels={channels}
+          currentChannel={currentChannel}
+          setCurrentChannel={setCurrentChannel}
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+          onViewProfile={handleViewProfile}
         />
 
         {/* Content Area */}
         <main className="forum-main">
-            {currentView === "Forum" && (
+          {currentView === "Forum" && (
             <Forum
-                userId={userId}
-                categories={channels}
-                topics={topics}
-                setTopics={setTopics}
-                selectedTopic={selectedTopic}
-                onSelectTopic={handleSelectTopic}
-                onViewProfile={handleViewProfile}
+              userId={userId}
+              categories={channels}
+              topics={topics}
+              setTopics={setTopics}
+              selectedTopic={selectedTopic}
+              onSelectTopic={handleSelectTopic}
+              onViewProfile={handleViewProfile}
             />
-            )}
-            {currentView === "BookClub" && (
+          )}
+          {currentView === "BookClub" && (
             <BookClub userId={userId} onViewProfile={handleViewProfile} />
-            )}
-            {currentView === "WritingCorner" && (
+          )}
+          {currentView === "WritingCorner" && (
             <WritingCorner
-                userId={userId}
-                poems={poems}
-                setPoems={setPoems}
-                philosophy={philosophy}
-                setPhilosophy={setPhilosophy}
-                stories={stories}
-                setStories={setStories}
-                onViewProfile={handleViewProfile}
+              userId={userId}
+              poems={poems}
+              setPoems={setPoems}
+              philosophy={philosophy}
+              setPhilosophy={setPhilosophy}
+              stories={stories}
+              setStories={setStories}
+              onViewProfile={handleViewProfile}
             />
-            )}
-            {currentView === "Chat" && (
+          )}
+          {currentView === "Chat" && (
             <Chatroom
-                userId={userId}
-                currentChannel={currentChannel}
-                onViewProfile={handleViewProfile}
+              userId={userId}
+              currentChannel={currentChannel}
+              onViewProfile={handleViewProfile}
             />
-            )}
+          )}
         </main>
 
         {/* --- User Profile Modal --- */}
         {viewingProfileId && (
-            <UserProfileModal
+          <UserProfileModal
             userId={viewingProfileId}
             allTopics={topics}
             allPoems={poems}
@@ -244,9 +245,9 @@ export default function ForumPage() {
             allStories={stories}
             onClose={() => setViewingProfileId(null)}
             onSelectTopic={handleSelectTopic}
-            />
+          />
         )}
-        </div>
+      </div>
     </div>
   );
 }
@@ -298,59 +299,57 @@ function Sidebar({
       <div>
         <div className="forum-sidebar-view-label">View</div>
 
-      <button
-        type="button"
-        onClick={() => setCurrentView("Forum")}
-        className={[
-          "forum-sidebar-view-btn",
-          "forum-sidebar-view-btn-forum",                     // theme identifier
-          currentView === "Forum" ? "is-active-view" : "",    // NOT the colored class
-        ].join(" ")}
-      >
-        <BookOpen size={20} />
-        <span>Forum</span>
-      </button>
+        <button
+          type="button"
+          onClick={() => setCurrentView("Forum")}
+          className={[
+            "forum-sidebar-view-btn",
+            "forum-sidebar-view-btn-forum",
+            currentView === "Forum" ? "is-active-view" : "",
+          ].join(" ")}
+        >
+          <BookOpen size={20} />
+          <span>Forum</span>
+        </button>
 
-      <button
-        type="button"
-        onClick={() => setCurrentView("BookClub")}
-        className={[
-          "forum-sidebar-view-btn",
-          "forum-sidebar-view-btn-bookclub",
-          currentView === "BookClub" ? "is-active-view" : "",
-        ].join(" ")}
-      >
-        <Star size={20} />
-        <span>Book Club</span>
-      </button>
+        <button
+          type="button"
+          onClick={() => setCurrentView("BookClub")}
+          className={[
+            "forum-sidebar-view-btn",
+            "forum-sidebar-view-btn-bookclub",
+            currentView === "BookClub" ? "is-active-view" : "",
+          ].join(" ")}
+        >
+          <Star size={20} />
+          <span>Book Club</span>
+        </button>
 
-      <button
-        type="button"
-        onClick={() => setCurrentView("WritingCorner")}
-        className={[
-          "forum-sidebar-view-btn",
-          "forum-sidebar-view-btn-writing",
-          currentView === "WritingCorner" ? "is-active-view" : "",
-        ].join(" ")}
-      >
-        <PenSquare size={20} />
-        <span>Writing Corner</span>
-      </button>
+        <button
+          type="button"
+          onClick={() => setCurrentView("WritingCorner")}
+          className={[
+            "forum-sidebar-view-btn",
+            "forum-sidebar-view-btn-writing",
+            currentView === "WritingCorner" ? "is-active-view" : "",
+          ].join(" ")}
+        >
+          <PenSquare size={20} />
+          <span>Writing Corner</span>
+        </button>
 
-      <button
-        type="button"
-        onClick={() => setCurrentView("Chat")}
-        className={[
-          "forum-sidebar-view-btn",
-          "forum-sidebar-view-btn-chat",
-          currentView === "Chat" ? "is-active-view" : "",
-        ].join(" ")}
-      >
-        <MessageSquare size={20} />
-        <span>Chat</span>
-      </button>
-
-
+        <button
+          type="button"
+          onClick={() => setCurrentView("Chat")}
+          className={[
+            "forum-sidebar-view-btn",
+            "forum-sidebar-view-btn-chat",
+            currentView === "Chat" ? "is-active-view" : "",
+          ].join(" ")}
+        >
+          <MessageSquare size={20} />
+          <span>Chat</span>
+        </button>
       </div>
 
       {/* Channels (for Chat) */}
@@ -476,7 +475,9 @@ function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
   const [messages, setMessages] =
     useState<Record<string, any[]>>(MOCK_MESSAGES);
   const [newMessage, setNewMessage] = useState("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentMessages = messages[currentChannel] || [];
 
@@ -486,7 +487,7 @@ function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
 
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
-    if (!userId || !newMessage.trim()) return;
+    if (!userId || (!newMessage.trim() && !attachedImage)) return;
 
     const newMessageObj = {
       id: Date.now(),
@@ -495,6 +496,7 @@ function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
       timestamp: new Date(),
       channel: currentChannel,
       reactions: {} as Record<string, string[]>,
+      imageUrl: attachedImage || null,
     };
 
     setMessages((prev) => ({
@@ -502,6 +504,8 @@ function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
       [currentChannel]: [...(prev[currentChannel] || []), newMessageObj],
     }));
     setNewMessage("");
+    setAttachedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleReact = (messageId: number, emoji: string) => {
@@ -525,6 +529,19 @@ function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
     });
   };
 
+  const handleImagePick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setAttachedImage(url);
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const canSend = !!newMessage.trim() || !!attachedImage;
+
   return (
     <div className="chatroom-root">
       <header className="forum-header">
@@ -546,7 +563,16 @@ function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
                     {msg.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
-                <p className="chat-message-text">{msg.text}</p>
+                {msg.text && (
+                  <p className="chat-message-text">{msg.text}</p>
+                )}
+                {msg.imageUrl && (
+                  <img
+                    src={msg.imageUrl}
+                    alt="Attachment"
+                    className="forum-image-attachment"
+                  />
+                )}
                 <ReactionBar
                   reactions={msg.reactions || {}}
                   userId={userId}
@@ -569,14 +595,44 @@ function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
             placeholder={`Message #${currentChannel}...`}
             className="forum-input"
           />
+
+          {/* Image picker button */}
+          <button
+            type="button"
+            className="forum-btn forum-attach-btn"
+            onClick={openFilePicker}
+          >
+            <ImageIcon size={18} />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleImagePick}
+          />
+
           <button
             type="submit"
             className="forum-btn forum-btn-blue"
-            disabled={!newMessage.trim()}
+            disabled={!canSend}
           >
             <Send size={20} />
           </button>
         </div>
+
+        {attachedImage && (
+          <div className="forum-image-preview-row">
+            <span className="forum-image-preview-label">Attached image</span>
+            <div className="forum-image-preview-wrapper">
+              <img
+                src={attachedImage}
+                alt="Preview"
+                className="forum-image-attachment-small"
+              />
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );
@@ -600,7 +656,9 @@ function BookClub({ userId, onViewProfile }: BookClubProps) {
 
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -608,7 +666,7 @@ function BookClub({ userId, onViewProfile }: BookClubProps) {
 
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
-    if (!userId || !newMessage.trim()) return;
+    if (!userId || (!newMessage.trim() && !attachedImage)) return;
 
     const newMessageObj = {
       id: Date.now(),
@@ -616,9 +674,12 @@ function BookClub({ userId, onViewProfile }: BookClubProps) {
       userId,
       timestamp: new Date(),
       reactions: {} as Record<string, string[]>,
+      imageUrl: attachedImage || null,
     };
     setMessages((prev) => [...prev, newMessageObj]);
     setNewMessage("");
+    setAttachedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleReact = (messageId: number, emoji: string) => {
@@ -636,6 +697,19 @@ function BookClub({ userId, onViewProfile }: BookClubProps) {
       })
     );
   };
+
+  const handleImagePick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setAttachedImage(url);
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const canSend = !!newMessage.trim() || !!attachedImage;
 
   return (
     <div className="bookclub-root">
@@ -676,7 +750,16 @@ function BookClub({ userId, onViewProfile }: BookClubProps) {
                         {msg.timestamp.toLocaleTimeString()}
                       </span>
                     </div>
-                    <p className="chat-message-text">{msg.text}</p>
+                    {msg.text && (
+                      <p className="chat-message-text">{msg.text}</p>
+                    )}
+                    {msg.imageUrl && (
+                      <img
+                        src={msg.imageUrl}
+                        alt="Attachment"
+                        className="forum-image-attachment"
+                      />
+                    )}
                     <ReactionBar
                       reactions={msg.reactions || {}}
                       userId={userId}
@@ -699,14 +782,46 @@ function BookClub({ userId, onViewProfile }: BookClubProps) {
                 placeholder="Discuss the book..."
                 className="forum-input"
               />
+
+              {/* Image picker */}
+              <button
+                type="button"
+                className="forum-btn forum-attach-btn"
+                onClick={openFilePicker}
+              >
+                <ImageIcon size={18} />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleImagePick}
+              />
+
               <button
                 type="submit"
                 className="forum-btn forum-btn-pink"
-                disabled={!newMessage.trim()}
+                disabled={!canSend}
               >
                 <Send size={20} />
               </button>
             </div>
+
+            {attachedImage && (
+              <div className="forum-image-preview-row">
+                <span className="forum-image-preview-label">
+                  Attached image
+                </span>
+                <div className="forum-image-preview-wrapper">
+                  <img
+                    src={attachedImage}
+                    alt="Preview"
+                    className="forum-image-attachment-small"
+                  />
+                </div>
+              </div>
+            )}
           </form>
         </div>
       </div>
@@ -714,7 +829,7 @@ function BookClub({ userId, onViewProfile }: BookClubProps) {
   );
 }
 
-// --- WritingCorner Component ---
+// --- WritingCorner Component (no image upload) ---
 type WritingCornerProps = {
   userId: string;
   poems: any[];
@@ -866,7 +981,13 @@ function WritingCorner({
                 (subView === "Short Stories" ? " writing-post-card-wide" : "")
               }
             >
-              <div style={{ display: "flex", columnGap: "1rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  columnGap: "1rem",
+                  alignItems: "flex-start",
+                }}
+              >
                 <Avatar userId={post.userId} onViewProfile={onViewProfile} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="chat-message-meta">
@@ -1071,8 +1192,6 @@ function PollDisplay({ poll, userId, onVote }: PollDisplayProps) {
             totalVotes === 0 ? 0 : Math.round((voteCount / totalVotes) * 100);
           const isUserVote = userVote === option;
 
-          const isDisabled = !!userVote && !isUserVote;
-
           return (
             <button
               key={option}
@@ -1081,7 +1200,7 @@ function PollDisplay({ poll, userId, onVote }: PollDisplayProps) {
               className={[
                 "poll-choice-btn",
                 isUserVote ? "poll-choice-active" : "",
-                isDisabled ? "poll-choice-disabled" : "",
+                userVote && !isUserVote ? "poll-choice-disabled" : "",
               ].join(" ")}
               disabled={!!userVote}
             >
@@ -1151,8 +1270,12 @@ function Forum({
     "Newest"
   );
 
+  // image for new topic
+  const [newTopicImage, setNewTopicImage] = useState<string | null>(null);
+  const newTopicImageInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent | globalThis.MouseEvent) {
+    function handleClickOutside(e: ReactMouseEvent | globalThis.MouseEvent) {
       if (
         filterMenuRef.current &&
         !(filterMenuRef.current as any).contains(e.target)
@@ -1204,6 +1327,13 @@ function Forum({
     }
   }, [topics, currentCategory, searchQuery, sortBy]);
 
+  const handleTopicImagePick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setNewTopicImage(url);
+  };
+
   const handleCreateTopic = (e: FormEvent) => {
     e.preventDefault();
     if (!userId || !newTopicTitle.trim() || !newTopicContent.trim()) return;
@@ -1218,6 +1348,7 @@ function Forum({
       timestamp: new Date(),
       reactions: {},
       comments: [],
+      imageUrl: newTopicImage || null,
     };
 
     if (
@@ -1245,6 +1376,8 @@ function Forum({
     setShowPollCreator(false);
     setPollQuestion("");
     setPollOptions(["", ""]);
+    setNewTopicImage(null);
+    if (newTopicImageInputRef.current) newTopicImageInputRef.current.value = "";
   };
 
   const handleAddComment = (newComment: string) => {
@@ -1529,6 +1662,34 @@ function Forum({
                 className="forum-textarea"
               />
 
+              {/* Image attach for topic */}
+              <div className="forum-image-attach-row">
+                <button
+                  type="button"
+                  className="forum-btn forum-attach-btn"
+                  onClick={() => newTopicImageInputRef.current?.click()}
+                >
+                  <ImageIcon size={18} />
+                  <span>Attach image</span>
+                </button>
+                <input
+                  ref={newTopicImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleTopicImagePick}
+                />
+                {newTopicImage && (
+                  <div className="forum-image-preview-wrapper">
+                    <img
+                      src={newTopicImage}
+                      alt="Preview"
+                      className="forum-image-attachment-small"
+                    />
+                  </div>
+                )}
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowPollCreator((prev) => !prev)}
@@ -1579,6 +1740,13 @@ function Forum({
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h3 className="forum-topic-title">{topic.title}</h3>
                 <p className="forum-topic-excerpt">{topic.content}</p>
+                {topic.imageUrl && (
+                  <img
+                    src={topic.imageUrl}
+                    alt="Topic attachment"
+                    className="forum-image-attachment-small"
+                  />
+                )}
                 <span className="forum-topic-meta-small">
                   Posted by{" "}
                   <span
@@ -1698,7 +1866,14 @@ function SingleTopicView({
 
       <div className="forum-body-scroll custom-scrollbar">
         <div className="forum-panel topic-main-card">
-          <div style={{ display: "flex", columnGap: "1rem" }}>
+          <div
+            style={{
+              display: "flex",
+              columnGap: "1rem",
+              alignItems: "flex-start",
+            }}
+          >
+
             <Avatar
               userId={selectedTopic.userId}
               onViewProfile={onViewProfile}
@@ -1716,6 +1891,13 @@ function SingleTopicView({
               >
                 {selectedTopic.content}
               </p>
+              {selectedTopic.imageUrl && (
+                <img
+                  src={selectedTopic.imageUrl}
+                  alt="Attachment"
+                  className="forum-image-attachment"
+                />
+              )}
               <span className="forum-topic-meta-small">
                 Posted by{" "}
                 <span
