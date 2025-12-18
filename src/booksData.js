@@ -2,23 +2,24 @@
 export const sampleBooks = [
   {
     id: "bk-001",
-    title: "Everything to Get More and balls and balls and balls and and balls and balls and balls and",
+    title:
+      "Everything to Get More and balls and balls and balls and and balls and balls and balls and",
     author: "Diego Ballesteros",
     user: "Names Brooklyn",
-    coverUrl: "/public/covers/balls.png",
-    backCoverUrl: "/public/covers/balls.png",
+    coverUrl: "/covers/balls.png",
+    backCoverUrl: "/covers/balls.png",
     tags: ["Sci-Fi", "Young Adult", "Drama", "Balls", "Big Juicy Balls"],
     rating: "4.5",
+    ratingCount: 1284,
     year: 2023,
     likes: 423,
     bookmarks: 76,
     currentChapter: 1,
     totalChapters: 17,
     dedication: "meow meow meow MEOW",
-    // Added titles for the first two chapters so the centered title shows nicely
     chapters: ["Names", "Memory", "Balls"],
     chapterTexts: [
-`My name is Names.
+      `My name is Names.
 
 I was found alone in the middle of a tulip field, with a name tag naming me “Names.” I was told my body was so cold that my skin was blue. Later, when I was four, I was adopted by a woman who wasn’t ready to have a daughter and whom I never called mother. We grew up in a silent house. There, I found that silence brings thinking into the human mind, and that thinking takes you to weird places.
 
@@ -35,8 +36,7 @@ Kind, no pun intended, was a kind man. He was a year younger than the rest of us
 “I think?” I said bluntly as my voice cracked. “I don’t know, Kind. I feel like I flew away with the millions of tons of cigarette ash that we covered the campus with over these four years. I feel like I’m going to disappear.”
 
 “You are not having fun,” he said.`,
-/* -------------------- Chapter 2 (Memory) -------------------- */
-`My name is Memory.
+      `My name is Memory.
 
 My mom died giving birth to me. I was told that she held me tightly, covered in her blood, and cried out, “Me morí,” which means “I died” in Spanish. Those were her last words. “Me morí” sounds like “Memory,” and that was the twisted reasoning my father had when choosing my name, right before clogging the exhaust of our car with a wet towel and attempting to suffocate us both. I was the only survivor.
 
@@ -55,8 +55,7 @@ I hazily walked down the stairs in my pijamas. My three P.M. nap had turned my d
 Everyone turned their fingers away from my face as we all immediately turned our heads to see the news. All my friends saw pictures of UFOs, mass terror, and neon lights in the skies.
 
 I, myself, saw Kind kissing Names on the mouth.`,
-
-`I don’t drink alcohol. I don’t like the taste of alcohol. I don’t like how it makes you feel before, during, or after you drink it. That said, I drank three glasses of vodka, took five tequila shots, and smoked twenty-eight cigarettes in my evening with Kind inside Memory’s apartment. One thing led to another. We laughed, we smoked, we kissed, we drank.
+      `I don’t drink alcohol. I don’t like the taste of alcohol. I don’t like how it makes you feel before, during, or after you drink it. That said, I drank three glasses of vodka, took five tequila shots, and smoked twenty-eight cigarettes in my evening with Kind inside Memory’s apartment. One thing led to another. We laughed, we smoked, we kissed, we drank.
 
 At three in the morning, after we had laughed our hearts out, he scooped me up and carried me across the street from the apartment to my dorm room. He held me up like a princess as we moved through the dark alleys, spinning us beneath a streetlamp, nearly making the both of us puke. He gave me four long kisses on our way up the elevator.
 
@@ -86,6 +85,14 @@ He was dead.
 
 His funeral was held two days later, on an appropriately rainy, freezing day. I always thought I’d meet his parents on graduation day, and I always thought I’d see them cry out of pride for their son, not out of pure agony. To my surprise, more than a hundred people attended the funeral, and every single one of them were crying. Memory, being his best friend, was asked to give a speech, but he refused to, so everyone just stayed silent.`
     ],
+
+    // ---- NEW FIELDS (first 10 books only) ----
+    language: "English",
+    isbn: "978-1-913847-01-6",
+    copyright: "© 2023 Diego Ballesteros",
+    nsfw: true,
+    summary:
+      "A lost girl in Austria clings to friendship and memory as a surreal night fractures everything.",
   },
 
   {
@@ -93,142 +100,225 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     title: "The Grey Harbor",
     author: "M. Clarke",
     user: "GreyHarborFan",
-    coverUrl: "/public/covers/THSISA.png",
+    coverUrl: "/covers/THSISA.png",
     tags: ["Mystery", "Bruh", "Thriller"],
     rating: "4.2",
+    ratingCount: 642,
     year: 2024,
     likes: 210,
     bookmarks: 45,
     currentChapter: 3,
     totalChapters: 22,
-    dedication: "For my parents, who taught me to read the stars."
+    dedication: "For my parents, who taught me to read the stars.",
+
+    // ---- NEW ----
+    language: "English",
+    isbn: "978-1-913847-02-3",
+    copyright: "© 2024 M. Clarke",
+    nsfw: false,
+    summary:
+      "A fogbound port hides vanished sailors and coded signals; one obsessive fan follows the clues too far.",
   },
   {
     id: "bk-003",
     title: "Falling Orbit",
     author: "R. Patel",
     user: "OrbitLover",
-    coverUrl: "/public/covers/awnfdad.png",
+    coverUrl: "/covers/awnfdad.png",
     tags: ["Sci-Fi", "Young Adult", "Drama", "Balls", "Big Juicy Balls"],
     rating: "4.7",
+    ratingCount: 1903,
     year: 2022,
     likes: 780,
     bookmarks: 132,
     currentChapter: 6,
     totalChapters: 28,
-    dedication: "For my parents, who taught me to read the stars."
+    dedication: "For my parents, who taught me to read the stars.",
+
+    // ---- NEW ----
+    language: "English",
+    isbn: "978-1-913847-03-0",
+    copyright: "© 2022 R. Patel",
+    nsfw: false,
+    summary:
+      "A teen pilot spirals between love and gravity when an orbital disaster reveals a conspiracy above Earth.",
   },
   {
     id: "bk-004",
     title: "Paper Moons",
     author: "Z. Kim",
     user: "MoonWalker",
-    coverUrl: "/public/covers/eeeeeee.png",
+    coverUrl: "/covers/eeeeeee.png",
     tags: ["Literary", "Drama"],
     rating: "4.1",
+    ratingCount: 388,
     year: 2025,
     likes: 155,
     bookmarks: 31,
     currentChapter: 2,
     totalChapters: 12,
-    dedication: "For my parents, who taught me to read the stars."
+    dedication: "For my parents, who taught me to read the stars.",
+
+    // ---- NEW ----
+    language: "English",
+    isbn: "978-1-913847-04-7",
+    copyright: "© 2025 Z. Kim",
+    nsfw: false,
+    summary:
+      "Letters, scraps, and night walks stitch a fractured family together under a city that never sleeps.",
   },
   {
     id: "bk-005",
     title: "Ivory Tower",
     author: "S. Ahmed",
     user: "TowerClimber",
-    coverUrl: "/public/covers/yourenothavingfun.png",
+    coverUrl: "/covers/yourenothavingfun.png",
     tags: ["Fantasy"],
     rating: "4.6",
+    ratingCount: 1044,
     year: 2021,
     likes: 540,
     bookmarks: 90,
     currentChapter: 1,
     totalChapters: 10,
-    dedication: "For my parents, who taught me to read the stars."
+    dedication: "For my parents, who taught me to read the stars.",
+
+    // ---- NEW ----
+    language: "English",
+    isbn: "978-1-913847-05-4",
+    copyright: "© 2021 S. Ahmed",
+    nsfw: false,
+    summary:
+      "A scholar climbs a living tower to bargain with its keeper, trading memories for magic and truth.",
   },
   {
     id: "bk-006",
     title: "Neon Silence",
     author: "K. Ito",
     user: "NeonCity",
-    coverUrl: "/public/covers/FINAL.png",
+    coverUrl: "/covers/FINAL.png",
     tags: ["Cyberpunk"],
     rating: "4.3",
+    ratingCount: 721,
     year: 2024,
     likes: 320,
     bookmarks: 60,
     currentChapter: 5,
     totalChapters: 24,
-    dedication: "For my parents, who taught me to read the stars."
+    dedication: "For my parents, who taught me to read the stars.",
+
+    // ---- NEW ----
+    language: "Japanese (translated to English)",
+    isbn: "978-1-913847-06-1",
+    copyright: "© 2024 K. Ito",
+    nsfw: true,
+    summary:
+      "In a neon megacity, a mute hacker and a corrupt cop chase a signal that rewrites identities.",
   },
   {
     id: "bk-007",
     title: "Salt & Smoke",
     author: "D. Cruz",
     user: "SaltyReader",
-    coverUrl: "/public/covers/3.jpg",
+    coverUrl: "/covers/3.jpg",
     tags: ["Adventure"],
     rating: "4.0",
+    ratingCount: 255,
     year: 2020,
     likes: 120,
     bookmarks: 18,
     currentChapter: 0,
     totalChapters: 8,
-    dedication: "For my parents, who taught me to read the stars."
+    dedication: "For my parents, who taught me to read the stars.",
+
+    // ---- NEW ----
+    language: "Spanish (translated to English)",
+    isbn: "978-1-913847-07-8",
+    copyright: "© 2020 D. Cruz",
+    nsfw: false,
+    summary:
+      "A storm-chaser crew hunts a legendary coast, where sea-salt maps lead to treasures and betrayals.",
   },
   {
     id: "bk-008",
     title: "Glass Gardens",
     author: "E. Novak",
     user: "GardenReader",
-    coverUrl: "/public/covers/4.jpg",
+    coverUrl: "/covers/4.jpg",
     tags: ["Literary", "Drama"],
     rating: "4.3",
+    ratingCount: 512,
     year: 2023,
     likes: 188,
     bookmarks: 34,
     currentChapter: 2,
     totalChapters: 14,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
+
+    // ---- NEW ----
+    language: "English",
+    isbn: "978-1-913847-08-5",
+    copyright: "© 2023 E. Novak",
+    nsfw: false,
+    summary:
+      "A greenhouse caretaker uncovers diaries in cracked glass, confronting grief, love, and a vanished sister.",
   },
   {
     id: "bk-009",
     title: "Echoes in Neon",
     author: "T. Rivera",
     user: "NeonWatcher",
-    coverUrl: "/public/covers/5.jpeg",
+    coverUrl: "/covers/5.jpeg",
     tags: ["Cyberpunk", "Thriller"],
     rating: "4.1",
+    ratingCount: 689,
     year: 2025,
     likes: 256,
     bookmarks: 41,
     currentChapter: 5,
     totalChapters: 25,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
+
+    // ---- NEW ----
+    language: "English",
+    isbn: "978-1-913847-09-2",
+    copyright: "© 2025 T. Rivera",
+    nsfw: true,
+    summary:
+      "A club DJ records a sound that shouldn’t exist, then gets hunted across neon districts by corporate ghosts.",
   },
   {
     id: "bk-010",
     title: "Winter’s Map",
     author: "H. Lindgren",
     user: "CartoFan",
-    coverUrl: "/public/covers/6.png",
+    coverUrl: "/covers/6.png",
     tags: ["Adventure"],
     rating: "3.9",
+    ratingCount: 301,
     year: 2022,
     likes: 112,
     bookmarks: 19,
     currentChapter: 1,
     totalChapters: 12,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
+
+    // ---- NEW ----
+    language: "Swedish (translated to English)",
+    isbn: "978-1-913847-10-8",
+    copyright: "© 2022 H. Lindgren",
+    nsfw: false,
+    summary:
+      "A cartographer’s last winter trek reveals a shifting map, forcing a choice between survival and wonder.",
   },
+
+  // ---- Keep the rest exactly as they were (unchanged) ----
   {
     id: "bk-011",
     title: "Between Two Ferries",
     author: "L. Demir",
     user: "HarborReader",
-    coverUrl: "/public/covers/7.png",
+    coverUrl: "",
     tags: ["Mystery", "Drama"],
     rating: "4.0",
     year: 2021,
@@ -236,7 +326,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 27,
     currentChapter: 3,
     totalChapters: 18,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-012",
@@ -251,7 +341,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 77,
     currentChapter: 6,
     totalChapters: 26,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-013",
@@ -266,7 +356,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 38,
     currentChapter: 4,
     totalChapters: 20,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-014",
@@ -281,7 +371,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 17,
     currentChapter: 2,
     totalChapters: 10,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-015",
@@ -296,7 +386,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 29,
     currentChapter: 7,
     totalChapters: 22,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-016",
@@ -311,7 +401,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 24,
     currentChapter: 1,
     totalChapters: 11,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-017",
@@ -326,7 +416,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 92,
     currentChapter: 9,
     totalChapters: 30,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-018",
@@ -341,7 +431,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 15,
     currentChapter: 1,
     totalChapters: 9,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-019",
@@ -356,7 +446,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 36,
     currentChapter: 4,
     totalChapters: 21,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-020",
@@ -371,7 +461,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 101,
     currentChapter: 2,
     totalChapters: 16,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-021",
@@ -386,7 +476,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 28,
     currentChapter: 3,
     totalChapters: 18,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-022",
@@ -401,7 +491,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 31,
     currentChapter: 5,
     totalChapters: 20,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-023",
@@ -416,7 +506,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 83,
     currentChapter: 8,
     totalChapters: 27,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-024",
@@ -431,7 +521,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 22,
     currentChapter: 1,
     totalChapters: 13,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-025",
@@ -446,7 +536,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 44,
     currentChapter: 2,
     totalChapters: 15,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-026",
@@ -461,7 +551,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 23,
     currentChapter: 7,
     totalChapters: 19,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-027",
@@ -476,7 +566,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 95,
     currentChapter: 3,
     totalChapters: 24,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-028",
@@ -491,7 +581,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 14,
     currentChapter: 1,
     totalChapters: 9,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-029",
@@ -506,7 +596,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 33,
     currentChapter: 6,
     totalChapters: 23,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-030",
@@ -521,7 +611,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 66,
     currentChapter: 4,
     totalChapters: 21,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-031",
@@ -536,7 +626,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 18,
     currentChapter: 2,
     totalChapters: 12,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-032",
@@ -551,7 +641,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 27,
     currentChapter: 5,
     totalChapters: 18,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-033",
@@ -566,7 +656,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 39,
     currentChapter: 3,
     totalChapters: 17,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-034",
@@ -581,7 +671,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 16,
     currentChapter: 1,
     totalChapters: 10,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-035",
@@ -596,7 +686,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 35,
     currentChapter: 8,
     totalChapters: 26,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-036",
@@ -611,7 +701,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 104,
     currentChapter: 10,
     totalChapters: 32,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-037",
@@ -626,7 +716,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 30,
     currentChapter: 2,
     totalChapters: 14,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-038",
@@ -641,7 +731,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 62,
     currentChapter: 6,
     totalChapters: 22,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-039",
@@ -656,7 +746,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 21,
     currentChapter: 1,
     totalChapters: 11,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-040",
@@ -671,7 +761,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 37,
     currentChapter: 3,
     totalChapters: 16,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-041",
@@ -686,7 +776,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 33,
     currentChapter: 5,
     totalChapters: 19,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-042",
@@ -701,7 +791,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 28,
     currentChapter: 4,
     totalChapters: 18,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-043",
@@ -716,14 +806,14 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 88,
     currentChapter: 7,
     totalChapters: 28,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-044",
     title: "Candle Market",
     author: "M. Farley",
     user: "WickWorks",
-    coverUrl: "/public/covers/2.jpeg",
+    coverUrl: "/covers/2.jpeg",
     tags: ["Drama"],
     rating: "3.8",
     year: 2020,
@@ -731,14 +821,14 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 15,
     currentChapter: 2,
     totalChapters: 9,
-    dedication: "For those who keep reading."
+    dedication: "For those who keep reading.",
   },
   {
     id: "bk-045",
     title: "The Quiet Bridge",
     author: "J. Osei",
     user: "BridgeWalker",
-    coverUrl: "/public/covers/1.jpeg",
+    coverUrl: "/covers/1.jpeg",
     tags: ["Romance", "Drama"],
     rating: "4.2",
     year: 2023,
@@ -746,6 +836,6 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     bookmarks: 40,
     currentChapter: 3,
     totalChapters: 17,
-    dedication: "For those who keep reading."
-  }
+    dedication: "For those who keep reading.",
+  },
 ];

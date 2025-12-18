@@ -14,9 +14,7 @@ import SaveButton from "@/components/SaveButton";
 import StarButton from "@/components/StarButton";
 import ReaderMenu from "@/components/ReaderMenu";
 
-import CommentSidebar, {
-  ReviewModal,
-} from "@/components/CommentSidebar";
+import CommentSidebar, { ReviewModal } from "@/components/CommentSidebar";
 import "@/components/CommentSidebar.css";
 
 type BookSpread = { left: string; right: string };
@@ -94,9 +92,9 @@ export default function Home() {
   const userRating = centerId ? userRatingById[centerId] ?? 0 : 0;
 
   const baseRating =
-    typeof centerBook?.rating === "string"
-      ? parseFloat(String(centerBook.rating).split("/")[0] || "0")
-      : Number(centerBook?.rating ?? 0);
+    typeof (centerBook as any)?.rating === "string"
+      ? parseFloat(String((centerBook as any).rating).split("/")[0] || "0")
+      : Number((centerBook as any)?.rating ?? 0);
 
   const votesRaw = (centerBook as any)?.ratingCount ?? 0;
   const votes = Number.isFinite(Number(votesRaw)) ? Number(votesRaw) : 0;
@@ -111,8 +109,8 @@ export default function Home() {
         : userRating
       : baseRating;
 
-  const displayLikes = (centerBook?.likes ?? 0) + (liked ? 1 : 0);
-  const displaySaves = (centerBook?.bookmarks ?? 0) + (saved ? 1 : 0);
+  const displayLikes = ((centerBook as any)?.likes ?? 0) + (liked ? 1 : 0);
+  const displaySaves = ((centerBook as any)?.bookmarks ?? 0) + (saved ? 1 : 0);
 
   const toggleLike = () => {
     if (!centerId) return;
@@ -165,7 +163,7 @@ export default function Home() {
             back:
               (b as any).backCoverUrl ||
               `https://placehold.co/470x675/111111/f0f0f0?text=Back`,
-            title: b.title || `Book ${index + 1}`,
+            title: (b as any).title || `Book ${index + 1}`,
           }))
         : [];
 
@@ -211,9 +209,7 @@ export default function Home() {
     let windowEnd = Math.min(CHUNK - 1, numBooks - 1);
     let lastDirection: 1 | -1 | 0 = 0;
 
-    const bookMeshesByIndex: (THREE.Mesh | null)[] = Array(numBooks).fill(
-      null
-    );
+    const bookMeshesByIndex: (THREE.Mesh | null)[] = Array(numBooks).fill(null);
     let activeBooks: THREE.Mesh[] = [];
 
     let loadQueue: number[] = [];
@@ -538,8 +534,7 @@ export default function Home() {
       const isbn = "978-0-999999-99-9";
       const copyright = (bookData?.year ?? 2024).toString();
       const dedication =
-        bookData?.dedication ||
-        "For everyone who reads in a world of screens.";
+        bookData?.dedication || "For everyone who reads in a world of screens.";
 
       const chapterTitles: string[] = Array.isArray(bookData?.chapters)
         ? bookData.chapters
@@ -554,9 +549,7 @@ export default function Home() {
           .map((t, idx) => `<li>Chapter ${idx + 1}: ${t}</li>`)
           .join("");
       } else if (chapterTexts.length > 0) {
-        tocItems = chapterTexts
-          .map((_, idx) => `<li>Chapter ${idx + 1}</li>`)
-          .join("");
+        tocItems = chapterTexts.map((_, idx) => `<li>Chapter ${idx + 1}</li>`).join("");
       } else {
         tocItems = "<li>Chapter 1</li>";
       }
@@ -918,10 +911,7 @@ export default function Home() {
     // ---- Click handling ----
     function onDocumentClick(event: MouseEvent) {
       const target = event.target as HTMLElement;
-      if (
-        target.classList.contains("nav-arrow") ||
-        target.id === "nav-container"
-      ) {
+      if (target.classList.contains("nav-arrow") || target.id === "nav-container") {
         return;
       }
 
@@ -930,22 +920,18 @@ export default function Home() {
       }
 
       const canvasRect = renderer.domElement.getBoundingClientRect();
-      mouse.x =
-        ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
-      mouse.y =
-        -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
+      mouse.x = ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+      mouse.y = -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(activeBooks, false);
 
       if (intersects.length > 0) {
         const clickedBook = intersects[0].object as THREE.Mesh;
-        const clickedIndex =
-          (clickedBook.userData.logicalIndex as number) ?? -1;
+        const clickedIndex = (clickedBook.userData.logicalIndex as number) ?? -1;
         if (clickedIndex < 0) return;
 
-        const leftIndex =
-          currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
+        const leftIndex = currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
         const rightIndex =
           currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
 
@@ -956,10 +942,8 @@ export default function Home() {
           }
 
           const targetRotation = clickedBook.userData.targetRotation;
-          const atFront =
-            Math.abs(targetRotation % (2 * Math.PI)) < 0.01;
-          const atBack =
-            Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
+          const atFront = Math.abs(targetRotation % (2 * Math.PI)) < 0.01;
+          const atBack = Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
 
           if (atFront) {
             clickedBook.userData.isFlipping = true;
@@ -1043,10 +1027,7 @@ export default function Home() {
       }
 
       let unloadsThisFrame = 0;
-      while (
-        unloadsThisFrame < MAX_UNLOADS_PER_FRAME &&
-        unloadQueue.length > 0
-      ) {
+      while (unloadsThisFrame < MAX_UNLOADS_PER_FRAME && unloadQueue.length > 0) {
         const idx = unloadQueue.shift()!;
         unloadBook(idx);
         unloadsThisFrame++;
@@ -1056,8 +1037,7 @@ export default function Home() {
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
-            book.position.x +=
-              (book.userData.targetSlideX - book.position.x) * slowEase;
+            book.position.x += (book.userData.targetSlideX - book.position.x) * slowEase;
 
             const s = book.scale.x;
             const targetS = book.userData.targetSlideScale;
@@ -1073,12 +1053,9 @@ export default function Home() {
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isFlipping) {
-            book.rotation.y +=
-              (book.userData.targetRotation - book.rotation.y) * fastEase;
+            book.rotation.y += (book.userData.targetRotation - book.rotation.y) * fastEase;
 
-            if (
-              Math.abs(book.userData.targetRotation - book.rotation.y) < 0.01
-            ) {
+            if (Math.abs(book.userData.targetRotation - book.rotation.y) < 0.01) {
               book.rotation.y = book.userData.targetRotation;
               book.userData.isFlipping = false;
             }
@@ -1086,8 +1063,7 @@ export default function Home() {
         });
 
         if (isCarouselMoving) {
-          carouselGroup.position.x +=
-            (targetCarouselX - carouselGroup.position.x) * fastEase;
+          carouselGroup.position.x += (targetCarouselX - carouselGroup.position.x) * fastEase;
 
           if (Math.abs(targetCarouselX - carouselGroup.position.x) < 0.01) {
             carouselGroup.position.x = targetCarouselX;
@@ -1100,8 +1076,7 @@ export default function Home() {
           if (book.userData.isScaling) {
             const currentScale = book.scale.x;
             const targetScale = book.userData.targetScale;
-            const newScale =
-              currentScale + (targetScale - currentScale) * fastEase;
+            const newScale = currentScale + (targetScale - currentScale) * fastEase;
 
             book.scale.set(newScale, newScale, newScale);
 
@@ -1311,16 +1286,12 @@ export default function Home() {
   }) => {
     if (!activeBookId) return;
     updateCurrentThread((prev) => {
-      const existing = prev.reviews.find(
-        (r) => r.username === CURRENT_USER_ID
-      );
+      const existing = prev.reviews.find((r) => r.username === CURRENT_USER_ID);
       if (existing) {
         return {
           ...prev,
           reviews: prev.reviews.map((r) =>
-            r.username === CURRENT_USER_ID
-              ? { ...r, rating, text, date: Date.now() }
-              : r
+            r.username === CURRENT_USER_ID ? { ...r, rating, text, date: Date.now() } : r
           ),
         };
       }
@@ -1339,13 +1310,10 @@ export default function Home() {
     }));
   };
 
-  const usersReview = reviewsForBook.find(
-    (r) => r.username === CURRENT_USER_ID
-  );
+  const usersReview = reviewsForBook.find((r) => r.username === CURRENT_USER_ID);
   const hasUserReviewed = Boolean(usersReview);
 
-  const getDateVal = (d: number | string) =>
-    typeof d === "number" ? d : 0;
+  const getDateVal = (d: number | string) => (typeof d === "number" ? d : 0);
 
   const sortedComments = useMemo(() => {
     const sorted = [...commentsForBook];
@@ -1354,14 +1322,8 @@ export default function Home() {
         return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
       case "mostLiked":
         return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          const likesB = Object.values(b.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
+          const likesA = Object.values(a.reactions || {}).reduce((s, c) => s + c, 0);
+          const likesB = Object.values(b.reactions || {}).reduce((s, c) => s + c, 0);
           return likesB - likesA;
         });
       case "mostReplies":
@@ -1381,24 +1343,14 @@ export default function Home() {
         return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
       case "mostLiked":
         return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          const likesB = Object.values(b.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
+          const likesA = Object.values(a.reactions || {}).reduce((s, c) => s + c, 0);
+          const likesB = Object.values(b.reactions || {}).reduce((s, c) => s + c, 0);
           return likesB - likesA;
         });
       case "highestRating":
-        return sorted.sort(
-          (a, b) => (b.rating || 0) - (a.rating || 0)
-        );
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       case "lowestRating":
-        return sorted.sort(
-          (a, b) => (a.rating || 0) - (b.rating || 0)
-        );
+        return sorted.sort((a, b) => (a.rating || 0) - (b.rating || 0));
       case "newest":
       default:
         return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
@@ -1414,6 +1366,10 @@ export default function Home() {
     return `${lt}\n\n${rt}`.trim();
   };
 
+  const displayLanguage =
+    ((centerBook as any)?.language as string | undefined) ?? "Unknown";
+  const displayYear = (centerBook as any)?.year ?? "";
+
   return (
     <div className="app home3d-root">
       <AppHeader />
@@ -1421,6 +1377,21 @@ export default function Home() {
       <main className="carousel home3d-main">
         {/* LEFT: Metadata */}
         <div className="metadata" id="metadata-panel">
+          {/* 1. title */}
+          <div className="meta-title" title={(centerBook as any)?.title ?? ""}>
+            {(centerBook as any)?.title ?? "Untitled"}
+          </div>
+
+          {/* 2. separator */}
+          <hr className="meta-hr" />
+
+          {/* 3. year and "written by" */}
+          <div className="meta-subline">
+            <span className="meta-year">{displayYear}</span>
+            <span className="meta-writtenby"> written by</span>
+          </div>
+
+          {/* 4. author profile picture and author name */}
           <div className="meta-header">
             <div className="meta-avatar" aria-hidden="true">
               <svg
@@ -1440,49 +1411,54 @@ export default function Home() {
                 />
               </svg>
             </div>
+
+            {/* Keeping the same behavior as before (Link + stopPropagation) */}
             <Link
               to="/profile"
               className="meta-username"
-              title={centerBook?.user ?? ""}
+              title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
               onClick={(e) => e.stopPropagation()}
             >
-              {centerBook?.user ?? "Unknown User"}
+              {(centerBook as any)?.author ?? (centerBook as any)?.user ?? "Unknown Author"}
             </Link>
           </div>
 
+          {/* 5. separator */}
           <hr className="meta-hr" />
 
+          {/* 6. 3 icons */}
           <div className="meta-actions">
-            <LikeButton
-              count={displayLikes}
-              active={liked}
-              onToggle={toggleLike}
-            />
+            <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />
             <StarButton
               rating={combinedRating}
               userRating={userRating}
               active={userRating > 0}
               onRate={onRate}
             />
-            <SaveButton
-              count={displaySaves}
-              active={saved}
-              onToggle={toggleSave}
-            />
+            <SaveButton count={displaySaves} active={saved} onToggle={toggleSave} />
           </div>
 
+          {/* 7. separator */}
           <hr className="meta-hr" />
 
+          {/* 8. chapters */}
           <p className="meta-chapters">
-            {(centerBook?.currentChapter ?? 0)}/
-            {centerBook?.totalChapters ?? 0}{" "}
-            Chapters
+            {((centerBook as any)?.currentChapter ?? 0)}/
+            {((centerBook as any)?.totalChapters ?? 0)} Chapters
           </p>
 
+          {/* 9. separator */}
           <hr className="meta-hr" />
 
+          {/* 10. language */}
+          <p className="meta-language">Language: {displayLanguage}</p>
+
+          {/* 11. separator */}
+          <hr className="meta-hr" />
+
+          {/* 12. genres */}
           <ul className="meta-tags">
-            {(centerBook?.tags ?? []).map((t: string) => (
+            {(((centerBook as any)?.tags ?? []) as string[]).map((t) => (
               <li key={t}>{t}</li>
             ))}
           </ul>
@@ -1521,18 +1497,10 @@ export default function Home() {
             }: TypographyOptions) => {
               const controls = readerControlsRef.current;
               if (!controls) return;
-              if (typeof fontSize === "number") {
-                controls.setFontSize(fontSize);
-              }
-              if (typeof lineHeight === "number") {
-                controls.setLineHeight(lineHeight);
-              }
-              if (typeof fontFamily === "string") {
-                controls.setFontFamily(fontFamily);
-              }
-              if (typeof theme === "string") {
-                controls.setTheme(theme);
-              }
+              if (typeof fontSize === "number") controls.setFontSize(fontSize);
+              if (typeof lineHeight === "number") controls.setLineHeight(lineHeight);
+              if (typeof fontFamily === "string") controls.setFontFamily(fontFamily);
+              if (typeof theme === "string") controls.setTheme(theme);
             }}
           />
 
@@ -1561,7 +1529,7 @@ export default function Home() {
             />
           )}
 
-          {/* Review modal – global overlay (choice A) */}
+          {/* Review modal – global overlay */}
           {isReviewModalOpen && (
             <ReviewModal
               isOpen={isReviewModalOpen}
