@@ -14,6 +14,8 @@ import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
 import StarButton from "@/components/StarButton";
 import ReaderMenu from "@/components/ReaderMenu";
+import CommentButton from "@/components/CommentButton";
+
 
 import CommentSidebar, { ReviewModal } from "@/components/CommentSidebar";
 import "@/components/CommentSidebar.css";
@@ -127,6 +129,8 @@ export default function Home() {
   >("comments");
 
   const [pendingOpenReviews, setPendingOpenReviews] = useState(false);
+  const [pendingOpenComments, setPendingOpenComments] = useState(false);
+
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [filterSort, setFilterSort] = useState<FilterSort>("newest");
@@ -209,6 +213,22 @@ export default function Home() {
     setPendingOpenReviews(false);
   };
 
+  const openBookAndGoToComments = () => {
+    setPendingOpenComments(true);
+
+    if (!isBookOpen) {
+      openBookRef.current?.();
+      return;
+    }
+
+    // already open
+    setIsCommentsOpen(true);
+    setCommentSidebarView("comments");
+    setPendingOpenComments(false);
+  };
+
+
+
   // When a star click opened the book, finish the navigation once activeBookId is set
   useEffect(() => {
     if (!pendingOpenReviews) return;
@@ -219,6 +239,18 @@ export default function Home() {
     setCommentSidebarView("reviews");
     setPendingOpenReviews(false);
   }, [pendingOpenReviews, isBookOpen, activeBookId]);
+
+  useEffect(() => {
+    if (!pendingOpenComments) return;
+    if (!isBookOpen) return;
+    if (!activeBookId) return;
+
+    setIsCommentsOpen(true);
+    setCommentSidebarView("comments");
+    setPendingOpenComments(false);
+  }, [pendingOpenComments, isBookOpen, activeBookId]);
+
+
 
   // Current (opened) thread
   const currentThread = activeBookId
@@ -234,6 +266,20 @@ export default function Home() {
     (r) => r.username === CURRENT_USER_ID
   );
   const hasUserReviewedCenter = Boolean(centerUsersReview);
+
+  const hasUserCommentedInThread = (thread: ThreadState, username: string) => {
+    const walk = (items: CommentItem[]): boolean =>
+      items.some(
+        (c) => c.username === username || (c.replies?.length ? walk(c.replies) : false)
+      );
+    return walk(thread.comments ?? []);
+  };
+
+  const hasUserCommentedCenter = hasUserCommentedInThread(
+    centerThread,
+    CURRENT_USER_ID
+  );
+
 
   // Rating display: show combined avg that includes user review rating if present
   const baseRating =
@@ -1568,6 +1614,11 @@ export default function Home() {
               onToggle={toggleLike}
             />
 
+            <CommentButton
+              active={hasUserCommentedCenter}
+              onOpenComments={openBookAndGoToComments}
+            />
+            
             <StarButton
               rating={combinedRating}
               hasUserReviewed={hasUserReviewedCenter}
