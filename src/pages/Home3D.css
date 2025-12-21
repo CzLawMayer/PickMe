@@ -380,7 +380,7 @@
 
 .home3d-main .metadata {
   position: absolute;
-  top: 48%;  /* desktop / tall screens */
+  top: 45%;  /* desktop / tall screens */
   /* "left" is the X of the metadata's RIGHT edge because of translate(-100%, -50%) */
   left: calc(50% - var(--book-page-width) - var(--meta-gap-closed));
   transform: translate(-100%, -50%);
@@ -409,4 +409,276 @@
 /* Make sure text behaves like normal book text */
 .open-book-page {
   white-space: normal; /* default, but explicit for safety */
+}
+
+/* ------------------------------------------------------------
+   METADATA: Keep layout fixed when title wraps
+   The title is taken out of normal flow and anchored above the
+   first separator. Extra lines grow UP, not down.
+------------------------------------------------------------ */
+
+.home3d-main .metadata {
+  /* keep whatever positioning you already have */
+  position: absolute; /* (safe even if already set) */
+  box-sizing: border-box;
+
+  /* Reserve a fixed “start line” for the content below the title */
+  --meta-title-slot: 3.1rem; /* tweak if you want more/less space */
+
+  padding-top: var(--meta-title-slot);
+
+  /* allow long titles to extend upward without being clipped */
+  overflow: visible;
+}
+
+.home3d-main .metadata .meta-title {
+  /* Remove from document flow so it doesn't push anything down */
+  position: absolute;
+  left: 0;
+  right: 0;
+
+  /* Anchor the BOTTOM of the title to the slot line */
+  top: var(--meta-title-slot);
+  transform: translateY(-100%);
+
+  /* Wrapping rules */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  /* Keep your existing typography if you already have it */
+  margin: 0;
+}
+
+/* Optional: ensure the first separator doesn’t stick to the title */
+.home3d-main .metadata .meta-hr:first-of-type {
+  margin-top: 0.35rem;
+}
+
+/* ------------------------------------------------------------
+   METADATA: Title + subline (year / written by) above separator
+   Both are taken out of flow so they don't push the rest down.
+------------------------------------------------------------ */
+
+.home3d-main .metadata {
+  --meta-title-slot: 4.7rem; /* total reserved space for title + subline */
+  padding-top: var(--meta-title-slot);
+  overflow: visible;
+}
+
+/* Book title */
+.home3d-main .metadata .meta-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+
+  /* anchor bottom of title+subline block to the slot line */
+  top: var(--meta-title-slot);
+  transform: translateY(-100%);
+
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.35rem; /* larger */
+  line-height: 1.15;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Year + "written by" line right under the title */
+.home3d-main .metadata .meta-subtitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+
+  /* place it under the title, but still above the separator */
+  top: var(--meta-title-slot);
+  transform: translateY(-0.1rem);
+
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Give the first separator a touch of breathing room */
+.home3d-main .metadata .meta-hr:first-of-type {
+  margin-top: 0.5rem;
+}
+
+/* ============================================================
+   HOME (Home3D) — Genre pills (match Library pill styling)
+   Scoped to metadata so it won't affect other pages.
+   ============================================================ */
+
+.home3d-main .metadata .meta-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 2px;
+}
+
+/* Pill base (same vibe as Library) */
+.home3d-main .metadata .genre-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 600;
+
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  position: relative;
+  overflow: hidden; /* needed for shine */
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Shine sweep (copied behavior from Library) */
+.home3d-main .metadata .genre-pill::after {
+  content: "";
+  position: absolute;
+  inset: -40% -120% -40% -120%;
+  background: linear-gradient(
+    75deg,
+    transparent 0%,
+    rgba(255,255,255,0.10) 35%,
+    rgba(255,255,255,0.35) 50%,
+    rgba(255,255,255,0.10) 65%,
+    transparent 100%
+  );
+  transform: translateX(-60%) rotate(8deg);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.home3d-main .metadata .genre-pill:hover {
+  filter: brightness(1.08);
+}
+
+.home3d-main .metadata .genre-pill:hover::after {
+  animation: pill-shine 700ms ease-out forwards;
+  opacity: 1;
+}
+
+@keyframes pill-shine {
+  from { transform: translateX(-60%) rotate(8deg); }
+  to   { transform: translateX(60%)  rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home3d-main .metadata .genre-pill:hover::after {
+    animation: none;
+    opacity: 0.15;
+  }
+}
+
+/* Home3D.css */
+.home3d-main .meta-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Only affects pills on Home (keeps other pages untouched) */
+.home3d-main .genre-pill.genre-pill--home {
+  background: var(--pill-color);
+  color: #ffffff;
+  border: 1px solid var(--pill-color);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Home3D.css — genre pills like Library */
+
+.home3d-main .meta-tags.meta-tags--pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+}
+
+.home3d-main .meta-tags.meta-tags--pills .genre-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home3d-main .meta-avatar-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.home3d-main .meta-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home3d-main .meta-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Remove any ring/border/shadow from the avatar */
+.home3d-main .meta-avatar-link,
+.home3d-main .meta-avatar-link:focus,
+.home3d-main .meta-avatar-link:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.home3d-main .meta-avatar {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.home3d-main .meta-avatar img {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }

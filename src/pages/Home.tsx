@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 
 import AppHeader from "@/components/AppHeader";
 import { sampleBooks } from "@/booksData";
+import { profile } from "@/profileData";
+
 
 import "./Home.css";
 import "./Home3D.css";
@@ -61,6 +63,16 @@ type FilterSort =
   | "lowestRating";
 
 const CURRENT_USER_ID = "CurrentUser";
+
+// ✅ same helper as Library.tsx (transparent pills)
+function colorFromString(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
+  const bg = `hsl(${h} 70% 50% / 0.16)`;
+  const border = `hsl(${h} 70% 50% / 0.38)`;
+  const text = `hsl(${h} 85% 92%)`;
+  return { bg, border, text };
+}
 
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
@@ -549,7 +561,9 @@ export default function Home() {
           .map((t, idx) => `<li>Chapter ${idx + 1}: ${t}</li>`)
           .join("");
       } else if (chapterTexts.length > 0) {
-        tocItems = chapterTexts.map((_, idx) => `<li>Chapter ${idx + 1}</li>`).join("");
+        tocItems = chapterTexts
+          .map((_, idx) => `<li>Chapter ${idx + 1}</li>`)
+          .join("");
       } else {
         tocItems = "<li>Chapter 1</li>";
       }
@@ -1291,7 +1305,9 @@ export default function Home() {
         return {
           ...prev,
           reviews: prev.reviews.map((r) =>
-            r.username === CURRENT_USER_ID ? { ...r, rating, text, date: Date.now() } : r
+            r.username === CURRENT_USER_ID
+              ? { ...r, rating, text, date: Date.now() }
+              : r
           ),
         };
       }
@@ -1322,8 +1338,14 @@ export default function Home() {
         return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
       case "mostLiked":
         return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce((s, c) => s + c, 0);
-          const likesB = Object.values(b.reactions || {}).reduce((s, c) => s + c, 0);
+          const likesA = Object.values(a.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          const likesB = Object.values(b.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
           return likesB - likesA;
         });
       case "mostReplies":
@@ -1343,12 +1365,18 @@ export default function Home() {
         return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
       case "mostLiked":
         return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce((s, c) => s + c, 0);
-          const likesB = Object.values(b.reactions || {}).reduce((s, c) => s + c, 0);
+          const likesA = Object.values(a.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          const likesB = Object.values(b.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
           return likesB - likesA;
         });
       case "highestRating":
-        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        return sorted.sort((a, b) => (b.rating || 0) - (b.rating || 0));
       case "lowestRating":
         return sorted.sort((a, b) => (a.rating || 0) - (b.rating || 0));
       case "newest":
@@ -1370,6 +1398,17 @@ export default function Home() {
     ((centerBook as any)?.language as string | undefined) ?? "Unknown";
   const displayYear = (centerBook as any)?.year ?? "";
 
+  const profileAvatarSrc =
+    (profile as any)?.avatarUrl ||
+    (profile as any)?.photo ||
+    (profile as any)?.avatar ||
+    "";
+
+
+  const tags = Array.isArray((centerBook as any)?.tags)
+    ? (((centerBook as any).tags ?? []) as string[]).filter(Boolean)
+    : [];
+
   return (
     <div className="app home3d-root">
       <AppHeader />
@@ -1382,35 +1421,41 @@ export default function Home() {
             {(centerBook as any)?.title ?? "Untitled"}
           </div>
 
-          {/* 2. separator */}
-          <hr className="meta-hr" />
-
           {/* 3. year and "written by" */}
           <div className="meta-subline">
             <span className="meta-year">{displayYear}</span>
             <span className="meta-writtenby"> written by</span>
           </div>
 
+          {/* 2. separator */}
+          <hr className="meta-hr" />
+
           {/* 4. author profile picture and author name */}
           <div className="meta-header">
-            <div className="meta-avatar" aria-hidden="true">
-              <svg
-                width="40"
-                height="40"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-                <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                <path
-                  d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
+            <Link
+              to="/profile"
+              className="meta-avatar-link"
+              aria-label="Open profile"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="meta-avatar" aria-hidden="true">
+                {profileAvatarSrc ? (
+                  <img src={profileAvatarSrc} alt="" />
+                ) : (
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                    <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                    <path
+                      d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                )}
+              </div>
+            </Link>
+
 
             {/* Keeping the same behavior as before (Link + stopPropagation) */}
             <Link
@@ -1419,7 +1464,9 @@ export default function Home() {
               title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
               onClick={(e) => e.stopPropagation()}
             >
-              {(centerBook as any)?.author ?? (centerBook as any)?.user ?? "Unknown Author"}
+              {(centerBook as any)?.author ??
+                (centerBook as any)?.user ??
+                "Unknown Author"}
             </Link>
           </div>
 
@@ -1456,12 +1503,31 @@ export default function Home() {
           {/* 11. separator */}
           <hr className="meta-hr" />
 
-          {/* 12. genres */}
-          <ul className="meta-tags">
-            {(((centerBook as any)?.tags ?? []) as string[]).map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
+          {/* ✅ 12. genres as transparent pills (same idea as Library) */}
+          <div
+            className="meta-tags meta-tags--pills"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {tags.length > 0
+              ? tags.map((t, i) => {
+                  const c = colorFromString(t);
+                  return (
+                    <span
+                      key={`${t}-${i}`}
+                      className="genre-pill"
+                      title={t}
+                      style={{
+                        backgroundColor: c.bg,
+                        borderColor: c.border,
+                        color: c.text,
+                      }}
+                    >
+                      {t}
+                    </span>
+                  );
+                })
+              : null}
+          </div>
         </div>
 
         {/* CENTER: 3D + Reader */}
