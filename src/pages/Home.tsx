@@ -7,7 +7,6 @@ import AppHeader from "@/components/AppHeader";
 import { sampleBooks } from "@/booksData";
 import { profile } from "@/profileData";
 
-
 import "./Home.css";
 import "./Home3D.css";
 
@@ -86,40 +85,22 @@ export default function Home() {
   // Reader typography controls
   const readerControlsRef = useRef<ReaderControls | null>(null);
 
+  // Expose open/close from the Three.js effect to React handlers (StarButton)
+  const openBookRef = useRef<null | (() => void)>(null);
+  const closeBookRef = useRef<null | (() => void)>(null);
+
   // Effective book in the center (if locked by open-book)
   const effectiveIndex = lockedIndex ?? centerIndex;
   const centerBook = sampleBooks[effectiveIndex] ?? sampleBooks[0];
 
-  // ---------- Per-book like/save/rating ----------
+  // ---------- Per-book like/save ----------
   const [likedById, setLikedById] = useState<Record<string, boolean>>({});
   const [savedById, setSavedById] = useState<Record<string, boolean>>({});
-  const [userRatingById, setUserRatingById] = useState<Record<string, number>>(
-    {}
-  );
 
   const centerId = (centerBook as any)?.id ?? "";
 
   const liked = centerId ? !!likedById[centerId] : false;
   const saved = centerId ? !!savedById[centerId] : false;
-  const userRating = centerId ? userRatingById[centerId] ?? 0 : 0;
-
-  const baseRating =
-    typeof (centerBook as any)?.rating === "string"
-      ? parseFloat(String((centerBook as any).rating).split("/")[0] || "0")
-      : Number((centerBook as any)?.rating ?? 0);
-
-  const votesRaw = (centerBook as any)?.ratingCount ?? 0;
-  const votes = Number.isFinite(Number(votesRaw)) ? Number(votesRaw) : 0;
-  const PRIOR_VOTES = 20;
-
-  const combinedRating =
-    userRating > 0
-      ? votes > 0
-        ? (baseRating * votes + userRating) / (votes + 1)
-        : baseRating > 0
-        ? (baseRating * PRIOR_VOTES + userRating) / (PRIOR_VOTES + 1)
-        : userRating
-      : baseRating;
 
   const displayLikes = ((centerBook as any)?.likes ?? 0) + (liked ? 1 : 0);
   const displaySaves = ((centerBook as any)?.bookmarks ?? 0) + (saved ? 1 : 0);
@@ -134,11 +115,6 @@ export default function Home() {
     setSavedById((m) => ({ ...m, [centerId]: !m[centerId] }));
   };
 
-  const onRate = (value: number) => {
-    if (!centerId) return;
-    setUserRatingById((m) => ({ ...m, [centerId]: value }));
-  };
-
   // ---------- COMMENT / REVIEW STATE (per book) ----------
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
   const [commentThreads, setCommentThreads] = useState<
@@ -146,12 +122,356 @@ export default function Home() {
   >({});
 
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [commentSidebarView, setCommentSidebarView] = useState<
+    "comments" | "reviews"
+  >("comments");
+
+  const [pendingOpenReviews, setPendingOpenReviews] = useState(false);
+
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [filterSort, setFilterSort] = useState<FilterSort>("newest");
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isToastVisible, setIsToastVisible] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
+
+  // Key must match what openBook() sets
+  const getBookKeyByIndex = (idx: number) => {
+    const b = sampleBooks[idx] as any;
+    return b?.id ? String(b.id) : `book-${idx}`;
+  };
+
+  const centerBookKey = getBookKeyByIndex(effectiveIndex);
+
+  // ---------- COMMENT / REVIEW HELPERS ----------
+  const ensureThread = (bookId: string): ThreadState => {
+    return commentThreads[bookId] ?? { comments: [], reviews: [] };
+  };
+
+  const updateCurrentThread = (updater: (prev: ThreadState) => ThreadState) => {
+    if (!activeBookId) return;
+    setCommentThreads((prev) => {
+      const previous = prev[activeBookId] ?? { comments: [], reviews: [] };
+      return {
+        ...prev,
+        [activeBookId]: updater(previous),
+      };
+    });
+  };
+
+  const createDataObject = (
+    text: string,
+    rating: number | null = null
+  ): CommentItem => ({
+    id: Date.now(),
+    username: CURRENT_USER_ID,
+    pfpUrl: "https://placehold.co/40x40/7A86B6/FFF?text=Me",
+    date: Date.now(),
+    text,
+    reactions: {},
+    replies: [],
+    ...(rating !== null ? { rating } : {}),
+  });
+
+  const triggerToast = (message: string) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    setToastMessage(message);
+    setIsToastVisible(true);
+    toastTimerRef.current = window.setTimeout(() => {
+      setIsToastVisible(false);
+      toastTimerRef.current = null;
+    }, 3000);
+  };
+
+  const handleToggleComments = () => {
+    if (!isBookOpen || !activeBookId) return;
+    if (!isCommentsOpen) {
+      setIsLoading(true);
+      setTimeout(() => setIsLoading(false), 800);
+    }
+    setIsCommentsOpen((open) => !open);
+  };
+
+  // Used by StarButton: open book + open sidebar + go to reviews tab
+  const openBookAndGoToReviews = () => {
+    setPendingOpenReviews(true);
+
+    if (!isBookOpen) {
+      openBookRef.current?.();
+      return;
+    }
+
+    // already open
+    setIsCommentsOpen(true);
+    setCommentSidebarView("reviews");
+    setPendingOpenReviews(false);
+  };
+
+  // When a star click opened the book, finish the navigation once activeBookId is set
+  useEffect(() => {
+    if (!pendingOpenReviews) return;
+    if (!isBookOpen) return;
+    if (!activeBookId) return;
+
+    setIsCommentsOpen(true);
+    setCommentSidebarView("reviews");
+    setPendingOpenReviews(false);
+  }, [pendingOpenReviews, isBookOpen, activeBookId]);
+
+  // Current (opened) thread
+  const currentThread = activeBookId
+    ? ensureThread(activeBookId)
+    : { comments: [], reviews: [] };
+
+  const commentsForBook = currentThread.comments;
+  const reviewsForBook = currentThread.reviews;
+
+  // Center (metadata) review state, even when book is closed
+  const centerThread = ensureThread(centerBookKey);
+  const centerUsersReview = centerThread.reviews.find(
+    (r) => r.username === CURRENT_USER_ID
+  );
+  const hasUserReviewedCenter = Boolean(centerUsersReview);
+
+  // Rating display: show combined avg that includes user review rating if present
+  const baseRating =
+    typeof (centerBook as any)?.rating === "string"
+      ? parseFloat(String((centerBook as any).rating).split("/")[0] || "0")
+      : Number((centerBook as any)?.rating ?? 0);
+
+  const votesRaw = (centerBook as any)?.ratingCount ?? 0;
+  const votes = Number.isFinite(Number(votesRaw)) ? Number(votesRaw) : 0;
+
+  const userReviewRating = centerUsersReview?.rating ?? 0;
+  const PRIOR_VOTES = 20;
+
+  const combinedRating =
+    userReviewRating > 0
+      ? votes > 0
+        ? (baseRating * votes + userReviewRating) / (votes + 1)
+        : baseRating > 0
+        ? (baseRating * PRIOR_VOTES + userReviewRating) / (PRIOR_VOTES + 1)
+        : userReviewRating
+      : baseRating;
+
+  // ---- Comment actions ----
+  const handleAddComment = (text: string) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: [createDataObject(text), ...prev.comments],
+    }));
+  };
+
+  const handleAddReply = (parentId: number, text: string) => {
+    const reply = createDataObject(text);
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: prev.comments.map((c) =>
+        c.id === parentId
+          ? { ...c, replies: [...(c.replies ?? []), reply] }
+          : c
+      ),
+    }));
+  };
+
+  const handleAddReviewReply = (parentId: number, text: string) => {
+    const reply = createDataObject(text);
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews.map((r) =>
+        r.id === parentId
+          ? { ...r, replies: [...(r.replies ?? []), reply] }
+          : r
+      ),
+    }));
+  };
+
+  const handleEditComment = (commentId: number, newText: string) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: prev.comments.map((comment) => {
+        if (comment.id === commentId) {
+          return { ...comment, text: newText, date: "Edited" };
+        }
+        if (comment.replies) {
+          return {
+            ...comment,
+            replies: comment.replies.map((reply) =>
+              reply.id === commentId
+                ? { ...reply, text: newText, date: "Edited" }
+                : reply
+            ),
+          };
+        }
+        return comment;
+      }),
+    }));
+  };
+
+  const handleEditReview = (reviewId: number, newText: string) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews.map((review) => {
+        if (review.id === reviewId) {
+          return { ...review, text: newText, date: "Edited" };
+        }
+        if (review.replies) {
+          return {
+            ...review,
+            replies: review.replies.map((reply) =>
+              reply.id === reviewId
+                ? { ...reply, text: newText, date: "Edited" }
+                : reply
+            ),
+          };
+        }
+        return review;
+      }),
+    }));
+  };
+
+  const handleDeleteComment = (commentId: number) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      comments: prev.comments
+        .filter((c) => c.id !== commentId)
+        .map((c) => ({
+          ...c,
+          replies: c.replies.filter((r) => r.id !== commentId),
+        })),
+    }));
+  };
+
+  const handleDeleteReview = (reviewId: number) => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews
+        .filter((r) => r.id !== reviewId)
+        .map((r) => ({
+          ...r,
+          replies: r.replies.filter((rr) => rr.id !== reviewId),
+        })),
+    }));
+  };
+
+  const handleSubmitReview = ({
+    rating,
+    text,
+  }: {
+    rating: number;
+    text: string;
+  }) => {
+    if (!activeBookId) return;
+    updateCurrentThread((prev) => {
+      const existing = prev.reviews.find((r) => r.username === CURRENT_USER_ID);
+      if (existing) {
+        return {
+          ...prev,
+          reviews: prev.reviews.map((r) =>
+            r.username === CURRENT_USER_ID
+              ? { ...r, rating, text, date: Date.now() }
+              : r
+          ),
+        };
+      }
+      const newReview = createDataObject(text, rating);
+      return {
+        ...prev,
+        reviews: [newReview, ...prev.reviews],
+      };
+    });
+  };
+
+  const handleDeleteOwnReview = () => {
+    updateCurrentThread((prev) => ({
+      ...prev,
+      reviews: prev.reviews.filter((r) => r.username !== CURRENT_USER_ID),
+    }));
+  };
+
+  const usersReview = reviewsForBook.find((r) => r.username === CURRENT_USER_ID);
+  const hasUserReviewed = Boolean(usersReview);
+
+  const getDateVal = (d: number | string) => (typeof d === "number" ? d : 0);
+
+  const sortedComments = useMemo(() => {
+    const sorted = [...commentsForBook];
+    switch (filterSort) {
+      case "oldest":
+        return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
+      case "mostLiked":
+        return sorted.sort((a, b) => {
+          const likesA = Object.values(a.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          const likesB = Object.values(b.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          return likesB - likesA;
+        });
+      case "mostReplies":
+        return sorted.sort(
+          (a, b) => (b.replies?.length || 0) - (a.replies?.length || 0)
+        );
+      case "newest":
+      default:
+        return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
+    }
+  }, [commentsForBook, filterSort]);
+
+  const sortedReviews = useMemo(() => {
+    const sorted = [...reviewsForBook];
+    switch (filterSort) {
+      case "oldest":
+        return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
+      case "mostLiked":
+        return sorted.sort((a, b) => {
+          const likesA = Object.values(a.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          const likesB = Object.values(b.reactions || {}).reduce(
+            (s, c) => s + c,
+            0
+          );
+          return likesB - likesA;
+        });
+      case "highestRating":
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      case "lowestRating":
+        return sorted.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+      case "newest":
+      default:
+        return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
+    }
+  }, [reviewsForBook, filterSort]);
+
+  // Helper for Text-to-Speech etc.
+  const getVisiblePageText = () => {
+    const left = document.getElementById("page-left");
+    const right = document.getElementById("page-right");
+    const lt = left?.innerText ?? "";
+    const rt = right?.innerText ?? "";
+    return `${lt}\n\n${rt}`.trim();
+  };
+
+  const displayLanguage =
+    ((centerBook as any)?.language as string | undefined) ?? "Unknown";
+  const displayYear = (centerBook as any)?.year ?? "";
+
+  const profileAvatarSrc =
+    (profile as any)?.avatarUrl ||
+    (profile as any)?.photo ||
+    (profile as any)?.avatar ||
+    "";
+
+  const tags = Array.isArray((centerBook as any)?.tags)
+    ? (((centerBook as any).tags ?? []) as string[]).filter(Boolean)
+    : [];
 
   // ---------- 3D + Reader setup ----------
   useEffect(() => {
@@ -561,9 +881,7 @@ export default function Home() {
           .map((t, idx) => `<li>Chapter ${idx + 1}: ${t}</li>`)
           .join("");
       } else if (chapterTexts.length > 0) {
-        tocItems = chapterTexts
-          .map((_, idx) => `<li>Chapter ${idx + 1}</li>`)
-          .join("");
+        tocItems = chapterTexts.map((_, idx) => `<li>Chapter ${idx + 1}</li>`).join("");
       } else {
         tocItems = "<li>Chapter 1</li>";
       }
@@ -797,15 +1115,18 @@ export default function Home() {
       setIsBookOpen(true);
       isBookOpenLocal = true;
 
+      // Default sidebar state on open
+      setIsCommentsOpen(false);
+      setIsReviewModalOpen(false);
+      setCommentSidebarView("comments");
+
       // Per-book comment thread key
       const openedBook = sampleBooks[currentCenterIndex] as any;
       if (openedBook?.id) {
-        setActiveBookId(openedBook.id);
+        setActiveBookId(String(openedBook.id));
       } else {
         setActiveBookId(`book-${currentCenterIndex}`);
       }
-      setIsCommentsOpen(false);
-      setIsReviewModalOpen(false);
 
       bookSpreads = buildBookSpreads(currentCenterIndex);
       updatePageContent(currentPageSpread);
@@ -835,24 +1156,24 @@ export default function Home() {
         }
       }
 
-      navContainer!.classList.add("is-open");
+      navContainer.classList.add("is-open");
       openBookContainer.classList.add("is-open");
       metadataPanel?.classList.add("is-open");
     }
 
     function closeBook() {
       openBookContainer.style.transition = "none";
-      navContainer!.style.transition = "none";
+      navContainer.style.transition = "none";
 
       openBookContainer.classList.remove("is-open");
-      navContainer!.classList.remove("is-open");
+      navContainer.classList.remove("is-open");
       metadataPanel?.classList.remove("is-open");
 
       void openBookContainer.offsetWidth;
 
       openBookContainer.style.transition =
         "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease";
-      navContainer!.style.transition =
+      navContainer.style.transition =
         "opacity 0.3s ease, left 0.5s cubic-bezier(0.25, 1, 0.5, 1)";
 
       carouselGroup.position.x = targetCarouselX;
@@ -904,6 +1225,10 @@ export default function Home() {
       setActiveBookId(null);
     }
 
+    // expose open/close to React
+    openBookRef.current = openBook;
+    closeBookRef.current = closeBook;
+
     function flipPageLeft() {
       if (currentPageSpread > 0) {
         currentPageSpread--;
@@ -925,7 +1250,16 @@ export default function Home() {
     // ---- Click handling ----
     function onDocumentClick(event: MouseEvent) {
       const target = event.target as HTMLElement;
-      if (target.classList.contains("nav-arrow") || target.id === "nav-container") {
+
+      // ignore clicks inside metadata or the sidebar UI
+      const sidebarRoot = document.querySelector(".cs-sidebar-root");
+      if (metadataPanel && metadataPanel.contains(target)) return;
+      if (sidebarRoot && sidebarRoot.contains(target)) return;
+
+      if (
+        target.classList.contains("nav-arrow") ||
+        target.id === "nav-container"
+      ) {
         return;
       }
 
@@ -942,10 +1276,12 @@ export default function Home() {
 
       if (intersects.length > 0) {
         const clickedBook = intersects[0].object as THREE.Mesh;
-        const clickedIndex = (clickedBook.userData.logicalIndex as number) ?? -1;
+        const clickedIndex =
+          (clickedBook.userData.logicalIndex as number) ?? -1;
         if (clickedIndex < 0) return;
 
-        const leftIndex = currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
+        const leftIndex =
+          currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
         const rightIndex =
           currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
 
@@ -957,7 +1293,8 @@ export default function Home() {
 
           const targetRotation = clickedBook.userData.targetRotation;
           const atFront = Math.abs(targetRotation % (2 * Math.PI)) < 0.01;
-          const atBack = Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
+          const atBack =
+            Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
 
           if (atFront) {
             clickedBook.userData.isFlipping = true;
@@ -1041,7 +1378,10 @@ export default function Home() {
       }
 
       let unloadsThisFrame = 0;
-      while (unloadsThisFrame < MAX_UNLOADS_PER_FRAME && unloadQueue.length > 0) {
+      while (
+        unloadsThisFrame < MAX_UNLOADS_PER_FRAME &&
+        unloadQueue.length > 0
+      ) {
         const idx = unloadQueue.shift()!;
         unloadBook(idx);
         unloadsThisFrame++;
@@ -1051,7 +1391,8 @@ export default function Home() {
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
-            book.position.x += (book.userData.targetSlideX - book.position.x) * slowEase;
+            book.position.x +=
+              (book.userData.targetSlideX - book.position.x) * slowEase;
 
             const s = book.scale.x;
             const targetS = book.userData.targetSlideScale;
@@ -1067,7 +1408,8 @@ export default function Home() {
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isFlipping) {
-            book.rotation.y += (book.userData.targetRotation - book.rotation.y) * fastEase;
+            book.rotation.y +=
+              (book.userData.targetRotation - book.rotation.y) * fastEase;
 
             if (Math.abs(book.userData.targetRotation - book.rotation.y) < 0.01) {
               book.rotation.y = book.userData.targetRotation;
@@ -1077,7 +1419,8 @@ export default function Home() {
         });
 
         if (isCarouselMoving) {
-          carouselGroup.position.x += (targetCarouselX - carouselGroup.position.x) * fastEase;
+          carouselGroup.position.x +=
+            (targetCarouselX - carouselGroup.position.x) * fastEase;
 
           if (Math.abs(targetCarouselX - carouselGroup.position.x) < 0.01) {
             carouselGroup.position.x = targetCarouselX;
@@ -1090,7 +1433,8 @@ export default function Home() {
           if (book.userData.isScaling) {
             const currentScale = book.scale.x;
             const targetScale = book.userData.targetScale;
-            const newScale = currentScale + (targetScale - currentScale) * fastEase;
+            const newScale =
+              currentScale + (targetScale - currentScale) * fastEase;
 
             book.scale.set(newScale, newScale, newScale);
 
@@ -1121,11 +1465,17 @@ export default function Home() {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
+
       if (paginationTimer !== null) {
         window.clearTimeout(paginationTimer);
       }
+
       readerControlsRef.current = null;
+      openBookRef.current = null;
+      closeBookRef.current = null;
+
       cancelAnimationFrame(rafId);
+
       if (renderer) {
         renderer.dispose();
         if (renderer.domElement.parentNode === root) {
@@ -1135,287 +1485,18 @@ export default function Home() {
     };
   }, []);
 
-  // ---------- COMMENT / REVIEW HELPERS ----------
-  const ensureThread = (bookId: string): ThreadState => {
-    return commentThreads[bookId] ?? { comments: [], reviews: [] };
-  };
-
-  const updateCurrentThread = (updater: (prev: ThreadState) => ThreadState) => {
-    if (!activeBookId) return;
-    setCommentThreads((prev) => {
-      const previous = prev[activeBookId] ?? { comments: [], reviews: [] };
-      return {
-        ...prev,
-        [activeBookId]: updater(previous),
-      };
-    });
-  };
-
-  const createDataObject = (
-    text: string,
-    rating: number | null = null
-  ): CommentItem => ({
-    id: Date.now(),
-    username: CURRENT_USER_ID,
-    pfpUrl: "https://placehold.co/40x40/7A86B6/FFF?text=Me",
-    date: Date.now(),
-    text,
-    reactions: {},
-    replies: [],
-    ...(rating !== null ? { rating } : {}),
-  });
-
-  const triggerToast = (message: string) => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
-    setToastMessage(message);
-    setIsToastVisible(true);
-    toastTimerRef.current = window.setTimeout(() => {
-      setIsToastVisible(false);
-      toastTimerRef.current = null;
-    }, 3000);
-  };
-
-  const handleToggleComments = () => {
-    if (!isBookOpen || !activeBookId) return;
-    if (!isCommentsOpen) {
-      setIsLoading(true);
-      setTimeout(() => setIsLoading(false), 800);
-    }
-    setIsCommentsOpen((open) => !open);
-  };
-
-  const currentThread = activeBookId
-    ? ensureThread(activeBookId)
-    : { comments: [], reviews: [] };
-  const commentsForBook = currentThread.comments;
-  const reviewsForBook = currentThread.reviews;
-
-  const handleAddComment = (text: string) => {
-    updateCurrentThread((prev) => ({
-      ...prev,
-      comments: [createDataObject(text), ...prev.comments],
-    }));
-  };
-
-  const handleAddReply = (parentId: number, text: string) => {
-    const reply = createDataObject(text);
-    updateCurrentThread((prev) => ({
-      ...prev,
-      comments: prev.comments.map((c) =>
-        c.id === parentId
-          ? { ...c, replies: [...(c.replies ?? []), reply] }
-          : c
-      ),
-    }));
-  };
-
-  const handleAddReviewReply = (parentId: number, text: string) => {
-    const reply = createDataObject(text);
-    updateCurrentThread((prev) => ({
-      ...prev,
-      reviews: prev.reviews.map((r) =>
-        r.id === parentId
-          ? { ...r, replies: [...(r.replies ?? []), reply] }
-          : r
-      ),
-    }));
-  };
-
-  const handleEditComment = (commentId: number, newText: string) => {
-    updateCurrentThread((prev) => ({
-      ...prev,
-      comments: prev.comments.map((comment) => {
-        if (comment.id === commentId) {
-          return { ...comment, text: newText, date: "Edited" };
-        }
-        if (comment.replies) {
-          return {
-            ...comment,
-            replies: comment.replies.map((reply) =>
-              reply.id === commentId
-                ? { ...reply, text: newText, date: "Edited" }
-                : reply
-            ),
-          };
-        }
-        return comment;
-      }),
-    }));
-  };
-
-  const handleEditReview = (reviewId: number, newText: string) => {
-    updateCurrentThread((prev) => ({
-      ...prev,
-      reviews: prev.reviews.map((review) => {
-        if (review.id === reviewId) {
-          return { ...review, text: newText, date: "Edited" };
-        }
-        if (review.replies) {
-          return {
-            ...review,
-            replies: review.replies.map((reply) =>
-              reply.id === reviewId
-                ? { ...reply, text: newText, date: "Edited" }
-                : reply
-            ),
-          };
-        }
-        return review;
-      }),
-    }));
-  };
-
-  const handleDeleteComment = (commentId: number) => {
-    updateCurrentThread((prev) => ({
-      ...prev,
-      comments: prev.comments
-        .filter((c) => c.id !== commentId)
-        .map((c) => ({
-          ...c,
-          replies: c.replies.filter((r) => r.id !== commentId),
-        })),
-    }));
-  };
-
-  const handleDeleteReview = (reviewId: number) => {
-    updateCurrentThread((prev) => ({
-      ...prev,
-      reviews: prev.reviews
-        .filter((r) => r.id !== reviewId)
-        .map((r) => ({
-          ...r,
-          replies: r.replies.filter((rr) => rr.id !== reviewId),
-        })),
-    }));
-  };
-
-  const handleSubmitReview = ({
-    rating,
-    text,
-  }: {
-    rating: number;
-    text: string;
-  }) => {
-    if (!activeBookId) return;
-    updateCurrentThread((prev) => {
-      const existing = prev.reviews.find((r) => r.username === CURRENT_USER_ID);
-      if (existing) {
-        return {
-          ...prev,
-          reviews: prev.reviews.map((r) =>
-            r.username === CURRENT_USER_ID
-              ? { ...r, rating, text, date: Date.now() }
-              : r
-          ),
-        };
-      }
-      const newReview = createDataObject(text, rating);
-      return {
-        ...prev,
-        reviews: [newReview, ...prev.reviews],
-      };
-    });
-  };
-
-  const handleDeleteOwnReview = () => {
-    updateCurrentThread((prev) => ({
-      ...prev,
-      reviews: prev.reviews.filter((r) => r.username !== CURRENT_USER_ID),
-    }));
-  };
-
-  const usersReview = reviewsForBook.find((r) => r.username === CURRENT_USER_ID);
-  const hasUserReviewed = Boolean(usersReview);
-
-  const getDateVal = (d: number | string) => (typeof d === "number" ? d : 0);
-
-  const sortedComments = useMemo(() => {
-    const sorted = [...commentsForBook];
-    switch (filterSort) {
-      case "oldest":
-        return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
-      case "mostLiked":
-        return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          const likesB = Object.values(b.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          return likesB - likesA;
-        });
-      case "mostReplies":
-        return sorted.sort(
-          (a, b) => (b.replies?.length || 0) - (a.replies?.length || 0)
-        );
-      case "newest":
-      default:
-        return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
-    }
-  }, [commentsForBook, filterSort]);
-
-  const sortedReviews = useMemo(() => {
-    const sorted = [...reviewsForBook];
-    switch (filterSort) {
-      case "oldest":
-        return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
-      case "mostLiked":
-        return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          const likesB = Object.values(b.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          return likesB - likesA;
-        });
-      case "highestRating":
-        return sorted.sort((a, b) => (b.rating || 0) - (b.rating || 0));
-      case "lowestRating":
-        return sorted.sort((a, b) => (a.rating || 0) - (b.rating || 0));
-      case "newest":
-      default:
-        return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
-    }
-  }, [reviewsForBook, filterSort]);
-
-  // Helper for Text-to-Speech etc.
-  const getVisiblePageText = () => {
-    const left = document.getElementById("page-left");
-    const right = document.getElementById("page-right");
-    const lt = left?.innerText ?? "";
-    const rt = right?.innerText ?? "";
-    return `${lt}\n\n${rt}`.trim();
-  };
-
-  const displayLanguage =
-    ((centerBook as any)?.language as string | undefined) ?? "Unknown";
-  const displayYear = (centerBook as any)?.year ?? "";
-
-  const profileAvatarSrc =
-    (profile as any)?.avatarUrl ||
-    (profile as any)?.photo ||
-    (profile as any)?.avatar ||
-    "";
-
-
-  const tags = Array.isArray((centerBook as any)?.tags)
-    ? (((centerBook as any).tags ?? []) as string[]).filter(Boolean)
-    : [];
-
   return (
     <div className="app home3d-root">
       <AppHeader />
 
       <main className="carousel home3d-main">
         {/* LEFT: Metadata */}
-        <div className="metadata" id="metadata-panel">
+        <div
+          className="metadata"
+          id="metadata-panel"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* 1. title */}
           <div className="meta-title" title={(centerBook as any)?.title ?? ""}>
             {(centerBook as any)?.title ?? "Untitled"}
@@ -1442,7 +1523,13 @@ export default function Home() {
                 {profileAvatarSrc ? (
                   <img src={profileAvatarSrc} alt="" />
                 ) : (
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <svg
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
                     <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
                     <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
                     <path
@@ -1456,12 +1543,12 @@ export default function Home() {
               </div>
             </Link>
 
-
-            {/* Keeping the same behavior as before (Link + stopPropagation) */}
             <Link
               to="/profile"
               className="meta-username"
-              title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
+              title={
+                (centerBook as any)?.author ?? (centerBook as any)?.user ?? ""
+              }
               onClick={(e) => e.stopPropagation()}
             >
               {(centerBook as any)?.author ??
@@ -1475,14 +1562,23 @@ export default function Home() {
 
           {/* 6. 3 icons */}
           <div className="meta-actions">
-            <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />
+            <LikeButton
+              count={displayLikes}
+              active={liked}
+              onToggle={toggleLike}
+            />
+
             <StarButton
               rating={combinedRating}
-              userRating={userRating}
-              active={userRating > 0}
-              onRate={onRate}
+              hasUserReviewed={hasUserReviewedCenter}
+              onOpenReviews={openBookAndGoToReviews}
             />
-            <SaveButton count={displaySaves} active={saved} onToggle={toggleSave} />
+
+            <SaveButton
+              count={displaySaves}
+              active={saved}
+              onToggle={toggleSave}
+            />
           </div>
 
           {/* 7. separator */}
@@ -1503,11 +1599,8 @@ export default function Home() {
           {/* 11. separator */}
           <hr className="meta-hr" />
 
-          {/* ✅ 12. genres as transparent pills (same idea as Library) */}
-          <div
-            className="meta-tags meta-tags--pills"
-            onClick={(e) => e.stopPropagation()}
-          >
+          {/* 12. genres as transparent pills */}
+          <div className="meta-tags meta-tags--pills">
             {tags.length > 0
               ? tags.map((t, i) => {
                   const c = colorFromString(t);
@@ -1551,7 +1644,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Reader menu */}
           <ReaderMenu
             visible={isBookOpen}
             getVisiblePageText={getVisiblePageText}
@@ -1575,6 +1667,7 @@ export default function Home() {
             <CommentSidebar
               isOpen={isCommentsOpen}
               onToggle={handleToggleComments}
+              requestedView={commentSidebarView}
               comments={sortedComments}
               reviews={sortedReviews}
               onAddComment={handleAddComment}

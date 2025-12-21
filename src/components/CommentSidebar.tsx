@@ -934,6 +934,7 @@ export default function CommentSidebar({
   comments,
   reviews,
   onAddComment,
+  requestedView,
   onAddReply,
   onAddReviewReply,
   onOpenReviewModal,
@@ -954,6 +955,15 @@ export default function CommentSidebar({
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const mainCommentInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (requestedView === "comments" || requestedView === "reviews") {
+      setActiveView(requestedView);
+      onFilterChange("newest");
+      setIsFilterOpen(false);
+    }
+  }, [requestedView]);
+
 
   const handleTabChange = (view: "comments" | "reviews") => {
     setActiveView(view);

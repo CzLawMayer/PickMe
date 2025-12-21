@@ -682,3 +682,9 @@
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Force metadata to be only 10px wider to the left (keeps the same anchor) */
+.home3d-main .metadata{
+  width: 220px !important;
+  max-width: 220px !important;
+}
