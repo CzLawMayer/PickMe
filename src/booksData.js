@@ -3,7 +3,7 @@ export const sampleBooks = [
   {
     id: "bk-001",
     title:
-      "Everything to Get More and balls and balls and balls and and balls and balls and balls and",
+      "Everything to Get More",
     author: "Diego Ballesteros",
     user: "Names Brooklyn",
     coverUrl: "/covers/balls.png",

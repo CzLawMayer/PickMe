@@ -16,7 +16,6 @@ import StarButton from "@/components/StarButton";
 import ReaderMenu from "@/components/ReaderMenu";
 import CommentButton from "@/components/CommentButton";
 
-
 import CommentSidebar, { ReviewModal } from "@/components/CommentSidebar";
 import "@/components/CommentSidebar.css";
 
@@ -117,11 +116,31 @@ export default function Home() {
     setSavedById((m) => ({ ...m, [centerId]: !m[centerId] }));
   };
 
+  // ---------- SUMMARY MODAL ----------
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const summaryText = String((centerBook as any)?.summary ?? "").trim();
+  const hasSummary = summaryText.length > 0;
+
+  // Close summary when center book changes (prevents stale modal content)
+  useEffect(() => {
+    setIsSummaryOpen(false);
+  }, [centerBookKeyFromBook(centerBook)]);
+
+  // Escape to close summary
+  useEffect(() => {
+    if (!isSummaryOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSummaryOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isSummaryOpen]);
+
   // ---------- COMMENT / REVIEW STATE (per book) ----------
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
-  const [commentThreads, setCommentThreads] = useState<
-    Record<string, ThreadState>
-  >({});
+  const [commentThreads, setCommentThreads] = useState<Record<string, ThreadState>>(
+    {}
+  );
 
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [commentSidebarView, setCommentSidebarView] = useState<
@@ -130,7 +149,6 @@ export default function Home() {
 
   const [pendingOpenReviews, setPendingOpenReviews] = useState(false);
   const [pendingOpenComments, setPendingOpenComments] = useState(false);
-
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [filterSort, setFilterSort] = useState<FilterSort>("newest");
@@ -146,6 +164,10 @@ export default function Home() {
   };
 
   const centerBookKey = getBookKeyByIndex(effectiveIndex);
+
+  function centerBookKeyFromBook(b: any) {
+    return b?.id ? String(b.id) : "unknown";
+  }
 
   // ---------- COMMENT / REVIEW HELPERS ----------
   const ensureThread = (bookId: string): ThreadState => {
@@ -163,10 +185,7 @@ export default function Home() {
     });
   };
 
-  const createDataObject = (
-    text: string,
-    rating: number | null = null
-  ): CommentItem => ({
+  const createDataObject = (text: string, rating: number | null = null): CommentItem => ({
     id: Date.now(),
     username: CURRENT_USER_ID,
     pfpUrl: "https://placehold.co/40x40/7A86B6/FFF?text=Me",
@@ -178,9 +197,7 @@ export default function Home() {
   });
 
   const triggerToast = (message: string) => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage(message);
     setIsToastVisible(true);
     toastTimerRef.current = window.setTimeout(() => {
@@ -207,7 +224,6 @@ export default function Home() {
       return;
     }
 
-    // already open
     setIsCommentsOpen(true);
     setCommentSidebarView("reviews");
     setPendingOpenReviews(false);
@@ -221,13 +237,10 @@ export default function Home() {
       return;
     }
 
-    // already open
     setIsCommentsOpen(true);
     setCommentSidebarView("comments");
     setPendingOpenComments(false);
   };
-
-
 
   // When a star click opened the book, finish the navigation once activeBookId is set
   useEffect(() => {
@@ -250,36 +263,24 @@ export default function Home() {
     setPendingOpenComments(false);
   }, [pendingOpenComments, isBookOpen, activeBookId]);
 
-
-
   // Current (opened) thread
-  const currentThread = activeBookId
-    ? ensureThread(activeBookId)
-    : { comments: [], reviews: [] };
+  const currentThread = activeBookId ? ensureThread(activeBookId) : { comments: [], reviews: [] };
 
   const commentsForBook = currentThread.comments;
   const reviewsForBook = currentThread.reviews;
 
   // Center (metadata) review state, even when book is closed
   const centerThread = ensureThread(centerBookKey);
-  const centerUsersReview = centerThread.reviews.find(
-    (r) => r.username === CURRENT_USER_ID
-  );
+  const centerUsersReview = centerThread.reviews.find((r) => r.username === CURRENT_USER_ID);
   const hasUserReviewedCenter = Boolean(centerUsersReview);
 
   const hasUserCommentedInThread = (thread: ThreadState, username: string) => {
     const walk = (items: CommentItem[]): boolean =>
-      items.some(
-        (c) => c.username === username || (c.replies?.length ? walk(c.replies) : false)
-      );
+      items.some((c) => c.username === username || (c.replies?.length ? walk(c.replies) : false));
     return walk(thread.comments ?? []);
   };
 
-  const hasUserCommentedCenter = hasUserCommentedInThread(
-    centerThread,
-    CURRENT_USER_ID
-  );
-
+  const hasUserCommentedCenter = hasUserCommentedInThread(centerThread, CURRENT_USER_ID);
 
   // Rating display: show combined avg that includes user review rating if present
   const baseRating =
@@ -315,9 +316,7 @@ export default function Home() {
     updateCurrentThread((prev) => ({
       ...prev,
       comments: prev.comments.map((c) =>
-        c.id === parentId
-          ? { ...c, replies: [...(c.replies ?? []), reply] }
-          : c
+        c.id === parentId ? { ...c, replies: [...(c.replies ?? []), reply] } : c
       ),
     }));
   };
@@ -327,9 +326,7 @@ export default function Home() {
     updateCurrentThread((prev) => ({
       ...prev,
       reviews: prev.reviews.map((r) =>
-        r.id === parentId
-          ? { ...r, replies: [...(r.replies ?? []), reply] }
-          : r
+        r.id === parentId ? { ...r, replies: [...(r.replies ?? []), reply] } : r
       ),
     }));
   };
@@ -338,16 +335,12 @@ export default function Home() {
     updateCurrentThread((prev) => ({
       ...prev,
       comments: prev.comments.map((comment) => {
-        if (comment.id === commentId) {
-          return { ...comment, text: newText, date: "Edited" };
-        }
+        if (comment.id === commentId) return { ...comment, text: newText, date: "Edited" };
         if (comment.replies) {
           return {
             ...comment,
             replies: comment.replies.map((reply) =>
-              reply.id === commentId
-                ? { ...reply, text: newText, date: "Edited" }
-                : reply
+              reply.id === commentId ? { ...reply, text: newText, date: "Edited" } : reply
             ),
           };
         }
@@ -360,16 +353,12 @@ export default function Home() {
     updateCurrentThread((prev) => ({
       ...prev,
       reviews: prev.reviews.map((review) => {
-        if (review.id === reviewId) {
-          return { ...review, text: newText, date: "Edited" };
-        }
+        if (review.id === reviewId) return { ...review, text: newText, date: "Edited" };
         if (review.replies) {
           return {
             ...review,
             replies: review.replies.map((reply) =>
-              reply.id === reviewId
-                ? { ...reply, text: newText, date: "Edited" }
-                : reply
+              reply.id === reviewId ? { ...reply, text: newText, date: "Edited" } : reply
             ),
           };
         }
@@ -383,10 +372,7 @@ export default function Home() {
       ...prev,
       comments: prev.comments
         .filter((c) => c.id !== commentId)
-        .map((c) => ({
-          ...c,
-          replies: c.replies.filter((r) => r.id !== commentId),
-        })),
+        .map((c) => ({ ...c, replies: c.replies.filter((r) => r.id !== commentId) })),
     }));
   };
 
@@ -395,20 +381,11 @@ export default function Home() {
       ...prev,
       reviews: prev.reviews
         .filter((r) => r.id !== reviewId)
-        .map((r) => ({
-          ...r,
-          replies: r.replies.filter((rr) => rr.id !== reviewId),
-        })),
+        .map((r) => ({ ...r, replies: r.replies.filter((rr) => rr.id !== reviewId) })),
     }));
   };
 
-  const handleSubmitReview = ({
-    rating,
-    text,
-  }: {
-    rating: number;
-    text: string;
-  }) => {
+  const handleSubmitReview = ({ rating, text }: { rating: number; text: string }) => {
     if (!activeBookId) return;
     updateCurrentThread((prev) => {
       const existing = prev.reviews.find((r) => r.username === CURRENT_USER_ID);
@@ -416,17 +393,12 @@ export default function Home() {
         return {
           ...prev,
           reviews: prev.reviews.map((r) =>
-            r.username === CURRENT_USER_ID
-              ? { ...r, rating, text, date: Date.now() }
-              : r
+            r.username === CURRENT_USER_ID ? { ...r, rating, text, date: Date.now() } : r
           ),
         };
       }
       const newReview = createDataObject(text, rating);
-      return {
-        ...prev,
-        reviews: [newReview, ...prev.reviews],
-      };
+      return { ...prev, reviews: [newReview, ...prev.reviews] };
     });
   };
 
@@ -449,20 +421,12 @@ export default function Home() {
         return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
       case "mostLiked":
         return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          const likesB = Object.values(b.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
+          const likesA = Object.values(a.reactions || {}).reduce((s, c) => s + c, 0);
+          const likesB = Object.values(b.reactions || {}).reduce((s, c) => s + c, 0);
           return likesB - likesA;
         });
       case "mostReplies":
-        return sorted.sort(
-          (a, b) => (b.replies?.length || 0) - (a.replies?.length || 0)
-        );
+        return sorted.sort((a, b) => (b.replies?.length || 0) - (a.replies?.length || 0));
       case "newest":
       default:
         return sorted.sort((a, b) => getDateVal(b.date) - getDateVal(a.date));
@@ -476,14 +440,8 @@ export default function Home() {
         return sorted.sort((a, b) => getDateVal(a.date) - getDateVal(b.date));
       case "mostLiked":
         return sorted.sort((a, b) => {
-          const likesA = Object.values(a.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
-          const likesB = Object.values(b.reactions || {}).reduce(
-            (s, c) => s + c,
-            0
-          );
+          const likesA = Object.values(a.reactions || {}).reduce((s, c) => s + c, 0);
+          const likesB = Object.values(b.reactions || {}).reduce((s, c) => s + c, 0);
           return likesB - likesA;
         });
       case "highestRating":
@@ -505,15 +463,11 @@ export default function Home() {
     return `${lt}\n\n${rt}`.trim();
   };
 
-  const displayLanguage =
-    ((centerBook as any)?.language as string | undefined) ?? "Unknown";
+  const displayLanguage = ((centerBook as any)?.language as string | undefined) ?? "Unknown";
   const displayYear = (centerBook as any)?.year ?? "";
 
   const profileAvatarSrc =
-    (profile as any)?.avatarUrl ||
-    (profile as any)?.photo ||
-    (profile as any)?.avatar ||
-    "";
+    (profile as any)?.avatarUrl || (profile as any)?.photo || (profile as any)?.avatar || "";
 
   const tags = Array.isArray((centerBook as any)?.tags)
     ? (((centerBook as any).tags ?? []) as string[]).filter(Boolean)
@@ -539,8 +493,7 @@ export default function Home() {
               (b as any).coverUrl ||
               `https://placehold.co/470x675/222222/f0f0f0?text=Book+${index + 1}`,
             back:
-              (b as any).backCoverUrl ||
-              `https://placehold.co/470x675/111111/f0f0f0?text=Back`,
+              (b as any).backCoverUrl || `https://placehold.co/470x675/111111/f0f0f0?text=Back`,
             title: (b as any).title || `Book ${index + 1}`,
           }))
         : [];
@@ -597,30 +550,14 @@ export default function Home() {
     const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
 
     // ---- DOM refs ----
-    const openBookContainer = document.getElementById(
-      "open-book-container"
-    ) as HTMLDivElement | null;
-    const pageLeft = document.getElementById(
-      "page-left"
-    ) as HTMLDivElement | null;
-    const pageRight = document.getElementById(
-      "page-right"
-    ) as HTMLDivElement | null;
-    const navContainer = document.getElementById(
-      "nav-container"
-    ) as HTMLDivElement | null;
-    const leftArrowBtn = document.getElementById(
-      "left-arrow"
-    ) as HTMLDivElement | null;
-    const rightArrowBtn = document.getElementById(
-      "right-arrow"
-    ) as HTMLDivElement | null;
-    const closeBookBtn = document.getElementById(
-      "close-book-btn"
-    ) as HTMLDivElement | null;
-    const metadataPanel = document.getElementById(
-      "metadata-panel"
-    ) as HTMLDivElement | null;
+    const openBookContainer = document.getElementById("open-book-container") as HTMLDivElement | null;
+    const pageLeft = document.getElementById("page-left") as HTMLDivElement | null;
+    const pageRight = document.getElementById("page-right") as HTMLDivElement | null;
+    const navContainer = document.getElementById("nav-container") as HTMLDivElement | null;
+    const leftArrowBtn = document.getElementById("left-arrow") as HTMLDivElement | null;
+    const rightArrowBtn = document.getElementById("right-arrow") as HTMLDivElement | null;
+    const closeBookBtn = document.getElementById("close-book-btn") as HTMLDivElement | null;
+    const metadataPanel = document.getElementById("metadata-panel") as HTMLDivElement | null;
 
     if (!openBookContainer || !pageLeft || !pageRight || !navContainer) {
       console.warn("Reader DOM elements not found.");
@@ -628,12 +565,7 @@ export default function Home() {
     }
 
     // ---- Helpers ----
-    function createSpineTexture(
-      title: string,
-      width: number,
-      height: number,
-      color: string
-    ) {
+    function createSpineTexture(title: string, width: number, height: number, color: string) {
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -696,15 +628,9 @@ export default function Home() {
       );
       spineTexture.colorSpace = THREE.SRGBColorSpace;
 
-      const frontCoverMaterial = new THREE.MeshBasicMaterial({
-        map: frontTexture,
-      });
-      const backCoverMaterial = new THREE.MeshBasicMaterial({
-        map: backTexture,
-      });
-      const spineMaterial = new THREE.MeshBasicMaterial({
-        map: spineTexture,
-      });
+      const frontCoverMaterial = new THREE.MeshBasicMaterial({ map: frontTexture });
+      const backCoverMaterial = new THREE.MeshBasicMaterial({ map: backTexture });
+      const spineMaterial = new THREE.MeshBasicMaterial({ map: spineTexture });
 
       const materials = [
         pageMaterial,
@@ -740,13 +666,8 @@ export default function Home() {
     function ensureBookLoaded(index: number, immediate = false) {
       if (index < 0 || index >= numBooks) return;
       if (bookMeshesByIndex[index]) return;
-      if (immediate) {
-        createBookMesh(index);
-      } else {
-        if (!loadQueue.includes(index)) {
-          loadQueue.push(index);
-        }
-      }
+      if (immediate) createBookMesh(index);
+      else if (!loadQueue.includes(index)) loadQueue.push(index);
     }
 
     function unloadBook(index: number) {
@@ -761,9 +682,7 @@ export default function Home() {
     function ensureRangeLoaded(start: number, end: number, immediate = false) {
       const s = Math.max(0, start);
       const e = Math.min(numBooks - 1, end);
-      for (let i = s; i <= e; i++) {
-        ensureBookLoaded(i, immediate);
-      }
+      for (let i = s; i <= e; i++) ensureBookLoaded(i, immediate);
     }
 
     function trimWindowIfNeeded() {
@@ -774,15 +693,11 @@ export default function Home() {
 
       if (lastDirection >= 0) {
         const dropEnd = windowStart + toDrop - 1;
-        for (let i = windowStart; i <= dropEnd; i++) {
-          unloadBook(i);
-        }
+        for (let i = windowStart; i <= dropEnd; i++) unloadBook(i);
         windowStart = dropEnd + 1;
       } else {
         const dropStart = windowEnd - toDrop + 1;
-        for (let i = dropStart; i <= windowEnd; i++) {
-          unloadBook(i);
-        }
+        for (let i = dropStart; i <= windowEnd; i++) unloadBook(i);
         windowEnd = dropStart - 1;
       }
     }
@@ -851,9 +766,7 @@ export default function Home() {
       const computedStyle = window.getComputedStyle(testPage);
       const pageHeight = parseFloat(computedStyle.height);
       const contentAreaHeight =
-        pageHeight -
-        (parseFloat(computedStyle.paddingTop) +
-          parseFloat(computedStyle.paddingBottom));
+        pageHeight - (parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom));
       const effectiveHeight = contentAreaHeight;
 
       const originalContent = testPage.innerHTML;
@@ -861,9 +774,7 @@ export default function Home() {
 
       let normalized = (fullText || "").replace(/\r\n/g, "\n");
       normalized = normalized.replace(/\n{3,}/g, "\n\n");
-      const processedText = normalized
-        .replace(/\n{2}/g, " <br><br> ")
-        .replace(/\n/g, " ");
+      const processedText = normalized.replace(/\n{2}/g, " <br><br> ").replace(/\n/g, " ");
 
       const words = processedText.split(" ");
 
@@ -894,9 +805,7 @@ export default function Home() {
         }
       }
 
-      if (currentPageText.trim() !== "") {
-        pages.push(cleanPage(currentPageText));
-      }
+      if (currentPageText.trim() !== "") pages.push(cleanPage(currentPageText));
 
       testPage.removeChild(measureDiv);
       testPage.innerHTML = originalContent;
@@ -911,21 +820,14 @@ export default function Home() {
       const bookAuthor = bookData?.author || "A. Nonymous";
       const isbn = "978-0-999999-99-9";
       const copyright = (bookData?.year ?? 2024).toString();
-      const dedication =
-        bookData?.dedication || "For everyone who reads in a world of screens.";
+      const dedication = bookData?.dedication || "For everyone who reads in a world of screens.";
 
-      const chapterTitles: string[] = Array.isArray(bookData?.chapters)
-        ? bookData.chapters
-        : [];
-      const chapterTexts: string[] = Array.isArray(bookData?.chapterTexts)
-        ? bookData.chapterTexts
-        : [];
+      const chapterTitles: string[] = Array.isArray(bookData?.chapters) ? bookData.chapters : [];
+      const chapterTexts: string[] = Array.isArray(bookData?.chapterTexts) ? bookData.chapterTexts : [];
 
       let tocItems = "";
       if (chapterTitles.length > 0) {
-        tocItems = chapterTitles
-          .map((t, idx) => `<li>Chapter ${idx + 1}: ${t}</li>`)
-          .join("");
+        tocItems = chapterTitles.map((t, idx) => `<li>Chapter ${idx + 1}: ${t}</li>`).join("");
       } else if (chapterTexts.length > 0) {
         tocItems = chapterTexts.map((_, idx) => `<li>Chapter ${idx + 1}</li>`).join("");
       } else {
@@ -963,8 +865,7 @@ export default function Home() {
       let allPages: string[] = [];
 
       if (chapterTexts.length === 0) {
-        const fallbackText =
-          "This book doesn’t have any chapters loaded yet. Check back soon.";
+        const fallbackText = "This book doesn’t have any chapters loaded yet. Check back soon.";
 
         const chapterTitleHtml = `
           <div style="text-align:center; margin: 0 0 12px 0;">
@@ -991,10 +892,7 @@ export default function Home() {
 
       const chapterSpreads: BookSpread[] = [];
       for (let i = 0; i < allPages.length; i += 2) {
-        chapterSpreads.push({
-          left: allPages[i] ?? "",
-          right: allPages[i + 1] ?? "",
-        });
+        chapterSpreads.push({ left: allPages[i] ?? "", right: allPages[i + 1] ?? "" });
       }
 
       return staticSpreads.concat(chapterSpreads);
@@ -1047,18 +945,14 @@ export default function Home() {
 
     function rePaginateBook() {
       bookSpreads = buildBookSpreads(currentCenterIndex);
-      if (currentPageSpread >= bookSpreads.length) {
-        currentPageSpread = bookSpreads.length - 1;
-      }
+      if (currentPageSpread >= bookSpreads.length) currentPageSpread = bookSpreads.length - 1;
       if (currentPageSpread < 0) currentPageSpread = 0;
       updatePageContent(currentPageSpread);
     }
 
     function scheduleRepaginate(layoutChanged: boolean) {
       if (!layoutChanged) return;
-      if (paginationTimer !== null) {
-        window.clearTimeout(paginationTimer);
-      }
+      if (paginationTimer !== null) window.clearTimeout(paginationTimer);
       paginationTimer = window.setTimeout(() => {
         if (!isBookOpenLocal) return;
         rePaginateBook();
@@ -1095,8 +989,7 @@ export default function Home() {
       const sideScale = 1.2;
       const outerScale = 1.0;
 
-      const wrappedCenter =
-        ((currentCenterIndex % numBooks) + numBooks) % numBooks;
+      const wrappedCenter = ((currentCenterIndex % numBooks) + numBooks) % numBooks;
 
       for (let i = 0; i < numBooks; i++) {
         const book = bookMeshesByIndex[i];
@@ -1161,26 +1054,19 @@ export default function Home() {
       setIsBookOpen(true);
       isBookOpenLocal = true;
 
-      // Default sidebar state on open
       setIsCommentsOpen(false);
       setIsReviewModalOpen(false);
       setCommentSidebarView("comments");
 
-      // Per-book comment thread key
       const openedBook = sampleBooks[currentCenterIndex] as any;
-      if (openedBook?.id) {
-        setActiveBookId(String(openedBook.id));
-      } else {
-        setActiveBookId(`book-${currentCenterIndex}`);
-      }
+      if (openedBook?.id) setActiveBookId(String(openedBook.id));
+      else setActiveBookId(`book-${currentCenterIndex}`);
 
       bookSpreads = buildBookSpreads(currentCenterIndex);
       updatePageContent(currentPageSpread);
 
-      const leftBookIndex =
-        currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
-      const rightBookIndex =
-        currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
+      const leftBookIndex = currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
+      const rightBookIndex = currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
 
       for (let i = 0; i < numBooks; i++) {
         const book = bookMeshesByIndex[i];
@@ -1219,8 +1105,7 @@ export default function Home() {
 
       openBookContainer.style.transition =
         "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease";
-      navContainer.style.transition =
-        "opacity 0.3s ease, left 0.5s cubic-bezier(0.25, 1, 0.5, 1)";
+      navContainer.style.transition = "opacity 0.3s ease, left 0.5s cubic-bezier(0.25, 1, 0.5, 1)";
 
       carouselGroup.position.x = targetCarouselX;
 
@@ -1297,21 +1182,12 @@ export default function Home() {
     function onDocumentClick(event: MouseEvent) {
       const target = event.target as HTMLElement;
 
-      // ignore clicks inside metadata or the sidebar UI
       const sidebarRoot = document.querySelector(".cs-sidebar-root");
       if (metadataPanel && metadataPanel.contains(target)) return;
       if (sidebarRoot && sidebarRoot.contains(target)) return;
 
-      if (
-        target.classList.contains("nav-arrow") ||
-        target.id === "nav-container"
-      ) {
-        return;
-      }
-
-      if (openBookContainer.classList.contains("is-open")) {
-        return;
-      }
+      if (target.classList.contains("nav-arrow") || target.id === "nav-container") return;
+      if (openBookContainer.classList.contains("is-open")) return;
 
       const canvasRect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
@@ -1322,14 +1198,11 @@ export default function Home() {
 
       if (intersects.length > 0) {
         const clickedBook = intersects[0].object as THREE.Mesh;
-        const clickedIndex =
-          (clickedBook.userData.logicalIndex as number) ?? -1;
+        const clickedIndex = (clickedBook.userData.logicalIndex as number) ?? -1;
         if (clickedIndex < 0) return;
 
-        const leftIndex =
-          currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
-        const rightIndex =
-          currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
+        const leftIndex = currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
+        const rightIndex = currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
 
         if (clickedIndex === currentCenterIndex) {
           if (clickedBook.userData.isFlipping) {
@@ -1339,8 +1212,7 @@ export default function Home() {
 
           const targetRotation = clickedBook.userData.targetRotation;
           const atFront = Math.abs(targetRotation % (2 * Math.PI)) < 0.01;
-          const atBack =
-            Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
+          const atBack = Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
 
           if (atFront) {
             clickedBook.userData.isFlipping = true;
@@ -1383,9 +1255,7 @@ export default function Home() {
     function onPointerMove(e: PointerEvent) {
       if (dragStartX === null) return;
       const dx = e.clientX - dragStartX;
-      if (Math.abs(dx) > 10) {
-        dragged = true;
-      }
+      if (Math.abs(dx) > 10) dragged = true;
     }
 
     function onPointerUp(e: PointerEvent) {
@@ -1424,10 +1294,7 @@ export default function Home() {
       }
 
       let unloadsThisFrame = 0;
-      while (
-        unloadsThisFrame < MAX_UNLOADS_PER_FRAME &&
-        unloadQueue.length > 0
-      ) {
+      while (unloadsThisFrame < MAX_UNLOADS_PER_FRAME && unloadQueue.length > 0) {
         const idx = unloadQueue.shift()!;
         unloadBook(idx);
         unloadsThisFrame++;
@@ -1437,25 +1304,21 @@ export default function Home() {
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isSlidingOut) {
-            book.position.x +=
-              (book.userData.targetSlideX - book.position.x) * slowEase;
+            book.position.x += (book.userData.targetSlideX - book.position.x) * slowEase;
 
             const s = book.scale.x;
             const targetS = book.userData.targetSlideScale;
             const newS = s + (targetS - s) * slowEase;
             book.scale.set(newS, newS, newS);
 
-            if (Math.abs(targetS - newS) < 0.01) {
-              book.userData.isSlidingOut = false;
-            }
+            if (Math.abs(targetS - newS) < 0.01) book.userData.isSlidingOut = false;
           }
         });
       } else {
         activeBooks.forEach((book) => {
           if (!book) return;
           if (book.userData.isFlipping) {
-            book.rotation.y +=
-              (book.userData.targetRotation - book.rotation.y) * fastEase;
+            book.rotation.y += (book.userData.targetRotation - book.rotation.y) * fastEase;
 
             if (Math.abs(book.userData.targetRotation - book.rotation.y) < 0.01) {
               book.rotation.y = book.userData.targetRotation;
@@ -1465,8 +1328,7 @@ export default function Home() {
         });
 
         if (isCarouselMoving) {
-          carouselGroup.position.x +=
-            (targetCarouselX - carouselGroup.position.x) * fastEase;
+          carouselGroup.position.x += (targetCarouselX - carouselGroup.position.x) * fastEase;
 
           if (Math.abs(targetCarouselX - carouselGroup.position.x) < 0.01) {
             carouselGroup.position.x = targetCarouselX;
@@ -1479,8 +1341,7 @@ export default function Home() {
           if (book.userData.isScaling) {
             const currentScale = book.scale.x;
             const targetScale = book.userData.targetScale;
-            const newScale =
-              currentScale + (targetScale - currentScale) * fastEase;
+            const newScale = currentScale + (targetScale - currentScale) * fastEase;
 
             book.scale.set(newScale, newScale, newScale);
 
@@ -1512,9 +1373,7 @@ export default function Home() {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
 
-      if (paginationTimer !== null) {
-        window.clearTimeout(paginationTimer);
-      }
+      if (paginationTimer !== null) window.clearTimeout(paginationTimer);
 
       readerControlsRef.current = null;
       openBookRef.current = null;
@@ -1524,9 +1383,7 @@ export default function Home() {
 
       if (renderer) {
         renderer.dispose();
-        if (renderer.domElement.parentNode === root) {
-          root.removeChild(renderer.domElement);
-        }
+        if (renderer.domElement.parentNode === root) root.removeChild(renderer.domElement);
       }
     };
   }, []);
@@ -1570,13 +1427,7 @@ export default function Home() {
                 {profileAvatarSrc ? (
                   <img src={profileAvatarSrc} alt="" />
                 ) : (
-                  <svg
-                    width="40"
-                    height="40"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                  >
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
                     <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
                     <path
@@ -1593,44 +1444,29 @@ export default function Home() {
             <Link
               to="/profile"
               className="meta-username"
-              title={
-                (centerBook as any)?.author ?? (centerBook as any)?.user ?? ""
-              }
+              title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
               onClick={(e) => e.stopPropagation()}
             >
-              {(centerBook as any)?.author ??
-                (centerBook as any)?.user ??
-                "Unknown Author"}
+              {(centerBook as any)?.author ?? (centerBook as any)?.user ?? "Unknown Author"}
             </Link>
           </div>
 
           {/* 5. separator */}
           <hr className="meta-hr" />
 
-          {/* 6. 3 icons */}
+          {/* 6. 4 icons */}
           <div className="meta-actions">
-            <LikeButton
-              count={displayLikes}
-              active={liked}
-              onToggle={toggleLike}
-            />
+            <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />
 
-            <CommentButton
-              active={hasUserCommentedCenter}
-              onOpenComments={openBookAndGoToComments}
-            />
-            
+            <CommentButton active={hasUserCommentedCenter} onOpenComments={openBookAndGoToComments} />
+
             <StarButton
               rating={combinedRating}
               hasUserReviewed={hasUserReviewedCenter}
               onOpenReviews={openBookAndGoToReviews}
             />
 
-            <SaveButton
-              count={displaySaves}
-              active={saved}
-              onToggle={toggleSave}
-            />
+            <SaveButton count={displaySaves} active={saved} onToggle={toggleSave} />
           </div>
 
           {/* 7. separator */}
@@ -1638,9 +1474,27 @@ export default function Home() {
 
           {/* 8. chapters */}
           <p className="meta-chapters">
-            {((centerBook as any)?.currentChapter ?? 0)}/
-            {((centerBook as any)?.totalChapters ?? 0)} Chapters
+            {((centerBook as any)?.currentChapter ?? 0)}/{((centerBook as any)?.totalChapters ?? 0)}{" "}
+            Chapters
           </p>
+
+          {/* 8.5 SUMMARY button (between chapters and language) */}
+          <div className="meta-summary-row">
+            <button
+              type="button"
+              className="meta-summary-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!hasSummary) return;
+                setIsSummaryOpen(true);
+              }}
+              disabled={!hasSummary}
+              aria-disabled={!hasSummary}
+              title={hasSummary ? "Read summary" : "No summary available"}
+            >
+              Summary
+            </button>
+          </div>
 
           {/* 9. separator */}
           <hr className="meta-hr" />
@@ -1673,6 +1527,55 @@ export default function Home() {
                 })
               : null}
           </div>
+
+          {/* SUMMARY MODAL */}
+          {isSummaryOpen && (
+            <div
+              className="meta-summary-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Book summary"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                const target = e.target as HTMLElement;
+                if (target.classList.contains("meta-summary-overlay")) setIsSummaryOpen(false);
+              }}
+            >
+              <div className="meta-summary-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="meta-summary-top">
+                  <div className="meta-summary-title">Summary</div>
+                  <button
+                    type="button"
+                    className="meta-summary-close"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSummaryOpen(false);
+                    }}
+                    aria-label="Close summary"
+                    title="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="meta-summary-body">{summaryText}</div>
+
+                <div className="meta-summary-actions">
+                  <button
+                    type="button"
+                    className="meta-summary-ok"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSummaryOpen(false);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CENTER: 3D + Reader */}
@@ -1699,12 +1602,7 @@ export default function Home() {
           <ReaderMenu
             visible={isBookOpen}
             getVisiblePageText={getVisiblePageText}
-            onApplyTypography={({
-              fontSize,
-              lineHeight,
-              fontFamily,
-              theme,
-            }: TypographyOptions) => {
+            onApplyTypography={({ fontSize, lineHeight, fontFamily, theme }: TypographyOptions) => {
               const controls = readerControlsRef.current;
               if (!controls) return;
               if (typeof fontSize === "number") controls.setFontSize(fontSize);
