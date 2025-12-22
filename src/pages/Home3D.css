@@ -764,3 +764,349 @@
   box-shadow: none;
 }
 
+/* ───────────────── Meta action buttons (Heart, Comment, Star, Save) ───────────────── */
+/* Put this at the VERY BOTTOM of Home.css so it wins against earlier rules */
+
+:root{
+  --meta-action-icon-box: 58px;   /* reserved vertical space for the icon */
+  --meta-action-icon-size: 52px;  /* visual icon size (svg or glyph) */
+  --meta-action-count-h: 14px;    /* reserved space for the counter row */
+  --meta-action-row-gap: 6px;     /* gap between icon and count */
+}
+
+/* 4 buttons side-by-side */
+.metadata .meta-actions{
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  align-items: start !important;
+  width: 100% !important;
+}
+
+/* push extremes out, keep middle centered */
+.metadata .meta-actions > .meta-icon-btn:nth-child(1){ justify-self: start !important; }
+.metadata .meta-actions > .meta-icon-btn:nth-child(2){ justify-self: center !important; }
+.metadata .meta-actions > .meta-icon-btn:nth-child(3){ justify-self: center !important; }
+.metadata .meta-actions > .meta-icon-btn:nth-child(4){ justify-self: end !important; }
+
+/* each button becomes a 2-row grid: [icon box] [count box] */
+.metadata .meta-icon-btn{
+  width: var(--meta-action-icon-box) !important;          /* consistent column width */
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--fg) !important;
+  cursor: pointer;
+
+  display: grid !important;
+  grid-template-rows: var(--meta-action-icon-box) var(--meta-action-count-h) !important;
+  justify-items: center !important;
+  align-items: center !important;
+  row-gap: var(--meta-action-row-gap) !important;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Material Symbols icon (heart/star/save) */
+.metadata .meta-icon-btn .meta-icon-glyph{
+  font-size: var(--meta-action-icon-size) !important;
+  line-height: 1 !important;
+  display: block !important;
+  transform-origin: center center;
+}
+
+/* Lucide icon (comment button) */
+.metadata .meta-icon-btn > svg{
+  width: var(--meta-action-icon-size) !important;
+  height: var(--meta-action-icon-size) !important;
+  display: block !important;
+  transform-origin: center center;
+}
+
+/* Counter row: locked height and aligned across all buttons */
+.metadata .meta-icon-btn .meta-icon-count{
+  height: var(--meta-action-count-h) !important;
+  line-height: var(--meta-action-count-h) !important;
+  display: block !important;
+  text-align: center !important;
+
+  font-size: var(--meta-count-size) !important;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.95;
+}
+
+/* If you keep hover scaling, this prevents it from pushing counters around */
+.metadata .meta-icon-btn:hover > svg,
+.metadata .meta-icon-btn:hover .meta-icon-glyph{
+  transform: scale(1.08);
+  transition: transform 120ms ease;
+}
+
+.metadata .meta-icon-btn:active > svg,
+.metadata .meta-icon-btn:active .meta-icon-glyph{
+  transform: scale(0.98);
+}
+
+/* --- Comment icon visual normalization (Lucide looks bigger than Material Symbols) --- */
+.metadata .meta-comment-btn > svg{
+  transform: scale(0.85) !important;  /* small, subtle reduction */
+}
+
+/* Keep hover/active consistent (no jumping) */
+.metadata .meta-icon-btn:hover > svg,
+.metadata .meta-icon-btn:hover .meta-icon-glyph{
+  transform: scale(1.06) !important;
+  transition: transform 120ms ease;
+}
+
+.metadata .meta-icon-btn:active > svg,
+.metadata .meta-icon-btn:active .meta-icon-glyph{
+  transform: scale(0.98) !important;
+}
+
+/* Ensure the comment button doesn't inherit any extra sizing rules elsewhere */
+.metadata .meta-comment-btn{
+  width: var(--meta-action-icon-box) !important;
+}
+/* ============================================================
+   HOME meta-actions: make ALL 4 buttons same size + aligned counts
+   (scoped to Home3D metadata so it won't affect other pages)
+   ============================================================ */
+
+.home3d-main .metadata {
+  /* 4 slots must fit inside ~220px metadata width */
+  --meta-slot: 54px;          /* each button column width */
+  --meta-icon-box: 52px;      /* reserved height for the icon */
+  --meta-icon-size: 40px;     /* actual icon size (svg + glyph target) */
+  --meta-count-h: 14px;       /* reserved height for counter row */
+  --meta-gap: 6px;            /* icon-to-counter gap */
+}
+
+.home3d-main .metadata .meta-actions {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+}
+
+.home3d-main .metadata .meta-actions > .meta-icon-btn {
+  flex: 0 0 var(--meta-slot) !important;
+  width: var(--meta-slot) !important;
+
+  display: grid !important;
+  grid-template-rows: var(--meta-icon-box) var(--meta-gap) var(--meta-count-h) !important;
+  justify-items: center !important;
+  align-items: center !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  cursor: pointer !important;
+
+  /* keep layout stable */
+  box-sizing: border-box !important;
+}
+
+/* --- ICONS (SVG and glyph) live in the icon box row --- */
+.home3d-main .metadata .meta-actions > .meta-icon-btn > svg,
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg {
+  width: var(--meta-icon-size) !important;
+  height: var(--meta-icon-size) !important;
+  display: block !important;
+  grid-row: 1 !important;
+}
+
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph {
+  /* Material Symbols uses font-size; set it to match the svg visually */
+  font-size: var(--meta-icon-size) !important;
+  line-height: 1 !important;
+  display: block !important;
+  grid-row: 1 !important;
+}
+
+/* --- COUNTERS locked to the same baseline for all buttons --- */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count {
+  grid-row: 3 !important;
+  height: var(--meta-count-h) !important;
+  line-height: var(--meta-count-h) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Optional: allow hover scale without changing layout */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:hover > svg,
+.home3d-main .metadata .meta-actions > .meta-icon-btn:hover .meta-icon-glyph {
+  transform: scale(1.06);
+  transform-origin: center;
+}
+
+/* ============================================================
+   HOME meta-actions: 4 columns that ALWAYS fit inside metadata
+   ============================================================ */
+
+/* 4 equal columns that fit the panel */
+.home3d-main .metadata .meta-actions{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  column-gap: 0 !important;
+  align-items: start !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Each button fills its column and uses the same 2-row layout */
+.home3d-main .metadata .meta-actions > .meta-icon-btn{
+  width: 100% !important;
+  min-width: 0 !important;
+
+  display: grid !important;
+  grid-template-rows: 52px 14px !important; /* icon row, count row */
+  justify-items: center !important;
+  align-items: center !important;
+  row-gap: 6px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Normalize icon sizes so they fit even when columns shrink */
+.home3d-main .metadata .meta-actions > .meta-icon-btn > svg,
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg{
+  width: 34px !important;
+  height: 34px !important;
+  display: block !important;
+}
+
+/* Material-symbol glyph icons (heart/star/save) */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph{
+  font-size: 34px !important;
+  line-height: 1 !important;
+  display: block !important;
+}
+
+/* Counters locked to the same row */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count{
+  height: 14px !important;
+  line-height: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* If any earlier rule tries to space-between/flex, this ensures no overflow */
+.home3d-main .metadata .meta-actions{
+  overflow: visible !important;
+}
+
+/* Remove the “3 vertical sections” effect: ONLY icon + counter, no spacer row */
+.home3d-main .metadata .meta-actions{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 2-row layout: icon (auto) + counter (auto). No 1fr, no middle gap. */
+.home3d-main .metadata .meta-actions > .meta-icon-btn{
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+
+  display: grid !important;
+  grid-template-rows: auto auto !important;  /* IMPORTANT */
+  justify-items: center !important;
+  align-content: start !important;           /* IMPORTANT */
+  row-gap: 4px !important;                   /* small, not a whole band */
+}
+
+/* Make the icon as large as the column allows */
+.home3d-main .metadata .meta-actions > .meta-icon-btn{
+  --icon: clamp(44px, 90%, 66px);
+}
+
+.home3d-main .metadata .meta-actions > .meta-icon-btn > svg,
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg{
+  width: var(--icon) !important;
+  height: var(--icon) !important;
+  display: block !important;
+}
+
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph{
+  font-size: var(--icon) !important;
+  line-height: 1 !important;
+  display: block !important;
+}
+
+/* Counter: no extra reserved height, sits right under icon */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count{
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  height: auto !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Push Heart fully left and Save fully right, give middle icons the flexible space */
+.home3d-main .metadata .meta-actions{
+  grid-template-columns: auto 1fr 1fr auto !important;
+}
+
+/* Edge buttons take only what they need */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(1),
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(4){
+  width: auto !important;
+  justify-self: start !important;
+}
+
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(4){
+  justify-self: end !important;
+}
+
+/* Middle buttons fill their columns */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(2),
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(3){
+  width: 100% !important;
+}
+
+/* Even distribution (4 equal columns), but pin first/last to edges */
+.home3d-main .metadata .meta-actions{
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+/* Heart: stick to the left edge of its column */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(1){
+  justify-self: start !important;
+}
+
+/* Save: stick to the right edge of its column */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(4){
+  justify-self: end !important;
+}
+
+/* Middle two stay centered in their columns */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(2),
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(3){
+  justify-self: center !important;
+}
+
+/* Make the 4 icons bigger (use more of each 1/4 column) */
+.home3d-main .metadata .meta-actions > .meta-icon-btn{
+  --icon: clamp(56px, 98%, 86px) !important;
+}
+

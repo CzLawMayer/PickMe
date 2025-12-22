@@ -24,7 +24,7 @@ export default function CommentButton({ count = 0, active, onOpenComments }: Pro
       <MessageCircle
         className="meta-icon-svg"
         size={28}
-        strokeWidth={2}
+        strokeWidth={1.5}
         fill={active ? "currentColor" : "none"}
       />
       <span className="meta-icon-count">{count}</span>
