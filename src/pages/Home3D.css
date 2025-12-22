@@ -1110,3 +1110,15 @@
   --icon: clamp(56px, 98%, 86px) !important;
 }
 
+
+
+
+/* Gap between the (absolute) title and the year line */
+.home3d-main .metadata .meta-subline{
+  margin-top: 8px !important;   /* try 6px–12px */
+}
+
+/* Dot separator between year and "written by" */
+.home3d-main .metadata .meta-dot {
+  margin: 0 6px;
+}

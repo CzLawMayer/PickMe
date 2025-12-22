@@ -1551,7 +1551,8 @@ export default function Home() {
           {/* 3. year and "written by" */}
           <div className="meta-subline">
             <span className="meta-year">{displayYear}</span>
-            <span className="meta-writtenby"> written by</span>
+            <span className="meta-dot">•</span>
+            <span className="meta-writtenby">written by</span>
           </div>
 
           {/* 2. separator */}
