@@ -2,7 +2,20 @@
 
 /* Root: full viewport height */
 .home3d-root {
+  /* Book cover size controls for the open pages */
+  --book-cover-height: 75vh;      /* tweak this until it visually matches */
+  --book-cover-aspect: 5.7 / 8;   /* width / height (from Three.js bookWidth / bookHeight) */
+
+  /* Reuse the same visual width as your open-page: 47.5vh */
+  --book-page-width: 47.5vh;
+  --meta-gap-closed: calc(-16vh + 20px);
+  --meta-gap-open: 12vh;   /* distance from the left page when open */
+  --meta-y-offset: -20vh;
+
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #0f0f10; /* new */
 }
 
 /* Override the old .carousel grid for this page */
@@ -11,14 +24,16 @@
   display: block;        /* kill the grid/2-column layout */
   padding: 0;            /* remove page padding that shrinks the canvas */
   margin: 0;
+  flex: 1;               /* NEW: fill everything under the header */
 }
 
-/* 3D stage takes all the space under the header */
+/* 3D stage takes all the height of main */
 .home3d-stage {
   position: relative;
   width: 100%;
-  height: calc(100vh - 80px); /* adjust if your header is taller/shorter */
+  height: 100%;
   overflow: hidden;
+  background-color: #0f0f10; /* so any gaps match the canvas */
 }
 
 /* Three.js root: fill the entire stage, no centering offsets */
@@ -35,9 +50,6 @@
   height: 100%;
 }
 
-
-
-
 /* Open book container – as in your HTML version */
 .open-book-container {
   position: absolute;
@@ -45,24 +57,28 @@
   left: 50%;
   display: flex;
   z-index: 20;
-  transform: translate(-25%, -50%) scale(1.0);
+
+  /* Start a bit to the right and slightly smaller, like a book sliding in */
+  transform: translate(-20%, -50%) scale(0.9);
   opacity: 0;
   pointer-events: none;
+
   transition:
-    transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.3s ease;
+    transform 0.55s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.35s ease-out;
   perspective: 1200px;
 }
 
 .open-book-container.is-open {
-  transform: translate(-50%, -50%) scale(1.0);
+  /* Now perfectly centered and full size */
+  transform: translate(-50%, -50%) scale(1);
   opacity: 1;
   pointer-events: auto;
 }
 
 .open-book-page {
-  height: 68vh;
-  width: 47.5vh;
+  height: var(--book-cover-height);
+  width: calc(var(--book-cover-height) * var(--book-cover-aspect));
   background-color: #f5f5dc;
   color: #1a1a1a;
   padding: 30px 30px 31px;
@@ -70,15 +86,16 @@
   border: 1px solid #aaa;
   overflow: hidden;
   overflow-wrap: break-word;
-  font-family: 'Georgia', serif;
+  font-family: "Georgia", serif;
   font-size: 14px;
   line-height: 1.6;
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  white-space: normal; /* explicit for safety */
 }
 
 #page-left {
   border-right: 1px solid #ccc;
-  box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
   transform-origin: right center;
@@ -86,7 +103,7 @@
 }
 
 #page-right {
-  box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
   transform-origin: left center;
@@ -96,8 +113,18 @@
 .open-book-container.is-open #page-left {
   transform: rotateY(0deg);
 }
+
 .open-book-container.is-open #page-right {
   transform: rotateY(0deg);
+}
+
+/* Paragraph styling inside the open book pages */
+.open-book-page p {
+  margin: 0 0 0.9em;
+}
+
+.open-book-page p:last-child {
+  margin-bottom: 0;
 }
 
 /* Settings button + tray (unchanged from your HTML) */
@@ -217,177 +244,26 @@
   display: flex;
 }
 
-/* Root: full viewport height */
-.home3d-root {
-  min-height: 100vh;
-  display: flex;          /* NEW */
-  flex-direction: column; /* NEW */
-}
-
-/* Override the old .carousel grid for this page */
-.home3d-main.carousel {
-  position: relative;
-  display: block;
-  padding: 0;
-  margin: 0;
-  flex: 1;                /* NEW: fill everything under the header */
-}
-
-/* 3D stage takes all the height of main */
-.home3d-stage {
-  position: relative;
-  width: 100%;
-  height: 100%;           /* CHANGE: was calc(100vh - 80px) */
-  overflow: hidden;
-}
-
-/* Replace this block: */
-.open-book-page {
-  height: 68vh;
-  width: 47.5vh;
-  background-color: #f5f5dc;
-  color: #1a1a1a;
-  padding: 30px 30px 31px;
-  box-sizing: border-box;
-  border: 1px solid #aaa;
-  overflow: hidden;
-  overflow-wrap: break-word;
-  font-family: 'Georgia', serif;
-  font-size: 14px;
-  line-height: 1.6;
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-/* With this: */
-.open-book-page {
-  /* match cover aspect ratio 470 x 675 */
-  height: 68vh;
-  width: calc(68vh * (470 / 675));
-  background-color: #f5f5dc;
-  color: #1a1a1a;
-  padding: 30px 30px 31px;
-  box-sizing: border-box;
-  border: 1px solid #aaa;
-  overflow: hidden;
-  overflow-wrap: break-word;
-  font-family: 'Georgia', serif;
-  font-size: 14px;
-  line-height: 1.6;
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-/* Before */
-.nav-container.is-open {
-  left: calc(50% + 47.5vh + 30px);
-}
-
-/* After – keep it in sync with .open-book-page width */
-.nav-container.is-open {
-  left: calc(
-    50% + (var(--book-cover-height) * var(--book-cover-aspect)) + 40px
-  );
-}
-
-/* Root: full viewport height */
-.home3d-root {
-  /* Book cover size controls for the open pages */
-  --book-cover-height: 75vh;      /* tweak this until it visually matches */
-  --book-cover-aspect: 5.7 / 8;   /* width / height (from Three.js bookWidth / bookHeight) */
-
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.open-book-page {
-  height: var(--book-cover-height);
-  width: calc(var(--book-cover-height) * var(--book-cover-aspect));
-  background-color: #f5f5dc;
-  color: #1a1a1a;
-  padding: 30px 30px 31px;
-  box-sizing: border-box;
-  border: 1px solid #aaa;
-  overflow: hidden;
-  overflow-wrap: break-word;
-  font-family: 'Georgia', serif;
-  font-size: 14px;
-  line-height: 1.6;
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.open-book-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  z-index: 20;
-
-  /* Start a bit to the right and slightly smaller, like a book sliding in */
-  transform: translate(-20%, -50%) scale(0.9);
-  opacity: 0;
-  pointer-events: none;
-
-  transition:
-    transform 0.55s cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.35s ease-out;
-  perspective: 1200px;
-}
-
-.open-book-container.is-open {
-  /* Now perfectly centered and full size */
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.home3d-root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #0f0f10; /* new */
-}
-
-.home3d-stage {
-  background-color: #0f0f10; /* so any gaps match the canvas */
-}
-
-/* Reuse the same visual width as your open-page: 47.5vh */
-.home3d-root {
-  --book-page-width: 47.5vh;
-  --meta-gap-closed: calc(-16vh + 20px);
-  --meta-gap-open: 12vh;   /* distance from the left page when open */
-  --meta-y-offset: -20vh;
-}
-
 /* Closed state: anchor to the left of the center book */
 .home3d-main .metadata {
   position: absolute;
   top: 45%;
-  /* "left" is the X of the metadata's RIGHT edge because of translate(-100%, -50%) */
   left: calc(50% - var(--book-page-width) - var(--meta-gap-closed));
   transform: translate(-100%, -50%);
   z-index: 15;
-  max-width: 360px;
   width: 200px;
   box-sizing: border-box;
   transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+
+  /* Title/subline reserved block */
+  --meta-title-slot: 4.7rem; /* total reserved space for title + subline */
+  padding-top: var(--meta-title-slot);
+  overflow: visible;
 }
 
-/* Open state: slide a bit further left, still using vh relative to the page width */
+/* Open state: slide a bit further left */
 .home3d-main .metadata.is-open {
   left: calc(50% - var(--book-page-width) - var(--meta-gap-open));
-}
-
-.home3d-main .metadata {
-  position: absolute;
-  top: 45%;  /* desktop / tall screens */
-  /* "left" is the X of the metadata's RIGHT edge because of translate(-100%, -50%) */
-  left: calc(50% - var(--book-page-width) - var(--meta-gap-closed));
-  transform: translate(-100%, -50%);
-  z-index: 15;
-  width: 200px;           /* your fixed width */
-  box-sizing: border-box;
-  transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* On shorter viewports (typical laptops), move it slightly up */
@@ -397,82 +273,11 @@
   }
 }
 
-/* Paragraph styling inside the open book pages */
-.open-book-page p {
-  margin: 0 0 0.9em;
-}
-
-.open-book-page p:last-child {
-  margin-bottom: 0;
-}
-
-/* Make sure text behaves like normal book text */
-.open-book-page {
-  white-space: normal; /* default, but explicit for safety */
-}
-
-/* ------------------------------------------------------------
-   METADATA: Keep layout fixed when title wraps
-   The title is taken out of normal flow and anchored above the
-   first separator. Extra lines grow UP, not down.
------------------------------------------------------------- */
-
-.home3d-main .metadata {
-  /* keep whatever positioning you already have */
-  position: absolute; /* (safe even if already set) */
-  box-sizing: border-box;
-
-  /* Reserve a fixed “start line” for the content below the title */
-  --meta-title-slot: 3.1rem; /* tweak if you want more/less space */
-
-  padding-top: var(--meta-title-slot);
-
-  /* allow long titles to extend upward without being clipped */
-  overflow: visible;
-}
-
-.home3d-main .metadata .meta-title {
-  /* Remove from document flow so it doesn't push anything down */
-  position: absolute;
-  left: 0;
-  right: 0;
-
-  /* Anchor the BOTTOM of the title to the slot line */
-  top: var(--meta-title-slot);
-  transform: translateY(-100%);
-
-  /* Wrapping rules */
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-
-  /* Keep your existing typography if you already have it */
-  margin: 0;
-}
-
-/* Optional: ensure the first separator doesn’t stick to the title */
-.home3d-main .metadata .meta-hr:first-of-type {
-  margin-top: 0.35rem;
-}
-
-/* ------------------------------------------------------------
-   METADATA: Title + subline (year / written by) above separator
-   Both are taken out of flow so they don't push the rest down.
------------------------------------------------------------- */
-
-.home3d-main .metadata {
-  --meta-title-slot: 4.7rem; /* total reserved space for title + subline */
-  padding-top: var(--meta-title-slot);
-  overflow: visible;
-}
-
 /* Book title */
 .home3d-main .metadata .meta-title {
   position: absolute;
   left: 0;
   right: 0;
-
-  /* anchor bottom of title+subline block to the slot line */
   top: var(--meta-title-slot);
   transform: translateY(-100%);
 
@@ -491,8 +296,6 @@
   position: absolute;
   left: 0;
   right: 0;
-
-  /* place it under the title, but still above the separator */
   top: var(--meta-title-slot);
   transform: translateY(-0.1rem);
 
@@ -514,106 +317,6 @@
    HOME (Home3D) — Genre pills (match Library pill styling)
    Scoped to metadata so it won't affect other pages.
    ============================================================ */
-
-.home3d-main .metadata .meta-genres {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  justify-content: flex-start;
-  margin-top: 2px;
-}
-
-/* Pill base (same vibe as Library) */
-.home3d-main .metadata .genre-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 600;
-
-  padding: 4px 8px;
-  border-radius: 999px;
-
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #fff;
-
-  white-space: nowrap;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  position: relative;
-  overflow: hidden; /* needed for shine */
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Shine sweep (copied behavior from Library) */
-.home3d-main .metadata .genre-pill::after {
-  content: "";
-  position: absolute;
-  inset: -40% -120% -40% -120%;
-  background: linear-gradient(
-    75deg,
-    transparent 0%,
-    rgba(255,255,255,0.10) 35%,
-    rgba(255,255,255,0.35) 50%,
-    rgba(255,255,255,0.10) 65%,
-    transparent 100%
-  );
-  transform: translateX(-60%) rotate(8deg);
-  pointer-events: none;
-  opacity: 0;
-}
-
-.home3d-main .metadata .genre-pill:hover {
-  filter: brightness(1.08);
-}
-
-.home3d-main .metadata .genre-pill:hover::after {
-  animation: pill-shine 700ms ease-out forwards;
-  opacity: 1;
-}
-
-@keyframes pill-shine {
-  from { transform: translateX(-60%) rotate(8deg); }
-  to   { transform: translateX(60%)  rotate(8deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home3d-main .metadata .genre-pill:hover::after {
-    animation: none;
-    opacity: 0.15;
-  }
-}
-
-/* Home3D.css */
-.home3d-main .meta-genres {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* Only affects pills on Home (keeps other pages untouched) */
-.home3d-main .genre-pill.genre-pill--home {
-  background: var(--pill-color);
-  color: #ffffff;
-  border: 1px solid var(--pill-color);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 12px;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-  user-select: none;
-}
-
-/* Home3D.css — genre pills like Library */
 
 .home3d-main .meta-tags.meta-tags--pills {
   display: flex;
@@ -637,8 +340,52 @@
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  position: relative;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
+/* Shine sweep (copied behavior from Library) */
+.home3d-main .metadata .genre-pill::after {
+  content: "";
+  position: absolute;
+  inset: -40% -120% -40% -120%;
+  background: linear-gradient(
+    75deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.10) 35%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0.10) 65%,
+    transparent 100%
+  );
+  transform: translateX(-60%) rotate(8deg);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.home3d-main .metadata .genre-pill:hover {
+  filter: brightness(1.08);
+}
+
+.home3d-main .metadata .genre-pill:hover::after {
+  animation: pill-shine 700ms ease-out forwards;
+  opacity: 1;
+}
+
+@keyframes pill-shine {
+  from { transform: translateX(-60%) rotate(8deg); }
+  to   { transform: translateX(60%) rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home3d-main .metadata .genre-pill:hover::after {
+    animation: none;
+    opacity: 0.15;
+  }
+}
+
+/* Avatar */
 .home3d-main .meta-avatar-link {
   display: inline-flex;
   align-items: center;
@@ -654,6 +401,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .home3d-main .meta-avatar img {
@@ -661,6 +412,10 @@
   height: 100%;
   object-fit: cover;
   display: block;
+
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Remove any ring/border/shadow from the avatar */
@@ -671,20 +426,8 @@
   box-shadow: none !important;
 }
 
-.home3d-main .meta-avatar {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.home3d-main .meta-avatar img {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
 /* Force metadata to be only 10px wider to the left (keeps the same anchor) */
-.home3d-main .metadata{
+.home3d-main .metadata {
   width: 220px !important;
   max-width: 220px !important;
 }
@@ -700,325 +443,31 @@
 }
 
 .meta-icon-btn.is-active {
-  /* keep subtle, don't change layout */
   opacity: 1;
 }
 
-/* ============================================================
-   METADATA ACTION BUTTONS (Like / Comment / Star / Save)
-   Forces a single row with consistent sizing + counters.
-   Heart & Save end up at the extremes via space-between.
-   ============================================================ */
-
-.home3d-main .meta-actions {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between; /* extremes */
-  width: 100%;
-  gap: 14px; /* safe on smaller widths */
-}
-
-.home3d-main .meta-icon-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-
-  background: transparent;
-  border: 0;
-  padding: 0;
-  margin: 0;
-
-  cursor: pointer;
-  user-select: none;
-
-  /* keeps each button’s “column” consistent */
-  min-width: 52px;
-
-  /* kill any inherited transforms/animations */
-  transform: none !important;
-  animation: none !important;
-  box-shadow: none !important;
-}
-
-.home3d-main .meta-icon-glyph {
-  line-height: 1;
-  display: inline-block;
-
-  /* use your existing var if present; otherwise stable size */
-  font-size: var(--meta-glyph-size, 54px);
-}
-
-.home3d-main .meta-icon-count {
-  margin-top: 6px;
-  font-size: 12px;
-  line-height: 1;
-  font-weight: 600;
-  opacity: 0.9;
-}
-
-/* remove focus outline/ring while keeping accessibility reasonable */
-.home3d-main .meta-icon-btn:focus,
-.home3d-main .meta-icon-btn:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-/* ───────────────── Meta action buttons (Heart, Comment, Star, Save) ───────────────── */
-/* Put this at the VERY BOTTOM of Home.css so it wins against earlier rules */
-
-:root{
-  --meta-action-icon-box: 58px;   /* reserved vertical space for the icon */
-  --meta-action-icon-size: 52px;  /* visual icon size (svg or glyph) */
-  --meta-action-count-h: 14px;    /* reserved space for the counter row */
-  --meta-action-row-gap: 6px;     /* gap between icon and count */
-}
-
-/* 4 buttons side-by-side */
-.metadata .meta-actions{
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  align-items: start !important;
-  width: 100% !important;
-}
-
-/* push extremes out, keep middle centered */
-.metadata .meta-actions > .meta-icon-btn:nth-child(1){ justify-self: start !important; }
-.metadata .meta-actions > .meta-icon-btn:nth-child(2){ justify-self: center !important; }
-.metadata .meta-actions > .meta-icon-btn:nth-child(3){ justify-self: center !important; }
-.metadata .meta-actions > .meta-icon-btn:nth-child(4){ justify-self: end !important; }
-
-/* each button becomes a 2-row grid: [icon box] [count box] */
-.metadata .meta-icon-btn{
-  width: var(--meta-action-icon-box) !important;          /* consistent column width */
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  color: var(--fg) !important;
-  cursor: pointer;
-
-  display: grid !important;
-  grid-template-rows: var(--meta-action-icon-box) var(--meta-action-count-h) !important;
-  justify-items: center !important;
-  align-items: center !important;
-  row-gap: var(--meta-action-row-gap) !important;
-
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Material Symbols icon (heart/star/save) */
-.metadata .meta-icon-btn .meta-icon-glyph{
-  font-size: var(--meta-action-icon-size) !important;
-  line-height: 1 !important;
-  display: block !important;
-  transform-origin: center center;
-}
-
-/* Lucide icon (comment button) */
-.metadata .meta-icon-btn > svg{
-  width: var(--meta-action-icon-size) !important;
-  height: var(--meta-action-icon-size) !important;
-  display: block !important;
-  transform-origin: center center;
-}
-
-/* Counter row: locked height and aligned across all buttons */
-.metadata .meta-icon-btn .meta-icon-count{
-  height: var(--meta-action-count-h) !important;
-  line-height: var(--meta-action-count-h) !important;
-  display: block !important;
-  text-align: center !important;
-
-  font-size: var(--meta-count-size) !important;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.95;
-}
-
-/* If you keep hover scaling, this prevents it from pushing counters around */
-.metadata .meta-icon-btn:hover > svg,
-.metadata .meta-icon-btn:hover .meta-icon-glyph{
-  transform: scale(1.08);
-  transition: transform 120ms ease;
-}
-
-.metadata .meta-icon-btn:active > svg,
-.metadata .meta-icon-btn:active .meta-icon-glyph{
-  transform: scale(0.98);
-}
-
-/* --- Comment icon visual normalization (Lucide looks bigger than Material Symbols) --- */
-.metadata .meta-comment-btn > svg{
-  transform: scale(0.85) !important;  /* small, subtle reduction */
-}
-
-/* Keep hover/active consistent (no jumping) */
-.metadata .meta-icon-btn:hover > svg,
-.metadata .meta-icon-btn:hover .meta-icon-glyph{
-  transform: scale(1.06) !important;
-  transition: transform 120ms ease;
-}
-
-.metadata .meta-icon-btn:active > svg,
-.metadata .meta-icon-btn:active .meta-icon-glyph{
-  transform: scale(0.98) !important;
-}
-
-/* Ensure the comment button doesn't inherit any extra sizing rules elsewhere */
-.metadata .meta-comment-btn{
-  width: var(--meta-action-icon-box) !important;
-}
 /* ============================================================
    HOME meta-actions: make ALL 4 buttons same size + aligned counts
    (scoped to Home3D metadata so it won't affect other pages)
    ============================================================ */
 
-.home3d-main .metadata {
-  /* 4 slots must fit inside ~220px metadata width */
-  --meta-slot: 54px;          /* each button column width */
-  --meta-icon-box: 52px;      /* reserved height for the icon */
-  --meta-icon-size: 40px;     /* actual icon size (svg + glyph target) */
-  --meta-count-h: 14px;       /* reserved height for counter row */
-  --meta-gap: 6px;            /* icon-to-counter gap */
-}
-
+/* Push Heart fully left and Save fully right, give middle icons the flexible space */
 .home3d-main .metadata .meta-actions {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: flex-start !important;
-  width: 100% !important;
-}
-
-.home3d-main .metadata .meta-actions > .meta-icon-btn {
-  flex: 0 0 var(--meta-slot) !important;
-  width: var(--meta-slot) !important;
-
-  display: grid !important;
-  grid-template-rows: var(--meta-icon-box) var(--meta-gap) var(--meta-count-h) !important;
-  justify-items: center !important;
-  align-items: center !important;
-
-  padding: 0 !important;
-  margin: 0 !important;
-  background: transparent !important;
-  border: 0 !important;
-  cursor: pointer !important;
-
-  /* keep layout stable */
-  box-sizing: border-box !important;
-}
-
-/* --- ICONS (SVG and glyph) live in the icon box row --- */
-.home3d-main .metadata .meta-actions > .meta-icon-btn > svg,
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg {
-  width: var(--meta-icon-size) !important;
-  height: var(--meta-icon-size) !important;
-  display: block !important;
-  grid-row: 1 !important;
-}
-
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph {
-  /* Material Symbols uses font-size; set it to match the svg visually */
-  font-size: var(--meta-icon-size) !important;
-  line-height: 1 !important;
-  display: block !important;
-  grid-row: 1 !important;
-}
-
-/* --- COUNTERS locked to the same baseline for all buttons --- */
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count {
-  grid-row: 3 !important;
-  height: var(--meta-count-h) !important;
-  line-height: var(--meta-count-h) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
-  text-align: center !important;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Optional: allow hover scale without changing layout */
-.home3d-main .metadata .meta-actions > .meta-icon-btn:hover > svg,
-.home3d-main .metadata .meta-actions > .meta-icon-btn:hover .meta-icon-glyph {
-  transform: scale(1.06);
-  transform-origin: center;
-}
-
-/* ============================================================
-   HOME meta-actions: 4 columns that ALWAYS fit inside metadata
-   ============================================================ */
-
-/* 4 equal columns that fit the panel */
-.home3d-main .metadata .meta-actions{
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  column-gap: 0 !important;
-  align-items: start !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-/* Each button fills its column and uses the same 2-row layout */
-.home3d-main .metadata .meta-actions > .meta-icon-btn{
-  width: 100% !important;
-  min-width: 0 !important;
-
-  display: grid !important;
-  grid-template-rows: 52px 14px !important; /* icon row, count row */
-  justify-items: center !important;
-  align-items: center !important;
-  row-gap: 6px !important;
-
-  padding: 0 !important;
-  margin: 0 !important;
-  background: transparent !important;
-  border: 0 !important;
-  box-sizing: border-box !important;
-}
-
-/* Normalize icon sizes so they fit even when columns shrink */
-.home3d-main .metadata .meta-actions > .meta-icon-btn > svg,
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg{
-  width: 34px !important;
-  height: 34px !important;
-  display: block !important;
-}
-
-/* Material-symbol glyph icons (heart/star/save) */
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph{
-  font-size: 34px !important;
-  line-height: 1 !important;
-  display: block !important;
-}
-
-/* Counters locked to the same row */
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count{
-  height: 14px !important;
-  line-height: 14px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
-  text-align: center !important;
-  font-variant-numeric: tabular-nums;
-}
-
-/* If any earlier rule tries to space-between/flex, this ensures no overflow */
-.home3d-main .metadata .meta-actions{
-  overflow: visible !important;
-}
-
-/* Remove the “3 vertical sections” effect: ONLY icon + counter, no spacer row */
-.home3d-main .metadata .meta-actions{
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   column-gap: 0 !important;
   row-gap: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
+  align-items: start !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
 }
 
 /* 2-row layout: icon (auto) + counter (auto). No 1fr, no middle gap. */
-.home3d-main .metadata .meta-actions > .meta-icon-btn{
+.home3d-main .metadata .meta-actions > .meta-icon-btn {
   width: 100% !important;
   min-width: 0 !important;
   padding: 0 !important;
@@ -1027,32 +476,47 @@
   background: transparent !important;
 
   display: grid !important;
-  grid-template-rows: auto auto !important;  /* IMPORTANT */
+  grid-template-rows: auto auto !important;
   justify-items: center !important;
-  align-content: start !important;           /* IMPORTANT */
-  row-gap: 4px !important;                   /* small, not a whole band */
+  align-content: start !important;
+  row-gap: 4px !important;
+
+  /* Make the 4 icons bigger (use more of each 1/4 column) */
+  --icon: clamp(56px, 98%, 86px) !important;
 }
 
-/* Make the icon as large as the column allows */
-.home3d-main .metadata .meta-actions > .meta-icon-btn{
-  --icon: clamp(44px, 90%, 66px);
+/* Heart: stick to the left edge of its column */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(1) {
+  justify-self: start !important;
 }
 
+/* Save: stick to the right edge of its column */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(4) {
+  justify-self: end !important;
+}
+
+/* Middle two stay centered in their columns */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(2),
+.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(3) {
+  justify-self: center !important;
+}
+
+/* Icons */
 .home3d-main .metadata .meta-actions > .meta-icon-btn > svg,
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg{
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg {
   width: var(--icon) !important;
   height: var(--icon) !important;
   display: block !important;
 }
 
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph{
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph {
   font-size: var(--icon) !important;
   line-height: 1 !important;
   display: block !important;
 }
 
 /* Counter: no extra reserved height, sits right under icon */
-.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count{
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count {
   margin: 0 !important;
   padding: 0 !important;
   line-height: 1 !important;
@@ -1062,60 +526,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Push Heart fully left and Save fully right, give middle icons the flexible space */
-.home3d-main .metadata .meta-actions{
-  grid-template-columns: auto 1fr 1fr auto !important;
-}
-
-/* Edge buttons take only what they need */
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(1),
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(4){
-  width: auto !important;
-  justify-self: start !important;
-}
-
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(4){
-  justify-self: end !important;
-}
-
-/* Middle buttons fill their columns */
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(2),
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(3){
-  width: 100% !important;
-}
-
-/* Even distribution (4 equal columns), but pin first/last to edges */
-.home3d-main .metadata .meta-actions{
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
-
-/* Heart: stick to the left edge of its column */
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(1){
-  justify-self: start !important;
-}
-
-/* Save: stick to the right edge of its column */
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(4){
-  justify-self: end !important;
-}
-
-/* Middle two stay centered in their columns */
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(2),
-.home3d-main .metadata .meta-actions > .meta-icon-btn:nth-child(3){
-  justify-self: center !important;
-}
-
-/* Make the 4 icons bigger (use more of each 1/4 column) */
-.home3d-main .metadata .meta-actions > .meta-icon-btn{
-  --icon: clamp(56px, 98%, 86px) !important;
-}
-
-
-
-
 /* Gap between the (absolute) title and the year line */
-.home3d-main .metadata .meta-subline{
-  margin-top: 8px !important;   /* try 6px–12px */
+.home3d-main .metadata .meta-subline {
+  margin-top: 8px !important; /* try 6px–12px */
 }
 
 /* Dot separator between year and "written by" */
@@ -1123,29 +536,38 @@
   margin: 0 6px;
 }
 
-
-/* Add this to Home3D.css (or Home.css) near the bottom so it wins */
-
 /* SUMMARY button row */
 .home3d-main .meta-summary-row {
-  margin-top: 10px;
-  width: 100%;
+  position: relative;
+  z-index: 2;
+  height: 34px; /* was 44 */
   display: flex;
+  align-items: center;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
   justify-content: flex-start;
 }
 
+/* Button */
 .home3d-main .meta-summary-btn {
   width: 100%;
-  height: 34px;
+  height: 34px; /* was 44 */
+  margin: 0 !important;
+
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
+
   font-weight: 700;
-  font-size: 12px;
+  font-size: 14px; /* bigger */
   letter-spacing: 0.2px;
+
   cursor: pointer;
   user-select: none;
+
+  padding: 0 10px !important;
 }
 
 .home3d-main .meta-summary-btn:hover {
@@ -1162,121 +584,51 @@
   cursor: not-allowed;
 }
 
-/* SUMMARY modal overlay */
-.home3d-main .meta-summary-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.62);
-  backdrop-filter: blur(6px);
-}
-
-.home3d-main .meta-summary-modal {
-  width: min(520px, calc(100vw - 28px));
-  max-height: min(520px, calc(100vh - 28px));
-  overflow: hidden;
-
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(18, 18, 20, 0.92);
-  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.55);
-
-  display: flex;
-  flex-direction: column;
-}
-
-.home3d-main .meta-summary-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding: 14px 14px 10px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-}
-
-.home3d-main .meta-summary-title {
-  font-size: 14px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 0.2px;
-}
-
-.home3d-main .meta-summary-close {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.home3d-main .meta-summary-close:hover {
-  filter: brightness(1.1);
-}
-
-.home3d-main .meta-summary-body {
-  padding: 14px 16px;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 13px;
-  line-height: 1.6;
-  overflow: auto;
-  white-space: pre-wrap;
-}
-
-.home3d-main .meta-summary-actions {
-  padding: 12px 16px 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.10);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.home3d-main .meta-summary-ok {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.10);
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.home3d-main .meta-summary-ok:hover {
-  filter: brightness(1.1);
-}
-
-/* =========================
-   SUMMARY POPOVER (SAFE)
-   Covers ONLY the metadata panel without affecting carousel layout
-   ========================= */
-
-/* DO NOT modify .metadata positioning; just ensure it can host absolute children */
 .home3d-main #metadata-panel {
-  /* keep whatever your layout already uses */
-  overflow: visible; /* prevents bleed */
+  /* JS will set this to the button offset in px */
+  --summary-btn-top: 9999px;
 }
 
-/* Popover covers metadata exactly */
+/* SUMMARY POPOVER (SAFE)
+   Covers ONLY the metadata panel without affecting carousel layout */
+.home3d-main #metadata-panel {
+  overflow: visible !important;
+}
+
+.home3d-main #metadata-panel.metadata {
+  position: absolute;      /* keep your existing absolute positioning */
+  z-index: 80 !important;
+}
+
+/* Popover: use metadata padding box; bottom is calculated from the button */
 .home3d-main #metadata-panel .meta-summary-popover {
   position: absolute;
-  inset: 0;
-  z-index: 999;
+  left: 0;
+  right: 0;
+  top: 0;
+
+  /* EXACT: 4px gap above the button's top edge */
+  bottom: calc(100% - var(--summary-btn-top) + 4px);
+
+  z-index: 9999;
+
+  background: rgba(15, 15, 16, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  border-radius: 0 !important;
+
+  /* remove the weird surrounding shadow completely */
+  box-shadow: none !important;
+  filter: none !important;
+
   display: flex;
   flex-direction: column;
 
-  /* visually match metadata */
-  background: rgba(12, 12, 14, 0.96);
-  border-radius: inherit; /* inherits metadata rounding */
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(10px);
+  /* prevent subpixel “halo” on some GPUs */
+  outline: none !important;
+
+  overflow: hidden;
+  transform: translateZ(0);
 }
 
 /* Header */
@@ -1313,7 +665,7 @@
   filter: brightness(1.1);
 }
 
-/* Body scrolls inside same metadata size */
+/* Body scroll */
 .home3d-main #metadata-panel .meta-summary-popover__body {
   flex: 1 1 auto;
   overflow: auto;
@@ -1325,232 +677,33 @@
   white-space: pre-wrap;
 }
 
-.home3d-main #metadata-panel .meta-summary-popover {
-  overflow: hidden;        /* clip inside popover */
-  border-radius: inherit;  /* keep rounded corners */
+/* If you keep hover scaling, this prevents it from pushing counters around */
+.home3d-main .metadata .meta-actions > .meta-icon-btn:hover > svg,
+.home3d-main .metadata .meta-actions > .meta-icon-btn:hover .meta-icon-glyph {
+  transform: scale(1.06) !important;
+  transition: transform 120ms ease;
 }
 
-/* ===== Summary popover (tight 4px gap, square corners, taller) ===== */
-
-.home3d-main #metadata-panel.metadata{
-  z-index: 80 !important;
-  overflow: visible !important;
+.home3d-main .metadata .meta-actions > .meta-icon-btn:active > svg,
+.home3d-main .metadata .meta-actions > .meta-icon-btn:active .meta-icon-glyph {
+  transform: scale(0.98) !important;
 }
 
-/* Summary row: give it a stable height but no extra padding */
-.home3d-main #metadata-panel .meta-summary-row{
-  position: relative;
-  z-index: 1;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  margin: 0 !important;
-  padding: 0 !important;
+/* Ensure the comment button doesn't inherit any extra sizing rules elsewhere */
+.metadata .meta-comment-btn {
+  width: var(--meta-action-icon-box) !important;
 }
 
-/* Button: full width, no extra margins */
-.home3d-main #metadata-panel .meta-summary-btn{
-  width: 100%;
-  height: 44px;
-  margin: 0 !important;
-}
-
-/* Popover: full width of metadata, bottom sits exactly 4px above the row */
-.home3d-main #metadata-panel .meta-summary-popover{
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-
-  /* EXACT: row height (44px) + 4px gap */
-  bottom: calc(44px + 4px);
-
-  z-index: 9999;
-
-  background: rgba(15, 15, 16, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-
-  border-radius: 0 !important;          /* square edges */
-  box-shadow: 0 18px 50px rgba(0,0,0,0.55);
-
-  display: flex;
-  flex-direction: column;
-
-  transform: translateZ(0);
-}
-
-/* Header */
-.home3d-main #metadata-panel .meta-summary-popover-header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-/* Make it feel longer: give body more usable space + slightly smaller padding */
-.home3d-main #metadata-panel .meta-summary-popover-body{
-  padding: 10px;
-  overflow: auto;
-  color: rgba(255,255,255,0.92);
-  line-height: 1.55;
-  font-size: 13px;
-}
-
-/* Optional: remove rounding on close button too (since you said no rounding) */
-.home3d-main #metadata-panel .meta-summary-close{
-  border-radius: 0 !important;
-}
-
-/* ===== Summary popover: FULL height down to 4px above button (covers chapters etc.) ===== */
-
-.home3d-main #metadata-panel.metadata{
-  position: absolute;      /* keep your existing absolute positioning */
-  overflow: visible !important;
-  z-index: 80 !important;
-}
-
-/* Summary row: only used as an anchor */
-.home3d-main #metadata-panel .meta-summary-row{
-  position: relative;
-  z-index: 2;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Button */
-.home3d-main #metadata-panel .meta-summary-btn{
-  width: 100%;
-  height: 44px;
-  margin: 0 !important;
-}
-
-/* Popover: use metadata padding box; bottom is calculated from the button */
-.home3d-main #metadata-panel{
-  /* JS will set this to the button offset in px */
-  --summary-btn-top: 9999px;
-}
-
-/* The popover is positioned relative to the METADATA panel */
-.home3d-main #metadata-panel .meta-summary-popover{
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-
-  /* EXACT: 4px gap above the button's top edge */
-  bottom: calc(100% - var(--summary-btn-top) + 4px);
-
-  z-index: 9999;
-
-  background: rgba(15, 15, 16, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-
-  border-radius: 0 !important;
-
-  /* remove the weird surrounding shadow completely */
-  box-shadow: none !important;
-  filter: none !important;
-
-  display: flex;
-  flex-direction: column;
-
-  /* prevent subpixel “halo” on some GPUs */
-  outline: none !important;
-}
-
-/* Header */
-.home3d-main #metadata-panel .meta-summary-popover-header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-/* Body scroll */
-.home3d-main #metadata-panel .meta-summary-popover-body{
-  padding: 10px;
-  overflow: auto;
-  color: rgba(255,255,255,0.92);
-  line-height: 1.55;
-  font-size: 13px;
-}
-
-/* Close button: also square, no shadow */
-.home3d-main #metadata-panel .meta-summary-close{
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* If any focus ring is creating a "shadow", kill it for this close button */
-.home3d-main #metadata-panel .meta-summary-close:focus,
-.home3d-main #metadata-panel .meta-summary-close:focus-visible{
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* ===== Summary button tweaks ===== */
-
-/* less tall + bigger text */
-.home3d-main #metadata-panel .meta-summary-row{
-  height: 34px; /* was 44 */
-}
-
-.home3d-main #metadata-panel .meta-summary-btn{
-  height: 34px;            /* was 44 */
-  font-size: 14px;         /* bigger */
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  padding: 0 10px !important;
-}
-
-/* If your button has any inner spans/icons, keep them centered */
-.home3d-main #metadata-panel .meta-summary-btn *{
-  line-height: 1;
-}
-
-
-/* ===== Dark-mode scrollbar inside the popover ===== */
-
-.home3d-main #metadata-panel .meta-summary-popover-body{
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.35); /* thumb track */
-}
-
-/* Chromium / Safari */
-.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar{
-  width: 10px;
-}
-
-.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar-track{
-  background: rgba(0,0,0,0.35);
-}
-
-.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,0.20);
-  border: 2px solid rgba(0,0,0,0.35); /* makes it feel inset */
-  border-radius: 0; /* keep it square like the popover */
-}
-
-.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar-thumb:hover{
-  background: rgba(255,255,255,0.28);
-}
-
-/* ===== FORCE dark scrollbars inside the Summary popover (Chromium/Safari + Firefox) ===== */
+/* Dark-mode scrollbar inside the popover (Chromium/Safari + Firefox) */
 
 /* Firefox */
 .home3d-main #metadata-panel .meta-summary-popover,
 .home3d-main #metadata-panel .meta-summary-popover * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.28) rgba(0,0,0,0.55);
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(0, 0, 0, 0.55);
 }
 
-/* Chromium / Safari: apply to popover + anything inside it that scrolls */
+/* Chromium / Safari */
 .home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar,
 .home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar {
   width: 12px;
@@ -1558,23 +711,27 @@
 
 .home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar-track,
 .home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar-thumb,
 .home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.22);
-  border: 2px solid rgba(0,0,0,0.55);
+  background: rgba(255, 255, 255, 0.22);
+  border: 2px solid rgba(0, 0, 0, 0.55);
   border-radius: 0;
 }
 
 .home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar-thumb:hover,
 .home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.32);
+  background: rgba(255, 255, 255, 0.32);
 }
 
-.home3d-main #metadata-panel .meta-hr--summary{
+.home3d-main #metadata-panel .meta-hr--summary {
   margin: 10px 0 10px;
   opacity: 0.9;
 }
 
+/* Comment (Lucide) reads visually larger — slightly reduce ONLY this one */
+.home3d-main .metadata .meta-actions > .meta-comment-btn{
+  --icon: clamp(50px, 92%, 78px) !important;
+}
