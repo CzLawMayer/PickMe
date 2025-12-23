@@ -1252,3 +1252,329 @@
 .home3d-main .meta-summary-ok:hover {
   filter: brightness(1.1);
 }
+
+/* =========================
+   SUMMARY POPOVER (SAFE)
+   Covers ONLY the metadata panel without affecting carousel layout
+   ========================= */
+
+/* DO NOT modify .metadata positioning; just ensure it can host absolute children */
+.home3d-main #metadata-panel {
+  /* keep whatever your layout already uses */
+  overflow: visible; /* prevents bleed */
+}
+
+/* Popover covers metadata exactly */
+.home3d-main #metadata-panel .meta-summary-popover {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+
+  /* visually match metadata */
+  background: rgba(12, 12, 14, 0.96);
+  border-radius: inherit; /* inherits metadata rounding */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+/* Header */
+.home3d-main #metadata-panel .meta-summary-popover__top {
+  height: 48px;
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 0 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.home3d-main #metadata-panel .meta-summary-popover__title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover__close {
+  width: 34px;
+  height: 34px;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding-left: 10px;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover__close:hover {
+  filter: brightness(1.1);
+}
+
+/* Body scrolls inside same metadata size */
+.home3d-main #metadata-panel .meta-summary-popover__body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 14px 14px 16px;
+
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover {
+  overflow: hidden;        /* clip inside popover */
+  border-radius: inherit;  /* keep rounded corners */
+}
+
+/* ===== Summary popover (tight 4px gap, square corners, taller) ===== */
+
+.home3d-main #metadata-panel.metadata{
+  z-index: 80 !important;
+  overflow: visible !important;
+}
+
+/* Summary row: give it a stable height but no extra padding */
+.home3d-main #metadata-panel .meta-summary-row{
+  position: relative;
+  z-index: 1;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Button: full width, no extra margins */
+.home3d-main #metadata-panel .meta-summary-btn{
+  width: 100%;
+  height: 44px;
+  margin: 0 !important;
+}
+
+/* Popover: full width of metadata, bottom sits exactly 4px above the row */
+.home3d-main #metadata-panel .meta-summary-popover{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+
+  /* EXACT: row height (44px) + 4px gap */
+  bottom: calc(44px + 4px);
+
+  z-index: 9999;
+
+  background: rgba(15, 15, 16, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  border-radius: 0 !important;          /* square edges */
+  box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+
+  display: flex;
+  flex-direction: column;
+
+  transform: translateZ(0);
+}
+
+/* Header */
+.home3d-main #metadata-panel .meta-summary-popover-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Make it feel longer: give body more usable space + slightly smaller padding */
+.home3d-main #metadata-panel .meta-summary-popover-body{
+  padding: 10px;
+  overflow: auto;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+/* Optional: remove rounding on close button too (since you said no rounding) */
+.home3d-main #metadata-panel .meta-summary-close{
+  border-radius: 0 !important;
+}
+
+/* ===== Summary popover: FULL height down to 4px above button (covers chapters etc.) ===== */
+
+.home3d-main #metadata-panel.metadata{
+  position: absolute;      /* keep your existing absolute positioning */
+  overflow: visible !important;
+  z-index: 80 !important;
+}
+
+/* Summary row: only used as an anchor */
+.home3d-main #metadata-panel .meta-summary-row{
+  position: relative;
+  z-index: 2;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Button */
+.home3d-main #metadata-panel .meta-summary-btn{
+  width: 100%;
+  height: 44px;
+  margin: 0 !important;
+}
+
+/* Popover: use metadata padding box; bottom is calculated from the button */
+.home3d-main #metadata-panel{
+  /* JS will set this to the button offset in px */
+  --summary-btn-top: 9999px;
+}
+
+/* The popover is positioned relative to the METADATA panel */
+.home3d-main #metadata-panel .meta-summary-popover{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+
+  /* EXACT: 4px gap above the button's top edge */
+  bottom: calc(100% - var(--summary-btn-top) + 4px);
+
+  z-index: 9999;
+
+  background: rgba(15, 15, 16, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  border-radius: 0 !important;
+
+  /* remove the weird surrounding shadow completely */
+  box-shadow: none !important;
+  filter: none !important;
+
+  display: flex;
+  flex-direction: column;
+
+  /* prevent subpixel “halo” on some GPUs */
+  outline: none !important;
+}
+
+/* Header */
+.home3d-main #metadata-panel .meta-summary-popover-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Body scroll */
+.home3d-main #metadata-panel .meta-summary-popover-body{
+  padding: 10px;
+  overflow: auto;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+/* Close button: also square, no shadow */
+.home3d-main #metadata-panel .meta-summary-close{
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* If any focus ring is creating a "shadow", kill it for this close button */
+.home3d-main #metadata-panel .meta-summary-close:focus,
+.home3d-main #metadata-panel .meta-summary-close:focus-visible{
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== Summary button tweaks ===== */
+
+/* less tall + bigger text */
+.home3d-main #metadata-panel .meta-summary-row{
+  height: 34px; /* was 44 */
+}
+
+.home3d-main #metadata-panel .meta-summary-btn{
+  height: 34px;            /* was 44 */
+  font-size: 14px;         /* bigger */
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 0 10px !important;
+}
+
+/* If your button has any inner spans/icons, keep them centered */
+.home3d-main #metadata-panel .meta-summary-btn *{
+  line-height: 1;
+}
+
+
+/* ===== Dark-mode scrollbar inside the popover ===== */
+
+.home3d-main #metadata-panel .meta-summary-popover-body{
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.35); /* thumb track */
+}
+
+/* Chromium / Safari */
+.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar{
+  width: 10px;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar-track{
+  background: rgba(0,0,0,0.35);
+}
+
+.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,0.20);
+  border: 2px solid rgba(0,0,0,0.35); /* makes it feel inset */
+  border-radius: 0; /* keep it square like the popover */
+}
+
+.home3d-main #metadata-panel .meta-summary-popover-body::-webkit-scrollbar-thumb:hover{
+  background: rgba(255,255,255,0.28);
+}
+
+/* ===== FORCE dark scrollbars inside the Summary popover (Chromium/Safari + Firefox) ===== */
+
+/* Firefox */
+.home3d-main #metadata-panel .meta-summary-popover,
+.home3d-main #metadata-panel .meta-summary-popover * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.28) rgba(0,0,0,0.55);
+}
+
+/* Chromium / Safari: apply to popover + anything inside it that scrolls */
+.home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar,
+.home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar {
+  width: 12px;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar-track,
+.home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.55);
+}
+
+.home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar-thumb,
+.home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.22);
+  border: 2px solid rgba(0,0,0,0.55);
+  border-radius: 0;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover::-webkit-scrollbar-thumb:hover,
+.home3d-main #metadata-panel .meta-summary-popover *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.32);
+}
+
+.home3d-main #metadata-panel .meta-hr--summary{
+  margin: 10px 0 10px;
+  opacity: 0.9;
+}
+

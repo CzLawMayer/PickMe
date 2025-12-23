@@ -89,6 +89,7 @@ export default function Home() {
   // Expose open/close from the Three.js effect to React handlers (StarButton)
   const openBookRef = useRef<null | (() => void)>(null);
   const closeBookRef = useRef<null | (() => void)>(null);
+  const summaryBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Effective book in the center (if locked by open-book)
   const effectiveIndex = lockedIndex ?? centerIndex;
@@ -262,6 +263,24 @@ export default function Home() {
     setCommentSidebarView("comments");
     setPendingOpenComments(false);
   }, [pendingOpenComments, isBookOpen, activeBookId]);
+
+  useEffect(() => {
+    const panel = document.getElementById("metadata-panel") as HTMLDivElement | null;
+    const btn = summaryBtnRef.current;
+    if (!panel || !btn) return;
+
+    const updateVar = () => {
+      const panelRect = panel.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const topWithinPanel = btnRect.top - panelRect.top;
+      panel.style.setProperty("--summary-btn-top", `${topWithinPanel}px`);
+    };
+
+    updateVar();
+    window.addEventListener("resize", updateVar);
+    return () => window.removeEventListener("resize", updateVar);
+  }, [/* include your isSummaryOpen state here */]);
+
 
   // Current (opened) thread
   const currentThread = activeBookId ? ensureThread(activeBookId) : { comments: [], reviews: [] };
@@ -1477,16 +1496,17 @@ export default function Home() {
             {((centerBook as any)?.currentChapter ?? 0)}/{((centerBook as any)?.totalChapters ?? 0)}{" "}
             Chapters
           </p>
+          <hr className="meta-hr meta-hr--summary" />
 
           {/* 8.5 SUMMARY button (between chapters and language) */}
           <div className="meta-summary-row">
             <button
+              ref={summaryBtnRef}
               type="button"
               className="meta-summary-btn"
               onClick={(e) => {
                 e.stopPropagation();
-                if (!hasSummary) return;
-                setIsSummaryOpen(true);
+                setIsSummaryOpen((v) => !v);
               }}
               disabled={!hasSummary}
               aria-disabled={!hasSummary}
@@ -1529,53 +1549,39 @@ export default function Home() {
           </div>
 
           {/* SUMMARY MODAL */}
+          {/* SUMMARY POPOVER (covers metadata) */}
           {isSummaryOpen && (
             <div
-              className="meta-summary-overlay"
+              className="meta-summary-popover"
               role="dialog"
               aria-modal="true"
               aria-label="Book summary"
               onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                const target = e.target as HTMLElement;
-                if (target.classList.contains("meta-summary-overlay")) setIsSummaryOpen(false);
-              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="meta-summary-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="meta-summary-top">
-                  <div className="meta-summary-title">Summary</div>
-                  <button
-                    type="button"
-                    className="meta-summary-close"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsSummaryOpen(false);
-                    }}
-                    aria-label="Close summary"
-                    title="Close"
-                  >
-                    ×
-                  </button>
-                </div>
+              <div className="meta-summary-popover__top">
+                <div className="meta-summary-popover__title">Summary</div>
 
-                <div className="meta-summary-body">{summaryText}</div>
+                <button
+                  type="button"
+                  className="meta-summary-popover__close"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSummaryOpen(false);
+                  }}
+                  aria-label="Close summary"
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
 
-                <div className="meta-summary-actions">
-                  <button
-                    type="button"
-                    className="meta-summary-ok"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsSummaryOpen(false);
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
+              <div className="meta-summary-popover__body">
+                {summaryText}
               </div>
             </div>
           )}
+
         </div>
 
         {/* CENTER: 3D + Reader */}
