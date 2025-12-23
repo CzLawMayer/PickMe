@@ -735,3 +735,150 @@
 .home3d-main .metadata .meta-actions > .meta-comment-btn{
   --icon: clamp(50px, 92%, 78px) !important;
 }
+
+/* ✅ True visual centering: compensate for reserved top padding by moving UP */
+.home3d-main .metadata{
+  top: 50% !important;
+  transform: translate(-100%, calc(-50% - (var(--meta-title-slot, 0rem) / 2))) !important;
+}
+
+.home3d-main .metadata.is-open{
+  top: 50% !important;
+  transform: translate(-100%, calc(-50% - (var(--meta-title-slot, 0rem) / 2))) !important;
+}
+
+/* ============================================================
+   HOME3D — METADATA RESET + TRUE CENTERING (NO TITLE SLOT HACKS)
+   Append this at the VERY BOTTOM of Home3D.css so it wins.
+   ============================================================ */
+
+/* 1) Make sure our cover sizing vars exist */
+.home3d-root{
+  --book-cover-height: 75vh;
+  --book-cover-aspect: 5.7 / 8;
+  --book-page-width: calc(var(--book-cover-height) * var(--book-cover-aspect));
+
+  /* Keep your existing meta gaps if you like */
+  --meta-gap-closed: calc(-16vh + 20px);
+  --meta-gap-open: 12vh;
+}
+
+/* 2) The only correct way: center the PANEL by its own box */
+.home3d-main #metadata-panel.metadata{
+  position: absolute;
+  top: 50% !important;
+  transform: translate(-100%, -50%) !important; /* keep your “left-of-book” anchor */
+
+  /* Keep your current left positioning logic */
+  left: calc(50% - var(--book-page-width) - var(--meta-gap-closed)) !important;
+
+  /* Stable size so “center” is always consistent */
+  width: 220px !important;
+  max-width: 220px !important;
+  height: var(--book-cover-height) !important;
+
+  /* IMPORTANT: remove any old spacing tricks */
+  padding-top: 0 !important;
+  overflow: visible !important;
+
+  z-index: 80;
+}
+
+/* 3) Open state shifts LEFT only (not up/down) */
+.home3d-main #metadata-panel.metadata.is-open{
+  left: calc(50% - var(--book-page-width) - var(--meta-gap-open)) !important;
+}
+
+/* 4) Title/subline are normal flow again */
+.home3d-main #metadata-panel .meta-title,
+.home3d-main #metadata-panel .meta-subline{
+  position: static !important;
+  transform: none !important;
+}
+
+/* 5) Ensure the inside layout doesn’t “look” offset */
+.home3d-main #metadata-panel{
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* makes the content visually centered inside the panel */
+  gap: 8px;
+}
+
+/* If you prefer content to start at top but the panel itself centered, use this instead:
+.home3d-main #metadata-panel{
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 12px;
+}
+*/
+
+/* 6) Summary popover covers the panel without changing layout */
+.home3d-main #metadata-panel .meta-summary-popover{
+  position: absolute;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+
+  background: rgba(15, 15, 16, 0.98);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover-header{
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+.home3d-main #metadata-panel .meta-summary-popover-title{
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover-close{
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.home3d-main #metadata-panel .meta-summary-popover-body{
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 10px;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.55;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+/* 5) Remove ALL extra spacing added by the reset */
+.home3d-main #metadata-panel{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  /* remove the spacing we added */
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* also ensure children don’t introduce “default” spacing */
+.home3d-main #metadata-panel > *{
+  margin-top: 0 !important;
+}
+
+/* keep your existing separators and component spacing from your original styles */

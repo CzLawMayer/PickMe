@@ -74,6 +74,15 @@ function colorFromString(seed: string) {
   return { bg, border, text };
 }
 
+function bookKeyFromIndex(idx: number) {
+  const b = sampleBooks[idx] as any;
+  return b?.id ? String(b.id) : `book-${idx}`;
+}
+
+function bookKeyFromBook(b: any) {
+  return b?.id ? String(b.id) : "unknown";
+}
+
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -89,7 +98,6 @@ export default function Home() {
   // Expose open/close from the Three.js effect to React handlers (StarButton)
   const openBookRef = useRef<null | (() => void)>(null);
   const closeBookRef = useRef<null | (() => void)>(null);
-  const summaryBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Effective book in the center (if locked by open-book)
   const effectiveIndex = lockedIndex ?? centerIndex;
@@ -100,7 +108,6 @@ export default function Home() {
   const [savedById, setSavedById] = useState<Record<string, boolean>>({});
 
   const centerId = (centerBook as any)?.id ?? "";
-
   const liked = centerId ? !!likedById[centerId] : false;
   const saved = centerId ? !!savedById[centerId] : false;
 
@@ -117,17 +124,15 @@ export default function Home() {
     setSavedById((m) => ({ ...m, [centerId]: !m[centerId] }));
   };
 
-  // ---------- SUMMARY MODAL ----------
+  // ---------- SUMMARY POPOVER ----------
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const summaryText = String((centerBook as any)?.summary ?? "").trim();
   const hasSummary = summaryText.length > 0;
 
-  // Close summary when center book changes (prevents stale modal content)
   useEffect(() => {
     setIsSummaryOpen(false);
-  }, [centerBookKeyFromBook(centerBook)]);
+  }, [bookKeyFromBook(centerBook)]);
 
-  // Escape to close summary
   useEffect(() => {
     if (!isSummaryOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -139,14 +144,10 @@ export default function Home() {
 
   // ---------- COMMENT / REVIEW STATE (per book) ----------
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
-  const [commentThreads, setCommentThreads] = useState<Record<string, ThreadState>>(
-    {}
-  );
+  const [commentThreads, setCommentThreads] = useState<Record<string, ThreadState>>({});
 
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [commentSidebarView, setCommentSidebarView] = useState<
-    "comments" | "reviews"
-  >("comments");
+  const [commentSidebarView, setCommentSidebarView] = useState<"comments" | "reviews">("comments");
 
   const [pendingOpenReviews, setPendingOpenReviews] = useState(false);
   const [pendingOpenComments, setPendingOpenComments] = useState(false);
@@ -158,19 +159,8 @@ export default function Home() {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
 
-  // Key must match what openBook() sets
-  const getBookKeyByIndex = (idx: number) => {
-    const b = sampleBooks[idx] as any;
-    return b?.id ? String(b.id) : `book-${idx}`;
-  };
+  const centerBookKey = bookKeyFromIndex(effectiveIndex);
 
-  const centerBookKey = getBookKeyByIndex(effectiveIndex);
-
-  function centerBookKeyFromBook(b: any) {
-    return b?.id ? String(b.id) : "unknown";
-  }
-
-  // ---------- COMMENT / REVIEW HELPERS ----------
   const ensureThread = (bookId: string): ThreadState => {
     return commentThreads[bookId] ?? { comments: [], reviews: [] };
   };
@@ -179,10 +169,7 @@ export default function Home() {
     if (!activeBookId) return;
     setCommentThreads((prev) => {
       const previous = prev[activeBookId] ?? { comments: [], reviews: [] };
-      return {
-        ...prev,
-        [activeBookId]: updater(previous),
-      };
+      return { ...prev, [activeBookId]: updater(previous) };
     });
   };
 
@@ -216,15 +203,12 @@ export default function Home() {
     setIsCommentsOpen((open) => !open);
   };
 
-  // Used by StarButton: open book + open sidebar + go to reviews tab
   const openBookAndGoToReviews = () => {
     setPendingOpenReviews(true);
-
     if (!isBookOpen) {
       openBookRef.current?.();
       return;
     }
-
     setIsCommentsOpen(true);
     setCommentSidebarView("reviews");
     setPendingOpenReviews(false);
@@ -232,23 +216,19 @@ export default function Home() {
 
   const openBookAndGoToComments = () => {
     setPendingOpenComments(true);
-
     if (!isBookOpen) {
       openBookRef.current?.();
       return;
     }
-
     setIsCommentsOpen(true);
     setCommentSidebarView("comments");
     setPendingOpenComments(false);
   };
 
-  // When a star click opened the book, finish the navigation once activeBookId is set
   useEffect(() => {
     if (!pendingOpenReviews) return;
     if (!isBookOpen) return;
     if (!activeBookId) return;
-
     setIsCommentsOpen(true);
     setCommentSidebarView("reviews");
     setPendingOpenReviews(false);
@@ -258,33 +238,13 @@ export default function Home() {
     if (!pendingOpenComments) return;
     if (!isBookOpen) return;
     if (!activeBookId) return;
-
     setIsCommentsOpen(true);
     setCommentSidebarView("comments");
     setPendingOpenComments(false);
   }, [pendingOpenComments, isBookOpen, activeBookId]);
 
-  useEffect(() => {
-    const panel = document.getElementById("metadata-panel") as HTMLDivElement | null;
-    const btn = summaryBtnRef.current;
-    if (!panel || !btn) return;
-
-    const updateVar = () => {
-      const panelRect = panel.getBoundingClientRect();
-      const btnRect = btn.getBoundingClientRect();
-      const topWithinPanel = btnRect.top - panelRect.top;
-      panel.style.setProperty("--summary-btn-top", `${topWithinPanel}px`);
-    };
-
-    updateVar();
-    window.addEventListener("resize", updateVar);
-    return () => window.removeEventListener("resize", updateVar);
-  }, [/* include your isSummaryOpen state here */]);
-
-
   // Current (opened) thread
   const currentThread = activeBookId ? ensureThread(activeBookId) : { comments: [], reviews: [] };
-
   const commentsForBook = currentThread.comments;
   const reviewsForBook = currentThread.reviews;
 
@@ -324,10 +284,7 @@ export default function Home() {
 
   // ---- Comment actions ----
   const handleAddComment = (text: string) => {
-    updateCurrentThread((prev) => ({
-      ...prev,
-      comments: [createDataObject(text), ...prev.comments],
-    }));
+    updateCurrentThread((prev) => ({ ...prev, comments: [createDataObject(text), ...prev.comments] }));
   };
 
   const handleAddReply = (parentId: number, text: string) => {
@@ -504,15 +461,13 @@ export default function Home() {
     let raycaster: THREE.Raycaster;
     let mouse: THREE.Vector2;
 
-    // Books from data
     const bookCovers =
       sampleBooks.length > 0
         ? sampleBooks.map((b, index) => ({
             front:
               (b as any).coverUrl ||
               `https://placehold.co/470x675/222222/f0f0f0?text=Book+${index + 1}`,
-            back:
-              (b as any).backCoverUrl || `https://placehold.co/470x675/111111/f0f0f0?text=Back`,
+            back: (b as any).backCoverUrl || `https://placehold.co/470x675/111111/f0f0f0?text=Back`,
             title: (b as any).title || `Book ${index + 1}`,
           }))
         : [];
@@ -552,7 +507,6 @@ export default function Home() {
 
     let paginationTimer: number | null = null;
 
-    // Lazy-loading
     const MAX_LOADED = 30;
     const CHUNK = 10;
     let windowStart = 0;
@@ -568,7 +522,6 @@ export default function Home() {
     const textureLoader = new THREE.TextureLoader();
     const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
 
-    // ---- DOM refs ----
     const openBookContainer = document.getElementById("open-book-container") as HTMLDivElement | null;
     const pageLeft = document.getElementById("page-left") as HTMLDivElement | null;
     const pageRight = document.getElementById("page-right") as HTMLDivElement | null;
@@ -583,7 +536,6 @@ export default function Home() {
       return;
     }
 
-    // ---- Helpers ----
     function createSpineTexture(title: string, width: number, height: number, color: string) {
       const canvas = document.createElement("canvas");
       canvas.width = width;
@@ -623,7 +575,6 @@ export default function Home() {
       return cleaned.trim();
     }
 
-    // ---- THREE init ----
     function createBookMesh(index: number): THREE.Mesh {
       const coverMeta = bookCovers[index];
       const frontTexture = textureLoader.load(coverMeta.front);
@@ -639,26 +590,14 @@ export default function Home() {
       const spineCanvasWidth = bookDepth * 100;
       const spineCanvasHeight = bookHeight * 100;
       const spineColor = spineColors[index % spineColors.length];
-      const spineTexture = createSpineTexture(
-        coverMeta.title,
-        spineCanvasWidth,
-        spineCanvasHeight,
-        spineColor
-      );
+      const spineTexture = createSpineTexture(coverMeta.title, spineCanvasWidth, spineCanvasHeight, spineColor);
       spineTexture.colorSpace = THREE.SRGBColorSpace;
 
       const frontCoverMaterial = new THREE.MeshBasicMaterial({ map: frontTexture });
       const backCoverMaterial = new THREE.MeshBasicMaterial({ map: backTexture });
       const spineMaterial = new THREE.MeshBasicMaterial({ map: spineTexture });
 
-      const materials = [
-        pageMaterial,
-        spineMaterial,
-        pageMaterial,
-        pageMaterial,
-        frontCoverMaterial,
-        backCoverMaterial,
-      ];
+      const materials = [pageMaterial, spineMaterial, pageMaterial, pageMaterial, frontCoverMaterial, backCoverMaterial];
 
       const geom = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
       const book = new THREE.Mesh(geom, materials);
@@ -779,7 +718,6 @@ export default function Home() {
       renderer.setSize(w, h);
     }
 
-    // ---- Pagination / pages ----
     function paginateChapter(fullText: string, titleHtml: string | null = null) {
       const testPage = pageLeft!;
       const computedStyle = window.getComputedStyle(testPage);
@@ -885,7 +823,6 @@ export default function Home() {
 
       if (chapterTexts.length === 0) {
         const fallbackText = "This book doesn’t have any chapters loaded yet. Check back soon.";
-
         const chapterTitleHtml = `
           <div style="text-align:center; margin: 0 0 12px 0;">
             <span style="font-weight:700; font-size:1.4em;">${bookTitle}</span>
@@ -898,7 +835,6 @@ export default function Home() {
           const text = chapterTexts[i];
           if (!text) continue;
           const title = chapterTitles[i] ?? `Chapter ${i + 1}`;
-
           const chapterTitleHtml = `
             <div style="text-align:center; margin: 0 0 12px 0;">
               <span style="font-weight:700; font-size:1.4em;">${title}</span>
@@ -978,7 +914,6 @@ export default function Home() {
       }, 80);
     }
 
-    // Expose reader controls
     readerControlsRef.current = {
       setFontSize: (px: number) => {
         currentFontSize = px;
@@ -1002,7 +937,6 @@ export default function Home() {
       },
     };
 
-    // ---- Carousel scaling ----
     function updateBookProperties(isInitial = false) {
       const centerScale = 1.2;
       const sideScale = 1.2;
@@ -1065,7 +999,6 @@ export default function Home() {
       updateBookProperties();
     }
 
-    // ---- Open / Close book ----
     function openBook() {
       currentPageSpread = 0;
 
@@ -1175,7 +1108,6 @@ export default function Home() {
       setActiveBookId(null);
     }
 
-    // expose open/close to React
     openBookRef.current = openBook;
     closeBookRef.current = closeBook;
 
@@ -1197,7 +1129,6 @@ export default function Home() {
       }
     }
 
-    // ---- Click handling ----
     function onDocumentClick(event: MouseEvent) {
       const target = event.target as HTMLElement;
 
@@ -1247,7 +1178,6 @@ export default function Home() {
       }
     }
 
-    // ---- Nav arrows ----
     leftArrowBtn?.addEventListener("click", () => {
       if (isBookOpenLocal) flipPageLeft();
       else moveCarouselLeft();
@@ -1262,7 +1192,6 @@ export default function Home() {
       closeBook();
     });
 
-    // ---- Drag to navigate ----
     let dragStartX: number | null = null;
     let dragged = false;
 
@@ -1294,7 +1223,6 @@ export default function Home() {
       }
     }
 
-    // ---- Animation loop ----
     const slowEase = 0.02;
     const fastEase = 0.08;
     let rafId: number;
@@ -1375,7 +1303,6 @@ export default function Home() {
       renderer.render(scene, camera);
     }
 
-    // ---- Start + cleanup ----
     init();
     window.addEventListener("resize", onWindowResize);
     document.addEventListener("click", onDocumentClick);
@@ -1419,22 +1346,21 @@ export default function Home() {
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 1. title */}
+          {/* Title (NORMAL FLOW — no absolute positioning) */}
           <div className="meta-title" title={(centerBook as any)?.title ?? ""}>
             {(centerBook as any)?.title ?? "Untitled"}
           </div>
 
-          {/* 3. year and "written by" */}
+          {/* Year + written by (NORMAL FLOW) */}
           <div className="meta-subline">
             <span className="meta-year">{displayYear}</span>
             <span className="meta-dot">•</span>
             <span className="meta-writtenby">written by</span>
           </div>
 
-          {/* 2. separator */}
           <hr className="meta-hr" />
 
-          {/* 4. author profile picture and author name */}
+          {/* Author profile + name */}
           <div className="meta-header">
             <Link
               to="/profile"
@@ -1470,38 +1396,31 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* 5. separator */}
           <hr className="meta-hr" />
 
-          {/* 6. 4 icons */}
+          {/* Actions */}
           <div className="meta-actions">
             <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />
-
             <CommentButton active={hasUserCommentedCenter} onOpenComments={openBookAndGoToComments} />
-
             <StarButton
               rating={combinedRating}
               hasUserReviewed={hasUserReviewedCenter}
               onOpenReviews={openBookAndGoToReviews}
             />
-
             <SaveButton count={displaySaves} active={saved} onToggle={toggleSave} />
           </div>
 
-          {/* 7. separator */}
           <hr className="meta-hr" />
 
-          {/* 8. chapters */}
           <p className="meta-chapters">
-            {((centerBook as any)?.currentChapter ?? 0)}/{((centerBook as any)?.totalChapters ?? 0)}{" "}
-            Chapters
+            {((centerBook as any)?.currentChapter ?? 0)}/{((centerBook as any)?.totalChapters ?? 0)} Chapters
           </p>
+
           <hr className="meta-hr meta-hr--summary" />
 
-          {/* 8.5 SUMMARY button (between chapters and language) */}
+          {/* Summary button */}
           <div className="meta-summary-row">
             <button
-              ref={summaryBtnRef}
               type="button"
               className="meta-summary-btn"
               onClick={(e) => {
@@ -1516,16 +1435,12 @@ export default function Home() {
             </button>
           </div>
 
-          {/* 9. separator */}
           <hr className="meta-hr" />
 
-          {/* 10. language */}
           <p className="meta-language">Language: {displayLanguage}</p>
 
-          {/* 11. separator */}
           <hr className="meta-hr" />
 
-          {/* 12. genres as transparent pills */}
           <div className="meta-tags meta-tags--pills">
             {tags.length > 0
               ? tags.map((t, i) => {
@@ -1535,11 +1450,7 @@ export default function Home() {
                       key={`${t}-${i}`}
                       className="genre-pill"
                       title={t}
-                      style={{
-                        backgroundColor: c.bg,
-                        borderColor: c.border,
-                        color: c.text,
-                      }}
+                      style={{ backgroundColor: c.bg, borderColor: c.border, color: c.text }}
                     >
                       {t}
                     </span>
@@ -1548,8 +1459,7 @@ export default function Home() {
               : null}
           </div>
 
-          {/* SUMMARY MODAL */}
-          {/* SUMMARY POPOVER (covers metadata) */}
+          {/* Summary popover (covers panel, but layout stays stable) */}
           {isSummaryOpen && (
             <div
               className="meta-summary-popover"
@@ -1559,12 +1469,11 @@ export default function Home() {
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="meta-summary-popover__top">
-                <div className="meta-summary-popover__title">Summary</div>
-
+              <div className="meta-summary-popover-header">
+                <div className="meta-summary-popover-title">Summary</div>
                 <button
                   type="button"
-                  className="meta-summary-popover__close"
+                  className="meta-summary-popover-close"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsSummaryOpen(false);
@@ -1576,12 +1485,9 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="meta-summary-popover__body">
-                {summaryText}
-              </div>
+              <div className="meta-summary-popover-body">{summaryText}</div>
             </div>
           )}
-
         </div>
 
         {/* CENTER: 3D + Reader */}
@@ -1618,7 +1524,6 @@ export default function Home() {
             }}
           />
 
-          {/* Comments sidebar – only when book open */}
           {isBookOpen && activeBookId && (
             <CommentSidebar
               isOpen={isCommentsOpen}
@@ -1644,7 +1549,6 @@ export default function Home() {
             />
           )}
 
-          {/* Review modal – global overlay */}
           {isReviewModalOpen && (
             <ReviewModal
               isOpen={isReviewModalOpen}
