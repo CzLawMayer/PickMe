@@ -308,10 +308,7 @@
   word-break: break-word;
 }
 
-/* Give the first separator a touch of breathing room */
-.home3d-main .metadata .meta-hr:first-of-type {
-  margin-top: 0.5rem;
-}
+
 
 /* ============================================================
    HOME (Home3D) — Genre pills (match Library pill styling)
@@ -715,10 +712,7 @@
   background: rgba(255, 255, 255, 0.32);
 }
 
-.home3d-main #metadata-panel .meta-hr--summary {
-  margin: 10px 0 10px;
-  opacity: 0.9;
-}
+
 
 
 
@@ -889,49 +883,113 @@
 }
 
 
-
 /* ============================================================
-   HOME3D — 4px padding below key metadata rows
-   Append at VERY BOTTOM so it wins.
+   HOME3D — Consistent 8px padding for every block between <hr>
+   Append at VERY BOTTOM of Home3D.css
    ============================================================ */
 
-/* Title */
-.home3d-main #metadata-panel .meta-title {
-  padding-bottom: 6px !important;
+/* 1) Separators should NOT contribute extra spacing */
+.home3d-main #metadata-panel hr,
+.home3d-main #metadata-panel .meta-hr{
+  margin: 0 !important;
 }
 
-/* Year / author line (your class might be meta-subtitle OR meta-subline) */
+/* 2) Every "row" between separators gets the SAME padding */
+.home3d-main #metadata-panel .meta-title,
+.home3d-main #metadata-panel .meta-subtitle,
+.home3d-main #metadata-panel .meta-avatar-link,
+.home3d-main #metadata-panel .meta-actions,
+.home3d-main #metadata-panel .meta-chapters,
+.home3d-main #metadata-panel .meta-summary-row,
+.home3d-main #metadata-panel .meta-language,
+.home3d-main #metadata-panel .meta-tags{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  margin: 0 !important; /* kill any default margins */
+}
+
+/* 3) The user row usually has an inner wrapper; ensure it doesn't add extra space */
+.home3d-main #metadata-panel .meta-avatar-link,
+.home3d-main #metadata-panel .meta-avatar-link *{
+  margin: 0 !important;
+}
+
+/* 4) Language line often looks "taller" because of line-height */
+.home3d-main #metadata-panel .meta-language{
+  line-height: 1.2 !important;
+}
+
+/* 5) Tags pills row can add spacing via gap; keep gap but not extra margins */
+.home3d-main #metadata-panel .meta-tags{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+/* SUMMARY row: allow real spacing inside separators */
+.home3d-main #metadata-panel .meta-summary-row{
+  height: auto !important;        /* <- key fix */
+  min-height: 34px !important;    /* keep the row at least button height */
+  padding: 8px 0 !important;      /* 8px above + 8px below */
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Button stays the same size, centered in the padded row */
+.home3d-main #metadata-panel .meta-summary-btn{
+  height: 34px !important;
+  margin: 0 !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+/* If your <hr> has margins somewhere else, kill them so spacing is controlled by sections */
+.home3d-main #metadata-panel .meta-hr{
+  margin: 0 !important;
+}
+
+/* FORCE title + year into normal flow and control the gap precisely */
+.home3d-main #metadata-panel .meta-title,
 .home3d-main #metadata-panel .meta-subtitle,
 .home3d-main #metadata-panel .meta-subline {
-  padding-bottom: 6px !important;
+  position: static !important;
+  transform: none !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
 }
 
-/* The 4 buttons row */
-.home3d-main #metadata-panel .meta-actions {
-  padding-bottom: 6px !important;
+/* Exact spacing: 4px between title and year */
+.home3d-main #metadata-panel .meta-title {
+  margin: 0 0 8px 0 !important;
+  padding: 0 !important;
 }
 
-/* Chapters row/container (covers most common structures) */
-.home3d-main #metadata-panel .meta-chapters,
-.home3d-main #metadata-panel .meta-chapters-row,
-.home3d-main #metadata-panel .meta-chapters-wrap,
-.home3d-main #metadata-panel .meta-chapters-count {
-  padding-bottom: 6px !important;
+/* Exact: 4px under the year line */
+.home3d-main #metadata-panel .meta-subtitle,
+.home3d-main #metadata-panel .meta-subline {
+  margin: 0 0 8px 0 !important;
+  padding: 0 !important;
+  line-height: 1.15 !important; /* prevents "invisible" extra height from tall line-height */
 }
 
-
-/* Language row/container */
-.home3d-main #metadata-panel .meta-language,
-.home3d-main #metadata-panel .meta-language-row,
-.home3d-main #metadata-panel .meta-language-wrap,
-.home3d-main #metadata-panel .meta-lang {
-  padding-bottom: 6px !important;
+/* Safety: remove any parent gap that could add extra space */
+.home3d-main #metadata-panel {
+  gap: 0 !important;
 }
 
-/* Give the Summary row space BELOW so it doesn't sit on the next separator */
-.home3d-main #metadata-panel .meta-summary-row{
-  padding-bottom: 6px !important;
-  margin-bottom: 0 !important;
+/* Keep counters exactly as they were (white), only recolor the ICONS when active */
+
+/* Comment: recolor only the SVG (it uses currentColor for fill when active) */
+.home3d-main .metadata .meta-actions .meta-comment-btn.is-active .meta-icon-svg,
+.home3d-main .metadata .meta-actions .meta-comment-btn[aria-pressed="true"] .meta-icon-svg {
+  color: #f4511e !important;
 }
 
+/* Save: recolor only the Material icon glyph */
+.home3d-main .metadata .meta-actions .meta-icon-btn.save.is-active .meta-icon-glyph,
+.home3d-main .metadata .meta-actions .meta-icon-btn.save[aria-pressed="true"] .meta-icon-glyph {
+  color: #1e88e5 !important;
+}
 
