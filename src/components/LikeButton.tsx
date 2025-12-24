@@ -1,16 +1,12 @@
-import React from "react"
+import React from "react";
 
 type LikeButtonProps = {
-  count?: number
-  active?: boolean
-  onToggle?: () => void
-}
+  count?: number;
+  active?: boolean;
+  onToggle?: () => void;
+};
 
-export default function LikeButton({
-  count = 0,
-  active = false,
-  onToggle,
-}: LikeButtonProps) {
+export default function LikeButton({ count = 0, active = false, onToggle }: LikeButtonProps) {
   return (
     <button
       type="button"
@@ -18,10 +14,10 @@ export default function LikeButton({
       onClick={onToggle}
       aria-pressed={active}
     >
-      <span className="material-symbols-outlined meta-icon-glyph">
-        favorite
+      <span className="meta-icon-slot" aria-hidden="true">
+        <span className="material-symbols-outlined meta-icon-glyph">favorite</span>
       </span>
       <span className="meta-icon-count">{count}</span>
     </button>
-  )
+  );
 }

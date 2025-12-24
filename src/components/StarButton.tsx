@@ -2,17 +2,8 @@ import React from "react";
 
 type StarButtonProps = {
   rating?: number | string;
-
-  // this should be TRUE when the CURRENT USER has a review for the current book
   hasUserReviewed?: boolean;
-
-  // optional extra active flag if you already use it elsewhere
   active?: boolean;
-
-  // Home should implement this:
-  // - open the book (if not open)
-  // - open the sidebar (if closed)
-  // - set sidebar tab to "reviews"
   onOpenReviews?: () => void;
 };
 
@@ -32,22 +23,7 @@ export default function StarButton({
   onOpenReviews,
 }: StarButtonProps) {
   const displayRating = coerceRating(rating);
-
-  // Filled only if user has reviewed (or active explicitly passed)
   const isActive = active || hasUserReviewed;
-
-  const handleOpen = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onOpenReviews?.();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.stopPropagation();
-      onOpenReviews?.();
-    }
-  };
 
   return (
     <button
@@ -55,10 +31,21 @@ export default function StarButton({
       className={`meta-icon-btn star ${isActive ? "is-active" : ""}`}
       aria-pressed={isActive}
       aria-label="Open reviews"
-      onClick={handleOpen}
-      onKeyDown={handleKeyDown}
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenReviews?.();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenReviews?.();
+        }
+      }}
     >
-      <span className="material-symbols-outlined meta-icon-glyph">star</span>
+      <span className="meta-icon-slot" aria-hidden="true">
+        <span className="material-symbols-outlined meta-icon-glyph">star</span>
+      </span>
       <span className="meta-icon-count">{displayRating.toFixed(1)}/5</span>
     </button>
   );

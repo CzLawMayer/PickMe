@@ -1,16 +1,12 @@
-import React from "react"
+import React from "react";
 
 type SaveButtonProps = {
-  count?: number
-  active?: boolean
-  onToggle?: () => void
-}
+  count?: number;
+  active?: boolean;
+  onToggle?: () => void;
+};
 
-export default function SaveButton({
-  count = 0,
-  active = false,
-  onToggle,
-}: SaveButtonProps) {
+export default function SaveButton({ count = 0, active = false, onToggle }: SaveButtonProps) {
   return (
     <button
       type="button"
@@ -18,10 +14,10 @@ export default function SaveButton({
       onClick={onToggle}
       aria-pressed={active}
     >
-      <span className="material-symbols-outlined meta-icon-glyph">
-        bookmark
+      <span className="meta-icon-slot" aria-hidden="true">
+        <span className="material-symbols-outlined meta-icon-glyph">bookmark</span>
       </span>
       <span className="meta-icon-count">{count}</span>
     </button>
-  )
+  );
 }

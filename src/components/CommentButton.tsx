@@ -1,6 +1,4 @@
-// src/components/CommentButton.tsx
 import React from "react";
-import { MessageCircle } from "lucide-react";
 
 type Props = {
   count?: number;
@@ -20,13 +18,17 @@ export default function CommentButton({ count = 0, active, onOpenComments }: Pro
         e.stopPropagation();
         onOpenComments();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenComments();
+        }
+      }}
     >
-      <MessageCircle
-        className="meta-icon-svg"
-        size={28}
-        strokeWidth={1.5}
-        fill={active ? "currentColor" : "none"}
-      />
+      <span className="meta-icon-slot" aria-hidden="true">
+        <span className="material-symbols-outlined meta-icon-glyph">chat_bubble</span>
+      </span>
       <span className="meta-icon-count">{count}</span>
     </button>
   );

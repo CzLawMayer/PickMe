@@ -482,7 +482,6 @@
   row-gap: 4px !important;
 
   /* Make the 4 icons bigger (use more of each 1/4 column) */
-  --icon: clamp(56px, 98%, 86px) !important;
 }
 
 /* Heart: stick to the left edge of its column */
@@ -677,17 +676,7 @@
   white-space: pre-wrap;
 }
 
-/* If you keep hover scaling, this prevents it from pushing counters around */
-.home3d-main .metadata .meta-actions > .meta-icon-btn:hover > svg,
-.home3d-main .metadata .meta-actions > .meta-icon-btn:hover .meta-icon-glyph {
-  transform: scale(1.06) !important;
-  transition: transform 120ms ease;
-}
 
-.home3d-main .metadata .meta-actions > .meta-icon-btn:active > svg,
-.home3d-main .metadata .meta-actions > .meta-icon-btn:active .meta-icon-glyph {
-  transform: scale(0.98) !important;
-}
 
 /* Ensure the comment button doesn't inherit any extra sizing rules elsewhere */
 .metadata .meta-comment-btn {
@@ -731,10 +720,7 @@
   opacity: 0.9;
 }
 
-/* Comment (Lucide) reads visually larger — slightly reduce ONLY this one */
-.home3d-main .metadata .meta-actions > .meta-comment-btn{
-  --icon: clamp(50px, 92%, 78px) !important;
-}
+
 
 /* ✅ True visual centering: compensate for reserved top padding by moving UP */
 .home3d-main .metadata{
@@ -882,3 +868,70 @@
 }
 
 /* keep your existing separators and component spacing from your original styles */
+
+/* Make ALL meta action icons obey the same sizing */
+.home3d-main .metadata .meta-actions > .meta-icon-btn {
+  --icon: clamp(56px, 98%, 86px);
+}
+
+.home3d-main .metadata .meta-actions > .meta-icon-btn svg {
+  width: var(--icon) !important;
+  height: var(--icon) !important;
+  display: block !important;
+}
+
+/* Keep counts aligned under every icon */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+
+
+/* ============================================================
+   HOME3D — 4px padding below key metadata rows
+   Append at VERY BOTTOM so it wins.
+   ============================================================ */
+
+/* Title */
+.home3d-main #metadata-panel .meta-title {
+  padding-bottom: 6px !important;
+}
+
+/* Year / author line (your class might be meta-subtitle OR meta-subline) */
+.home3d-main #metadata-panel .meta-subtitle,
+.home3d-main #metadata-panel .meta-subline {
+  padding-bottom: 6px !important;
+}
+
+/* The 4 buttons row */
+.home3d-main #metadata-panel .meta-actions {
+  padding-bottom: 6px !important;
+}
+
+/* Chapters row/container (covers most common structures) */
+.home3d-main #metadata-panel .meta-chapters,
+.home3d-main #metadata-panel .meta-chapters-row,
+.home3d-main #metadata-panel .meta-chapters-wrap,
+.home3d-main #metadata-panel .meta-chapters-count {
+  padding-bottom: 6px !important;
+}
+
+
+/* Language row/container */
+.home3d-main #metadata-panel .meta-language,
+.home3d-main #metadata-panel .meta-language-row,
+.home3d-main #metadata-panel .meta-language-wrap,
+.home3d-main #metadata-panel .meta-lang {
+  padding-bottom: 6px !important;
+}
+
+/* Give the Summary row space BELOW so it doesn't sit on the next separator */
+.home3d-main #metadata-panel .meta-summary-row{
+  padding-bottom: 6px !important;
+  margin-bottom: 0 !important;
+}
+
+
