@@ -86,6 +86,9 @@ function bookKeyFromBook(b: any) {
 export default function Home() {
   const threeRootRef = useRef<HTMLDivElement | null>(null);
 
+  // ✅ focus target for keyboard (so arrows work immediately without clicking)
+  const stageFocusRef = useRef<HTMLElement | null>(null);
+
   // 3D carousel state
   const [centerIndex, setCenterIndex] = useState(0);
   const centerIndexRef = useRef(0);
@@ -142,6 +145,13 @@ export default function Home() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isSummaryOpen]);
 
+  // Latest UI state refs for the Three.js effect (avoid stale closures)
+  const isSummaryOpenRef = useRef(false);
+  const isReviewModalOpenRef = useRef(false);
+  useEffect(() => {
+    isSummaryOpenRef.current = isSummaryOpen;
+  }, [isSummaryOpen]);
+
   // ---------- COMMENT / REVIEW STATE (per book) ----------
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
   const [commentThreads, setCommentThreads] = useState<Record<string, ThreadState>>({});
@@ -153,6 +163,10 @@ export default function Home() {
   const [pendingOpenComments, setPendingOpenComments] = useState(false);
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  useEffect(() => {
+    isReviewModalOpenRef.current = isReviewModalOpen;
+  }, [isReviewModalOpen]);
+
   const [filterSort, setFilterSort] = useState<FilterSort>("newest");
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -261,7 +275,7 @@ export default function Home() {
 
   const hasUserCommentedCenter = hasUserCommentedInThread(centerThread, CURRENT_USER_ID);
 
-  // Rating display: show combined avg that includes user review rating if present
+  // Rating display
   const baseRating =
     typeof (centerBook as any)?.rating === "string"
       ? parseFloat(String((centerBook as any).rating).split("/")[0] || "0")
@@ -454,6 +468,21 @@ export default function Home() {
     const root = threeRootRef.current;
     if (!root) return;
 
+    // ✅ focus helper (fixes “must click once after opening”)
+    const forceKeyboardFocus = () => {
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae && typeof ae.blur === "function") ae.blur();
+      const stage = stageFocusRef.current;
+      if (stage) {
+        // must be focusable
+        if (!stage.hasAttribute("tabindex")) stage.setAttribute("tabindex", "-1");
+        stage.focus({ preventScroll: true });
+      } else {
+        // fallback
+        window.focus();
+      }
+    };
+
     let scene: THREE.Scene;
     let camera: THREE.PerspectiveCamera;
     let renderer: THREE.WebGLRenderer;
@@ -534,6 +563,15 @@ export default function Home() {
     if (!openBookContainer || !pageLeft || !pageRight || !navContainer) {
       console.warn("Reader DOM elements not found.");
       return;
+    }
+
+    function isTypingActive() {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el) return false;
+      const tag = (el.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return true;
+      if (el.isContentEditable) return true;
+      return false;
     }
 
     function createSpineTexture(title: string, width: number, height: number, color: string) {
@@ -898,45 +936,6 @@ export default function Home() {
       applyTypographyStyles();
     }
 
-    function rePaginateBook() {
-      bookSpreads = buildBookSpreads(currentCenterIndex);
-      if (currentPageSpread >= bookSpreads.length) currentPageSpread = bookSpreads.length - 1;
-      if (currentPageSpread < 0) currentPageSpread = 0;
-      updatePageContent(currentPageSpread);
-    }
-
-    function scheduleRepaginate(layoutChanged: boolean) {
-      if (!layoutChanged) return;
-      if (paginationTimer !== null) window.clearTimeout(paginationTimer);
-      paginationTimer = window.setTimeout(() => {
-        if (!isBookOpenLocal) return;
-        rePaginateBook();
-      }, 80);
-    }
-
-    readerControlsRef.current = {
-      setFontSize: (px: number) => {
-        currentFontSize = px;
-        applyTypographyStyles();
-        scheduleRepaginate(true);
-      },
-      setLineHeight: (lh: number) => {
-        currentLineHeight = lh;
-        applyTypographyStyles();
-        scheduleRepaginate(true);
-      },
-      setFontFamily: (family: string) => {
-        currentFontFamily = family;
-        applyTypographyStyles();
-        scheduleRepaginate(true);
-      },
-      setTheme: (theme: ReaderTheme) => {
-        currentTheme = theme;
-        applyTypographyStyles();
-        scheduleRepaginate(false);
-      },
-    };
-
     function updateBookProperties(isInitial = false) {
       const centerScale = 1.2;
       const sideScale = 1.2;
@@ -1043,6 +1042,26 @@ export default function Home() {
       navContainer.classList.add("is-open");
       openBookContainer.classList.add("is-open");
       metadataPanel?.classList.add("is-open");
+
+      // ✅ THIS is the fix:
+      // after opening, force focus back to our stage so keyboard works immediately (no click needed)
+      requestAnimationFrame(() => forceKeyboardFocus());
+    }
+
+    // ✅ open immediately even mid-scroll (no waiting for easing)
+    function openBookNowIgnoreCarouselMotion() {
+      if (isBookOpenLocal) return;
+
+      isCarouselMoving = false;
+      carouselGroup.position.x = targetCarouselX;
+
+      const centerMesh = bookMeshesByIndex[currentCenterIndex];
+      if (centerMesh) {
+        centerMesh.userData.isFlipping = false;
+        centerMesh.userData.targetRotation = centerMesh.rotation.y;
+      }
+
+      openBook();
     }
 
     function closeBook() {
@@ -1061,10 +1080,6 @@ export default function Home() {
 
       carouselGroup.position.x = targetCarouselX;
 
-      const centerScale = 1.2;
-      const sideScale = 1.2;
-      const outerScale = 0.4;
-
       for (let i = 0; i < numBooks; i++) {
         const book = bookMeshesByIndex[i];
         if (!book) continue;
@@ -1079,7 +1094,7 @@ export default function Home() {
           book.userData.targetRotation = 0;
           book.userData.isFlipping = true;
           book.position.x = finalX;
-          book.scale.set(centerScale, centerScale, centerScale);
+          book.scale.set(1.2, 1.2, 1.2);
           book.visible = true;
         } else {
           book.position.x = finalX;
@@ -1087,10 +1102,10 @@ export default function Home() {
           book.userData.isFlipping = false;
 
           if (distance === 1) {
-            book.scale.set(sideScale, sideScale, sideScale);
+            book.scale.set(1.2, 1.2, 1.2);
             book.visible = true;
           } else {
-            book.scale.set(outerScale, outerScale, outerScale);
+            book.scale.set(0.4, 0.4, 0.4);
             const inWindow = i >= windowStart && i <= windowEnd;
             book.visible = inWindow;
           }
@@ -1106,26 +1121,27 @@ export default function Home() {
       setIsCommentsOpen(false);
       setIsReviewModalOpen(false);
       setActiveBookId(null);
+
+      // keep keyboard consistent after close too
+      requestAnimationFrame(() => forceKeyboardFocus());
     }
 
-    openBookRef.current = openBook;
+    openBookRef.current = openBookNowIgnoreCarouselMotion;
     closeBookRef.current = closeBook;
 
     function flipPageLeft() {
+      if (!isBookOpenLocal) return;
       if (currentPageSpread > 0) {
         currentPageSpread--;
         updatePageContent(currentPageSpread);
-      } else {
-        closeBook();
       }
     }
 
     function flipPageRight() {
+      if (!isBookOpenLocal) return;
       if (currentPageSpread < bookSpreads.length - 1) {
         currentPageSpread++;
         updatePageContent(currentPageSpread);
-      } else {
-        closeBook();
       }
     }
 
@@ -1155,11 +1171,6 @@ export default function Home() {
         const rightIndex = currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
 
         if (clickedIndex === currentCenterIndex) {
-          if (clickedBook.userData.isFlipping) {
-            openBook();
-            return;
-          }
-
           const targetRotation = clickedBook.userData.targetRotation;
           const atFront = Math.abs(targetRotation % (2 * Math.PI)) < 0.01;
           const atBack = Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
@@ -1168,7 +1179,7 @@ export default function Home() {
             clickedBook.userData.isFlipping = true;
             clickedBook.userData.targetRotation += Math.PI;
           } else if (atBack) {
-            openBook();
+            openBookNowIgnoreCarouselMotion();
           }
         } else if (clickedIndex === leftIndex && leftIndex !== -1) {
           moveCarouselLeft();
@@ -1179,16 +1190,19 @@ export default function Home() {
     }
 
     leftArrowBtn?.addEventListener("click", () => {
+      forceKeyboardFocus();
       if (isBookOpenLocal) flipPageLeft();
       else moveCarouselLeft();
     });
 
     rightArrowBtn?.addEventListener("click", () => {
+      forceKeyboardFocus();
       if (isBookOpenLocal) flipPageRight();
       else moveCarouselRight();
     });
 
     closeBookBtn?.addEventListener("click", () => {
+      forceKeyboardFocus();
       closeBook();
     });
 
@@ -1214,12 +1228,57 @@ export default function Home() {
       const threshold = 40;
       if (Math.abs(dx) < threshold) return;
 
+      forceKeyboardFocus();
+
       if (!isBookOpenLocal) {
         if (dx < 0) moveCarouselRight();
         else moveCarouselLeft();
       } else {
         if (dx < 0) flipPageRight();
         else flipPageLeft();
+      }
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (isTypingActive()) return;
+      if (isReviewModalOpenRef.current) return;
+
+      if (isSummaryOpenRef.current) {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Enter") {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        forceKeyboardFocus();
+        if (isBookOpenLocal) flipPageLeft();
+        else moveCarouselLeft();
+        return;
+      }
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        forceKeyboardFocus();
+        if (isBookOpenLocal) flipPageRight();
+        else moveCarouselRight();
+        return;
+      }
+
+      if (e.key === "Enter") {
+        if (isBookOpenLocal) return;
+        e.preventDefault();
+        forceKeyboardFocus();
+        openBookNowIgnoreCarouselMotion();
+        return;
+      }
+
+      if (e.key === "Escape") {
+        if (!isBookOpenLocal) return;
+        e.preventDefault();
+        forceKeyboardFocus();
+        closeBook();
       }
     }
 
@@ -1231,20 +1290,12 @@ export default function Home() {
       rafId = requestAnimationFrame(animate);
 
       const MAX_LOADS_PER_FRAME = 2;
-      const MAX_UNLOADS_PER_FRAME = 4;
 
       let loadsThisFrame = 0;
       while (loadsThisFrame < MAX_LOADS_PER_FRAME && loadQueue.length > 0) {
         const idx = loadQueue.shift()!;
         createBookMesh(idx);
         loadsThisFrame++;
-      }
-
-      let unloadsThisFrame = 0;
-      while (unloadsThisFrame < MAX_UNLOADS_PER_FRAME && unloadQueue.length > 0) {
-        const idx = unloadQueue.shift()!;
-        unloadBook(idx);
-        unloadsThisFrame++;
       }
 
       if (isBookOpenLocal) {
@@ -1310,6 +1361,9 @@ export default function Home() {
     document.addEventListener("pointermove", onPointerMove);
     document.addEventListener("pointerup", onPointerUp);
 
+    // ✅ capture: ensures keys are caught even if some UI tries to swallow them
+    document.addEventListener("keydown", onKeyDown, { capture: true });
+
     animate();
 
     return () => {
@@ -1318,6 +1372,8 @@ export default function Home() {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
+
+      document.removeEventListener("keydown", onKeyDown, { capture: true } as any);
 
       if (paginationTimer !== null) window.clearTimeout(paginationTimer);
 
@@ -1346,12 +1402,10 @@ export default function Home() {
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Title (NORMAL FLOW — no absolute positioning) */}
           <div className="meta-title" title={(centerBook as any)?.title ?? ""}>
             {(centerBook as any)?.title ?? "Untitled"}
           </div>
 
-          {/* Year + written by (NORMAL FLOW) */}
           <div className="meta-subline">
             <span className="meta-year">{displayYear}</span>
             <span className="meta-dot">•</span>
@@ -1360,7 +1414,6 @@ export default function Home() {
 
           <hr className="meta-hr" />
 
-          {/* Author profile + name */}
           <div className="meta-header">
             <Link
               to="/profile"
@@ -1398,7 +1451,6 @@ export default function Home() {
 
           <hr className="meta-hr" />
 
-          {/* Actions */}
           <div className="meta-actions">
             <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />
             <CommentButton active={hasUserCommentedCenter} onOpenComments={openBookAndGoToComments} />
@@ -1418,7 +1470,6 @@ export default function Home() {
 
           <hr className="meta-hr meta-hr--summary" />
 
-          {/* Summary button */}
           <div className="meta-summary-row">
             <button
               type="button"
@@ -1459,7 +1510,6 @@ export default function Home() {
               : null}
           </div>
 
-          {/* Summary popover (covers panel, but layout stays stable) */}
           {isSummaryOpen && (
             <div
               className="meta-summary-popover"
@@ -1491,7 +1541,13 @@ export default function Home() {
         </div>
 
         {/* CENTER: 3D + Reader */}
-        <section className="home3d-stage">
+        <section
+          className="home3d-stage"
+          ref={(el) => {
+            stageFocusRef.current = el;
+          }}
+          tabIndex={-1}
+        >
           <div ref={threeRootRef} className="three-root" />
 
           <div id="open-book-container" className="open-book-container">
