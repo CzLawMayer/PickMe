@@ -993,3 +993,58 @@
   color: #1e88e5 !important;
 }
 
+/* ============================================================
+   HOME3D — EXACT 20px GAP from CENTER BOOK (CLOSED + OPEN)
+   Paste at VERY BOTTOM of Home3D.css
+   ============================================================ */
+
+.home3d-root{
+  --side-gap: 20px;          /* ✅ your required gap */
+  --closed-inset: 22vh;      /* ✅ pulls panels inward for CLOSED 3D view
+                                (this matches what your old -16vh was doing) */
+}
+
+/* Ensure this var is correct */
+.home3d-root{
+  --book-page-width: calc(var(--book-cover-height) * var(--book-cover-aspect));
+}
+
+/* LEFT metadata: 20px from the book */
+.home3d-main #metadata-panel.metadata{
+  left: calc(50% - var(--book-page-width) + var(--closed-inset) - var(--side-gap)) !important;
+  transform: translate(-100%, -50%) !important;
+}
+
+/* RIGHT arrows: 20px from the book */
+.home3d-main .nav-container{
+  left: calc(50% + var(--book-page-width) - var(--closed-inset) + var(--side-gap)) !important;
+}
+
+/* When book is OPEN, the open pages match --book-page-width,
+   so we should remove the inset (keep the same 20px gap) */
+.home3d-main #metadata-panel.metadata.is-open{
+  left: calc(50% - var(--book-page-width) - var(--side-gap)) !important;
+}
+
+.home3d-main .nav-container.is-open{
+  left: calc(50% + var(--book-page-width) + var(--side-gap)) !important;
+}
+
+/* ============================================================
+   HOME3D — extra spacing ONLY when book is OPEN
+   Paste at VERY BOTTOM of Home3D.css
+   ============================================================ */
+
+.home3d-root{
+  --side-gap: 20px;        /* closed gap (already good) */
+  --open-side-gap: 44px;   /* ✅ increase/decrease this to taste */
+}
+
+/* OPEN state: push metadata + arrows farther away */
+.home3d-main #metadata-panel.metadata.is-open{
+  left: calc(50% - var(--book-page-width) - var(--open-side-gap)) !important;
+}
+
+.home3d-main .nav-container.is-open{
+  left: calc(50% + var(--book-page-width) + var(--open-side-gap)) !important;
+}
