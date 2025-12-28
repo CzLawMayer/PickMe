@@ -468,17 +468,14 @@ export default function Home() {
     const root = threeRootRef.current;
     if (!root) return;
 
-    // ✅ focus helper (fixes “must click once after opening”)
     const forceKeyboardFocus = () => {
       const ae = document.activeElement as HTMLElement | null;
       if (ae && typeof ae.blur === "function") ae.blur();
       const stage = stageFocusRef.current;
       if (stage) {
-        // must be focusable
         if (!stage.hasAttribute("tabindex")) stage.setAttribute("tabindex", "-1");
         stage.focus({ preventScroll: true });
       } else {
-        // fallback
         window.focus();
       }
     };
@@ -546,7 +543,6 @@ export default function Home() {
     let activeBooks: THREE.Mesh[] = [];
 
     let loadQueue: number[] = [];
-    let unloadQueue: number[] = [];
 
     const textureLoader = new THREE.TextureLoader();
     const pageMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
@@ -628,14 +624,26 @@ export default function Home() {
       const spineCanvasWidth = bookDepth * 100;
       const spineCanvasHeight = bookHeight * 100;
       const spineColor = spineColors[index % spineColors.length];
-      const spineTexture = createSpineTexture(coverMeta.title, spineCanvasWidth, spineCanvasHeight, spineColor);
+      const spineTexture = createSpineTexture(
+        coverMeta.title,
+        spineCanvasWidth,
+        spineCanvasHeight,
+        spineColor
+      );
       spineTexture.colorSpace = THREE.SRGBColorSpace;
 
       const frontCoverMaterial = new THREE.MeshBasicMaterial({ map: frontTexture });
       const backCoverMaterial = new THREE.MeshBasicMaterial({ map: backTexture });
       const spineMaterial = new THREE.MeshBasicMaterial({ map: spineTexture });
 
-      const materials = [pageMaterial, spineMaterial, pageMaterial, pageMaterial, frontCoverMaterial, backCoverMaterial];
+      const materials = [
+        pageMaterial,
+        spineMaterial,
+        pageMaterial,
+        pageMaterial,
+        frontCoverMaterial,
+        backCoverMaterial,
+      ];
 
       const geom = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
       const book = new THREE.Mesh(geom, materials);
@@ -976,6 +984,10 @@ export default function Home() {
       }
     }
 
+    function targetXForIndex(idx: number) {
+      return -(idx - INITIAL_CENTER_INDEX) * bookSpacing;
+    }
+
     function moveCarouselLeft() {
       if (isBookOpenLocal) return;
       if (currentCenterIndex <= 0) return;
@@ -994,6 +1006,19 @@ export default function Home() {
       isCarouselMoving = true;
       setCenter(currentCenterIndex + 1);
       targetCarouselX -= bookSpacing;
+      adjustWindow();
+      updateBookProperties();
+    }
+
+    // ✅ snap to an index (used by click-to-flip fix)
+    function snapCarouselToIndex(idx: number) {
+      const clamped = Math.max(0, Math.min(numBooks - 1, idx));
+      lastDirection = clamped > currentCenterIndex ? 1 : clamped < currentCenterIndex ? -1 : 0;
+
+      setCenter(clamped);
+      targetCarouselX = targetXForIndex(clamped);
+      isCarouselMoving = true;
+
       adjustWindow();
       updateBookProperties();
     }
@@ -1043,8 +1068,6 @@ export default function Home() {
       openBookContainer.classList.add("is-open");
       metadataPanel?.classList.add("is-open");
 
-      // ✅ THIS is the fix:
-      // after opening, force focus back to our stage so keyboard works immediately (no click needed)
       requestAnimationFrame(() => forceKeyboardFocus());
     }
 
@@ -1122,7 +1145,6 @@ export default function Home() {
       setIsReviewModalOpen(false);
       setActiveBookId(null);
 
-      // keep keyboard consistent after close too
       requestAnimationFrame(() => forceKeyboardFocus());
     }
 
@@ -1145,7 +1167,69 @@ export default function Home() {
       }
     }
 
+    // ---------------------------
+    // ✅ Responsive drag/swipe
+    // ---------------------------
+    let isDraggingCarousel = false;
+    let activePointerId: number | null = null;
+
+    let dragStartClientX = 0;
+    let dragStartCarouselX = 0;
+
+    let lastMoveX = 0;
+    let lastMoveT = 0;
+    let velocityPxPerMs = 0;
+
+    let didDrag = false;
+    let lastDragEndAt = 0;
+
+    // ✅ Pending "flip/open" action after we snap a clicked book to center
+    let pendingCenteredClickIndex: number | null = null;
+
+    function unitsPerPixelAtZ0() {
+      const z = camera.position.z; // ~8
+      const vFov = THREE.MathUtils.degToRad(camera.fov);
+      const viewportH = 2 * z * Math.tan(vFov / 2);
+      const viewportW = viewportH * camera.aspect;
+      const pxW = renderer.domElement.clientWidth || window.innerWidth;
+      return viewportW / pxW;
+    }
+
+    function indexFromCarouselX(x: number) {
+      const raw = -(x / bookSpacing) + INITIAL_CENTER_INDEX;
+      return Math.round(raw);
+    }
+
+    function doCenterFlipOrOpen(index: number) {
+      const mesh = bookMeshesByIndex[index];
+      if (!mesh) return;
+
+      // ensure we’re working with the *actual* current rotation (not stale target)
+      const rot = mesh.rotation.y;
+      const rotNorm = ((rot % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+      const atFront = Math.abs(rotNorm - 0) < 0.08 || Math.abs(rotNorm - 2 * Math.PI) < 0.08;
+      const atBack = Math.abs(rotNorm - Math.PI) < 0.08;
+
+      if (atFront) {
+        mesh.userData.isFlipping = true;
+        mesh.userData.targetRotation = rot + Math.PI;
+      } else if (atBack) {
+        openBookNowIgnoreCarouselMotion();
+      } else {
+        // mid-rotation: finish toward nearest side (front/back) first
+        const distToFront = Math.min(Math.abs(rotNorm - 0), Math.abs(rotNorm - 2 * Math.PI));
+        const distToBack = Math.abs(rotNorm - Math.PI);
+
+        mesh.userData.isFlipping = true;
+        mesh.userData.targetRotation = distToBack < distToFront ? rot + (Math.PI - rotNorm) : rot - rotNorm;
+      }
+    }
+
     function onDocumentClick(event: MouseEvent) {
+      // ✅ ignore click right after drag end (prevents raycast-open after swiping)
+      if (performance.now() - lastDragEndAt < 140) return;
+
       const target = event.target as HTMLElement;
 
       const sidebarRoot = document.querySelector(".cs-sidebar-root");
@@ -1155,6 +1239,9 @@ export default function Home() {
       if (target.classList.contains("nav-arrow") || target.id === "nav-container") return;
       if (openBookContainer.classList.contains("is-open")) return;
 
+      // If we are in the middle of dragging, ignore clicks entirely
+      if (isDraggingCarousel) return;
+
       const canvasRect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
       mouse.y = -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
@@ -1162,31 +1249,36 @@ export default function Home() {
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(activeBooks, false);
 
-      if (intersects.length > 0) {
-        const clickedBook = intersects[0].object as THREE.Mesh;
-        const clickedIndex = (clickedBook.userData.logicalIndex as number) ?? -1;
-        if (clickedIndex < 0) return;
+      if (intersects.length === 0) return;
 
-        const leftIndex = currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
-        const rightIndex = currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
+      const clickedBook = intersects[0].object as THREE.Mesh;
+      const clickedIndex = (clickedBook.userData.logicalIndex as number) ?? -1;
+      if (clickedIndex < 0) return;
 
-        if (clickedIndex === currentCenterIndex) {
-          const targetRotation = clickedBook.userData.targetRotation;
-          const atFront = Math.abs(targetRotation % (2 * Math.PI)) < 0.01;
-          const atBack = Math.abs((targetRotation - Math.PI) % (2 * Math.PI)) < 0.01;
+      const leftIndex = currentCenterIndex - 1 >= 0 ? currentCenterIndex - 1 : -1;
+      const rightIndex = currentCenterIndex + 1 < numBooks ? currentCenterIndex + 1 : -1;
 
-          if (atFront) {
-            clickedBook.userData.isFlipping = true;
-            clickedBook.userData.targetRotation += Math.PI;
-          } else if (atBack) {
-            openBookNowIgnoreCarouselMotion();
-          }
-        } else if (clickedIndex === leftIndex && leftIndex !== -1) {
-          moveCarouselLeft();
-        } else if (clickedIndex === rightIndex && rightIndex !== -1) {
-          moveCarouselRight();
-        }
+      // If clicking left/right neighbor, keep your existing “tap neighbor to move” behavior
+      if (clickedIndex === leftIndex && leftIndex !== -1) {
+        moveCarouselLeft();
+        return;
       }
+      if (clickedIndex === rightIndex && rightIndex !== -1) {
+        moveCarouselRight();
+        return;
+      }
+
+      // ✅ If clicked book is NOT centered (common after drag), snap it to center first,
+      // then perform the flip/open action at the centered position.
+      if (clickedIndex !== currentCenterIndex || isCarouselMoving) {
+        pendingCenteredClickIndex = clickedIndex;
+        snapCarouselToIndex(clickedIndex);
+        forceKeyboardFocus();
+        return;
+      }
+
+      // Centered click: flip/open as before, but ALWAYS in center
+      doCenterFlipOrOpen(clickedIndex);
     }
 
     leftArrowBtn?.addEventListener("click", () => {
@@ -1206,37 +1298,99 @@ export default function Home() {
       closeBook();
     });
 
-    let dragStartX: number | null = null;
-    let dragged = false;
-
     function onPointerDown(e: PointerEvent) {
-      dragStartX = e.clientX;
-      dragged = false;
+      // Only drag carousel when book is closed
+      if (isBookOpenLocal) return;
+
+      const t = e.target as HTMLElement;
+      const sidebarRoot = document.querySelector(".cs-sidebar-root");
+      if (metadataPanel && metadataPanel.contains(t)) return;
+      if (sidebarRoot && sidebarRoot.contains(t)) return;
+      if (openBookContainer.classList.contains("is-open")) return;
+
+      activePointerId = e.pointerId;
+      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+
+      isDraggingCarousel = true;
+      didDrag = false;
+
+      // Stop snap animation while dragging
+      isCarouselMoving = false;
+      pendingCenteredClickIndex = null; // cancel any pending click action
+
+      dragStartClientX = e.clientX;
+      dragStartCarouselX = carouselGroup.position.x;
+
+      lastMoveX = e.clientX;
+      lastMoveT = performance.now();
+      velocityPxPerMs = 0;
+
+      forceKeyboardFocus();
     }
 
     function onPointerMove(e: PointerEvent) {
-      if (dragStartX === null) return;
-      const dx = e.clientX - dragStartX;
-      if (Math.abs(dx) > 10) dragged = true;
+      if (!isDraggingCarousel) return;
+      if (activePointerId !== null && e.pointerId !== activePointerId) return;
+      if (isBookOpenLocal) return;
+
+      const dxPx = e.clientX - dragStartClientX;
+
+      if (!didDrag && Math.abs(dxPx) > 3) didDrag = true;
+
+      const uPerPx = unitsPerPixelAtZ0();
+      let nextX = dragStartCarouselX + dxPx * uPerPx;
+
+      // Clamp so you can't drag past ends infinitely
+      const minX = targetXForIndex(numBooks - 1);
+      const maxX = targetXForIndex(0);
+      if (nextX < minX) nextX = minX;
+      if (nextX > maxX) nextX = maxX;
+
+      carouselGroup.position.x = nextX;
+
+      // Velocity for flick
+      const now = performance.now();
+      const dt = now - lastMoveT;
+      if (dt > 0) {
+        velocityPxPerMs = (e.clientX - lastMoveX) / dt;
+        lastMoveX = e.clientX;
+        lastMoveT = now;
+      }
     }
 
     function onPointerUp(e: PointerEvent) {
-      if (dragStartX === null) return;
-      const dx = e.clientX - dragStartX;
-      dragStartX = null;
-      if (!dragged) return;
-      const threshold = 40;
-      if (Math.abs(dx) < threshold) return;
+      if (!isDraggingCarousel) return;
+      if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
-      forceKeyboardFocus();
+      isDraggingCarousel = false;
+      activePointerId = null;
 
-      if (!isBookOpenLocal) {
-        if (dx < 0) moveCarouselRight();
-        else moveCarouselLeft();
-      } else {
-        if (dx < 0) flipPageRight();
-        else flipPageLeft();
+      // If basically a click, let click handler do its job
+      if (!didDrag) return;
+
+      lastDragEndAt = performance.now();
+
+      // Decide snap target index
+      let snapIndex = indexFromCarouselX(carouselGroup.position.x);
+
+      // Flick support
+      const FLICK_VELOCITY = 0.9; // px/ms (tweak)
+      if (Math.abs(velocityPxPerMs) > FLICK_VELOCITY) {
+        if (velocityPxPerMs < 0) snapIndex += 1; // flick left -> go next
+        else snapIndex -= 1; // flick right -> go prev
       }
+
+      snapIndex = Math.max(0, Math.min(numBooks - 1, snapIndex));
+
+      lastDirection = snapIndex > currentCenterIndex ? 1 : snapIndex < currentCenterIndex ? -1 : 0;
+
+      setCenter(snapIndex);
+      targetCarouselX = targetXForIndex(snapIndex);
+      isCarouselMoving = true;
+
+      adjustWindow();
+      updateBookProperties();
+      forceKeyboardFocus();
     }
 
     function onKeyDown(e: KeyboardEvent) {
@@ -1290,7 +1444,6 @@ export default function Home() {
       rafId = requestAnimationFrame(animate);
 
       const MAX_LOADS_PER_FRAME = 2;
-
       let loadsThisFrame = 0;
       while (loadsThisFrame < MAX_LOADS_PER_FRAME && loadQueue.length > 0) {
         const idx = loadQueue.shift()!;
@@ -1325,12 +1478,20 @@ export default function Home() {
           }
         });
 
-        if (isCarouselMoving) {
+        // Only auto-ease to target when not actively dragging
+        if (isCarouselMoving && !isDraggingCarousel) {
           carouselGroup.position.x += (targetCarouselX - carouselGroup.position.x) * fastEase;
 
           if (Math.abs(targetCarouselX - carouselGroup.position.x) < 0.01) {
             carouselGroup.position.x = targetCarouselX;
             isCarouselMoving = false;
+
+            // ✅ If a click requested flip/open on a non-centered book, execute now (in the center)
+            if (pendingCenteredClickIndex !== null && pendingCenteredClickIndex === currentCenterIndex) {
+              const idx = pendingCenteredClickIndex;
+              pendingCenteredClickIndex = null;
+              doCenterFlipOrOpen(idx);
+            }
           }
         }
 
@@ -1361,7 +1522,6 @@ export default function Home() {
     document.addEventListener("pointermove", onPointerMove);
     document.addEventListener("pointerup", onPointerUp);
 
-    // ✅ capture: ensures keys are caught even if some UI tries to swallow them
     document.addEventListener("keydown", onKeyDown, { capture: true });
 
     animate();
@@ -1465,7 +1625,8 @@ export default function Home() {
           <hr className="meta-hr" />
 
           <p className="meta-chapters">
-            {((centerBook as any)?.currentChapter ?? 0)}/{((centerBook as any)?.totalChapters ?? 0)} Chapters
+            {((centerBook as any)?.currentChapter ?? 0)}/{((centerBook as any)?.totalChapters ?? 0)}{" "}
+            Chapters
           </p>
 
           <hr className="meta-hr meta-hr--summary" />
