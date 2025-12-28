@@ -1058,3 +1058,128 @@
 .cs-modal {
   z-index: 999999 !important;
 }
+
+
+
+/* ============================================================
+   DARK GLASS (background only) — keep existing colors & buttons
+   Paste at VERY BOTTOM of CommentSidebar.css
+   ============================================================ */
+
+/* Panel shell */
+.cs-sidebar-panel{
+  background: rgba(15, 15, 16, 0.78) !important;
+  border-left: 1px solid rgba(255,255,255,0.10) !important;
+
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+/* Header / footer get slightly different translucency so they separate */
+.cs-sidebar-header{
+  background: rgba(17, 17, 17, 0.60) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.cs-sidebar-footer,
+.cs-sidebar-footer--reviews{
+  background: rgba(17, 17, 17, 0.60) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+/* Content area should NOT force black; let it be transparent */
+.cs-sidebar-content{
+  background: transparent !important;
+}
+
+/* Comment cards: keep your existing styling, just a subtle glass lift */
+.cs-comment--root,
+.cs-comment-skeleton{
+  background: rgba(33, 33, 33, 0.70) !important; /* was solid #212121 */
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* Menus / popovers: keep their colors, just make them translucent */
+.cs-filter-menu,
+.cs-comment-menu,
+.cs-reaction-popover-inner,
+.cs-reaction-picker{
+  background: rgba(33, 33, 33, 0.92) !important; /* close to your #212121 */
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* Filter menu must sit above the comments list */
+.cs-sidebar-header {
+  position: relative;
+  z-index: 200;
+}
+
+/* Ensure the filter wrap/menu are on top */
+.cs-filter-wrap {
+  position: relative;
+  z-index: 300;
+}
+
+.cs-filter-menu {
+  position: absolute;
+  z-index: 9999;
+}
+
+/* Keep the scrolling list underneath */
+.cs-sidebar-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hide the toggle button when the sidebar is open */
+.cs-sidebar-root .cs-sidebar-toggle {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
+}
+
+/* Your panel uses --open; when open, hide the toggle */
+.cs-sidebar-panel.cs-sidebar-panel--open ~ .cs-sidebar-toggle,
+.cs-sidebar-root:has(.cs-sidebar-panel--open) .cs-sidebar-toggle {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Fade out toggle 0.1s after opening */
+.cs-sidebar-root:has(.cs-sidebar-panel--open) .cs-sidebar-toggle {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+
+  transition-property: opacity, visibility;
+  transition-duration: 250ms, 0ms;
+  transition-timing-function: ease, linear;
+  transition-delay: 100ms, 350ms; /* 0.1s wait, then hide */
+}
+
+/* Fallback for browsers without :has() support */
+.cs-sidebar-panel.cs-sidebar-panel--open ~ .cs-sidebar-toggle {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+
+  transition-property: opacity, visibility;
+  transition-duration: 250ms, 0ms;
+  transition-timing-function: ease, linear;
+  transition-delay: 100ms, 350ms;
+}
+
+/* Top divider (very top of the sidebar panel) */
+.cs-sidebar-header {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Bottom divider (very bottom of the sidebar panel) */
+.cs-sidebar-footer,
+.cs-sidebar-footer--reviews {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
