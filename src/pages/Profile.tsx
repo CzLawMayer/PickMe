@@ -11,8 +11,7 @@ import { flushSync } from "react-dom";
 import { useMemo } from "react";
 
 import AppHeader from "@/components/AppHeader";
-
-
+import ProfileBoard from "@/components/ProfileBoard";
 
 /* --- Tiny hook to auto-fit text to its line without reflowing layout --- */
 function useFitText(minPx = 12, maxPx = 48) {
@@ -30,18 +29,13 @@ function useFitText(minPx = 12, maxPx = 48) {
       let lo = minPx;
       let hi = maxPx;
 
-      // Binary search the largest size that fits on one line
       for (let i = 0; i < 18; i++) {
         const mid = Math.floor((lo + hi) / 2);
         el.style.fontSize = `${mid}px`;
-        // one-line fit check
         const fitsWidth = el.scrollWidth <= el.clientWidth;
         const isOneLine = el.scrollHeight <= el.clientHeight || el.getClientRects().length <= 1;
-        if (fitsWidth && isOneLine) {
-          lo = mid + 1;
-        } else {
-          hi = mid - 1;
-        }
+        if (fitsWidth && isOneLine) lo = mid + 1;
+        else hi = mid - 1;
       }
       const finalSize = Math.max(minPx, hi);
       el.style.fontSize = `${finalSize}px`;
@@ -66,16 +60,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [userRating, setUserRating] = useState(0);
 
-  // Rating combination with UI-friendly formatting
-  const baseRating = 4.2;
-  const priorVotes = 20;
-  const combinedRatingRaw =
-    userRating > 0
-      ? (baseRating * priorVotes + userRating) / (priorVotes + 1)
-      : baseRating;
-  const combinedRating = Number(combinedRatingRaw.toFixed(1));
-
-  // Fit text for name/handle (max sizes are sane defaults; tune as you like)
+  // Fit text for name/handle
   const nameFit = useFitText(14, 42);
   const handleFit = useFitText(12, 28);
 
@@ -86,71 +71,26 @@ export default function ProfilePage() {
   const progressRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
 
-  const [canScrollStories, setCanScrollStories] = useState(false); // show/hide pill
-  const [storiesProgress, setStoriesProgress] = useState(0);       // 0..1
-  const [thumbPct, setThumbPct] = useState(1);                     // 0..1
-  const [storiesCount, setStoriesCount] = useState(0);             // number of covers
-
+  const [canScrollStories, setCanScrollStories] = useState(false);
+  const [storiesProgress, setStoriesProgress] = useState(0);
+  const [thumbPct, setThumbPct] = useState(1);
 
   const [activeBook, setActiveBook] = useState<any>(null);
 
-
-
-  // at top of component:
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const [titleLines, setTitleLines] = useState(2);
 
-
-  // Library -> center feature wiring (no visual changes to Library)
-  const shelfRef = useRef<HTMLDivElement | null>(null);
-
-  const handleLibraryHover = (evt: React.MouseEvent<HTMLDivElement>) => {
-    const el = (evt.target as Element)?.closest?.(".book-spine[data-index]") as HTMLElement | null;
-    if (!el) return;                           // ignore gaps/placeholders
-    const idx = Number(el.dataset.index);
-    if (Number.isNaN(idx)) return;
-    const books = libraryBooks();
-    const book = books[idx];
-    if (book) previewBook(book);               // <<< important
-  };
-
-  // KEYBOARD focus on a spine -> preview in center (no selection)
-  const handleLibraryFocus = (evt: React.FocusEvent<HTMLDivElement>) => {
-    const el = (evt.target as Element)?.closest?.(".book-spine[data-index]") as HTMLElement | null;
-    if (!el) return;
-    const idx = Number(el.dataset.index);
-    if (Number.isNaN(idx)) return;
-    const books = libraryBooks();
-    const book = books[idx];
-    if (book) previewBook(book);               // <<< important
-  };
-
-  const handleLibraryKey = (evt: React.KeyboardEvent<HTMLDivElement>) => {
-    const el = (evt.target as Element)?.closest?.(".book-spine") as HTMLElement | null;
-    if (!el) return;
-    if (evt.key === "Enter" || evt.key === " ") {
-      evt.preventDefault();
-      const idx = Number(el.dataset.index);
-      const books = libraryBooks();
-      if (!Number.isNaN(idx) && books[idx]) onHoverBook(books[idx]);
-    }
-  };
-
-  // KEEP your existing: const [activeBook, setActiveBook] = useState<any>(null);
-
   type SelectionSource = "stories" | "favorites" | "library" | null;
-
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<SelectionSource>(null);
 
-  // Helper to find a book by id from any list
   const getBookById = (id?: string | null) => {
     if (!id) return null;
     const sid = String(id);
     return (
-      storyBooks().find(b => String(b.id) === sid) ??
-      favoriteBooks().find(b => String(b.id) === sid) ??
-      libraryBooks().find(b => String(b.id) === sid) ??
+      storyBooks().find((b) => String(b.id) === sid) ??
+      favoriteBooks().find((b) => String(b.id) === sid) ??
+      libraryBooks().find((b) => String(b.id) === sid) ??
       null
     );
   };
@@ -158,49 +98,19 @@ export default function ProfilePage() {
   // HOVER = preview in center (does NOT change selection)
   const previewBook = (book: any) => setActiveBook(book);
 
-  // CLICK = select + stick in center, remembering which section it came from
+  // CLICK = select + stick in center
   const selectBook = (book: any, source: Exclude<SelectionSource, null>) => {
     setSelectedBookId(String(book.id));
     setSelectedSource(source);
     setActiveBook(book);
   };
 
-  // On leaving a strip/shelf, restore the last selection (if any)
+  // On leaving a strip/shelf, restore the last selection
   const clearHover = () => {
     const selected = getBookById(selectedBookId);
     setActiveBook(selected ?? null);
   };
 
-
-
-
-  const handleLibraryClick = (evt: React.MouseEvent<HTMLDivElement>) => {
-    const el = (evt.target as Element)?.closest?.(".book-spine[data-index]") as HTMLElement | null;
-    if (!el) return;
-    const idx = Number(el.dataset.index);
-    const books = libraryBooks();
-    const book = Number.isNaN(idx) ? null : books[idx];
-    if (book) selectBook(book, "library");
-  };
-
-
-  // Stamp indices + a11y labels on mount (keeps visuals unchanged)
-  useLayoutEffect(() => {
-    const shelf = shelfRef.current;
-    if (!shelf) return;
-
-    const spines = Array.from(shelf.querySelectorAll<HTMLElement>(".book-spine"));
-    const books = libraryBooks();
-
-    spines.slice(0, 45).forEach((el, i) => {
-      el.dataset.index = String(i);
-      if (!el.hasAttribute("tabindex")) el.tabIndex = 0; // keyboard focusable
-      const b = books[i];
-      if (b) el.setAttribute("aria-label", `Book: ${b.title}${b.author ? ` by ${b.author}` : ""}`);
-    });
-  }, []);
-
-  
   // measure on book/title change and resize
   useLayoutEffect(() => {
     const el = titleRef.current;
@@ -209,7 +119,7 @@ export default function ProfilePage() {
       const cs = getComputedStyle(el);
       const lineHeight = parseFloat(cs.lineHeight);
       const lines = Math.max(1, Math.round(el.scrollHeight / lineHeight));
-      setTitleLines(Math.min(lines, 2)); // we clamp to 2 visually anyway
+      setTitleLines(Math.min(lines, 2));
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -221,48 +131,33 @@ export default function ProfilePage() {
     };
   }, [activeBook?.title]);
 
-
-
-  // Recompute scrollability, thumb size, and progress
   const recomputeStories = () => {
     const vp = storiesRef.current;
     if (!vp) return;
 
     const count = vp.querySelectorAll(".stories-track .story-cover").length;
-    setStoriesCount(count);
 
     const total = vp.scrollWidth;
     const visible = vp.clientWidth;
     const max = Math.max(0, total - visible);
 
-    // pill appears only if there are >5 covers AND overflow exists
     const show = count > 5 && max > 0.5;
     setCanScrollStories(show);
 
-    // thumb size exactly equals visible/total (proportional)
     setThumbPct(total > 0 ? visible / total : 1);
-
-    // position 0..1
     setStoriesProgress(max ? vp.scrollLeft / max : 0);
   };
-
-
 
   const allStoryBooks = storyBooks();
   const allFavBooks = favoriteBooks();
   const allLibBooks = libraryBooks();
   const allBooks = [...allStoryBooks, ...allFavBooks, ...allLibBooks];
 
-  // Derive stats if not present in profile.stats
   const stats = useMemo(() => {
-    // 1) Prefer explicit values from profile.stats if provided
     const explicit = profile?.stats ?? {};
 
-    // 2) Fallbacks computed from book data (best-effort)
-    //    Adjust these heuristics to match your data model.
     const derivedBooksCompleted =
       allBooks.filter((b: any) => {
-        // consider completed if explicit status OR user reached last chapter
         const doneFlag = b.status === "completed" || b.completed === true;
         const byChapters =
           Number.isFinite(b?.currentChapter) &&
@@ -273,36 +168,28 @@ export default function ProfilePage() {
       }).length || 0;
 
     const derivedChaptersRead = allBooks.reduce((sum: number, b: any) => {
-      // prefer a read count field; else fall back to currentChapter
-      const read =
-        Number.isFinite(b?.chaptersRead)
-          ? b.chaptersRead
-          : Number.isFinite(b?.currentChapter)
-          ? b.currentChapter
-          : 0;
+      const read = Number.isFinite(b?.chaptersRead)
+        ? b.chaptersRead
+        : Number.isFinite(b?.currentChapter)
+        ? b.currentChapter
+        : 0;
       return sum + (read as number);
     }, 0);
 
     const derivedBooksSaved =
-      allBooks.filter((b: any) => {
-        // treat any truthy `saved`/`bookmarked`/`isSaved` as saved
-        return b?.saved === true || b?.isSaved === true || (b?.bookmarksByUser ?? 0) > 0;
-      }).length || 0;
+      allBooks.filter((b: any) => b?.saved === true || b?.isSaved === true || (b?.bookmarksByUser ?? 0) > 0)
+        .length || 0;
 
     return {
       booksCompleted:
-        Number.isFinite(explicit.booksCompleted) ? explicit.booksCompleted : derivedBooksCompleted,
+        Number.isFinite((explicit as any).booksCompleted) ? (explicit as any).booksCompleted : derivedBooksCompleted,
       chaptersRead:
-        Number.isFinite(explicit.chaptersRead) ? explicit.chaptersRead : derivedChaptersRead,
+        Number.isFinite((explicit as any).chaptersRead) ? (explicit as any).chaptersRead : derivedChaptersRead,
       booksSaved:
-        Number.isFinite(explicit.booksSaved) ? explicit.booksSaved : derivedBooksSaved,
+        Number.isFinite((explicit as any).booksSaved) ? (explicit as any).booksSaved : derivedBooksSaved,
     };
-    // Recompute if the inputs change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.stats, allBooks.length]);
-
-
-
 
   // Wheel-to-horizontal for Stories viewport
   useLayoutEffect(() => {
@@ -310,28 +197,21 @@ export default function ProfilePage() {
     if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
-      // If there's horizontal overflow, convert vertical wheel to horizontal
       const hasOverflowX = el.scrollWidth > el.clientWidth;
       if (!hasOverflowX) return;
 
-      // Only hijack when vertical movement dominates (normal mouse wheel)
       const verticalDominates = Math.abs(e.deltaY) >= Math.abs(e.deltaX);
-
       if (verticalDominates) {
-        e.preventDefault();                  // stop page from scrolling vertically
-        const speed = e.shiftKey ? 2 : 1;    // hold Shift to go faster
-        el.scrollLeft += e.deltaY * speed;   // natural direction
+        e.preventDefault();
+        const speed = e.shiftKey ? 2 : 1;
+        el.scrollLeft += e.deltaY * speed;
       }
-      // Trackpads with native horizontal swipe will still work via deltaX
     };
 
-    // Must be non-passive to allow preventDefault()
     el.addEventListener("wheel", onWheel, { passive: false });
-
     return () => el.removeEventListener("wheel", onWheel as EventListener);
   }, []);
 
-  // mount + resize + element size change
   useLayoutEffect(() => {
     recomputeStories();
     const onResize = () => recomputeStories();
@@ -349,7 +229,6 @@ export default function ProfilePage() {
     };
   }, []);
 
-  // keep pill in sync with natural horizontal scrolling
   useLayoutEffect(() => {
     const vp = storiesRef.current;
     if (!vp) return;
@@ -358,14 +237,11 @@ export default function ProfilePage() {
     return () => vp.removeEventListener("scroll", onScroll);
   }, []);
 
-  // right under the existing useLayoutEffect hooks
   useLayoutEffect(() => {
-    // when story count changes (e.g., 11), recompute after paint
     const id = requestAnimationFrame(recomputeStories);
     return () => cancelAnimationFrame(id);
   }, [profile.stories.length]);
 
-  // optional: recompute again once covers have loaded
   useLayoutEffect(() => {
     const vp = storiesRef.current;
     if (!vp) return;
@@ -379,10 +255,9 @@ export default function ProfilePage() {
       if (pending === 0) recomputeStories();
     };
 
-    // create lightweight preloaders for bg images
     const unload: HTMLImageElement[] = [];
     imgs.forEach((el) => {
-      const bg = getComputedStyle(el).backgroundImage; // url("...") or "none"
+      const bg = getComputedStyle(el).backgroundImage;
       const m = bg && bg.startsWith("url(") ? bg.match(/^url\(["']?(.*?)["']?\)$/) : null;
       const src = m?.[1];
       if (!src) return;
@@ -393,24 +268,19 @@ export default function ProfilePage() {
       unload.push(img);
     });
 
-    // if none had images, still recompute
     if (unload.length === 0) recomputeStories();
-
-    return () => { /* nothing to cleanup for Image objects */ };
+    return () => {};
   }, [profile.stories]);
 
-
-  // Drag handling for the pill
   const onDragAt = (clientX: number) => {
     const vp = storiesRef.current;
     const bar = progressRef.current;
     if (!vp || !bar) return;
 
     const rect = bar.getBoundingClientRect();
-    const t = thumbPct; // 0..1
+    const t = thumbPct;
     const x = clientX - rect.left;
 
-    // usable track width once the thumb width is considered
     const usable = rect.width * (1 - t);
     const clamped = Math.max(0, Math.min(usable, x - (t * rect.width) / 2));
     const ratio = usable > 0 ? clamped / usable : 0;
@@ -432,21 +302,23 @@ export default function ProfilePage() {
     draggingRef.current = false;
   };
 
+
+
   return (
     <div className="profile-app">
-      {/* Top bar (same as Home) */}
-      <AppHeader
-        menuOpen={menuOpen}
-        onToggleMenu={() => setMenuOpen((o) => !o)}
-        onClickWrite={() => { /* optional: open compose */ }}
-        onClickSearch={() => { /* optional: open search */ }}
-      />
+      {/* FIXED HEADER SHELL (cannot shrink) */}
+      <div className="profile-headerShell">
+        <AppHeader
+          menuOpen={menuOpen}
+          onToggleMenu={() => setMenuOpen((o) => !o)}
+          onClickWrite={() => {}}
+          onClickSearch={() => {}}
+        />
+      </div>
 
-
+      {/* MAIN AREA (fills rest, cannot grow) */}
       <main className="profile-page">
-        {/* Global 3×3 grid: rows = [top | middle | bottom], cols = [L | C | R] */}
         <div className="profile-grid">
-
           {/* LEFT — Row 1: Identity */}
           <section className="cell identity-cell">
             <div className="profile-identity">
@@ -527,7 +399,6 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* LEFT — Row 2: Stories (title + black box fills the row) */}
           {/* LEFT — Row 2: Stories */}
           <section className="cell stories-cell section">
             <h2 className="section-title">Stories</h2>
@@ -538,10 +409,7 @@ export default function ProfilePage() {
                   {storyBooks().map((book) => (
                     <div
                       key={book.id}
-                      className={
-                        "story-cover" +
-                        (selectedSource === "stories" && selectedBookId === String(book.id) ? " is-selected" : "")
-                      }
+                      className={"story-cover" + (selectedSource === "stories" && selectedBookId === String(book.id) ? " is-selected" : "")}
                       title={book.title}
                       aria-label={`Story: ${book.title}`}
                       tabIndex={0}
@@ -565,7 +433,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* pill slider unchanged */}
               {canScrollStories && (
                 <div
                   className="stories-progress"
@@ -586,7 +453,7 @@ export default function ProfilePage() {
                     const max = vp.scrollWidth - vp.clientWidth;
                     const step = vp.clientWidth * 0.1;
                     if (e.key === "ArrowRight") vp.scrollTo({ left: Math.min(vp.scrollLeft + step, max) });
-                    if (e.key === "ArrowLeft")  vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0) });
+                    if (e.key === "ArrowLeft") vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0) });
                   }}
                 >
                   <div
@@ -598,8 +465,7 @@ export default function ProfilePage() {
             </div>
           </section>
 
-
-          {/* LEFT — Row 3: Top 5 Favorites */}
+          {/* LEFT — Row 3: Favorites */}
           <section className="cell favorites-cell section">
             <h2 className="section-title">Favorites</h2>
             <div className="strip favorites-strip" onMouseLeave={clearHover}>
@@ -607,10 +473,7 @@ export default function ProfilePage() {
                 {favoriteBooks().slice(0, 5).map((book) => (
                   <div
                     key={book.id}
-                    className={
-                      "fav-cover" +
-                      (selectedSource === "favorites" && selectedBookId === String(book.id) ? " is-selected" : "")
-                    }
+                    className={"fav-cover" + (selectedSource === "favorites" && selectedBookId === String(book.id) ? " is-selected" : "")}
                     title={book.title}
                     aria-label={`Favorite: ${book.title}`}
                     tabIndex={0}
@@ -635,13 +498,11 @@ export default function ProfilePage() {
             </div>
           </section>
 
-
           {/* CENTER — spans all 3 rows */}
           <section className="cell feature-cell">
             <div className="feature-card">
               {activeBook ? (
                 <div className="feature-stack">
-                  {/* Cover */}
                   {activeBook.coverUrl ? (
                     <div className="feature-cover-row">
                       <Link
@@ -650,25 +511,17 @@ export default function ProfilePage() {
                         aria-label={`Open "${activeBook.title}" on Home`}
                         title={`Open "${activeBook.title}" on Home`}
                       >
-                        {activeBook.coverUrl ? (
-                          <div
-                            className="feature-cover-placeholder"
-                            aria-label={`${activeBook.title} cover`}
-                            style={{
-                              backgroundImage: `url(${activeBook.coverUrl})`,
-                              backgroundSize: "cover",
-                              backgroundPosition: "center",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            className="feature-cover-placeholder"
-                            aria-label="Featured book cover placeholder"
-                          />
-                        )}
+                        <div
+                          className="feature-cover-placeholder"
+                          aria-label={`${activeBook.title} cover`}
+                          style={{
+                            backgroundImage: `url(${activeBook.coverUrl})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }}
+                        />
                       </Link>
 
-                      {/* right-side chevron button (always visible) */}
                       <Link
                         to={`/?book=${encodeURIComponent(String(activeBook.id ?? ""))}`}
                         className="feature-jump"
@@ -682,10 +535,11 @@ export default function ProfilePage() {
                     <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" />
                   )}
 
-                  {/* Info */}
                   <div className="feature-info">
                     <div className={`feature-title-wrap ${titleLines === 1 ? "one-line" : ""}`}>
-                      <h3 ref={titleRef} className="feature-title">{activeBook.title}</h3>
+                      <h3 ref={titleRef} className="feature-title">
+                        {activeBook.title}
+                      </h3>
                     </div>
 
                     <hr className="meta-hr" />
@@ -704,12 +558,7 @@ export default function ProfilePage() {
                     <hr className="meta-hr" />
 
                     <div className="meta-actions">
-                      <LikeButton
-                        className="meta-icon-btn like"
-                        count={activeBook.likes ?? 0}
-                        active={liked}
-                        onToggle={() => setLiked((v) => !v)}
-                      />
+                      <LikeButton className="meta-icon-btn like" count={activeBook.likes ?? 0} active={liked} onToggle={() => setLiked((v) => !v)} />
                       <StarButton
                         className="meta-icon-btn star"
                         rating={Number(activeBook.rating ?? 0)}
@@ -717,12 +566,7 @@ export default function ProfilePage() {
                         active={userRating > 0}
                         onRate={(v: number) => setUserRating((prev) => (prev === v ? 0 : v))}
                       />
-                      <SaveButton
-                        className="meta-icon-btn save"
-                        count={activeBook.bookmarks ?? 0}
-                        active={saved}
-                        onToggle={() => setSaved((v) => !v)}
-                      />
+                      <SaveButton className="meta-icon-btn save" count={activeBook.bookmarks ?? 0} active={saved} onToggle={() => setSaved((v) => !v)} />
                     </div>
 
                     <hr className="meta-hr" />
@@ -740,14 +584,15 @@ export default function ProfilePage() {
                     <div className="align-left">
                       <div className="meta-tags-block">
                         <ul className="meta-tags meta-tags--outline">
-                          {(activeBook?.tags ?? []).map((t) => <li key={t}>{t}</li>)}
+                          {(activeBook?.tags ?? []).map((t: string) => (
+                            <li key={t}>{t}</li>
+                          ))}
                         </ul>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                // EMPTY STATE: centered PickMe! brand
                 <div className="feature-stack">
                   <div className="feature-empty-inline" aria-label="No book selected">
                     <h3 className="brand-mark">
@@ -760,85 +605,18 @@ export default function ProfilePage() {
             </div>
           </section>
 
-
-
-          {/* RIGHT — Rows 1–2: Library (title stuck to top, shelf fills rest) */}
-          {/* RIGHT — Rows 1–2: Library (always ≥3 shelves; fixed 15 columns; placeholders for empties) */}
+          {/* RIGHT — Rows 1–2: ProfileBoard */}
           <section className="cell library-cell section">
-            <h2 className="section-title right-title">
-              <Link
-                to="/library"
-                className="section-link"
-                aria-label="Open Library page"
-                title="Open Library"
-              >
-                Library ››
-              </Link>
-            </h2>
-
-            <div
-              className="shelf"
-              role="grid"
-              aria-label="Bookshelf"
-              ref={shelfRef}
-              onMouseOver={handleLibraryHover}   // should call previewBook(...)
-              onFocus={handleLibraryFocus}       // should call previewBook(...)
-              onKeyDown={handleLibraryKey}       // Enter/Space -> preview or select
-              onMouseLeave={clearHover}          // restore selection
-              onClick={handleLibraryClick}       // click -> select (stick)
-            >
-              {(() => {
-                const books = libraryBooks();   // your source of truth
-                const COLS = 15;                // spines per row
-                const MIN_ROWS = 3;             // always show at least 3 shelves
-
-                const totalRows = Math.max(MIN_ROWS, Math.ceil(books.length / COLS));
-
-                return Array.from({ length: totalRows }, (_, rIdx) => {
-                  const start = rIdx * COLS;
-                  const row = books.slice(start, start + COLS);
-                  const placeholders = Math.max(0, COLS - row.length);
-
-                  return (
-                    <div className="shelf-row" role="row" key={`row-${rIdx}`}>
-                      {/* real books */}
-                      {row.map((book, i) => {
-                        const globalIdx = rIdx * COLS + i;
-                        return (
-                          <div
-                            key={book.id ?? `b-${globalIdx}`}
-                            role="gridcell"
-                            className={`book-spine${selectedBookId === String(book.id) ? " is-selected" : ""}`}
-                            title={book.title}
-                            aria-label={`Book: ${book.title}${book.author ? ` by ${book.author}` : ""}`}
-                            tabIndex={0}
-                            data-index={globalIdx}
-                          />
-                        );
-                      })}
-
-                      {/* invisible placeholders to preserve 15 columns */}
-                      {Array.from({ length: placeholders }).map((_, p) => (
-                        <div
-                          key={`ph-${rIdx}-${p}`}
-                          role="gridcell"
-                          className="book-spine book-spine--placeholder"
-                          aria-hidden="true"
-                        />
-                      ))}
-                    </div>
-                  );
-                });
-              })()}
-            </div>
+            <ProfileBoard
+              selectedBookId={selectedBookId}
+              onPreviewBook={(book) => previewBook(book)}
+              onSelectBook={(book) => selectBook(book, "library")}
+              onClearHover={clearHover}
+              initialTab="Library"
+            />
           </section>
 
-
-
-
-
-
-          {/* RIGHT — Row 3: Currently Reading (title + black box fills the row) */}
+          {/* RIGHT — Row 3: Activity */}
           <section className="cell current-cell section">
             <h2 className="section-title">Activity</h2>
             <div className="strip current-strip">
@@ -846,7 +624,6 @@ export default function ProfilePage() {
                 <ReadingHeatmap year={new Date().getFullYear()} />
               </div>
 
-              {/* OVERLAY: does not affect layout size */}
               <div className="current-stats" role="group" aria-label="Reading stats">
                 <div className="current-stat">
                   <div className="stat-label">Books completed</div>

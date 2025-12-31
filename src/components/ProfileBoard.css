@@ -1,0 +1,959 @@
+/* ProfileBoard.css */
+/* IMPORTANT:
+   - This file styles ONLY the board tabs + About/Forum/Letters UI.
+   - It DOES NOT touch the Library shelf styles (.shelf, .shelf-row, .book-spine).
+*/
+
+/* ---------- Root layout: fixed size, no growth ---------- */
+:root {
+  --pb-radius: 12px;
+  --pb-tab-radius: 12px;
+  --pb-border: rgba(255, 255, 255, 0.08);
+  --pb-dark: #1f1f1f;
+  --pb-dark-2: #161616;
+  --pb-light: #ffffff;
+  --pb-muted: rgba(255, 255, 255, 0.65);
+  --pb-muted-2: rgba(255, 255, 255, 0.35);
+  --pb-accent: #2563eb;
+  --pb-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  --pb-serif: "Playfair Display", ui-serif, Georgia, "Times New Roman", serif;
+}
+
+/* If you don't already import Playfair elsewhere, keep this */
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
+/* Your Profile page likely places ProfileBoard inside some cell.
+   This makes the board behave like the demo: fixed vertical layout,
+   content scrolls inside, never pushes the page. */
+.pb-board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0; /* CRITICAL: lets inner scroll containers work */
+  width: 100%;
+}
+
+/* ---------- Tabs header (match your demo) ---------- */
+.pb-tabs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+  gap: 0;
+  font-family: var(--pb-serif);
+  user-select: none;
+}
+
+.pb-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  padding: 16px 24px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+
+  color: rgba(255, 255, 255, 0.5);
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+  margin-bottom: -1px; /* sits on the content border like demo */
+  z-index: 1;
+  border-top-left-radius: var(--pb-tab-radius);
+  border-top-right-radius: var(--pb-tab-radius);
+}
+
+.pb-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pb-tab.is-active {
+  background: var(--pb-dark);
+  color: #fff;
+  border-left: 1px solid rgba(0,0,0,0.35);
+  border-right: 1px solid rgba(0,0,0,0.35);
+  border-top: 1px solid rgba(0,0,0,0.35);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+  z-index: 5;
+}
+
+/* Optional: keep “Go to Library >>” not changing spacing */
+.pb-tab:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.8);
+  outline-offset: 2px;
+}
+
+/* ---------- Content wrapper: fixed, clips overflow ---------- */
+/* Your component returns panes directly after pb-tabs.
+   We enforce that the next sibling is the content area by
+   styling common pane roots to be fixed height and scroll internally. */
+
+.pb-pane,
+.pb-aboutRoot,
+.pb-lettersShell,
+.pb-lettersCompose,
+.pb-letterOpen,
+.shelf {
+  /* MUST NOT increase the parent height */
+  flex: 1 1 auto;
+  min-height: 0; /* CRITICAL */
+}
+
+/* The "frame" around all non-library panes */
+.pb-pane,
+.pb-aboutRoot,
+.pb-lettersShell,
+.pb-lettersCompose,
+.pb-letterOpen {
+  position: relative;
+  overflow: hidden; /* keeps arrows/fabs from expanding */
+  border-bottom-left-radius: var(--pb-radius);
+  border-bottom-right-radius: var(--pb-radius);
+  box-shadow: var(--pb-shadow);
+}
+
+/* If your ProfileBoard is placed on a light background in Profile,
+   we keep panes consistent. You can remove if Profile already frames it. */
+.pb-pane,
+.pb-lettersShell,
+.pb-lettersCompose,
+.pb-letterOpen {
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- Forum placeholder (same vibe as demo) ---------- */
+.pb-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.pb-paneIcon {
+  opacity: 0.2;
+}
+
+.pb-placeholderTitle {
+  font-family: var(--pb-serif);
+  font-size: 26px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.75);
+}
+
+.pb-placeholderSub {
+  font-family: var(--pb-serif);
+  font-size: 16px;
+  font-style: italic;
+  color: rgba(0,0,0,0.45);
+}
+
+/* ---------- ABOUT (matches demo, scroll inside) ---------- */
+.pb-aboutRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #1a1a1a; /* overridden inline for light/dark */
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+.pb-aboutBoard {
+  /* This is the scroll area. It must be the only thing that grows. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 32px;
+  padding-bottom: 120px; /* space for designer/fab like demo */
+  border: 12px solid #5d4037;
+  border-bottom-left-radius: var(--pb-radius);
+  border-bottom-right-radius: var(--pb-radius);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.18);
+}
+
+.pb-aboutBlocks {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 100%;
+}
+
+.pb-aboutBlock {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.pb-aboutBlock--editable {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+  transition: background-color 140ms ease;
+}
+
+.pb-aboutBlock--editable:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.pb-aboutBlock--selected {
+  background: rgba(0,0,0,0.06);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.9);
+}
+
+.pb-about-text {
+  font-family: var(--pb-serif);
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.pb-about-textarea {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  resize: none;
+  overflow: hidden; /* height is controlled by JS autoExpand */
+  font-family: var(--pb-serif);
+  line-height: 1.45;
+}
+
+/* Images */
+.pb-aboutImageWrap {
+  max-width: 100%;
+}
+
+.pb-aboutImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+  display: block;
+}
+
+/* ---------- About controls overlay (designer + FAB) ---------- */
+.pb-aboutControls {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 50;
+}
+
+/* Designer pill */
+.pb-designer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 999px;
+  padding: 10px 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+}
+
+.pb-designerGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pb-designerGroup--split {
+  padding-right: 10px;
+  border-right: 1px solid rgba(0,0,0,0.08);
+}
+
+/* small icon chips */
+.pb-iconChip {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.pb-iconChip:hover {
+  transform: translateY(-1px);
+}
+
+.pb-iconChip input {
+  display: none;
+}
+
+.pb-iconChip--blue { background: rgba(37, 99, 235, 0.10); color: #2563eb; }
+.pb-iconChip--blue:hover { background: rgba(37, 99, 235, 0.18); }
+
+.pb-iconChip--green { background: rgba(22, 163, 74, 0.10); color: #16a34a; }
+.pb-iconChip--green:hover { background: rgba(22, 163, 74, 0.18); }
+
+.pb-iconChip--danger { background: transparent; color: rgba(239, 68, 68, 0.45); }
+.pb-iconChip--danger:hover { background: rgba(239, 68, 68, 0.10); color: rgba(239, 68, 68, 0.85); }
+
+.pb-iconChip--sun { color: #eab308; background: rgba(234, 179, 8, 0.10); }
+.pb-iconChip--sun:hover { background: rgba(234, 179, 8, 0.18); }
+
+.pb-iconChip--moon { color: #0f172a; background: rgba(15, 23, 42, 0.08); }
+.pb-iconChip--moon:hover { background: rgba(15, 23, 42, 0.14); }
+
+/* align pill */
+.pb-alignPill {
+  display: flex;
+  align-items: center;
+  background: rgba(0,0,0,0.04);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.pb-alignBtn {
+  width: 30px;
+  height: 28px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: rgba(0,0,0,0.35);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.pb-alignBtn.is-active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.10);
+}
+
+.pb-fontSizeSelect {
+  font-family: var(--pb-serif);
+  font-weight: 700;
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.04);
+  outline: none;
+}
+
+/* Fab */
+.pb-fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25);
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.pb-fab:hover { transform: scale(1.06); }
+.pb-fab:active { transform: scale(0.98); }
+
+.pb-fab.is-edit { background: #2563eb; color: #fff; }
+.pb-fab.is-accept { background: #16a34a; color: #fff; }
+
+/* ---------- Scrollbar themes (exactly like demo) ---------- */
+.pb-scrollbarDark::-webkit-scrollbar { width: 8px; }
+.pb-scrollbarDark::-webkit-scrollbar-track { background: #1a1a1a; }
+.pb-scrollbarDark::-webkit-scrollbar-thumb { background: #404040; border-radius: 10px; }
+.pb-scrollbarDark::-webkit-scrollbar-thumb:hover { background: #525252; }
+.pb-scrollbarDark { scrollbar-width: thin; scrollbar-color: #404040 #1a1a1a; }
+
+.pb-scrollbarLight::-webkit-scrollbar { width: 8px; }
+.pb-scrollbarLight::-webkit-scrollbar-track { background: #f8fafc; }
+.pb-scrollbarLight::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.pb-scrollbarLight::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.pb-scrollbarLight { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f8fafc; }
+
+/* ---------- LETTERS (carousel + open + compose) ---------- */
+/* Shared: these panes must scroll INSIDE, never resize parent */
+.pb-lettersShell,
+.pb-lettersCompose,
+.pb-letterOpen {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== carousel shell ===== */
+.pb-lettersShell {
+  overflow: hidden; /* arrows/fab overlay don't expand */
+  background: #ffffff;
+}
+
+/* arrows (fade in on hover) */
+.pb-carouselArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.18);
+  cursor: pointer;
+
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.pb-lettersShell:hover .pb-carouselArrow {
+  opacity: 1;
+}
+
+.pb-carouselArrow--left { left: 10px; }
+.pb-carouselArrow--right { right: 10px; }
+
+/* carousel scroll area */
+.pb-carousel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  display: flex;
+  gap: 24px;
+
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+
+  padding: 24px;
+  padding-left: calc(10% + 0.5rem);
+  padding-right: calc(10% + 0.5rem);
+}
+
+/* Hide horizontal scrollbar but keep scroll */
+.pb-carousel::-webkit-scrollbar { height: 0; }
+.pb-carousel { scrollbar-width: none; }
+
+/* card */
+.pb-letterCard {
+  min-width: 80%;
+  scroll-snap-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.pb-letterCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.14);
+}
+
+.pb-letterCardTop {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.pb-letterCardAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+  flex: 0 0 auto;
+}
+
+.pb-letterCardMeta { flex: 1 1 auto; min-width: 0; }
+
+.pb-letterCardMetaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+
+  font-family: var(--pb-serif);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: rgba(0,0,0,0.35);
+}
+
+.pb-letterCardWriter {
+  color: rgba(0,0,0,0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-letterCardDate {
+  flex: 0 0 auto;
+}
+
+.pb-letterCardTo {
+  font-family: var(--pb-serif);
+  font-size: 10px;
+  font-style: italic;
+  color: rgba(0,0,0,0.45);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-letterCardBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+/* 7-line clamp for preview */
+.pb-letterCardPreview {
+  font-family: var(--pb-serif);
+  font-size: 12px;
+  color: rgba(0,0,0,0.75);
+  white-space: pre-wrap;
+
+  line-height: 24px;
+  background-image: linear-gradient(transparent, transparent 23px, #f3f4f6 23px);
+  background-size: 100% 24px;
+  padding-top: 1px;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 7;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.pb-letterCardImg {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.03);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+}
+
+.pb-letterCardImg img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+  opacity: 0.92;
+}
+
+.pb-letterCardBottom {
+  margin-top: auto;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  padding-top: 10px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  font-family: var(--pb-serif);
+  color: #2563eb;
+}
+
+.pb-letterCardBottom span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* compose fab */
+.pb-letterFab {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+  transition: transform 120ms ease;
+  z-index: 20;
+}
+
+.pb-letterFab:hover { transform: scale(1.08); }
+.pb-letterFab:active { transform: scale(0.98); }
+
+/* ===== open letter ===== */
+.pb-letterOpen {
+  padding: 24px;
+  overflow-y: auto; /* IMPORTANT: scroll inside */
+  overflow-x: hidden;
+}
+
+.pb-backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--pb-serif);
+  font-weight: 700;
+  font-size: 14px;
+  color: #2563eb;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+
+.pb-letterHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pb-letterAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  flex: 0 0 auto;
+}
+
+.pb-letterHeaderMain { flex: 1 1 auto; min-width: 0; }
+
+.pb-letterHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pb-letterWriter {
+  font-family: var(--pb-serif);
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(0,0,0,0.80);
+  overflow-wrap: anywhere;
+}
+
+.pb-letterRecipient {
+  font-family: var(--pb-serif);
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(0,0,0,0.48);
+}
+
+.pb-letterDate {
+  font-family: var(--pb-serif);
+  font-size: 10px;
+  color: rgba(0,0,0,0.40);
+  flex: 0 0 auto;
+  padding-top: 4px;
+}
+
+.pb-letterContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 24px;
+}
+
+.pb-letterText {
+  font-family: var(--pb-serif);
+  font-size: 16px;
+  color: rgba(0,0,0,0.76);
+  white-space: pre-wrap;
+
+  line-height: 28px;
+  background-image: linear-gradient(transparent, transparent 27px, #e5e7eb 27px);
+  background-size: 100% 28px;
+  padding-top: 2px;
+
+  overflow-wrap: anywhere;
+}
+
+.pb-letterImageRow {
+  padding: 14px 0;
+}
+
+.pb-letterImageRow img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.10);
+  display: block;
+  margin: 0 auto;
+}
+
+/* ===== compose ===== */
+.pb-lettersCompose {
+  padding: 20px 20px 0 20px;
+  overflow: hidden; /* scrolling is in body */
+}
+
+.pb-lettersComposeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex: 0 0 auto;
+}
+
+.pb-lettersField {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pb-lettersField--right { text-align: right; }
+
+.pb-lettersField label {
+  font-family: var(--pb-serif);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.38);
+}
+
+.pb-lettersField input {
+  font-family: var(--pb-serif);
+  font-size: 16px;
+  border: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.14);
+  padding: 6px 2px;
+  outline: none;
+}
+
+.pb-lettersField input:focus {
+  border-bottom-color: rgba(37, 99, 235, 0.8);
+}
+
+.pb-lettersComposeBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* IMPORTANT: scroll inside */
+  overflow-x: hidden;
+  padding-bottom: 72px;
+}
+
+.pb-writeBlock {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.pb-letterTextarea {
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  overflow: hidden; /* height managed by JS */
+  font-family: var(--pb-serif);
+  font-size: 16px;
+  color: rgba(0,0,0,0.76);
+
+  line-height: 28px;
+  background-image: linear-gradient(transparent, transparent 27px, #e5e7eb 27px);
+  background-size: 100% 28px;
+  padding-top: 2px;
+  min-height: 196px;
+  overflow-wrap: anywhere;
+}
+
+.pb-imageBlock {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px dashed rgba(0,0,0,0.14);
+  padding: 10px;
+  background: rgba(0,0,0,0.02);
+}
+
+.pb-imageBlock img {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.pb-imageDelete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 0;
+  background: rgba(239, 68, 68, 0.92);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 12px 22px rgba(0,0,0,0.18);
+}
+
+.pb-insertRow {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  padding: 6px 0 0 0;
+}
+
+.pb-writeBlock:hover .pb-insertRow {
+  opacity: 1;
+}
+
+.pb-insertChip {
+  font-family: var(--pb-serif);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(0,0,0,0.45);
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.03);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pb-insertChip--label input { display: none; }
+
+.pb-lettersComposeFooter {
+  position: sticky;
+  bottom: 0;
+  background: #ffffff;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  padding: 12px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.pb-btnText {
+  border: 0;
+  background: transparent;
+  color: rgba(0,0,0,0.52);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 10px;
+  font-family: var(--pb-serif);
+}
+
+.pb-btnPrimary {
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+  font-family: var(--pb-serif);
+}
+
+.pb-btnPrimary:hover { filter: brightness(1.03); }
+
+/* ---------- Safety: ensure no pane expands the layout ---------- */
+.pb-aboutRoot *,
+.pb-lettersShell *,
+.pb-lettersCompose *,
+.pb-letterOpen * {
+  box-sizing: border-box;
+}
+
+/* ===============================
+   STOP PAGE GROWTH + STOP HEADER SHRINK
+   =============================== */
+
+/* lock the whole page to viewport */
+.profile-app {
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* content must scroll inside cells, never expand page */
+}
+
+/* this wrapper makes header fixed and unshrinkable */
+.profile-headerShell {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* main area fills remaining height only */
+.profile-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* grid must never expand with content */
+.profile-grid {
+  height: 100%;
+  min-height: 0;
+
+  /* IMPORTANT: rows cannot be auto */
+  grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+}
+
+/* every cell must allow inner overflow rather than expanding grid/page */
+.profile-grid > .cell {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* the right-top cell that contains the board */
+.library-cell.section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ProfileBoard tabs must not steal height */
+.library-cell.section .pb-tabs {
+  flex: 0 0 auto;
+}
+
+/* the rendered pane below tabs must fill remaining height */
+.library-cell.section > :not(.pb-tabs) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
