@@ -342,7 +342,7 @@ export default function ProfileBoard({
                       </p>
                     )
                   ) : (
-                    <div className="pb-aboutImageWrap" style={{ textAlign: block.align as any }}>
+                    <div className="pb-aboutImageWrap" data-align={block.align}>
                       <img src={block.value} className="pb-aboutImage" alt="About" />
                     </div>
                   )}

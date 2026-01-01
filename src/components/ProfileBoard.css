@@ -957,3 +957,1443 @@
   min-height: 0;
   overflow: hidden;
 }
+
+/* src/components/ProfileBoard.css */
+
+/* ===============================
+   Base: lock board shape (no rounding)
+================================ */
+.profileBoardRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden; /* ensures inner content scrolls instead of growing the page */
+  border-radius: 0;
+}
+
+/* Tabs row */
+.pb-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  flex: 0 0 auto;
+  border-radius: 0;
+}
+
+/* Tab buttons */
+.pb-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 800;
+  font-size: 22px;
+  padding: 16px 22px;
+  cursor: pointer;
+  border-radius: 0; /* straight edges */
+  margin-bottom: -1px; /* keep the “connected” look */
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease;
+}
+
+.pb-tab:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pb-tab.is-active {
+  background: #151515;
+  color: #ffffff;
+  border-left: 1px solid #151515;
+  border-right: 1px solid #151515;
+  border-top: 1px solid #151515;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  border-radius: 0; /* straight edges */
+}
+
+/* ===============================
+   Body: must not grow page
+================================ */
+.pb-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden; /* prevents growth when content expands */
+  border-radius: 0;
+}
+
+/* A simple placeholder pane (Forum, etc.) */
+.pb-pane {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0f0f0f;
+  border-radius: 0;
+  padding: 22px;
+}
+
+.pb-placeholderTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0 0 8px 0;
+}
+
+.pb-placeholderSub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* ===============================
+   Library tab
+   IMPORTANT: do NOT style .shelf / .book-spine here
+   (Those are controlled by Profile.css and must remain unchanged)
+================================ */
+/* No library overrides on purpose */
+
+
+/* ===============================
+   ABOUT tab: remove the brown outline + straight edges
+   (Your TSX likely renders an about container with scrolling content.)
+================================ */
+
+/* Root wrapper for About content (safe generic hooks) */
+.pb-aboutRoot,
+.pb-aboutWrap,
+.pb-aboutContainer {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+/* This is the piece that used to have the brown “frame”.
+   We remove any thick border and any rounded corners. */
+.pb-aboutBoard,
+.pb-aboutCanvas,
+.pb-aboutContent {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  border: none !important;          /* removes brown outline */
+  outline: none !important;
+  border-radius: 0 !important;      /* straight edges */
+  box-shadow: none;                 /* kills “framed” inner shadow if you had one */
+}
+
+/* Ensure the About scrolling is contained */
+.pb-aboutBoard::-webkit-scrollbar,
+.pb-aboutCanvas::-webkit-scrollbar,
+.pb-aboutContent::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pb-aboutBoard::-webkit-scrollbar-thumb,
+.pb-aboutCanvas::-webkit-scrollbar-thumb,
+.pb-aboutContent::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.pb-aboutBoard::-webkit-scrollbar-track,
+.pb-aboutCanvas::-webkit-scrollbar-track,
+.pb-aboutContent::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Any About block selection rings should stay, but never rounded */
+.pb-aboutBlock,
+.pb-aboutBlockSelected,
+.pb-aboutBlockHover {
+  border-radius: 0 !important;
+}
+
+/* ===============================
+   LETTERS tab: straight edges everywhere
+================================ */
+
+.pb-lettersRoot,
+.pb-lettersWrap {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+/* The main letters stage */
+.pb-lettersStage {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0f0f0f;
+}
+
+/* Carousel area */
+.pb-lettersCarousel {
+  height: 100%;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  display: flex;
+  gap: 18px;
+  padding: 18px 10%;
+  border-radius: 0;
+}
+
+/* Letter preview card */
+.pb-letterCard {
+  scroll-snap-align: center;
+  min-width: 80%;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  padding: 16px;
+  border-radius: 0; /* straight edges */
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pb-letterCard:hover {
+  transform: translateY(-2px);
+}
+
+/* Any images inside letters should not be rounded */
+.pb-letterCard img,
+.pb-letterView img,
+.pb-letterCompose img {
+  border-radius: 0 !important;
+}
+
+/* Compose / view panes should scroll internally */
+.pb-letterCompose,
+.pb-letterView {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  border-radius: 0;
+  background: #0f0f0f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Buttons inside the board should be straight */
+.profileBoardRoot button,
+.profileBoardRoot input,
+.profileBoardRoot textarea,
+.profileBoardRoot select {
+  border-radius: 0 !important;
+}
+
+/* ===============================
+   Nuclear option (kept gentle):
+   Only removes rounding INSIDE the board,
+   without touching other pages.
+================================ */
+.profileBoardRoot * {
+  border-radius: 0;
+}
+
+/* src/components/ProfileBoard.css */
+
+/* =========================================================
+   ROOT: board must not grow page; no rounding (except tabs)
+========================================================= */
+.profileBoardRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* =========================================================
+   TABS: bring back rounded corners (ONLY tabs)
+========================================================= */
+.pb-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  flex: 0 0 auto;
+}
+
+.pb-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  padding: 16px 22px;
+  font-size: 22px;
+  font-weight: 800;
+
+  color: rgba(255, 255, 255, 0.6);
+
+  /* rounded corners restored */
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+
+  margin-bottom: -1px;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.pb-tab:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pb-tab.is-active {
+  background: #151515;
+  color: #ffffff;
+
+  border-left: 1px solid #151515;
+  border-right: 1px solid #151515;
+  border-top: 1px solid #151515;
+
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+
+  /* keep the rounding */
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+/* =========================================================
+   BODY: must not grow; content scrolls inside
+========================================================= */
+.pb-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden; /* prevents vertical growth */
+}
+
+/* Placeholder panes (Forum, etc.) */
+.pb-pane {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0f0f0f;
+  padding: 22px;
+
+  border-radius: 0; /* straight edges */
+}
+
+.pb-placeholderTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0 0 8px 0;
+}
+
+.pb-placeholderSub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* =========================================================
+   LIBRARY: DO NOT TOUCH (intentionally no .shelf overrides)
+========================================================= */
+
+
+/* =========================================================
+   ABOUT: no brown outline + straight edges (already good)
+========================================================= */
+.pb-aboutRoot,
+.pb-aboutWrap,
+.pb-aboutContainer {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.pb-aboutBoard,
+.pb-aboutCanvas,
+.pb-aboutContent {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+
+  border: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* About scrollbars */
+.pb-aboutBoard::-webkit-scrollbar,
+.pb-aboutCanvas::-webkit-scrollbar,
+.pb-aboutContent::-webkit-scrollbar {
+  width: 8px;
+}
+.pb-aboutBoard::-webkit-scrollbar-thumb,
+.pb-aboutCanvas::-webkit-scrollbar-thumb,
+.pb-aboutContent::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+.pb-aboutBoard::-webkit-scrollbar-track,
+.pb-aboutCanvas::-webkit-scrollbar-track,
+.pb-aboutContent::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* =========================================================
+   LETTERS: dark theme + fix arrows + fix compose inputs
+========================================================= */
+
+/* These hooks are written to be robust:
+   they apply if your TSX uses these classes OR similar wrappers.
+*/
+.pb-lettersRoot,
+.pb-lettersWrap,
+.pb-lettersStage,
+.pb-letterCompose,
+.pb-letterView {
+  border-radius: 0 !important; /* straight edges */
+}
+
+/* Main letters container should be dark */
+.pb-lettersRoot,
+.pb-lettersWrap,
+.pb-lettersStage {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+
+  background: #0b0b0b;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* If your TSX uses a generic “letters pane” div, this catches it too */
+.pb-lettersStage,
+.pb-lettersPane,
+.pb-lettersContainer {
+  background: #0b0b0b;
+  color: #ffffff;
+}
+
+/* Carousel: dark background, internal scrolling only */
+.pb-lettersCarousel,
+.pb-carousel,
+.pb-letterCarousel {
+  height: 100%;
+  min-height: 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  display: flex;
+  gap: 18px;
+
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+
+  background: #0b0b0b;
+  color: #ffffff;
+
+  border-radius: 0;
+}
+
+/* Hide horizontal scrollbar if you already do that elsewhere */
+.pb-lettersCarousel::-webkit-scrollbar,
+.pb-carousel::-webkit-scrollbar,
+.pb-letterCarousel::-webkit-scrollbar {
+  height: 0;
+}
+
+/* Letter preview cards: dark */
+.pb-letterCard,
+.pb-letterTile,
+.pb-letterPreview {
+  scroll-snap-align: center;
+
+  min-width: 80%;
+  min-height: 0;
+
+  background: #0f0f0f;
+  color: #ffffff;
+
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+
+  padding: 16px;
+  border-radius: 0;
+}
+
+.pb-letterCard * ,
+.pb-letterTile * ,
+.pb-letterPreview * {
+  color: inherit;
+}
+
+/* Make “Open letter” area readable */
+.pb-letterCard .openLetter,
+.pb-letterCard .pb-openLetter,
+.pb-letterTile .pb-openLetter {
+  color: #8ab4ff;
+}
+
+/* Images inside letters should not be rounded */
+.pb-letterCard img,
+.pb-letterTile img,
+.pb-letterPreview img,
+.pb-letterView img,
+.pb-letterCompose img {
+  border-radius: 0 !important;
+}
+
+/* ==========================
+   Carousel arrow buttons
+   Your screenshot shows white arrows on white backgrounds.
+   Fix by forcing DARK button background + white icon.
+========================== */
+.pb-carouselArrow,
+.pb-lettersArrow,
+.pb-arrowBtn,
+.pb-arrowLeft,
+.pb-arrowRight {
+  background: rgba(0, 0, 0, 0.72) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35) !important;
+
+  color: #ffffff !important;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 0 !important; /* straight edges */
+}
+
+.pb-carouselArrow svg,
+.pb-lettersArrow svg,
+.pb-arrowBtn svg,
+.pb-arrowLeft svg,
+.pb-arrowRight svg {
+  color: #ffffff !important;
+}
+
+/* ==========================
+   Floating write button: center the icon
+========================== */
+.pb-writeBtn,
+.pb-composeBtn,
+.pb-fab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 0 !important; /* straight edges */
+}
+
+/* ==========================
+   Compose / Open letter panes:
+   dark background + readable inputs
+========================== */
+.pb-letterCompose,
+.pb-letterView,
+.pb-letterOpen,
+.pb-letterDetail {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+
+  background: #0b0b0b;
+  color: #ffffff;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+}
+
+/* Inputs: make typed text visible */
+.pb-letterCompose input,
+.pb-letterCompose textarea,
+.pb-letterView input,
+.pb-letterView textarea,
+.pb-letterOpen input,
+.pb-letterOpen textarea {
+  background: transparent !important;
+  color: #ffffff !important;
+  caret-color: #ffffff !important;
+
+  border-color: rgba(255, 255, 255, 0.20) !important;
+}
+
+.pb-letterCompose input::placeholder,
+.pb-letterCompose textarea::placeholder {
+  color: rgba(255, 255, 255, 0.40) !important;
+}
+
+/* If your TSX has labels like "From/To", keep readable */
+.pb-letterCompose label,
+.pb-letterView label {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* =========================================================
+   IMPORTANT: remove global border-radius nukes
+   (We keep rounding only on the top tabs)
+========================================================= */
+.profileBoardRoot button,
+.profileBoardRoot input,
+.profileBoardRoot textarea,
+.profileBoardRoot select {
+  border-radius: 0;
+}
+
+/* But keep tab rounding */
+.profileBoardRoot .pb-tab {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* =========================================================
+   LETTERS — CSS ONLY (based on your TSX classnames)
+   Carousel: dark background, no outer white outline
+   Cards: white bg, black text, blue accents
+   Open: full white, black text, black ruling lines
+   Compose: full white, black text, visible inputs
+========================================================= */
+
+/* -------------------------
+   CAROUSEL SHELL (dark)
+-------------------------- */
+.pb-lettersShell {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  background: #0b0b0b;        /* dark */
+  color: #ffffff;              /* for arrows/FAB if needed */
+  border: none !important;     /* remove white outline */
+  outline: none !important;
+  box-shadow: none !important;
+
+  border-radius: 0 !important; /* straight edges */
+  overflow: hidden;            /* prevent growth bleed */
+}
+
+/* if your generic "light" pane adds border/shadow, kill it */
+.pb-lettersShell.pb-scrollbarLight {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* -------------------------
+   CAROUSEL SCROLLER
+-------------------------- */
+.pb-carousel {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  display: flex;
+  gap: 24px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+
+  padding: 24px 10%;
+}
+
+/* Hide scrollbar (optional) */
+.pb-carousel::-webkit-scrollbar { height: 0; }
+.pb-carousel { scrollbar-width: none; }
+
+/* Empty state on dark */
+.pb-emptyLetters {
+  color: rgba(255,255,255,0.55);
+  font-style: italic;
+  margin: auto;
+}
+
+/* -------------------------
+   PREVIEW CARD: WHITE + BLACK
+-------------------------- */
+.pb-letterCard {
+  min-width: 80%;
+  scroll-snap-align: center;
+
+  background: #ffffff;
+  color: #0b0b0b;
+
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.55);
+
+  border-radius: 0 !important; /* straight edges */
+  overflow: hidden;
+
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.pb-letterCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 44px rgba(0,0,0,0.65);
+}
+
+/* Make everything inside the card black by default */
+.pb-letterCard * {
+  color: inherit;
+}
+
+/* Card header styling */
+.pb-letterCardTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.10);
+}
+
+.pb-letterCardAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px; /* avatar can stay round */
+  background: #f2f2f2;
+  border: 1px solid rgba(0,0,0,0.08);
+  flex: 0 0 auto;
+}
+
+.pb-letterCardMeta { min-width: 0; flex: 1 1 auto; }
+
+.pb-letterCardMetaRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pb-letterCardWriter {
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0b0b0b;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-letterCardDate {
+  font-size: 12px;
+  color: rgba(0,0,0,0.55);
+  flex: 0 0 auto;
+}
+
+.pb-letterCardTo {
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(0,0,0,0.60);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Preview body: keep readable, clamp with overflow hidden if you want */
+.pb-letterCardBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Text preview with subtle light gray ruling (like your screenshot behavior) */
+.pb-letterCardPreview {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #111;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+
+  background-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 23px,
+    rgba(0,0,0,0.08) 23px
+  );
+  background-size: 100% 24px;
+  padding-top: 1px;
+}
+
+/* Preview images inside cards */
+.pb-letterCardImg {
+  margin: 8px 0;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #f6f6f6;
+  overflow: hidden;
+  border-radius: 0 !important;
+}
+
+.pb-letterCardImg img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Card footer: blue accents */
+.pb-letterCardBottom {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  color: #2563eb; /* blue */
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pb-letterCardBottom svg {
+  color: #2563eb;
+  opacity: 0.5;
+}
+
+/* -------------------------
+   CAROUSEL ARROWS (visible on dark)
+-------------------------- */
+.pb-carouselArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+
+  width: 42px;
+  height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.55);
+
+  cursor: pointer;
+}
+
+.pb-carouselArrow svg {
+  color: #ffffff; /* ensure visible */
+}
+
+.pb-carouselArrow--left { left: 10px; }
+.pb-carouselArrow--right { right: 10px; }
+
+/* -------------------------
+   FAB (center icon)
+-------------------------- */
+.pb-letterFab {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 30;
+
+  width: 52px;
+  height: 52px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #2563eb;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.60);
+
+  cursor: pointer;
+}
+
+.pb-letterFab svg { color: #fff; }
+
+/* =========================================================
+   OPEN LETTER — full white + black + black ruling lines
+========================================================= */
+
+.pb-letterOpen {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+
+  background: #ffffff;
+  color: #0b0b0b;
+
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+
+  border-radius: 0 !important;
+}
+
+/* everything inside open letter should be black by default */
+.pb-letterOpen * { color: inherit; }
+
+/* back button */
+.pb-backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0 0 14px;
+
+  color: #2563eb;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* header */
+.pb-letterHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.pb-letterAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: #f2f2f2;
+  border: 1px solid rgba(0,0,0,0.10);
+  flex: 0 0 auto;
+}
+
+.pb-letterWriter {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0b0b0b;
+  overflow-wrap: anywhere;
+}
+
+.pb-letterRecipient {
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(0,0,0,0.65);
+}
+
+.pb-letterDate {
+  font-size: 11px;
+  color: rgba(0,0,0,0.55);
+  white-space: nowrap;
+}
+
+/* body */
+.pb-letterContent {
+  padding-bottom: 18px;
+}
+
+/* text blocks with black ruling lines */
+.pb-letterText {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: #0b0b0b;
+
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+
+  background-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 27px,
+    rgba(0,0,0,0.18) 27px
+  );
+  background-size: 100% 28px;
+  padding-top: 2px;
+}
+
+/* open letter images */
+.pb-letterImageRow {
+  padding: 12px 0;
+}
+
+.pb-letterImageRow img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0 !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+}
+
+/* =========================================================
+   COMPOSE — full white + black, inputs visible
+========================================================= */
+
+.pb-lettersCompose {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+
+  background: #ffffff;
+  color: #0b0b0b;
+
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+
+  border-radius: 0 !important;
+}
+
+/* Compose header fields */
+.pb-lettersComposeHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.pb-lettersField {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pb-lettersField--right { text-align: right; }
+.pb-lettersField--right input { text-align: right; }
+
+.pb-lettersField label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: rgba(0,0,0,0.55);
+}
+
+.pb-lettersField input {
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.18);
+  outline: none;
+
+  padding: 6px 0;
+  font-size: 16px;
+
+  color: #0b0b0b;           /* IMPORTANT: visible text */
+  caret-color: #0b0b0b;
+  background: transparent;
+}
+
+.pb-lettersField input::placeholder {
+  color: rgba(0,0,0,0.35);
+}
+
+/* Compose body blocks */
+.pb-lettersComposeBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 70px;
+}
+
+/* Textarea: black text + gray lines */
+.pb-letterTextarea {
+  width: 100%;
+  resize: none;
+  outline: none;
+
+  font-size: 15px;
+  color: #0b0b0b;          /* IMPORTANT */
+  caret-color: #0b0b0b;
+
+  background-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 27px,
+    rgba(0,0,0,0.14) 27px
+  );
+  background-size: 100% 28px;
+
+  padding-top: 2px;
+  min-height: 196px;
+
+  overflow: hidden; /* your JS grows it */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.pb-letterTextarea::placeholder {
+  color: rgba(0,0,0,0.35);
+}
+
+/* Image block */
+.pb-imageBlock {
+  position: relative;
+  border: 2px dashed rgba(0,0,0,0.18);
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 0 !important;
+}
+
+.pb-imageBlock img {
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  display: block;
+}
+
+/* delete image button */
+.pb-imageDelete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ef4444;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pb-imageDelete svg { color: #fff; }
+
+/* Insert row chips */
+.pb-insertRow {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.pb-insertChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+
+  color: rgba(0,0,0,0.55);
+  background: #f6f6f6;
+  border: 1px solid rgba(0,0,0,0.10);
+
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pb-insertChip--label input {
+  display: none;
+}
+
+/* Compose footer (sticky) */
+.pb-lettersComposeFooter {
+  position: sticky;
+  bottom: 0;
+
+  background: #ffffff;
+  border-top: 1px solid rgba(0,0,0,0.10);
+
+  padding: 10px 0;
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.pb-btnText {
+  background: transparent;
+  border: none;
+  color: rgba(0,0,0,0.55);
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.pb-btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: #2563eb;
+  color: #fff;
+
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+/* ABOUT — make the edit/accept FAB circular */
+.pb-fab {
+  width: 52px;              /* keep consistent */
+  height: 52px;
+  border-radius: 999px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* if you have square corners coming from these states */
+.pb-fab.is-edit,
+.pb-fab.is-accept {
+  border-radius: 999px !important;
+}
+
+/* ABOUT — font size select should be black text */
+.pb-fontSizeSelect {
+  color: #000 !important;
+  background: #f6f6f6;                 /* or white, your choice */
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.pb-fontSizeSelect option {
+  color: #000 !important;
+  background: #fff !important;
+}
+
+/* ABOUT — image alignment driven by data-align */
+.pb-aboutImageWrap {
+  width: 100%;
+}
+
+.pb-aboutImage {
+  display: block;               /* important */
+  max-width: 100%;
+  height: auto;
+}
+
+/* left */
+.pb-aboutImageWrap[data-align="left"] .pb-aboutImage {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* center */
+.pb-aboutImageWrap[data-align="center"] .pb-aboutImage {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* right */
+.pb-aboutImageWrap[data-align="right"] .pb-aboutImage {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* =========================================================
+   ProfileBoard — use site-wide default font (sans)
+   ========================================================= */
+:root {
+  /* If your site already defines these, this won't hurt. */
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-mono);
+}
+
+/* Scope font changes ONLY to ProfileBoard */
+.pb-tabs,
+.pb-tab,
+.pb-pane,
+.pb-aboutRoot,
+.pb-aboutBoard,
+.pb-aboutBlocks,
+.pb-aboutBlock,
+.pb-about-text,
+.pb-about-textarea,
+.pb-designer,
+.pb-fontSizeSelect,
+.pb-lettersShell,
+.pb-carousel,
+.pb-letterCard,
+.pb-letterOpen,
+.pb-lettersCompose,
+.pb-letterTextarea,
+.pb-letterText,
+.pb-letterWriter,
+.pb-letterRecipient,
+.pb-letterDate,
+.pb-backBtn,
+.pb-btnText,
+.pb-btnPrimary,
+.pb-letterCardPreview,
+.pb-letterCardBottom,
+.pb-emptyLetters,
+.pb-lettersField,
+.pb-lettersField input {
+  font-family: var(--default-font-family) !important;
+}
+
+/* Ensure any code-like bits use mono if you have them */
+.pb-letterTextarea,
+.pb-about-textarea {
+  font-family: var(--default-font-family) !important; /* keep sans for writing */
+}
+
+/* If any placeholders/icons inherit weird fonts */
+.pb-tabs *,
+.pb-pane *,
+.pb-aboutRoot *,
+.pb-lettersShell * {
+  font-family: var(--default-font-family);
+}
+
+/* =========================
+   LETTERS: OPEN VIEW SCROLL FIX
+   ========================= */
+
+/* The letters tab root must not clip scrolling children */
+.pb-lettersShell {
+  height: 100%;
+  min-height: 0;          /* critical in flex layouts */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;       /* keeps arrows/fab contained */
+}
+
+/* Open letter page: make it a column and allow internal scroll */
+.pb-letterOpen {
+  height: 100%;
+  min-height: 0;          /* critical */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;       /* header stays, body scrolls */
+}
+
+/* The content area must be the scrolling region */
+.pb-letterContent {
+  flex: 1 1 auto;
+  min-height: 0;          /* critical */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 24px;   /* breathing room at bottom */
+}
+
+/* If you also want compose to scroll properly */
+.pb-lettersCompose {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pb-lettersComposeBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================
+   TOP TABS: no growing + colored accents
+   ========================= */
+
+:root{
+  --c1: #ef5623;
+  --c2: #e41f6c;
+  --c3: #6a1b9a;
+  --c4: #1e88e5;
+}
+
+/* container stays stable */
+.pb-tabs{
+  display: flex;
+  gap: 0;
+  align-items: flex-end;
+}
+
+/* base tab: NO scale / NO size change */
+.pb-tab{
+  appearance: none;
+  border: 0;
+  background: transparent;
+
+  /* lock sizing so it never “grows” */
+  padding: 12px 24px;
+  line-height: 1;
+  height: 52px;                 /* fixed */
+  min-height: 52px;
+  box-sizing: border-box;
+
+  font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif);
+  font-weight: 800;
+  font-size: 24px;
+
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+
+  /* remove any transform growth from old css */
+  transform: none !important;
+  scale: 1 !important;
+
+  /* if you had transitions that caused “growth”, keep only color/bg */
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+/* keep your rounded corners on the tabs only */
+.pb-tab{
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+/* hover: background only, no translate/scale */
+.pb-tab:hover{
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+}
+
+/* active: colored background + same exact size */
+.pb-tab.is-active{
+  color: #fff;
+  box-shadow: 0 -6px 18px rgba(0,0,0,0.25);
+}
+
+/* Assign each tab its accent */
+.pb-tab:nth-child(1).is-active{ background: var(--c1); border-color: var(--c1); }
+.pb-tab:nth-child(2).is-active{ background: var(--c2); border-color: var(--c2); }
+.pb-tab:nth-child(3).is-active{ background: var(--c3); border-color: var(--c3); }
+.pb-tab:nth-child(4).is-active{ background: var(--c4); border-color: var(--c4); }
+
+
+
+/* Kill any old rules that change padding/margin/translate on active */
+.pb-tab.is-active,
+.pb-tab:active{
+  margin: 0 !important;
+  padding: 12px 24px !important;
+  translate: 0 0 !important;
+}
