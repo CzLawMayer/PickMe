@@ -2397,3 +2397,136 @@
   padding: 12px 24px !important;
   translate: 0 0 !important;
 }
+
+/* =========================
+   LETTERS: dark shell background
+   ========================= */
+
+/* carousel view shell */
+.pb-lettersShell{
+  background: #0f0f10;
+  border: none;
+}
+
+/* compose view background */
+.pb-lettersCompose{
+  background: #0f0f10;
+  border: none;
+}
+
+/* open letter view background stays white as you wanted earlier,
+   but if you WANT the open view to inherit the shell, remove this. */
+.pb-letterOpen{
+  background: #fff;
+  color: #111;
+  border: none;
+}
+
+/* if any wrapper adds a light outline, kill it */
+.pb-lettersShell,
+.pb-lettersCompose,
+.pb-letterOpen{
+  outline: none;
+  box-shadow: none;
+}
+
+
+/* =========================
+   ABOUT: dark mode uses #0f0f10
+   ========================= */
+
+/* root of about section */
+.pb-aboutRoot{
+  background: #0f0f10; /* default (dark) */
+}
+
+/* your TSX sets inline backgroundColor via bgColor,
+   so we override specifically when dark mode class is present */
+.pb-aboutRoot[style*="background-color: rgb(26, 26, 26)"],
+.pb-aboutRoot[style*="background-color:#1a1a1a"],
+.pb-aboutRoot[style*="background-color: #1a1a1a"]{
+  background: #0f0f10 !important;
+}
+
+/* board surface in about */
+.pb-aboutBoard{
+  background: transparent; /* let root show through */
+}
+
+/* dark scrollbar track to match */
+.pb-scrollbarDark::-webkit-scrollbar-track{ background: #0f0f10; }
+.pb-scrollbarDark{ scrollbar-color: #3c3c3f #0f0f10; }
+
+/* =========================
+   KILL ALL WEIRD SHADOWS / OVERLAYS (Letters)
+   Put this at the VERY BOTTOM of ProfileBoard.css
+   ========================= */
+
+/* Remove any shadow/outline/border that can create a “dark edge” */
+.pb-lettersShell,
+.pb-lettersShell *,
+.pb-lettersCompose,
+.pb-lettersCompose *,
+.pb-letterOpen,
+.pb-letterOpen *{
+  box-shadow: none !important;
+  filter: none !important;
+  outline: none !important;
+}
+
+/* Ensure the shell is a flat solid color (no gradients/overlays) */
+.pb-lettersShell{
+  background: #0f0f10 !important;
+  background-image: none !important;
+  border: none !important;
+}
+
+/* If you have a pseudo-overlay causing the “darker” look, kill it */
+.pb-lettersShell::before,
+.pb-lettersShell::after,
+.pb-carousel::before,
+.pb-carousel::after{
+  content: none !important;
+  display: none !important;
+}
+
+/* Remove any inset effects that show as right-side shadows */
+.pb-carousel{
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Carousel arrows: no shadow pills */
+.pb-carouselArrow{
+  box-shadow: none !important;
+  filter: none !important;
+  border: none !important;
+  background: transparent !important; /* or keep your chosen bg */
+}
+
+/* Write FAB: remove shadow + ring + any glow */
+.pb-letterFab{
+  box-shadow: none !important;
+  filter: none !important;
+  outline: none !important;
+  border: none !important;
+}
+.pb-letterFab::before,
+.pb-letterFab::after{
+  content: none !important;
+  display: none !important;
+}
+
+/* If the FAB had a “ring” implemented as border or outline */
+.pb-letterFab{
+  background-image: none !important;
+}
+
+/* Some browsers add focus glow/shadow */
+.pb-letterFab:focus,
+.pb-letterFab:focus-visible,
+.pb-carouselArrow:focus,
+.pb-carouselArrow:focus-visible{
+  outline: none !important;
+  box-shadow: none !important;
+}
