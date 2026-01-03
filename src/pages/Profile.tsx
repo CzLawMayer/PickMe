@@ -356,7 +356,12 @@ export default function ProfilePage() {
                     </h2>
 
                     <div className="profile-handleRow profile-idRow">
-                      <span className="profile-flag" aria-hidden={true} />
+                      <img
+                        className="profile-flag"
+                        src="https://flagsapi.com/EE/flat/32.png"
+                        alt="Estonia"
+                        aria-hidden={false}
+                      />
                       <div className="profile-handle" ref={handleFit.ref as React.RefObject<HTMLDivElement>}>
                         @{profile.username}
                       </div>
