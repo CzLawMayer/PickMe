@@ -91,6 +91,19 @@ export default function ProfilePage() {
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<SelectionSource>(null);
 
+  type PeopleTab = "followers" | "following";
+
+  const [peopleModalOpen, setPeopleModalOpen] = useState(false);
+  const [peopleTab, setPeopleTab] = useState<PeopleTab>("followers");
+
+  const openPeopleModal = (tab: PeopleTab) => {
+    setPeopleTab(tab);
+    setPeopleModalOpen(true);
+  };
+
+  const closePeopleModal = () => setPeopleModalOpen(false);
+
+
   const getBookById = (id?: string | null) => {
     if (!id) return null;
     const sid = String(id);
@@ -137,6 +150,18 @@ export default function ProfilePage() {
       window.removeEventListener("resize", compute);
     };
   }, [activeBook?.title]);
+
+  useLayoutEffect(() => {
+    if (!peopleModalOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closePeopleModal();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [peopleModalOpen]);
+
 
   const recomputeStories = () => {
     const vp = storiesRef.current;
@@ -368,14 +393,28 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="profile-metrics profile-idRow" aria-label="Profile metrics">
-                      <div className="profile-metric">
+                      <button
+                        type="button"
+                        className="profile-metric profile-metricBtn"
+                        onClick={() => openPeopleModal("followers")}
+                        aria-haspopup="dialog"
+                        aria-expanded={peopleModalOpen}
+                      >
                         <div className="metric-number">{formatCompact(profileMetrics.followers)}</div>
                         <div className="metric-label">Followers</div>
-                      </div>
-                      <div className="profile-metric">
+                      </button>
+
+                      <button
+                        type="button"
+                        className="profile-metric profile-metricBtn"
+                        onClick={() => openPeopleModal("following")}
+                        aria-haspopup="dialog"
+                        aria-expanded={peopleModalOpen}
+                      >
                         <div className="metric-number">{formatCompact(profileMetrics.following)}</div>
                         <div className="metric-label">Following</div>
-                      </div>
+                      </button>
+
                       <div className="profile-metric">
                         <div className="metric-number">{formatCompact(profileMetrics.stories)}</div>
                         <div className="metric-label">Stories</div>
@@ -651,6 +690,68 @@ export default function ProfilePage() {
           </section>
         </div>
       </main>
+
+      {peopleModalOpen && (
+        <div className="peopleModalOverlay" role="presentation" onMouseDown={closePeopleModal}>
+          <div
+            className="peopleModal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Followers and Following"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="peopleModalHeader">
+              <div className="peopleTabs" role="tablist" aria-label="Followers and Following tabs">
+                <button
+                  type="button"
+                  role="tab"
+                  className={"peopleTab" + (peopleTab === "followers" ? " is-active" : "")}
+                  aria-selected={peopleTab === "followers"}
+                  onClick={() => setPeopleTab("followers")}
+                >
+                  Followers
+                </button>
+
+                <button
+                  type="button"
+                  role="tab"
+                  className={"peopleTab" + (peopleTab === "following" ? " is-active" : "")}
+                  aria-selected={peopleTab === "following"}
+                  onClick={() => setPeopleTab("following")}
+                >
+                  Following
+                </button>
+              </div>
+
+              <button type="button" className="peopleModalClose" onClick={closePeopleModal} aria-label="Close">
+                ×
+              </button>
+            </div>
+
+            <div className="peopleModalBody">
+              {/* TEMP: placeholder data (swap later to real followers/following arrays) */}
+              {Array.from({ length: 24 }).map((_, i) => (
+                <div className="peopleRow" key={`${peopleTab}-${i}`}>
+                  <div className="peopleAvatar" aria-hidden="true" />
+                  <div className="peopleMeta">
+                    <div className="peopleName">{peopleTab === "followers" ? `Follower ${i + 1}` : `Following ${i + 1}`}</div>
+                    <div className="peopleHandle">@handle{i + 1}</div>
+                  </div>
+
+                  <button type="button" className="peopleActionBtn">
+                    {peopleTab === "followers" ? "Remove" : "Following"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+
+
 
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>

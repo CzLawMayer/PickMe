@@ -2643,3 +2643,207 @@ a:focus,
   flex-shrink: 0 !important;
 }
 
+/* === Clickable metrics (Followers / Following) === */
+.profile-metricBtn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-metricBtn:focus,
+.profile-metricBtn:focus-visible {
+  outline: none !important;
+}
+
+/* === People modal (Instagram-ish) === */
+.peopleModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.62);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.peopleModal {
+  width: min(520px, 92vw);
+  max-height: min(640px, 86vh);
+  background: #0b0b0c;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.55);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.peopleModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+
+.peopleModalTitle {
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+  color: #fff;
+}
+
+.peopleModalClose {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+  padding: 0 6px;
+}
+
+.peopleModalBody {
+  padding: 10px 10px;
+  overflow: auto;
+}
+
+/* rows */
+.peopleRow {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: 10px;
+}
+
+.peopleRow:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.peopleAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+}
+
+.peopleMeta {
+  min-width: 0;
+}
+
+.peopleName {
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.peopleHandle {
+  margin-top: 2px;
+  color: rgba(255,255,255,0.62);
+  font-weight: 650;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.peopleActionBtn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.peopleActionBtn:active {
+  transform: translateY(1px);
+}
+
+/* === Tabs in modal header === */
+.peopleTabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.peopleTab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.60);
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  padding: 6px 2px;
+  position: relative;
+}
+
+.peopleTab.is-active {
+  color: #fff;
+}
+
+.peopleTab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -14px; /* aligns with header border area */
+  height: 2px;
+  background: rgba(255,255,255,0.85);
+  border-radius: 2px;
+}
+
+/* === Dark scrollbar inside Followers/Following popover === */
+.peopleModalBody {
+  scrollbar-width: thin;                          /* Firefox */
+  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.55);
+}
+
+/* Chromium / Safari / Edge */
+.peopleModalBody::-webkit-scrollbar {
+  width: 10px;
+}
+
+.peopleModalBody::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.55);
+  border-radius: 999px;
+}
+
+.peopleModalBody::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.22);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0.55);            /* keeps the thumb from looking “light” */
+}
+
+.peopleModalBody::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.32);
+}
+
+/* === Make the Followers / Following popup square (no rounded corners) === */
+.peopleModal {
+  border-radius: 0 !important;
+}
+
+.peopleModalHeader {
+  border-radius: 0 !important;
+}
+
+.peopleModalBody {
+  border-radius: 0 !important;
+}
