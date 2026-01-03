@@ -9,7 +9,7 @@ export const getBooksByIds = (ids) =>
 export const profile = {
   id: "user-001",
   name: "Diego Ballesteros",
-  username: "Balls",
+  username: "NamesBrooklyn",
   avatarUrl: "/public/avatars/Diego.jpg",
 
   stories: [

@@ -1943,3 +1943,694 @@ a:focus,
     transition: none;
   }
 }
+
+/* ============================
+   PROFILE IDENTITY (NEW HEADER STYLE)
+   matches screenshot: rectangle avatar + name/handle + metrics + bars
+============================ */
+
+/* Keep identity block compact and aligned */
+.profile-identity {
+  width: 100%;
+}
+
+/* Main row: rectangular avatar on left, content on right */
+.profile-identityRow {
+  display: grid;
+  grid-template-columns: clamp(96px, 14vh, 150px) 1fr;
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+}
+
+/* Rectangular avatar (no rounding) */
+.profile-avatarRect {
+  width: clamp(96px, 14vh, 150px);
+  height: clamp(96px, 14vh, 150px);
+  border-radius: 0;
+  overflow: hidden;
+  background: #1b1b1b;
+  border: 0;
+  flex: 0 0 auto;
+}
+
+.profile-avatarRect img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+/* Fallback block (keeps layout identical if no avatar) */
+.profile-avatarFallback {
+  width: 100%;
+  height: 100%;
+  background: #1b1b1b;
+}
+
+/* Right side content */
+.profile-identityMain {
+  min-width: 0;
+  display: grid;
+  grid-auto-rows: max-content;
+  row-gap: 6px;
+  align-content: start;
+  color: #fff;
+}
+
+/* Name on top */
+.profile-identityMain .profile-name {
+  margin: 0;
+  font-weight: 900;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Handle row: flag placeholder on left + @username on right */
+.profile-handleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-flag {
+  width: 22px;
+  height: 14px;
+  border-radius: 2px;
+  background: #2c2c2c; /* temporary flag placeholder */
+  flex: 0 0 auto;
+}
+
+.profile-identityMain .profile-handle {
+  margin: 0;
+  font-weight: 700;
+  opacity: 0.9;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Metrics row: 4 columns, number over label */
+.profile-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+  margin-top: 6px;
+}
+
+.profile-metric {
+  min-width: 0;
+  display: grid;
+  grid-auto-rows: max-content;
+  row-gap: 2px;
+}
+
+.profile-metric .metric-number {
+  font-weight: 900;
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.profile-metric .metric-label {
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.1;
+  opacity: 0.95;
+  white-space: nowrap;
+}
+
+/* Colored bar line aligned with the 4 metric columns */
+.profile-bars--metrics {
+  width: 100%;
+  height: 6px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 6px;
+}
+
+/* Ensure bars use your brand colors (final values) */
+.profile-bars--metrics .bar-1 { background: #fc5f2e; }
+.profile-bars--metrics .bar-2 { background: #d81b60; }
+.profile-bars--metrics .bar-3 { background: #6a1b9a; }
+.profile-bars--metrics .bar-4 { background: #1e88e5; }
+
+/* Responsive tightening */
+@media (max-width: 560px), (max-height: 680px) {
+  .profile-identityRow {
+    grid-template-columns: clamp(84px, 12vh, 120px) 1fr;
+  }
+  .profile-avatarRect {
+    width: clamp(84px, 12vh, 120px);
+    height: clamp(84px, 12vh, 120px);
+  }
+  .profile-metrics {
+    gap: 10px;
+  }
+  .profile-metric .metric-number {
+    font-size: 18px;
+  }
+  .profile-metric .metric-label {
+    font-size: 11px;
+  }
+}
+
+/* === Bigger profile picture (override) === */
+.profile-identityRow {
+  grid-template-columns: clamp(130px, 18vh, 190px) 1fr !important;
+}
+
+.profile-avatarRect {
+  width: clamp(130px, 18vh, 190px) !important;
+  height: clamp(130px, 18vh, 190px) !important;
+}
+
+/* Keep it sensible on smaller screens */
+@media (max-width: 560px), (max-height: 680px) {
+  .profile-identityRow {
+    grid-template-columns: clamp(110px, 16vh, 150px) 1fr !important;
+  }
+
+  .profile-avatarRect {
+    width: clamp(110px, 16vh, 150px) !important;
+    height: clamp(110px, 16vh, 150px) !important;
+  }
+}
+
+/* === Bars below metrics, baseline aligned to bottom of avatar === */
+
+.profile-identityGrid {
+  display: grid;
+  grid-template-columns: clamp(130px, 18vh, 190px) 1fr;
+  grid-template-rows: 1fr auto;      /* top content expands, bottom is just the bars */
+  column-gap: 14px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* Avatar spans both rows so the grid height is driven by the avatar */
+.profile-avatarRect {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  border-radius: 0;
+  overflow: hidden;
+  background: #1b1b1b;
+}
+
+.profile-avatarRect img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.profile-avatarFallback {
+  width: 100%;
+  height: 100%;
+  background: #1b1b1b;
+}
+
+/* Right main content */
+.profile-identityMain {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  display: grid;
+  grid-auto-rows: max-content;
+  row-gap: 6px;
+  align-content: start;
+}
+
+/* Bars are below metrics but forced to sit on the bottom edge of the whole grid */
+.profile-bars--metricsAligned {
+  grid-column: 2;
+  grid-row: 2;
+
+  align-self: end;                  /* bottom align within its row */
+  justify-self: stretch;
+
+  width: 100%;
+  height: 6px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 0 !important;             /* kill any previous margins */
+}
+
+/* Ensure these win */
+.profile-bars--metricsAligned .bar-1 { background: #fc5f2e; }
+.profile-bars--metricsAligned .bar-2 { background: #d81b60; }
+.profile-bars--metricsAligned .bar-3 { background: #6a1b9a; }
+.profile-bars--metricsAligned .bar-4 { background: #1e88e5; }
+
+/* Small screens */
+@media (max-width: 560px), (max-height: 680px) {
+  .profile-identityGrid {
+    grid-template-columns: clamp(110px, 16vh, 150px) 1fr;
+  }
+}
+
+/* === Bigger metrics + tighter gap to the colored bar === */
+
+/* Make the right column pack tighter overall */
+.profile-identityMain {
+  row-gap: 4px !important; /* tighter vertical rhythm */
+}
+
+/* Metrics row: bigger, tighter, less empty space */
+.profile-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;                 /* less gap between metrics */
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: end !important;
+}
+
+/* Each metric block */
+.profile-metric {
+  min-width: 0;
+}
+
+/* Big number */
+.profile-metric .metric-number {
+  font-size: clamp(16px, 3.2vw, 28px) !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.2px;
+}
+
+/* Label under the number */
+.profile-metric .metric-label {
+  margin-top: 2px !important;
+  font-size: clamp(11px, 1.2vw, 14px) !important;
+  line-height: 1.05 !important;
+  font-weight: 700 !important;
+  opacity: 0.9;
+}
+
+/* Pull the colored bar closer to metrics */
+.profile-bars--metricsAligned {
+  margin-top: 4px !important;   /* smaller gap above bar */
+  height: 7px !important;       /* slightly beefier bar */
+}
+
+/* On small screens: keep it readable without wrapping */
+@media (max-width: 560px), (max-height: 680px) {
+  .profile-metrics {
+    gap: 8px !important;
+  }
+  .profile-metric .metric-number {
+    font-size: clamp(20px, 6vw, 32px) !important;
+  }
+  .profile-metric .metric-label {
+    font-size: clamp(10px, 3.2vw, 13px) !important;
+  }
+}
+
+/* === Identity: top name, middle handle, bottom metrics (4px above bar) === */
+
+/* Keep avatar spanning full height; right side becomes its own 3-row grid */
+.profile-identityGrid {
+  grid-template-rows: 1fr auto !important; /* top content + bar row */
+}
+
+/* Right main: 3 rows (top/middle/bottom) */
+.profile-identityMain {
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important; /* name | middle | metrics */
+  align-items: stretch !important;
+  row-gap: 0 !important;
+  min-width: 0;
+}
+
+/* 1) Name pinned to top + prevent descender clipping */
+.profile-name {
+  align-self: start !important;
+  line-height: 1.08 !important;     /* safe for descenders */
+  padding-bottom: 0.18em !important; /* gives room for “g”, “y”, etc. */
+  margin: 0 !important;
+  overflow: visible !important;
+}
+
+/* Middle row: center handle+flag vertically between name and metrics */
+.profile-midRow {
+  display: flex !important;
+  align-items: center !important;   /* vertical centering */
+  min-height: 0;
+}
+
+/* Keep handle row tidy */
+.profile-handleRow {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px;
+}
+
+/* 2) Metrics pinned to bottom, but always 4px above the bar */
+.profile-metricsWrap {
+  align-self: end !important;
+  margin-bottom: 8px !important;    /* <-- the 4px gap above colored line */
+}
+
+/* Metrics layout (keep your big styling, just ensure no extra margins) */
+.profile-metrics {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 3) Bar stays at bottom aligned to avatar bottom */
+.profile-bars--metricsAligned {
+  align-self: end !important;
+  margin: 0 !important;
+  height: 7px !important;
+}
+
+/* === Name smaller, username bigger (profile identity) === */
+
+/* cap the fitted name smaller */
+.profile-name {
+  font-size: clamp(28px, 3.0vw, 40px) !important;
+  letter-spacing: 0.2px;
+}
+
+/* make the handle bigger */
+.profile-handle {
+  font-size: clamp(16px, 2.4vw, 24px) !important;
+  font-weight: 800 !important;
+  line-height: 1.05 !important;
+  opacity: 1 !important;
+  margin-bottom: 12px !important;
+}
+
+/* keep the flag visually matching the larger handle */
+.profile-flag {
+  width: clamp(18px, 2.2vw, 26px) !important;
+  height: clamp(18px, 2.2vw, 26px) !important;
+  margin-bottom: 12px !important;
+}
+
+/* === Center Stories perfectly between Identity and Favorites (left column only) === */
+
+.profile-leftCol {
+  grid-column: 1;
+  grid-row: 1 / 4;                 /* span all 3 rows of the main grid */
+  display: grid;
+  grid-template-rows: auto 1fr auto; /* identity | free space | favorites */
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Place the three left sections in our left-column grid */
+.profile-leftCol > .identity-cell  { grid-row: 1; }
+.profile-leftCol > .stories-cell   { grid-row: 2; }
+.profile-leftCol > .favorites-cell { grid-row: 3; }
+
+/* Stories: vertically centered within the leftover 1fr space */
+.profile-leftCol > .stories-cell {
+  align-self: center !important;
+  justify-self: stretch;
+}
+
+/* Ensure Stories doesn't stretch weirdly (keeps its natural height) */
+.profile-leftCol > .stories-cell.section {
+  display: block !important;
+}
+
+/* Identity stays at top, Favorites stays at bottom */
+.profile-leftCol > .identity-cell  { align-self: start !important; }
+.profile-leftCol > .favorites-cell { align-self: end !important; }
+
+/* === ALIGN Identity with top of other columns === */
+.profile-leftCol > .identity-cell,
+.identity-cell {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.profile-identity,
+.profile-identityGrid {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* ===========================
+   Identity: centered-right stack
+   =========================== */
+
+/* 2-column layout: avatar | content */
+.profile-identityGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 18px;
+  align-items: start; /* avatar stays natural; right side will center itself */
+}
+
+/* Avatar block */
+.profile-avatarRect {
+  width: clamp(110px, 16vh, 170px);
+  aspect-ratio: 1 / 1;
+  border-radius: 9999px; /* keep circle */
+  overflow: hidden;
+  background: #111;
+}
+.profile-avatarRect img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.profile-avatarFallback {
+  width: 100%;
+  height: 100%;
+  background: #111;
+}
+
+/* Right side: center the whole stack vertically to the avatar height */
+.profile-identityMain {
+  min-width: 0;
+  height: 100%;                 /* matches avatar column height */
+  display: grid;
+  align-content: center;         /* <-- vertical center of avatar */
+  justify-items: start;
+}
+
+/* The 4 rows: enforce consistent spacing */
+.profile-idRow {
+  margin: 0 0 8px 0;            /* <-- EXACT 8px bottom margin */
+}
+.profile-idRow:last-child {
+  margin-bottom: 0;
+}
+
+/* Name */
+.profile-name {
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Handle row */
+.profile-handleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.profile-flag {
+  width: 22px;
+  height: 14px;
+  background: #444; /* placeholder */
+  flex: 0 0 auto;
+}
+.profile-handle {
+  opacity: 0.9;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Metrics */
+.profile-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+.profile-metric {
+  text-align: center;
+  min-width: 0;
+}
+.metric-number {
+  font-weight: 900;
+  line-height: 1;
+}
+.metric-label {
+  margin-top: 2px;
+  font-weight: 700;
+  opacity: 0.85;
+  line-height: 1.05;
+}
+
+/* Bars stay as a row */
+.profile-bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 8px;
+  width: 75%;
+  gap: 0;
+}
+
+/* ===========================
+   Identity: PERFECT equal spacing on the right
+   (4 equal rows + fixed 8px gaps)
+   =========================== */
+
+/* Right side: 4 equal tracks, centered within avatar height */
+.profile-identityMain {
+  min-width: 0;
+  height: 100%;
+  display: grid;
+
+  /* 4 equal rows */
+  grid-template-rows: repeat(4, 1fr);
+
+  /* fixed gaps between rows */
+  row-gap: 8px;
+
+  /* center the whole block inside the avatar height */
+  align-content: center;
+  justify-items: start;
+}
+
+/* Kill the old margin-based spacing */
+.profile-idRow {
+  margin: 0 !important;
+}
+
+/* Center each row’s content within its equal-height track */
+.profile-name,
+.profile-handleRow,
+.profile-metrics,
+.profile-bars {
+  align-self: center;
+}
+
+/* Keep bars hugging left and not stretching vertically */
+.profile-bars {
+  align-self: end;      /* visually nicer: bars sit at bottom of its row */
+  width: 75%;
+}
+
+/* ===========================
+   Identity metrics + bar: PERFECT column alignment
+   =========================== */
+
+/* The right side becomes a 4-row grid.
+   Row 3 = metrics, Row 4 = bar, both share same 4-column layout. */
+.profile-identityMain {
+  min-width: 0;
+  height: 100%;
+  display: grid;
+
+  grid-template-rows: repeat(4, 1fr);
+  row-gap: 8px;
+
+  align-content: center;
+  justify-items: start;
+}
+
+/* Metrics: force 4 equal columns and remove any intrinsic sizing drift */
+.profile-metricsWrap {
+  width: 100%;
+  min-width: 0;
+}
+
+.profile-metrics {
+  width: 85%;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0 !important;
+  align-items: end;
+  justify-items: center;
+}
+
+/* Bar row: same 4 equal columns, full width */
+.profile-barsRow {
+  width: 85%;
+  min-width: 0;
+  align-self: end; /* keep it sitting lower in its row */
+}
+
+/* IMPORTANT: kill the old 75% width and any leftover margins */
+.profile-bars {
+  width: 85% !important;
+  margin: 0 !important;
+
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0 !important;
+
+  height: 8px;
+}
+
+/* Ensure each colored segment truly fills its column */
+.profile-bars .bar {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ===========================
+   Metrics: left-aligned like reference
+   =========================== */
+
+/* Left-align each metric inside its 1fr column */
+.profile-metrics {
+  justify-items: start !important;
+}
+
+/* Each metric block hugs the left edge of its column */
+.profile-metric {
+  justify-self: start !important;
+  text-align: left !important;
+}
+
+/* Keep labels/numbers left too */
+.profile-metric .metric-number,
+.profile-metric .metric-label {
+  text-align: left !important;
+}
+
+/* === Raise metrics row 8px up === */
+.profile-metrics {
+  transform: translateY(-8px) !important;
+}
+
+/* === Make colored bar taller === */
+.profile-bars {
+  height: 12px !important; /* was 8px, now +4px */
+}
+
+.profile-bars .bar {
+  height: 100% !important;
+}
+
+/* === Username lighter gray === */
+.profile-handle {
+  color: rgba(255, 255, 255, 0.65) !important;
+}

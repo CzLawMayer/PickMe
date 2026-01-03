@@ -1,4 +1,5 @@
-import { useState, useLayoutEffect, useRef, useState as useStateAlias } from "react";
+import type React from "react";
+import { useState, useLayoutEffect, useRef, useState as useStateAlias, useMemo } from "react";
 import "./Profile.css";
 import SideMenu from "@/components/SideMenu";
 import LikeButton from "@/components/LikeButton";
@@ -8,7 +9,6 @@ import { Link } from "react-router-dom";
 import ReadingHeatmap from "@/components/ReadingHeatmap";
 import { profile, storyBooks, favoriteBooks, libraryBooks } from "@/profileData";
 import { flushSync } from "react-dom";
-import { useMemo } from "react";
 
 import AppHeader from "@/components/AppHeader";
 import ProfileBoard from "@/components/ProfileBoard";
@@ -52,6 +52,13 @@ function useFitText(minPx = 12, maxPx = 48) {
   return { ref, fontSize: size };
 }
 
+/* Compact number formatter for metrics */
+function formatCompact(n: unknown) {
+  const num = typeof n === "number" ? n : Number(n ?? 0);
+  if (!Number.isFinite(num)) return "0";
+  return new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(num);
+}
+
 export default function ProfilePage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -61,8 +68,8 @@ export default function ProfilePage() {
   const [userRating, setUserRating] = useState(0);
 
   // Fit text for name/handle
-  const nameFit = useFitText(14, 42);
-  const handleFit = useFitText(12, 28);
+  const nameFit = useFitText(12, 36);
+  const handleFit = useFitText(14, 34);
 
   /* =========================
      STORIES: dynamic slider
@@ -191,6 +198,13 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.stats, allBooks.length]);
 
+  const profileMetrics = {
+    followers: (profile as any)?.followers ?? (profile as any)?.stats?.followers ?? 0,
+    following: (profile as any)?.following ?? (profile as any)?.stats?.following ?? 0,
+    stories: (profile as any)?.storiesCount ?? (profile as any)?.stats?.stories ?? (profile as any)?.stories?.length ?? 0,
+    likes: (profile as any)?.likes ?? (profile as any)?.stats?.likes ?? 0,
+  };
+
   // Wheel-to-horizontal for Stories viewport
   useLayoutEffect(() => {
     const el = storiesRef.current;
@@ -302,8 +316,6 @@ export default function ProfilePage() {
     draggingRef.current = false;
   };
 
-
-
   return (
     <div className="profile-app">
       {/* FIXED HEADER SHELL (cannot shrink) */}
@@ -319,107 +331,162 @@ export default function ProfilePage() {
       {/* MAIN AREA (fills rest, cannot grow) */}
       <main className="profile-page">
         <div className="profile-grid">
-          {/* LEFT — Row 1: Identity */}
-          <section className="cell identity-cell">
-            <div className="profile-identity">
-              <div className="profile-card">
-                <div className="profile-avatar" aria-hidden={true}>
-                  {profile.avatarUrl ? (
-                    <img
-                      src={profile.avatarUrl}
-                      alt={profile.name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "50%",
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    <svg width="96" height="96" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
-                      <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-                      <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                      <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  )}
-                </div>
-
-                <div className="profile-id" style={{ display: "grid", alignContent: "start" }}>
-                  <h2
-                    className="profile-name"
-                    ref={nameFit.ref as React.RefObject<HTMLHeadingElement>}
-                    style={{
-                      margin: "0 0 2px",
-                      fontWeight: 800,
-                      lineHeight: 1.05,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {profile.name}
-                  </h2>
-
-                  <div
-                    className="profile-handle"
-                    ref={handleFit.ref as React.RefObject<HTMLDivElement>}
-                    style={{
-                      margin: "0 0 8px",
-                      opacity: 0.8,
-                      fontWeight: 600,
-                      lineHeight: 1.1,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    @{profile.username}
+          {/* LEFT COLUMN WRAPPER (Identity / Stories / Favorites) */}
+          <div className="profile-leftCol">
+            {/* LEFT — Row 1: Identity (UPDATED AREA) */}
+            {/* LEFT — Row 1: Identity */}
+            <section className="cell identity-cell">
+              <div className="profile-identity">
+                <div className="profile-identityGrid">
+                  {/* Avatar */}
+                  <div className="profile-avatarCol">
+                    <div className="profile-avatarRect" aria-hidden={true}>
+                      {profile.avatarUrl ? (
+                        <img src={profile.avatarUrl} alt={profile.name} />
+                      ) : (
+                        <div className="profile-avatarFallback" aria-hidden={true} />
+                      )}
+                    </div>
                   </div>
 
-                  <div
-                    className="profile-bars"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(4, 1fr)",
-                      height: 8,
-                      gap: 0,
-                      width: "75%",
-                      marginLeft: 0,
-                      justifySelf: "start",
-                    }}
-                  >
-                    <div className="bar bar-1" />
-                    <div className="bar bar-2" />
-                    <div className="bar bar-3" />
-                    <div className="bar bar-4" />
+                  {/* Right side: vertically centered to the avatar, 4 rows with 8px bottom margin */}
+                  <div className="profile-identityMain">
+                    <h2 className="profile-name profile-idRow" ref={nameFit.ref as React.RefObject<HTMLHeadingElement>}>
+                      {profile.name}
+                    </h2>
+
+                    <div className="profile-handleRow profile-idRow">
+                      <span className="profile-flag" aria-hidden={true} />
+                      <div className="profile-handle" ref={handleFit.ref as React.RefObject<HTMLDivElement>}>
+                        @{profile.username}
+                      </div>
+                    </div>
+
+                    <div className="profile-metrics profile-idRow" aria-label="Profile metrics">
+                      <div className="profile-metric">
+                        <div className="metric-number">{formatCompact(profileMetrics.followers)}</div>
+                        <div className="metric-label">Followers</div>
+                      </div>
+                      <div className="profile-metric">
+                        <div className="metric-number">{formatCompact(profileMetrics.following)}</div>
+                        <div className="metric-label">Following</div>
+                      </div>
+                      <div className="profile-metric">
+                        <div className="metric-number">{formatCompact(profileMetrics.stories)}</div>
+                        <div className="metric-label">Stories</div>
+                      </div>
+                      <div className="profile-metric">
+                        <div className="metric-number">{formatCompact(profileMetrics.likes)}</div>
+                        <div className="metric-label">Likes</div>
+                      </div>
+                    </div>
+
+                    <div className="profile-bars profile-idRow" aria-hidden="true">
+                      <div className="bar bar-1" />
+                      <div className="bar bar-2" />
+                      <div className="bar bar-3" />
+                      <div className="bar bar-4" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* LEFT — Row 2: Stories */}
-          <section className="cell stories-cell section">
-            <h2 className="section-title">Stories</h2>
 
-            <div className="strip stories-strip" onMouseLeave={clearHover}>
-              <div className="stories-viewport" ref={storiesRef} aria-label="Stories">
-                <div className="stories-track">
-                  {storyBooks().map((book) => (
+            {/* LEFT — Row 2: Stories (NOW centered between Identity and Favorites) */}
+            <section className="cell stories-cell section">
+              <h2 className="section-title">Stories</h2>
+
+              <div className="strip stories-strip" onMouseLeave={clearHover}>
+                <div className="stories-viewport" ref={storiesRef} aria-label="Stories">
+                  <div className="stories-track">
+                    {storyBooks().map((book) => (
+                      <div
+                        key={book.id}
+                        className={
+                          "story-cover" +
+                          (selectedSource === "stories" && selectedBookId === String(book.id) ? " is-selected" : "")
+                        }
+                        title={book.title}
+                        aria-label={`Story: ${book.title}`}
+                        tabIndex={0}
+                        onMouseEnter={() => previewBook(book)}
+                        onPointerDown={() => flushSync(() => selectBook(book, "stories"))}
+                        onClick={() => selectBook(book, "stories")}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            selectBook(book, "stories");
+                          }
+                        }}
+                        style={{
+                          backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          backgroundColor: "#1b1b1b",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {canScrollStories && (
+                  <div
+                    className="stories-progress"
+                    ref={progressRef}
+                    role="slider"
+                    aria-label="Scroll stories"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(storiesProgress * 100)}
+                    tabIndex={0}
+                    onPointerDown={onPointerDownPill}
+                    onPointerMove={onPointerMovePill}
+                    onPointerUp={onPointerUpPill}
+                    onPointerCancel={onPointerUpPill}
+                    onKeyDown={(e) => {
+                      const vp = storiesRef.current;
+                      if (!vp) return;
+                      const max = vp.scrollWidth - vp.clientWidth;
+                      const step = vp.clientWidth * 0.1;
+                      if (e.key === "ArrowRight") vp.scrollTo({ left: Math.min(vp.scrollLeft + step, max) });
+                      if (e.key === "ArrowLeft") vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0) });
+                    }}
+                  >
+                    <div
+                      className="stories-thumb"
+                      style={{
+                        width: `${thumbPct * 100}%`,
+                        left: `${storiesProgress * (100 - thumbPct * 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* LEFT — Row 3: Favorites */}
+            <section className="cell favorites-cell section">
+              <h2 className="section-title">Favorites</h2>
+              <div className="strip favorites-strip" onMouseLeave={clearHover}>
+                <div className="favorites-grid">
+                  {favoriteBooks().slice(0, 5).map((book) => (
                     <div
                       key={book.id}
-                      className={"story-cover" + (selectedSource === "stories" && selectedBookId === String(book.id) ? " is-selected" : "")}
+                      className={
+                        "fav-cover" +
+                        (selectedSource === "favorites" && selectedBookId === String(book.id) ? " is-selected" : "")
+                      }
                       title={book.title}
-                      aria-label={`Story: ${book.title}`}
+                      aria-label={`Favorite: ${book.title}`}
                       tabIndex={0}
                       onMouseEnter={() => previewBook(book)}
-                      onPointerDown={() => flushSync(() => selectBook(book, "stories"))}
-                      onClick={() => selectBook(book, "stories")}
+                      onPointerDown={() => flushSync(() => selectBook(book, "favorites"))}
+                      onClick={() => selectBook(book, "favorites")}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          selectBook(book, "stories");
+                          selectBook(book, "favorites");
                         }
                       }}
                       style={{
@@ -432,71 +499,8 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
-
-              {canScrollStories && (
-                <div
-                  className="stories-progress"
-                  ref={progressRef}
-                  role="slider"
-                  aria-label="Scroll stories"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(storiesProgress * 100)}
-                  tabIndex={0}
-                  onPointerDown={onPointerDownPill}
-                  onPointerMove={onPointerMovePill}
-                  onPointerUp={onPointerUpPill}
-                  onPointerCancel={onPointerUpPill}
-                  onKeyDown={(e) => {
-                    const vp = storiesRef.current;
-                    if (!vp) return;
-                    const max = vp.scrollWidth - vp.clientWidth;
-                    const step = vp.clientWidth * 0.1;
-                    if (e.key === "ArrowRight") vp.scrollTo({ left: Math.min(vp.scrollLeft + step, max) });
-                    if (e.key === "ArrowLeft") vp.scrollTo({ left: Math.max(vp.scrollLeft - step, 0) });
-                  }}
-                >
-                  <div
-                    className="stories-thumb"
-                    style={{ width: `${thumbPct * 100}%`, left: `${storiesProgress * (100 - thumbPct * 100)}%` }}
-                  />
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* LEFT — Row 3: Favorites */}
-          <section className="cell favorites-cell section">
-            <h2 className="section-title">Favorites</h2>
-            <div className="strip favorites-strip" onMouseLeave={clearHover}>
-              <div className="favorites-grid">
-                {favoriteBooks().slice(0, 5).map((book) => (
-                  <div
-                    key={book.id}
-                    className={"fav-cover" + (selectedSource === "favorites" && selectedBookId === String(book.id) ? " is-selected" : "")}
-                    title={book.title}
-                    aria-label={`Favorite: ${book.title}`}
-                    tabIndex={0}
-                    onMouseEnter={() => previewBook(book)}
-                    onPointerDown={() => flushSync(() => selectBook(book, "stories"))}
-                    onClick={() => selectBook(book, "favorites")}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        selectBook(book, "favorites");
-                      }
-                    }}
-                    style={{
-                      backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      backgroundColor: "#1b1b1b",
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </section>
+            </section>
+          </div>
 
           {/* CENTER — spans all 3 rows */}
           <section className="cell feature-cell">
