@@ -483,7 +483,7 @@ export default function Home() {
     let currentFontSize = 14;
     let currentLineHeight = 1.6;
     let currentFontFamily = "Georgia, 'Times New Roman', serif";
-    let currentTheme: ReaderTheme = "cream";
+    let currentTheme: ReaderTheme = "white";
 
     let paginationTimer: number | null = null;
 
