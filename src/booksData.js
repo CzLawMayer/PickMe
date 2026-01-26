@@ -92,7 +92,7 @@ His funeral was held two days later, on an appropriately rainy, freezing day. I 
     copyright: "© 2023 Diego Ballesteros",
     nsfw: true,
     summary:
-      "A lost girl in Austria clings to friendship and memory as a surreal night fractures everything. A lost girl in Austria clings to friendship and memory as a surreal night fractures everything. A lost girl in Austria clings to friendship and memory as a surreal night fractures everything. A lost girl in Austria clings to friendship and memory as a surreal night fractures everything. A lost girl in Austria clings to friendship and memory as a surreal night fractures everything. A lost girl in Austria clings to friendship and memory as a surreal night fractures everything. ",
+      "As their final days at university draw to a close and graduation looms like a dark cloud over the fragile lives of Names, Memory, and Kind – three strange souls with strange names – their reality becomes unrecognizable. Friends turn into acquaintances, homes become rooms, and life itself fades into a memory. A sudden and tragic death sets off a spiral of confusion and dread in their lives. Eerie apparitions and devastating betrayals begin to haunt them as they struggle to make sense of the crumbling world around them. But the price to pay for clarity might be their sanity. Something sinister has been stirring beneath their feet and above their heads. Whispers of horror, impatient to scream, prowl in the shadows, waiting to shatter existence itself. The boundaries between reality and nightmare can blur at any moment, dragging the three friends into a world of terror and pain that delves into the darkest corners of the human experience, and the not-so-human too. Are you having fun?",
   },
 
   {

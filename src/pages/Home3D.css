@@ -1048,3 +1048,152 @@
 .home3d-main .nav-container.is-open{
   left: calc(50% + var(--book-page-width) + var(--open-side-gap)) !important;
 }
+
+
+/* ===== Top tabs: anchored under sticky AppHeader (does not push header) ===== */
+.home3d-root {
+  position: relative; /* establishes a positioning context */
+}
+
+/* This sits UNDER the sticky header without participating in layout flow */
+.home3d-top-tabs {
+  position: fixed;
+  top: var(--app-header-h, 64px); /* exactly below AppHeader */
+  left: 0;
+  right: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+
+  height: 34px; /* single-line tap area */
+  z-index: 40;
+
+  background: transparent;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 120ms ease;
+}
+
+/* Fade out fast when book is open */
+.home3d-top-tabs.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.home3d-top-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0.01em;
+
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+}
+
+.home3d-top-tab.is-active {
+  opacity: 1;
+}
+
+/* Make sure your main content doesn't sit under the fixed tabs */
+.home3d-main {
+  padding-top: 34px; /* must match .home3d-top-tabs height */
+}
+
+/* Ensure popover keeps its right edge position and grows leftwards */
+.meta-summary-popover {
+  position: absolute; /* (or fixed, depending on your current popover) */
+  right: 0;           /* key part: keeps right edge anchored */
+  box-sizing: border-box;
+  max-width: 92vw;    /* safety for small screens */
+}
+
+/* Left-edge drag handle */
+.meta-summary-resize-handle {
+  position: absolute;
+  top: 0;
+  left: -6px;         /* slightly outside so it’s easy to grab */
+  width: 12px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 2;
+}
+
+/* Optional: subtle visual cue on hover (no background blocks) */
+.meta-summary-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  opacity: 0;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+  transition: opacity 120ms ease;
+}
+
+.meta-summary-popover:hover .meta-summary-resize-handle::before {
+  opacity: 1;
+}
+
+/* Anchor popover to the RIGHT so width grows LEFT */
+.meta-summary-popover {
+  right: 0;
+  left: auto;
+}
+
+.meta-summary-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;              /* handle on LEFT edge */
+  width: 10px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+/* === HARD OVERRIDES: force summary popover to be right-anchored (so it grows LEFT) === */
+.meta-summary-row {
+  position: relative; /* make this the positioning context */
+}
+
+.meta-summary-popover {
+  position: absolute !important;
+
+  /* Anchor to the right edge of the Summary row */
+  right: 0 !important;
+  left: auto !important;
+
+  /* Kill any centering transforms that cause expansion both ways */
+  transform: none !important;
+  translate: none !important;
+
+  /* If you used margins to center it, kill them too */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+
+  /* Optional: make resizing feel more “anchored” */
+  transform-origin: right center;
+}
+
+/* Keep the drag handle on the LEFT edge */
+.meta-summary-popover .meta-summary-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+/* Remove the visual drag indicator line */
+.meta-summary-resize-handle::before {
+  display: none !important;
+}
