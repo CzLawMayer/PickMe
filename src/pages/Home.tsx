@@ -21,12 +21,14 @@ import "@/components/CommentSidebar.css";
 
 type BookSpread = { left: string; right: string };
 type ReaderTheme = "cream" | "dark" | "white";
+type PageSize = "sm" | "md" | "lg";
 
 type ReaderControls = {
   setFontSize: (px: number) => void;
   setLineHeight: (lh: number) => void;
   setFontFamily: (family: string) => void;
   setTheme: (theme: ReaderTheme) => void;
+  setPageSize: (size: PageSize) => void; // ✅ NEW
 };
 
 type TypographyOptions = {
@@ -34,6 +36,7 @@ type TypographyOptions = {
   lineHeight?: number;
   fontFamily?: string;
   theme?: ReaderTheme;
+  pageSize?: PageSize; // ✅ NEW
 };
 
 // ---- Comment system types ----
@@ -150,7 +153,7 @@ export default function Home() {
   // reset when the centered book changes
   useEffect(() => {
     setIsSummaryOpen(false);
-    setSummaryW(DEFAULT_SUMMARY_W); // optional: reset width per book
+    setSummaryW(DEFAULT_SUMMARY_W);
   }, [bookKeyFromBook(centerBook)]);
 
   // pointer drag listeners (resize)
@@ -184,7 +187,6 @@ export default function Home() {
       window.removeEventListener("pointercancel", onUp);
     };
   }, []);
-
 
   // ---------- COMMENT / REVIEW STATE ----------
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
@@ -387,7 +389,6 @@ export default function Home() {
     });
   };
 
-
   // ✅ NEW: metadata auto-hide (only when book is open)
   const [isMetaVisible, setIsMetaVisible] = useState(true);
   const [isMetaHovered, setIsMetaHovered] = useState(false);
@@ -403,15 +404,11 @@ export default function Home() {
   const scheduleMetaHide = () => {
     clearMetaHideTimer();
     metaHideTimerRef.current = window.setTimeout(() => {
-      // only hide if still open and not hovered
       setIsMetaVisible(false);
     }, 10_000);
   };
 
-
-
-
-  // Open book + jump to comments/reviews (no functionality for the Discover/In progress carousel switch yet)
+  // Open book + jump to comments/reviews
   const openBookAndGoToComments = () => {
     openBookRef.current?.();
     setIsCommentsOpen(true);
@@ -433,14 +430,11 @@ export default function Home() {
     return `${lt}\n\n${rt}`.trim();
   };
 
-
   useEffect(() => {
-    // When book opens: show metadata, then hide after 10s (unless hovered)
     if (isBookOpen) {
       setIsMetaVisible(true);
       if (!isMetaHovered) scheduleMetaHide();
     } else {
-      // When book closes: always show metadata and cleanup
       clearMetaHideTimer();
       setIsMetaVisible(true);
     }
@@ -452,7 +446,6 @@ export default function Home() {
   }, [isBookOpen]);
 
   useEffect(() => {
-    // While open: hovering shows it, leaving starts the 10s countdown again
     if (!isBookOpen) return;
 
     if (isMetaHovered) {
@@ -467,11 +460,6 @@ export default function Home() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMetaHovered, isBookOpen]);
-
-
-
-
-
 
   // ---------- 3D + Reader setup ----------
   useEffect(() => {
@@ -544,6 +532,19 @@ export default function Home() {
     let currentFontFamily = "Georgia, 'Times New Roman', serif";
     let currentTheme: ReaderTheme = "white";
 
+    // ✅ NEW: page size state + apply helper
+    let currentPageSize: PageSize = "md";
+    function applyPageSize(size: PageSize) {
+      currentPageSize = size;
+
+      const rootEl = document.querySelector(".home3d-root") as HTMLElement | null;
+      if (!rootEl) return;
+
+      // 3 hard presets (tweak if you want)
+      const H = size === "sm" ? "68vh" : size === "lg" ? "82vh" : "75vh";
+      rootEl.style.setProperty("--book-cover-height", H);
+    }
+
     let paginationTimer: number | null = null;
 
     const MAX_LOADED = 30;
@@ -573,6 +574,9 @@ export default function Home() {
       console.warn("Reader DOM elements not found.");
       return;
     }
+
+    // ✅ ensure default page size is in the middle
+    applyPageSize("md");
 
     function isTypingActive() {
       const el = document.activeElement as HTMLElement | null;
@@ -1029,6 +1033,9 @@ export default function Home() {
       if (openedBook?.id) setActiveBookId(String(openedBook.id));
       else setActiveBookId(`book-${currentCenterIndex}`);
 
+      // ✅ ensure page size applied before pagination
+      applyPageSize(currentPageSize);
+
       bookSpreads = buildBookSpreads(currentCenterIndex);
       updatePageContent(currentPageSpread);
 
@@ -1181,6 +1188,21 @@ export default function Home() {
       setTheme(theme) {
         currentTheme = theme;
         applyTypographyStyles();
+      },
+      // ✅ NEW: 3 hard sizes, changes the whole open-book page size
+      setPageSize(size) {
+        applyPageSize(size);
+
+        // reflow + re-paginate so text fits the new page size
+        applyTypographyStyles();
+        if (isBookOpenLocal) {
+          if (paginationTimer !== null) window.clearTimeout(paginationTimer);
+          paginationTimer = window.setTimeout(() => {
+            bookSpreads = buildBookSpreads(currentCenterIndex);
+            currentPageSpread = Math.min(currentPageSpread, bookSpreads.length - 1);
+            updatePageContent(currentPageSpread);
+          }, 80);
+        }
       },
     };
 
@@ -1545,7 +1567,7 @@ export default function Home() {
     <div className="app home3d-root">
       <AppHeader />
 
-      {/* ✅ NEW: centered top tabs below AppHeader, faint unselected, no background, fades out fast when book opens */}
+      {/* ✅ centered top tabs below AppHeader */}
       <div
         id="home3d-top-tabs"
         className={`home3d-top-tabs ${isBookOpen ? "is-hidden" : ""}`}
@@ -1576,7 +1598,6 @@ export default function Home() {
           className={`metadata ${isBookOpen ? "is-open meta-autoHide" : ""} ${
             isBookOpen && !isMetaVisible ? "meta-autoHide--hidden" : ""
           }`}
-          id="metadata-panel"
           onMouseEnter={() => {
             if (!isBookOpen) return;
             setIsMetaHovered(true);
@@ -1588,7 +1609,6 @@ export default function Home() {
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-
           <div className="meta-title" title={(centerBook as any)?.title ?? ""}>
             {(centerBook as any)?.title ?? "Untitled"}
           </div>
@@ -1707,7 +1727,6 @@ export default function Home() {
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* NEW: drag handle on the left edge */}
               <div
                 className="meta-summary-resize-handle"
                 role="separator"
@@ -1746,7 +1765,6 @@ export default function Home() {
               <div className="meta-summary-popover-body">{summaryText}</div>
             </div>
           )}
-
         </div>
 
         {/* CENTER: 3D + Reader */}
@@ -1779,13 +1797,14 @@ export default function Home() {
           <ReaderMenu
             visible={isBookOpen}
             getVisiblePageText={getVisiblePageText}
-            onApplyTypography={({ fontSize, lineHeight, fontFamily, theme }: TypographyOptions) => {
+            onApplyTypography={({ fontSize, lineHeight, fontFamily, theme, pageSize }: TypographyOptions) => {
               const controls = readerControlsRef.current;
               if (!controls) return;
               if (typeof fontSize === "number") controls.setFontSize(fontSize);
               if (typeof lineHeight === "number") controls.setLineHeight(lineHeight);
               if (typeof fontFamily === "string") controls.setFontFamily(fontFamily);
               if (typeof theme === "string") controls.setTheme(theme);
+              if (pageSize) controls.setPageSize(pageSize); // ✅ NEW
             }}
           />
 
