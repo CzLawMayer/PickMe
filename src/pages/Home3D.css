@@ -1197,3 +1197,27 @@
 .meta-summary-resize-handle::before {
   display: none !important;
 }
+
+/* ✅ Metadata should slide by changing LEFT, while keeping the anchor transform */
+.home3d-main #metadata-panel.metadata{
+  transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 180ms ease !important;
+  will-change: left, opacity;
+}
+
+/* ================================
+   Home3D — Metadata auto-hide (10s)
+   Only active when book is open
+   ================================ */
+
+/* Base: when we enable auto-hide on open, allow fading */
+#metadata-panel.meta-autoHide {
+  opacity: 1;
+  transition: opacity 260ms ease;
+  will-change: opacity;
+}
+
+/* Hidden state: fade out, BUT keep pointer events so hover can bring it back */
+#metadata-panel.meta-autoHide.meta-autoHide--hidden {
+  opacity: 0;
+  pointer-events: auto; /* important: allows hover to re-show */
+}

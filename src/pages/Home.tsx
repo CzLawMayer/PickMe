@@ -141,7 +141,7 @@ export default function Home() {
   // Resizable summary popover
   const DEFAULT_SUMMARY_W = 230; // keep your “perfect” width
   const MIN_SUMMARY_W = 230;
-  const MAX_SUMMARY_W = 760;
+  const MAX_SUMMARY_W = 400;
 
   const [summaryW, setSummaryW] = useState<number>(DEFAULT_SUMMARY_W);
   const resizingSummaryRef = useRef(false);
@@ -388,6 +388,25 @@ export default function Home() {
   };
 
 
+  // ✅ NEW: metadata auto-hide (only when book is open)
+  const [isMetaVisible, setIsMetaVisible] = useState(true);
+  const [isMetaHovered, setIsMetaHovered] = useState(false);
+  const metaHideTimerRef = useRef<number | null>(null);
+
+  const clearMetaHideTimer = () => {
+    if (metaHideTimerRef.current !== null) {
+      window.clearTimeout(metaHideTimerRef.current);
+      metaHideTimerRef.current = null;
+    }
+  };
+
+  const scheduleMetaHide = () => {
+    clearMetaHideTimer();
+    metaHideTimerRef.current = window.setTimeout(() => {
+      // only hide if still open and not hovered
+      setIsMetaVisible(false);
+    }, 10_000);
+  };
 
 
 
@@ -413,6 +432,46 @@ export default function Home() {
     const rt = (r?.textContent || "").trim();
     return `${lt}\n\n${rt}`.trim();
   };
+
+
+  useEffect(() => {
+    // When book opens: show metadata, then hide after 10s (unless hovered)
+    if (isBookOpen) {
+      setIsMetaVisible(true);
+      if (!isMetaHovered) scheduleMetaHide();
+    } else {
+      // When book closes: always show metadata and cleanup
+      clearMetaHideTimer();
+      setIsMetaVisible(true);
+    }
+
+    return () => {
+      clearMetaHideTimer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBookOpen]);
+
+  useEffect(() => {
+    // While open: hovering shows it, leaving starts the 10s countdown again
+    if (!isBookOpen) return;
+
+    if (isMetaHovered) {
+      clearMetaHideTimer();
+      setIsMetaVisible(true);
+    } else {
+      scheduleMetaHide();
+    }
+
+    return () => {
+      clearMetaHideTimer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMetaHovered, isBookOpen]);
+
+
+
+
+
 
   // ---------- 3D + Reader setup ----------
   useEffect(() => {
@@ -998,7 +1057,6 @@ export default function Home() {
 
       navContainer.classList.add("is-open");
       openBookContainer.classList.add("is-open");
-      metadataPanel?.classList.add("is-open");
 
       requestAnimationFrame(() => forceKeyboardFocus());
     }
@@ -1025,7 +1083,6 @@ export default function Home() {
 
       openBookContainer.classList.remove("is-open");
       navContainer.classList.remove("is-open");
-      metadataPanel?.classList.remove("is-open");
 
       void openBookContainer.offsetWidth;
 
@@ -1515,11 +1572,23 @@ export default function Home() {
       <main className="carousel home3d-main">
         {/* LEFT: Metadata */}
         <div
-          className="metadata"
           id="metadata-panel"
+          className={`metadata ${isBookOpen ? "is-open meta-autoHide" : ""} ${
+            isBookOpen && !isMetaVisible ? "meta-autoHide--hidden" : ""
+          }`}
+          id="metadata-panel"
+          onMouseEnter={() => {
+            if (!isBookOpen) return;
+            setIsMetaHovered(true);
+          }}
+          onMouseLeave={() => {
+            if (!isBookOpen) return;
+            setIsMetaHovered(false);
+          }}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
+
           <div className="meta-title" title={(centerBook as any)?.title ?? ""}>
             {(centerBook as any)?.title ?? "Untitled"}
           </div>
