@@ -468,6 +468,8 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMetaHovered, isBookOpen]);
 
+
+
   // ---------- 3D + Reader setup ----------
   useEffect(() => {
     const root = threeRootRef.current;
@@ -1024,6 +1026,47 @@ export default function Home() {
       adjustWindow();
       updateBookProperties();
     }
+
+    // ---- Trackpad / wheel swipe support (MUST live inside this useEffect) ----
+    let wheelAcc = 0;
+    let wheelTimer: number | null = null;
+
+    function onWheel(e: WheelEvent) {
+      if (isBookOpenLocal) return;
+
+      const t = e.target as HTMLElement;
+      const sidebarRoot = document.querySelector(".cs-sidebar-root");
+      const tabs = document.getElementById("home3d-top-tabs");
+
+      if (metadataPanel && metadataPanel.contains(t)) return;
+      if (sidebarRoot && sidebarRoot.contains(t)) return;
+      if (tabs && tabs.contains(t)) return;
+
+      // Prefer horizontal trackpad swipes when present
+      const dominant = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+      wheelAcc += dominant;
+
+      // prevent page scroll when user is swiping the carousel
+      if (Math.abs(wheelAcc) > 5) e.preventDefault();
+
+      if (wheelTimer !== null) window.clearTimeout(wheelTimer);
+      wheelTimer = window.setTimeout(() => {
+        const THRESH = 60; // tune sensitivity
+
+        // NOTE: wheel sign can vary by device; if direction feels inverted, swap these two calls.
+        if (wheelAcc > THRESH) moveCarouselRight();
+        else if (wheelAcc < -THRESH) moveCarouselLeft();
+
+        wheelAcc = 0;
+        wheelTimer = null;
+      }, 80);
+    }
+
+
+
+
+
 
     function openBook() {
       currentPageSpread = 0;
@@ -1582,6 +1625,8 @@ export default function Home() {
 
     pageLeft?.addEventListener("pointerdown", onPagePointerDown);
     pageRight?.addEventListener("pointerdown", onPagePointerDown);
+    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
+
 
     animate();
 
@@ -1598,6 +1643,9 @@ export default function Home() {
 
       pageLeft?.removeEventListener("pointerdown", onPagePointerDown);
       pageRight?.removeEventListener("pointerdown", onPagePointerDown);
+
+      renderer?.domElement.removeEventListener("wheel", onWheel as any);
+
 
       if (paginationTimer !== null) window.clearTimeout(paginationTimer);
 
