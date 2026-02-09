@@ -1183,3 +1183,36 @@
 .cs-sidebar-footer--reviews {
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
+
+/* ============================================================
+   INVISIBLE (but draggable) resize handle
+   Keeps mouse-drag resizing EXACTLY the same, removes indicator
+   ============================================================ */
+
+.cs-sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;              /* handle sits on the LEFT edge of the panel */
+  height: 100%;
+  width: 10px;          /* generous hit area so dragging feels good */
+  cursor: ew-resize;
+  z-index: 9999;
+
+  /* Invisible */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* If you previously had a visible line / dots via ::before/::after, kill them */
+.cs-sidebar-resize-handle::before,
+.cs-sidebar-resize-handle::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Optional: while dragging, keep a clear cursor everywhere */
+body.cs-resizing {
+  cursor: ew-resize !important;
+  user-select: none;
+}

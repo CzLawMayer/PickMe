@@ -950,11 +950,25 @@ export default function CommentSidebar({
   toastMessage,
   isToastVisible,
 }: any) {
-  const [activeView, setActiveView] = useState<"comments" | "reviews">(
-    "comments"
-  );
+  const [activeView, setActiveView] = useState<"comments" | "reviews">("comments");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const mainCommentInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // ---- Resizable / expandable panel ----
+  const DEFAULT_W = 384;   // your current max-width
+  const EXPANDED_W = 520;  // "expanded" target
+  const MIN_W = 320;
+  const MAX_W = 620;
+
+  const [panelWidth, setPanelWidth] = useState<number>(DEFAULT_W);
+  const dragRef = useRef<{
+    dragging: boolean;
+    startX: number;
+    startWidth: number;
+    pointerId: number | null;
+  }>({ dragging: false, startX: 0, startWidth: DEFAULT_W, pointerId: null });
+
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
   useEffect(() => {
     if (requestedView === "comments" || requestedView === "reviews") {
@@ -964,6 +978,13 @@ export default function CommentSidebar({
     }
   }, [requestedView]);
 
+  // Optional: when you close the sidebar, stop any dragging and keep width as-is
+  useEffect(() => {
+    if (!isOpen) {
+      dragRef.current.dragging = false;
+      dragRef.current.pointerId = null;
+    }
+  }, [isOpen]);
 
   const handleTabChange = (view: "comments" | "reviews") => {
     setActiveView(view);
@@ -991,8 +1012,7 @@ export default function CommentSidebar({
     { value: "lowestRating", label: "Lowest Rating", color: "#ffa000" },
   ];
 
-  const activeFilters =
-    activeView === "comments" ? commentFilters : reviewFilters;
+  const activeFilters = activeView === "comments" ? commentFilters : reviewFilters;
 
   const sidebarPanelClass = [
     "cs-sidebar-panel",
@@ -1015,31 +1035,97 @@ export default function CommentSidebar({
     .filter(Boolean)
     .join(" ");
 
+  // ---- Drag handlers (resize expands LEFT because right side is fixed) ----
+  const onResizePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isOpen) return;
+
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+
+    dragRef.current.dragging = true;
+    dragRef.current.startX = e.clientX;
+    dragRef.current.startWidth = panelWidth;
+    dragRef.current.pointerId = e.pointerId;
+
+    document.body.classList.add("cs-resizing");
+  };
+
+  const onResizePointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current.dragging) return;
+    if (dragRef.current.pointerId !== e.pointerId) return;
+
+    // Dragging LEFT should INCREASE width.
+    // When clientX decreases vs startX, delta becomes positive.
+    const delta = dragRef.current.startX - e.clientX;
+    const next = clamp(dragRef.current.startWidth + delta, MIN_W, MAX_W);
+    setPanelWidth(next);
+  };
+
+  const stopResizing = (e: React.PointerEvent) => {
+    if (!dragRef.current.dragging) return;
+
+    dragRef.current.dragging = false;
+    dragRef.current.pointerId = null;
+    document.body.classList.remove("cs-resizing");
+
+    try {
+      const el = e.currentTarget as HTMLElement;
+      el.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleExpanded = () => {
+    setPanelWidth((w) => (w < (DEFAULT_W + EXPANDED_W) / 2 ? EXPANDED_W : DEFAULT_W));
+  };
+
   return (
     <div className="cs-sidebar-root">
+      {/* Toggle button sitting outside the panel */}
+      <button
+        onClick={onToggle}
+        className="cs-sidebar-toggle"
+        aria-label={isOpen ? "Close comments" : "Open comments"}
+      >
+        <MessageSquare size={24} />
+      </button>
 
-        {/* Toggle button sitting outside the panel */}
-        <button
-          onClick={onToggle}
-          className="cs-sidebar-toggle"
-          aria-label={isOpen ? "Close comments" : "Open comments"}
-        >
-          <MessageSquare size={24} />
-        </button>
-      <div className={sidebarPanelClass}>
+      <div
+        className={sidebarPanelClass}
+        style={{
+          width: `${panelWidth}px`,
+          maxWidth: "none",
+        }}
+      >
+        {/* RESIZE HANDLE (drag me) */}
+        <div
+          className="cs-sidebar-resize-handle"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize comments panel"
+          title="Drag to resize"
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={stopResizing}
+          onPointerCancel={stopResizing}
+          onDoubleClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isOpen) return;
+            toggleExpanded();
+          }}
+        />
+
         {/* Header: tabs + filter + close button */}
         <div className="cs-sidebar-header">
           <div className="cs-sidebar-tabs">
-            <button
-              onClick={() => handleTabChange("comments")}
-              className={commentsTabClass}
-            >
+            <button onClick={() => handleTabChange("comments")} className={commentsTabClass}>
               Comments
             </button>
-            <button
-              onClick={() => handleTabChange("reviews")}
-              className={reviewsTabClass}
-            >
+            <button onClick={() => handleTabChange("reviews")} className={reviewsTabClass}>
               Reviews
             </button>
 
@@ -1053,10 +1139,7 @@ export default function CommentSidebar({
               </button>
 
               {isFilterOpen && (
-                <div
-                  className="cs-filter-menu"
-                  onMouseLeave={() => setIsFilterOpen(false)}
-                >
+                <div className="cs-filter-menu" onMouseLeave={() => setIsFilterOpen(false)}>
                   <div>
                     {activeFilters.map((filter) => {
                       const isActive = filterSort === filter.value;
@@ -1072,11 +1155,7 @@ export default function CommentSidebar({
                           key={filter.value}
                           onClick={() => handleFilterSelect(filter.value)}
                           className={itemClass}
-                          style={
-                            isActive
-                              ? { backgroundColor: filter.color }
-                              : undefined
-                          }
+                          style={isActive ? { backgroundColor: filter.color } : undefined}
                         >
                           {filter.label}
                         </button>
@@ -1089,11 +1168,21 @@ export default function CommentSidebar({
           </div>
 
           <div className="cs-sidebar-header-right">
+            {/* Expand/collapse width button (optional but useful) */}
             <button
-              onClick={onToggle}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleExpanded();
+              }}
               className="cs-icon-btn"
-              aria-label="Close comments"
+              aria-label="Expand panel"
+              title="Expand / collapse"
             >
+              {/* tiny visual; no extra imports */}
+              <span style={{ fontSize: 16, lineHeight: 1 }}>↔︎</span>
+            </button>
+
+            <button onClick={onToggle} className="cs-icon-btn" aria-label="Close comments">
               <X size={20} />
             </button>
           </div>
@@ -1121,9 +1210,7 @@ export default function CommentSidebar({
                   />
                 ))
               ) : (
-                <p className="cs-sidebar-empty">
-                  No comments yet. Be the first!
-                </p>
+                <p className="cs-sidebar-empty">No comments yet. Be the first!</p>
               )}
             </>
           ) : (
@@ -1133,9 +1220,7 @@ export default function CommentSidebar({
                   <Comment
                     key={review.id}
                     comment={review}
-                    onAddReply={(text: string) =>
-                      onAddReviewReply(review.id, text)
-                    }
+                    onAddReply={(text: string) => onAddReviewReply(review.id, text)}
                     rating={review.rating}
                     onEdit={onEditReview}
                     onDelete={onDeleteReview}
@@ -1152,11 +1237,7 @@ export default function CommentSidebar({
         {/* Footer: comment form or review button */}
         {activeView === "comments" && (
           <div className="cs-sidebar-footer">
-            <CommentForm
-              ref={mainCommentInputRef}
-              onSubmit={onAddComment}
-              placeholder="Add a comment..."
-            />
+            <CommentForm ref={mainCommentInputRef} onSubmit={onAddComment} placeholder="Add a comment..." />
           </div>
         )}
 
