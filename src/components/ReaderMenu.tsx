@@ -2,12 +2,14 @@
 import { useEffect, useRef, useState } from "react";
 
 type ReaderTheme = "cream" | "dark" | "white";
+type PageSize = "sm" | "md" | "lg";
 
 type TypographyOptions = {
   fontSize?: number;
   lineHeight?: number;
   fontFamily?: string;
   theme?: ReaderTheme;
+  pageSize?: PageSize;
 };
 
 type DictSense = { definition: string; example?: string };
@@ -56,8 +58,14 @@ export default function ReaderMenu({
   const [lineHeight, setLineHeight] = useState(1.7);
   const [fontStyleIndex, setFontStyleIndex] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
 
-  // theme: 0 = cream, 1 = dark, 2 = white
-  const [themeIndex, setThemeIndex] = useState<0 | 1 | 2>(0);
+  // theme: 0 = cream, 1 = dark, 2 = white (DEFAULT should match Home.tsx: "white")
+  const [themeIndex, setThemeIndex] = useState<0 | 1 | 2>(2);
+
+  // NEW: page size state (matches your Home.tsx PageSize support)
+  const [pageSize, setPageSize] = useState<PageSize>("md");
+
+  const currentTheme: ReaderTheme =
+    themeIndex === 0 ? "cream" : themeIndex === 1 ? "dark" : "white";
 
   const themeLabel = (() => {
     if (themeIndex === 0) return "Switch to dark mode";
@@ -116,11 +124,7 @@ export default function ReaderMenu({
     function handleMouseDown(e: MouseEvent) {
       const t = e.target as Node;
 
-      if (
-        fontPanelOpen &&
-        !fontPanelRef.current?.contains(t) &&
-        !fontBtnRef.current?.contains(t)
-      ) {
+      if (fontPanelOpen && !fontPanelRef.current?.contains(t) && !fontBtnRef.current?.contains(t)) {
         setFontPanelOpen(false);
       }
       if (
@@ -178,9 +182,7 @@ export default function ReaderMenu({
 
   // TTS: load voices
   useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return;
-    }
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     function loadVoices() {
       const v = window.speechSynthesis.getVoices() || [];
@@ -202,9 +204,8 @@ export default function ReaderMenu({
 
   // If menu is hidden (book closed), stop TTS
   useEffect(() => {
-    if (!visible) {
-      stopTTS();
-    }
+    if (!visible) stopTTS();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   // Dictionary lookup
@@ -233,16 +234,12 @@ export default function ReaderMenu({
                 example: d.example,
               }))
           );
-          return {
-            word: e.word,
-            phonetic: phon,
-            partOfSpeech: firstPOS,
-            senses,
-          };
+          return { word: e.word, phonetic: phon, partOfSpeech: firstPOS, senses };
         });
+
       if (!entries.length) throw new Error("No results");
       setDictResults(entries);
-    } catch (err) {
+    } catch {
       setDictError("No definition found.");
     } finally {
       setDictLoading(false);
@@ -255,7 +252,6 @@ export default function ReaderMenu({
   }
 
   // --- TTS handlers ---
-
   function playTTS() {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const text = getVisiblePageText();
@@ -272,13 +268,9 @@ export default function ReaderMenu({
     u.pitch = tts.pitch;
 
     const voice = voices.find((v) => v.voiceURI === tts.voiceURI);
-    if (voice) {
-      u.voice = voice;
-    }
+    if (voice) u.voice = voice;
 
-    u.onstart = () => {
-      setTts((s) => ({ ...s, speaking: true, paused: false }));
-    };
+    u.onstart = () => setTts((s) => ({ ...s, speaking: true, paused: false }));
     u.onend = () => {
       setTts((s) => ({ ...s, speaking: false, paused: false }));
       utterRef.current = null;
@@ -328,10 +320,7 @@ export default function ReaderMenu({
   if (!visible) return null;
 
   return (
-    <div
-      className={"reader-menu" + (isOpen ? " is-open" : "")}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className={"reader-menu" + (isOpen ? " is-open" : "")} onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
         className="reader-menu-toggle"
@@ -378,19 +367,12 @@ export default function ReaderMenu({
                 aria-label="Reading appearance"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div
-                  className="font-size-row"
-                  role="radiogroup"
-                  aria-label="Font size"
-                >
+                <div className="font-size-row" role="radiogroup" aria-label="Font size">
                   {FONT_SIZES.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
-                      className={
-                        "font-size-option" +
-                        (fontSizeIndex === idx ? " is-active" : "")
-                      }
+                      className={"font-size-option" + (fontSizeIndex === idx ? " is-active" : "")}
                       role="radio"
                       aria-checked={fontSizeIndex === idx}
                       onClick={() => {
@@ -399,30 +381,13 @@ export default function ReaderMenu({
 
                         const fontSize = FONT_SIZES[newIndex];
                         const fontFamily = FONT_STYLES[fontStyleIndex].css;
-                        const theme =
-                          themeIndex === 0
-                            ? "cream"
-                            : themeIndex === 1
-                            ? "dark"
-                            : "white";
-                        onApplyTypography({
-                          fontSize,
-                          lineHeight,
-                          fontFamily,
-                          theme,
-                        });
+
+                        // IMPORTANT: do NOT send theme here (prevents color from changing)
+                        onApplyTypography({ fontSize, lineHeight, fontFamily });
                       }}
-                      title={
-                        idx < 2 ? "Smaller" : idx === 2 ? "Default" : "Larger"
-                      }
+                      title={idx < 2 ? "Smaller" : idx === 2 ? "Default" : "Larger"}
                     >
-                      <span
-                        style={{
-                          fontSize: `${(14 * (0.85 + 0.1 * idx)).toFixed(2)}px`,
-                        }}
-                      >
-                        A
-                      </span>
+                      <span style={{ fontSize: `${(14 * (0.85 + 0.1 * idx)).toFixed(2)}px` }}>A</span>
                     </button>
                   ))}
                 </div>
@@ -445,18 +410,9 @@ export default function ReaderMenu({
 
                       const fontSize = FONT_SIZES[fontSizeIndex];
                       const fontFamily = FONT_STYLES[fontStyleIndex].css;
-                      const theme =
-                        themeIndex === 0
-                          ? "cream"
-                          : themeIndex === 1
-                          ? "dark"
-                          : "white";
-                      onApplyTypography({
-                        fontSize,
-                        lineHeight: val,
-                        fontFamily,
-                        theme,
-                      });
+
+                      // IMPORTANT: do NOT send theme here
+                      onApplyTypography({ fontSize, lineHeight: val, fontFamily });
                     }}
                     aria-valuemin={1.2}
                     aria-valuemax={2.0}
@@ -464,6 +420,34 @@ export default function ReaderMenu({
                   />
 
                   <div className="lh-value">{lineHeight.toFixed(2)}×</div>
+                </div>
+
+                {/* NEW: Page size (controls your Home.tsx pageSize + re-pagination) */}
+                <div className="page-size-wrap">
+                  <label className="ps-label" htmlFor="ps-range">
+                    Page size
+                  </label>
+                  <input
+                    id="ps-range"
+                    className="ps-range"
+                    type="range"
+                    min={0}
+                    max={2}
+                    step={1}
+                    value={pageSize === "sm" ? 0 : pageSize === "md" ? 1 : 2}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10);
+                      const next: PageSize = n === 0 ? "sm" : n === 1 ? "md" : "lg";
+                      setPageSize(next);
+
+                      // IMPORTANT: only send pageSize (never touch theme)
+                      onApplyTypography({ pageSize: next });
+                    }}
+                    aria-valuemin={0}
+                    aria-valuemax={2}
+                    aria-valuenow={pageSize === "sm" ? 0 : pageSize === "md" ? 1 : 2}
+                  />
+                  <div className="ps-value">{pageSize === "sm" ? "Small" : pageSize === "md" ? "Medium" : "Large"}</div>
                 </div>
               </div>
             )}
@@ -473,9 +457,7 @@ export default function ReaderMenu({
           <button
             ref={fontStyleBtnRef}
             type="button"
-            className={
-              "reader-menu-item" + (fontStylePanelOpen ? " is-active" : "")
-            }
+            className={"reader-menu-item" + (fontStylePanelOpen ? " is-active" : "")}
             role="menuitem"
             aria-label="Font style"
             aria-haspopup="dialog"
@@ -500,28 +482,16 @@ export default function ReaderMenu({
                     <button
                       key={idx}
                       type="button"
-                      className={
-                        "font-style-option" +
-                        (fontStyleIndex === idx ? " is-active" : "")
-                      }
+                      className={"font-style-option" + (fontStyleIndex === idx ? " is-active" : "")}
                       onClick={() => {
                         const newIndex = idx as 0 | 1 | 2 | 3 | 4 | 5;
                         setFontStyleIndex(newIndex);
 
                         const fontSize = FONT_SIZES[fontSizeIndex];
                         const fontFamily = FONT_STYLES[newIndex].css;
-                        const theme =
-                          themeIndex === 0
-                            ? "cream"
-                            : themeIndex === 1
-                            ? "dark"
-                            : "white";
-                        onApplyTypography({
-                          fontSize,
-                          lineHeight,
-                          fontFamily,
-                          theme,
-                        });
+
+                        // IMPORTANT: do NOT send theme here
+                        onApplyTypography({ fontSize, lineHeight, fontFamily });
                       }}
                       title={f.name}
                       style={{ fontFamily: f.css }}
@@ -534,7 +504,7 @@ export default function ReaderMenu({
             )}
           </button>
 
-          {/* Theme: cream -> dark -> white */}
+          {/* Theme: cream -> dark -> white (ONLY place we change theme) */}
           <button
             type="button"
             className="reader-menu-item"
@@ -543,21 +513,14 @@ export default function ReaderMenu({
             aria-pressed={true}
             onClick={(e) => {
               e.stopPropagation();
-              const nextIndex = (((themeIndex + 1) % 3) as 0 | 1 | 2);
+              const nextIndex = ((themeIndex + 1) % 3) as 0 | 1 | 2;
               setThemeIndex(nextIndex);
 
-              const theme: ReaderTheme =
+              const nextTheme: ReaderTheme =
                 nextIndex === 0 ? "cream" : nextIndex === 1 ? "dark" : "white";
 
-              const fontSize = FONT_SIZES[fontSizeIndex];
-              const fontFamily = FONT_STYLES[fontStyleIndex].css;
-
-              onApplyTypography({
-                fontSize,
-                lineHeight,
-                fontFamily,
-                theme,
-              });
+              // Send ONLY the theme so typography changes never override it
+              onApplyTypography({ theme: nextTheme });
             }}
             title={themeLabel}
           >
@@ -618,44 +581,26 @@ export default function ReaderMenu({
                     onKeyDown={(e) => e.stopPropagation()}
                     aria-label="Enter a word"
                   />
-                  <button
-                    className="dict-go"
-                    type="submit"
-                    disabled={dictLoading || !dictQuery.trim()}
-                  >
+                  <button className="dict-go" type="submit" disabled={dictLoading || !dictQuery.trim()}>
                     {dictLoading ? "…" : "Define"}
                   </button>
                 </form>
 
                 <div className="dict-results">
-                  {dictError && (
-                    <div className="dict-error">{dictError}</div>
-                  )}
+                  {dictError && <div className="dict-error">{dictError}</div>}
                   {!dictError &&
                     dictResults?.map((en, i) => (
                       <div key={i} className="dict-entry">
                         <div className="dict-head">
                           <span className="dict-word">{en.word}</span>
-                          {en.phonetic && (
-                            <span className="dict-phon">{en.phonetic}</span>
-                          )}
-                          {en.partOfSpeech && (
-                            <span className="dict-pos">
-                              {en.partOfSpeech}
-                            </span>
-                          )}
+                          {en.phonetic && <span className="dict-phon">{en.phonetic}</span>}
+                          {en.partOfSpeech && <span className="dict-pos">{en.partOfSpeech}</span>}
                         </div>
                         <ol className="dict-senses">
                           {en.senses.slice(0, 4).map((s, j) => (
                             <li key={j}>
-                              <span className="dict-def">
-                                {s.definition}
-                              </span>
-                              {s.example && (
-                                <div className="dict-eg">
-                                  “{s.example}”
-                                </div>
-                              )}
+                              <span className="dict-def">{s.definition}</span>
+                              {s.example && <div className="dict-eg">“{s.example}”</div>}
                             </li>
                           ))}
                         </ol>
@@ -671,7 +616,7 @@ export default function ReaderMenu({
             <button
               ref={noteBtnRef}
               type="button"
-              className="reader-menu-item"
+              className={"reader-menu-item" + (notePanelOpen ? " is-active" : "")}
               role="menuitem"
               aria-label="Notepad"
               onClick={(e) => {
@@ -734,37 +679,21 @@ export default function ReaderMenu({
 
                 <div className="tts-controls">
                   {!tts.speaking && (
-                    <button
-                      className="tts-btn tts-play"
-                      type="button"
-                      onClick={playTTS}
-                    >
+                    <button className="tts-btn tts-play" type="button" onClick={playTTS}>
                       Play
                     </button>
                   )}
                   {tts.speaking && !tts.paused && (
-                    <button
-                      className="tts-btn tts-pause"
-                      type="button"
-                      onClick={pauseTTS}
-                    >
+                    <button className="tts-btn tts-pause" type="button" onClick={pauseTTS}>
                       Pause
                     </button>
                   )}
                   {tts.speaking && tts.paused && (
-                    <button
-                      className="tts-btn tts-resume"
-                      type="button"
-                      onClick={resumeTTS}
-                    >
+                    <button className="tts-btn tts-resume" type="button" onClick={resumeTTS}>
                       Resume
                     </button>
                   )}
-                  <button
-                    className="tts-btn tts-stop"
-                    type="button"
-                    onClick={stopTTS}
-                  >
+                  <button className="tts-btn tts-stop" type="button" onClick={stopTTS}>
                     Stop
                   </button>
                 </div>
@@ -777,9 +706,7 @@ export default function ReaderMenu({
                     id="tts-voice"
                     className="tts-select"
                     value={tts.voiceURI || ""}
-                    onChange={(e) =>
-                      setTts((s) => ({ ...s, voiceURI: e.target.value }))
-                    }
+                    onChange={(e) => setTts((s) => ({ ...s, voiceURI: e.target.value }))}
                   >
                     {voices.map((v) => (
                       <option key={v.voiceURI} value={v.voiceURI}>
@@ -801,16 +728,9 @@ export default function ReaderMenu({
                     max={1.4}
                     step={0.05}
                     value={tts.rate}
-                    onChange={(e) =>
-                      setTts((s) => ({
-                        ...s,
-                        rate: parseFloat(e.target.value),
-                      }))
-                    }
+                    onChange={(e) => setTts((s) => ({ ...s, rate: parseFloat(e.target.value) }))}
                   />
-                  <div className="tts-value">
-                    {tts.rate.toFixed(2)}×
-                  </div>
+                  <div className="tts-value">{tts.rate.toFixed(2)}×</div>
                 </div>
 
                 <div className="tts-row">
@@ -825,22 +745,14 @@ export default function ReaderMenu({
                     max={1.2}
                     step={0.05}
                     value={tts.pitch}
-                    onChange={(e) =>
-                      setTts((s) => ({
-                        ...s,
-                        pitch: parseFloat(e.target.value),
-                      }))
-                    }
+                    onChange={(e) => setTts((s) => ({ ...s, pitch: parseFloat(e.target.value) }))}
                   />
-                  <div className="tts-value">
-                    {tts.pitch.toFixed(2)}
-                  </div>
+                  <div className="tts-value">{tts.pitch.toFixed(2)}</div>
                 </div>
 
                 <p className="tts-hint">
-                  Reads the visible pages. Turning pages will not break
-                  playback, but it will only read the current spread when
-                  you press Play again.
+                  Reads the visible pages. Turning pages will not break playback, but it will only read the
+                  current spread when you press Play again.
                 </p>
               </div>
             )}
