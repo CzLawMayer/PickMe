@@ -1576,6 +1576,14 @@ export default function Home() {
       >
         <button
           type="button"
+          className={`home3d-top-tab ${homeTab === "newChapter" ? "is-active" : ""}`}
+          onClick={() => setHomeTab("newChapter")}
+        >
+          New Chapter
+        </button>
+
+        <button
+          type="button"
           className={`home3d-top-tab ${homeTab === "inProgress" ? "is-active" : ""}`}
           onClick={() => setHomeTab("inProgress")}
         >
@@ -1590,6 +1598,7 @@ export default function Home() {
           Discover
         </button>
       </div>
+
 
       <main className="carousel home3d-main">
         {/* LEFT: Metadata */}

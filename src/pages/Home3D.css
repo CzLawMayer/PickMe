@@ -1065,7 +1065,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: 24px;
 
   height: 34px; /* single-line tap area */
   z-index: 40;
