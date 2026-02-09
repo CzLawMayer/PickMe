@@ -49,6 +49,7 @@ type CommentItem = {
   reactions: Record<string, number>;
   replies: CommentItem[];
   rating?: number;
+  isSpoiler?: boolean;
 };
 
 type ThreadState = {
@@ -292,7 +293,7 @@ export default function Home() {
   }, [activeThread.reviews, filterSort]);
 
   const nextIdRef = useRef(1);
-  const makeBaseItem = (text: string): CommentItem => ({
+  const makeBaseItem = (text: string, isSpoiler = false): CommentItem => ({
     id: nextIdRef.current++,
     username: CURRENT_USER_ID,
     pfpUrl: profileAvatarSrc,
@@ -300,18 +301,24 @@ export default function Home() {
     text,
     reactions: {},
     replies: [],
+    isSpoiler, 
   });
 
   const handleToggleComments = () => setIsCommentsOpen((v) => !v);
 
-  const handleAddComment = (text: string) => {
+  const handleAddComment = (text: string, isSpoiler = false) => {
     if (!activeBookId) return;
-    const item = makeBaseItem(text);
+    const item = makeBaseItem(text, isSpoiler);
+
     setCommentThreads((prev) => {
       const t = prev[activeBookId] ?? { comments: [], reviews: [] };
-      return { ...prev, [activeBookId]: { ...t, comments: [item, ...t.comments] } };
+      return {
+        ...prev,
+        [activeBookId]: { ...t, comments: [item, ...t.comments] },
+      };
     });
   };
+
 
   const handleAddReply = (parentId: number, text: string) => {
     if (!activeBookId) return;

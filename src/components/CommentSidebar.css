@@ -1216,3 +1216,161 @@ body.cs-resizing {
   cursor: ew-resize !important;
   user-select: none;
 }
+
+/* =========================
+   Spoiler UI
+   ========================= */
+
+.cs-comment-form-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.cs-comment-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cs-spoiler-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #bdbdbd;
+  user-select: none;
+}
+
+.cs-spoiler-toggle input {
+  accent-color: #ef5623;
+}
+
+.cs-comment-text-wrap {
+  position: relative;
+}
+
+/* Mark container so hover works even when cover is on top */
+.cs-comment--spoiler {
+  position: relative;
+}
+
+/* The cover */
+.cs-spoiler-cover {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  opacity: 1;
+  transition: opacity 0.15s ease;
+  pointer-events: auto;
+}
+
+/* Reveal on hover (mouse) */
+.cs-comment--spoiler:hover .cs-spoiler-cover {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Reveal on keyboard focus too */
+.cs-comment--spoiler:focus-within .cs-spoiler-cover {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =========================
+   Spoiler overlay (hover to reveal)
+   ========================= */
+
+/* Wrap must be positioned so overlay can sit on top */
+.cs-comment-text-wrap {
+  position: relative;
+}
+
+/* When spoiler, hide the text visually (but keep layout) */
+.cs-comment--spoiler .cs-comment-text {
+  filter: blur(6px);
+  opacity: 0.9;
+  transition: filter 140ms ease, opacity 140ms ease;
+}
+
+/* The overlay that sits on top */
+.cs-spoiler-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 0px;
+  padding: 10px 12px;
+
+  /* Make sure it actually covers */
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  /* This is important so it sits above the text */
+  z-index: 3;
+
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 140ms ease;
+}
+
+/* Reveal on hover */
+.cs-comment--spoiler:hover .cs-spoiler-cover {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cs-comment--spoiler:hover .cs-comment-text {
+  filter: blur(0);
+  opacity: 1;
+}
+
+/* The wrapper that contains BOTH the blurred text and the spoiler overlay */
+.cs-comment-text-wrap {
+  position: relative;
+  overflow: hidden;          /* ✅ clips the blur */
+  border-radius: 8px;       /* match your card rounding */
+  isolation: isolate;        /* prevents weird blending bleed */
+}
+
+/* If you blur the text itself (common approach) */
+.cs-comment--spoiler .cs-comment-text {
+  filter: blur(8px);
+  opacity: 0.9;              /* keeps it “transparent” */
+}
+
+/* Extra safety: force the filter to clip to a rounded shape even on some GPUs */
+.cs-comment--spoiler .cs-comment-text {
+  clip-path: inset(0 round 12px); /* ✅ hard clip inside rounded corners */
+}
+
+/* Your spoiler cover (overlay) should also respect the same rounding */
+.cs-spoiler-cover {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+}
+
+.cs-comment--spoiler .cs-comment-text {
+  text-shadow: none;
+}

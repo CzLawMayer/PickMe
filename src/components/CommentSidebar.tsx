@@ -1,11 +1,6 @@
 // src/components/CommentSidebar.tsx
 // @ts-nocheck
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  forwardRef,
-} from "react";
+import React, { useState, useEffect, useRef, forwardRef } from "react";
 import {
   MessageSquare,
   X,
@@ -110,7 +105,7 @@ const useTimeAgo = (date: number | string) => {
 const ReactionDetailsPopover = forwardRef(
   ({ reactions, onReactionClick }: any, ref: any) => {
     const reactionEntries = Object.entries(reactions || {}).filter(
-      ([, count]) => count > 0
+      ([, count]) => (count as number) > 0
     );
 
     return (
@@ -171,23 +166,29 @@ function ConfirmationModal({
   );
 }
 
+/* ----------------- Comment form (with spoiler checkbox option) ----------------- */
+
 const _CommentForm = (
-  { onSubmit, placeholder = "Add a comment...", initialText = "" }: any,
+  {
+    onSubmit,
+    placeholder = "Add a comment...",
+    initialText = "",
+    enableSpoiler = false,
+  }: any,
   ref: any
 ) => {
   const [text, setText] = useState(initialText);
+  const [isSpoiler, setIsSpoiler] = useState(false);
 
   useEffect(() => {
     setText(initialText);
+    setIsSpoiler(false);
 
     if (ref && ref.current) {
       ref.current.focus();
       requestAnimationFrame(() => {
         try {
-          ref.current.setSelectionRange(
-            initialText.length,
-            initialText.length
-          );
+          ref.current.setSelectionRange(initialText.length, initialText.length);
         } catch {
           // ignore
         }
@@ -202,8 +203,12 @@ const _CommentForm = (
       if (trimmedText.startsWith("@") && trimmedText.split(" ").length === 1) {
         return;
       }
-      onSubmit(trimmedText);
+
+      // Pass spoiler flag as 2nd arg (safe even if parent ignores it)
+      onSubmit(trimmedText, isSpoiler);
+
       setText("");
+      setIsSpoiler(false);
 
       if (ref && ref.current) {
         ref.current.style.height = "auto";
@@ -213,26 +218,42 @@ const _CommentForm = (
 
   return (
     <form onSubmit={handleSubmit} className="cs-comment-form">
-      <textarea
-        ref={ref}
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          e.target.style.height = "auto";
-          e.target.style.height = `${e.target.scrollHeight}px`;
-        }}
-        placeholder={placeholder}
-        className="cs-comment-input comment-input-scrollbar"
-        aria-label={placeholder}
-        rows={2}
-      />
-      <button
-        type="submit"
-        className="cs-comment-send-btn"
-        aria-label="Send comment"
-      >
-        <Send size={16} />
-      </button>
+      <div className="cs-comment-form-main">
+        <textarea
+          ref={ref}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            e.target.style.height = "auto";
+            e.target.style.height = `${e.target.scrollHeight}px`;
+          }}
+          placeholder={placeholder}
+          className="cs-comment-input comment-input-scrollbar"
+          aria-label={placeholder}
+          rows={2}
+        />
+
+        <div className="cs-comment-form-row">
+          {enableSpoiler && (
+            <label className="cs-spoiler-toggle">
+              <input
+                type="checkbox"
+                checked={isSpoiler}
+                onChange={(e) => setIsSpoiler(e.target.checked)}
+              />
+              <span>Mark as spoiler</span>
+            </label>
+          )}
+
+          <button
+            type="submit"
+            className="cs-comment-send-btn"
+            aria-label="Send comment"
+          >
+            <Send size={16} />
+          </button>
+        </div>
+      </div>
     </form>
   );
 };
@@ -280,9 +301,7 @@ const ReactionSummary = forwardRef(
     return (
       <button
         ref={ref}
-        onClick={
-          hasOneReaction ? () => onReactionClick(emojis[0]) : onOpenModal
-        }
+        onClick={hasOneReaction ? () => onReactionClick(emojis[0]) : onOpenModal}
         className={cls}
       >
         <span className="cs-reaction-summary-emojis">
@@ -313,9 +332,9 @@ function Comment({
   const [userReaction, setUserReaction] = useState<string | null>(null);
   const [isReactionPickerOpen, setIsReactionPickerOpen] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
-  const [replyState, setReplyState] = useState<"hidden" | "replyingTop" | "replyingBottom">(
-    "hidden"
-  );
+  const [replyState, setReplyState] = useState<
+    "hidden" | "replyingTop" | "replyingBottom"
+  >("hidden");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
@@ -423,15 +442,18 @@ function Comment({
   };
 
   const TRUNCATE_LENGTH = 200;
-  const isTruncated = comment.text.length > TRUNCATE_LENGTH;
+  const isTruncated = (comment.text || "").length > TRUNCATE_LENGTH;
   const displayText =
     isTruncated && !isExpanded
-      ? comment.text.slice(0, TRUNCATE_LENGTH) + "..."
+      ? (comment.text || "").slice(0, TRUNCATE_LENGTH) + "..."
       : comment.text;
+
+  const isSpoiler = !!comment.isSpoiler;
 
   const containerClasses = [
     "cs-comment",
     isReply ? "cs-comment--reply" : "cs-comment--root",
+    isSpoiler ? "cs-comment--spoiler" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -494,7 +516,20 @@ function Comment({
               </form>
             ) : (
               <>
-                <p className="cs-comment-text">{displayText}</p>
+                <div className="cs-comment-text-wrap">
+                  <p className="cs-comment-text">{displayText}</p>
+
+                  {isSpoiler && (
+                    <div
+                      className="cs-spoiler-cover"
+                      aria-label="Spoiler hidden. Hover to reveal."
+                      title="Spoiler hidden. Hover to reveal."
+                    >
+                      Spoiler!
+                    </div>
+                  )}
+                </div>
+
                 {isTruncated && (
                   <button
                     onClick={() => setIsExpanded(!isExpanded)}
@@ -633,11 +668,8 @@ function Comment({
                         className="cs-link cs-link-small cs-comment-toggle-replies"
                       >
                         <CornerDownRight size={14} className="cs-icon-inline" />
-                        {showReplies ? "Hide" : "Show"}{" "}
-                        {comment.replies.length}{" "}
-                        {comment.replies.length === 1
-                          ? "response"
-                          : "responses"}
+                        {showReplies ? "Hide" : "Show"} {comment.replies.length}{" "}
+                        {comment.replies.length === 1 ? "response" : "responses"}
                       </button>
                     )}
                 </div>
@@ -653,6 +685,7 @@ function Comment({
               onSubmit={handleAddReply}
               placeholder="Reply..."
               initialText={`@${comment.username} `}
+              enableSpoiler={false}
             />
           </div>
         )}
@@ -696,6 +729,7 @@ function Comment({
                       onSubmit={handleAddReply}
                       placeholder="Reply..."
                       initialText={`@${comment.username} `}
+                      enableSpoiler={false}
                     />
                   </div>
                 )}
@@ -926,7 +960,7 @@ export function Toast({ message, isVisible }: any) {
   return <div className={cls}>{message}</div>;
 }
 
-/* ----------------- Main sidebar component ----------------- */
+/* ----------------- Main sidebar component (resizable) ----------------- */
 
 export default function CommentSidebar({
   isOpen,
@@ -950,13 +984,15 @@ export default function CommentSidebar({
   toastMessage,
   isToastVisible,
 }: any) {
-  const [activeView, setActiveView] = useState<"comments" | "reviews">("comments");
+  const [activeView, setActiveView] = useState<"comments" | "reviews">(
+    "comments"
+  );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const mainCommentInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   // ---- Resizable / expandable panel ----
-  const DEFAULT_W = 384;   // your current max-width
-  const EXPANDED_W = 520;  // "expanded" target
+  const DEFAULT_W = 384; // your current max-width
+  const EXPANDED_W = 520; // "expanded" target
   const MIN_W = 320;
   const MAX_W = 620;
 
@@ -968,7 +1004,8 @@ export default function CommentSidebar({
     pointerId: number | null;
   }>({ dragging: false, startX: 0, startWidth: DEFAULT_W, pointerId: null });
 
-  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+  const clamp = (v: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, v));
 
   useEffect(() => {
     if (requestedView === "comments" || requestedView === "reviews") {
@@ -1079,7 +1116,9 @@ export default function CommentSidebar({
   };
 
   const toggleExpanded = () => {
-    setPanelWidth((w) => (w < (DEFAULT_W + EXPANDED_W) / 2 ? EXPANDED_W : DEFAULT_W));
+    setPanelWidth((w) =>
+      w < (DEFAULT_W + EXPANDED_W) / 2 ? EXPANDED_W : DEFAULT_W
+    );
   };
 
   return (
@@ -1122,10 +1161,16 @@ export default function CommentSidebar({
         {/* Header: tabs + filter + close button */}
         <div className="cs-sidebar-header">
           <div className="cs-sidebar-tabs">
-            <button onClick={() => handleTabChange("comments")} className={commentsTabClass}>
+            <button
+              onClick={() => handleTabChange("comments")}
+              className={commentsTabClass}
+            >
               Comments
             </button>
-            <button onClick={() => handleTabChange("reviews")} className={reviewsTabClass}>
+            <button
+              onClick={() => handleTabChange("reviews")}
+              className={reviewsTabClass}
+            >
               Reviews
             </button>
 
@@ -1139,7 +1184,10 @@ export default function CommentSidebar({
               </button>
 
               {isFilterOpen && (
-                <div className="cs-filter-menu" onMouseLeave={() => setIsFilterOpen(false)}>
+                <div
+                  className="cs-filter-menu"
+                  onMouseLeave={() => setIsFilterOpen(false)}
+                >
                   <div>
                     {activeFilters.map((filter) => {
                       const isActive = filterSort === filter.value;
@@ -1155,7 +1203,11 @@ export default function CommentSidebar({
                           key={filter.value}
                           onClick={() => handleFilterSelect(filter.value)}
                           className={itemClass}
-                          style={isActive ? { backgroundColor: filter.color } : undefined}
+                          style={
+                            isActive
+                              ? { backgroundColor: filter.color }
+                              : undefined
+                          }
                         >
                           {filter.label}
                         </button>
@@ -1168,7 +1220,7 @@ export default function CommentSidebar({
           </div>
 
           <div className="cs-sidebar-header-right">
-            {/* Expand/collapse width button (optional but useful) */}
+            {/* Expand/collapse width button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -1178,11 +1230,14 @@ export default function CommentSidebar({
               aria-label="Expand panel"
               title="Expand / collapse"
             >
-              {/* tiny visual; no extra imports */}
               <span style={{ fontSize: 16, lineHeight: 1 }}>↔︎</span>
             </button>
 
-            <button onClick={onToggle} className="cs-icon-btn" aria-label="Close comments">
+            <button
+              onClick={onToggle}
+              className="cs-icon-btn"
+              aria-label="Close comments"
+            >
               <X size={20} />
             </button>
           </div>
@@ -1237,7 +1292,32 @@ export default function CommentSidebar({
         {/* Footer: comment form or review button */}
         {activeView === "comments" && (
           <div className="cs-sidebar-footer">
-            <CommentForm ref={mainCommentInputRef} onSubmit={onAddComment} placeholder="Add a comment..." />
+            <CommentForm
+              ref={mainCommentInputRef}
+              onSubmit={(text: string, isSpoiler: boolean) => {
+                if (typeof onAddComment !== "function") return;
+
+                // helpful debug
+                // console.log("Submitting comment:", { text, isSpoiler, arity: onAddComment.length });
+
+                // Try the most likely signatures without breaking your app
+                try {
+                  // signature: (text, isSpoiler)
+                  return onAddComment(text, isSpoiler);
+                } catch (err1) {
+                  try {
+                    // signature: ({ text, isSpoiler })
+                    return onAddComment({ text, isSpoiler });
+                  } catch (err2) {
+                    // signature: (text)
+                    return onAddComment(text);
+                  }
+                }
+              }}
+              placeholder="Add a comment..."
+              enableSpoiler={true}
+            />
+
           </div>
         )}
 
