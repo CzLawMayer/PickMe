@@ -1222,6 +1222,38 @@ export default function Home() {
       }
     }
 
+
+
+    function onPageLeftClick(e: MouseEvent) {
+      // prevent any “click book / raycast” logic
+      e.stopPropagation();
+
+      // only when book is open
+      if (!isBookOpenLocal) return;
+
+      forceKeyboardFocus();
+      flipPageLeft();
+    }
+
+    function onPageRightClick(e: MouseEvent) {
+      e.stopPropagation();
+      if (!isBookOpenLocal) return;
+
+      forceKeyboardFocus();
+      flipPageRight();
+    }
+
+    // Optional: make it feel responsive (no text selecting)
+    function onPagePointerDown(e: PointerEvent) {
+      if (!isBookOpenLocal) return;
+      e.stopPropagation();
+    }
+
+
+
+
+    
+
     // ---------------------------
     // ✅ Responsive drag/swipe
     // ---------------------------
@@ -1538,6 +1570,12 @@ export default function Home() {
 
     document.addEventListener("keydown", onKeyDown, { capture: true });
 
+    pageLeft?.addEventListener("click", onPageLeftClick);
+    pageRight?.addEventListener("click", onPageRightClick);
+
+    pageLeft?.addEventListener("pointerdown", onPagePointerDown);
+    pageRight?.addEventListener("pointerdown", onPagePointerDown);
+
     animate();
 
     return () => {
@@ -1547,6 +1585,12 @@ export default function Home() {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
       document.removeEventListener("keydown", onKeyDown, { capture: true } as any);
+
+      pageLeft?.removeEventListener("click", onPageLeftClick);
+      pageRight?.removeEventListener("click", onPageRightClick);
+
+      pageLeft?.removeEventListener("pointerdown", onPagePointerDown);
+      pageRight?.removeEventListener("pointerdown", onPagePointerDown);
 
       if (paginationTimer !== null) window.clearTimeout(paginationTimer);
 
