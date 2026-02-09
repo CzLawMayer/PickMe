@@ -21,7 +21,7 @@ export default function AppHeader({ onClickWrite }: Props) {
     >
       <h1 className="logo">
         <Link to="/" className="logo-link" aria-label="Go to home">
-          Pick<span>M</span>e!
+          OddChapter
         </Link>
       </h1>
 
