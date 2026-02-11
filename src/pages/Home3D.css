@@ -903,7 +903,6 @@
 .home3d-main #metadata-panel .meta-summary-row,
 .home3d-main #metadata-panel .meta-language,
 .home3d-main #metadata-panel .meta-tags{
-  padding-top: 8px !important;
   padding-bottom: 8px !important;
   margin: 0 !important; /* kill any default margins */
 }
@@ -1224,3 +1223,215 @@
 
 
 
+/* ============================================================
+   HOME3D — FIX icon alignment (Material Symbols glyph metrics)
+   Paste at VERY BOTTOM of Home3D.css
+   ============================================================ */
+
+.home3d-main .metadata .meta-actions {
+  /* tweak these two only */
+  --icon-box: 44px;   /* square hit-area for the icon */
+  --icon-size: 34px;  /* actual glyph size */
+}
+
+/* Each button: same 2-row layout */
+.home3d-main .metadata .meta-actions > .meta-icon-btn {
+  display: grid !important;
+  grid-template-rows: var(--icon-box) auto !important;
+  justify-items: center !important;
+  align-content: start !important;
+  row-gap: 6px !important;
+
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+/* The icon container becomes the “truth” for sizing */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-slot {
+  width: var(--icon-box) !important;
+  height: var(--icon-box) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  /* kills baseline/inline font weirdness */
+  line-height: 0 !important;
+}
+
+/* Material Symbols: force consistent rendering + remove font box spacing */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph {
+  font-size: var(--icon-size) !important;
+  line-height: 1 !important;
+  display: block !important;
+
+  /* prevents baseline shifts */
+  vertical-align: middle !important;
+
+  /* keep icons consistent (same weight/optical size) */
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24 !important;
+}
+
+/* If you ever use inline SVG icons here too */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-svg,
+.home3d-main .metadata .meta-actions > .meta-icon-btn svg {
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  display: block !important;
+}
+
+/* Count row: consistent height + baseline */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.1 !important;
+  height: auto !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   HOME3D — Make meta action icons bigger (after alignment fix)
+   Paste at VERY BOTTOM (last wins)
+   ============================================================ */
+
+.home3d-main .metadata .meta-actions {
+  --icon-box: 70px;    /* was 44px */
+  --icon-size: 56px;   /* was 34px */
+}
+
+/* Optional: a bit more breathing room between icon and count */
+.home3d-main .metadata .meta-actions > .meta-icon-btn {
+  row-gap: 0px !important;
+}
+
+/* Optional: make counts slightly bigger too */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-count {
+  font-size: 13px !important;
+}
+
+/* ============================================================
+   HOME3D — Material Symbols: same visual size + thinner outlines
+   Paste at VERY BOTTOM of Home3D.css
+   ============================================================ */
+
+.home3d-main .metadata .meta-actions {
+  --icon-box: 62px;     /* hit area */
+  --icon-size: 50px;    /* glyph size */
+}
+
+/* Fixed icon box, perfectly centered */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-slot {
+  width: var(--icon-box) !important;
+  height: var(--icon-box) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
+}
+
+/* Thinner outlines + consistent rendering */
+.home3d-main .metadata .meta-actions > .meta-icon-btn .meta-icon-glyph {
+  font-size: var(--icon-size) !important;
+  line-height: 1 !important;
+  display: block !important;
+  vertical-align: middle !important;
+
+  /* thinner stroke: lower weight */
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 120,   /* 200–300 is usually the sweet spot for thin outlines */
+    "GRAD" 0,
+    "opsz" 24 !important;
+
+  /* tiny baseline normalization */
+  transform: translateY(1px);
+}
+
+/* Optical equalization (Material Symbols vary by glyph) */
+.home3d-main .metadata .meta-actions .like .meta-icon-glyph {
+  transform: translateY(1px) scale(1.07);
+}
+
+.home3d-main .metadata .meta-actions .meta-comment-btn .meta-icon-glyph {
+  transform: translateY(1px) scale(0.98);
+}
+
+.home3d-main .metadata .meta-actions .star .meta-icon-glyph {
+  transform: translateY(1px) scale(1.29);
+}
+
+.home3d-main .metadata .meta-actions .save .meta-icon-glyph {
+  transform: translateY(1px) scale(1.15);
+}
+
+.home3d-main .metadata .meta-actions {
+  --icon-box: 70px;    /* was 44px */
+  --icon-size: 56px;   /* was 34px */
+}
+
+/* ============================================================
+   HOME3D — Active state = FILLED icons (Material Symbols)
+   ============================================================ */
+
+/* Default (inactive): outlined */
+.home3d-main .metadata .meta-actions .meta-icon-glyph {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 120,
+    "GRAD" 0,
+    "opsz" 24 !important;
+}
+
+/* Active (any icon): filled */
+.home3d-main .metadata .meta-actions .meta-icon-btn.is-active .meta-icon-glyph,
+.home3d-main .metadata .meta-actions .meta-icon-btn[aria-pressed="true"] .meta-icon-glyph {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 120,
+    "GRAD" 0,
+    "opsz" 24 !important;
+}
+
+/* ============================================================
+   HOME3D — Meta button micro-interactions (PRESS = MOVE, NO SCALE)
+   ============================================================ */
+
+/* Make sure nothing scales on press (this is what caused shrinking) */
+.home3d-main .metadata .meta-actions .meta-icon-btn {
+  transition: none !important;
+}
+
+.home3d-main .metadata .meta-actions .meta-icon-btn:active {
+  transform: none !important; /* kills any old scale */
+}
+
+/* Icon only animates */
+.home3d-main .metadata .meta-actions .meta-icon-glyph {
+  transition: translate 140ms ease, color 160ms ease !important;
+  translate: 0 0; /* explicit baseline */
+}
+
+/* Hover: lift icon only */
+@media (hover: hover) {
+  .home3d-main .metadata .meta-actions .meta-icon-btn:hover .meta-icon-glyph {
+    translate: 0 -3px;
+  }
+}
+
+/* Press: push icon down only (feels like a click) */
+.home3d-main .metadata .meta-actions .meta-icon-btn:active .meta-icon-glyph {
+  translate: 0 1px;
+}
+
+/* Keyboard: match hover lift */
+.home3d-main .metadata .meta-actions .meta-icon-btn:focus-visible .meta-icon-glyph {
+  translate: 0 -3px;
+}
