@@ -19,6 +19,9 @@ import {
   Moon,
   Check,
   MessageSquare,
+  Maximize2,
+  Minimize2,
+  X,
 } from "lucide-react";
 
 import { libraryBooks, profile } from "@/profileData";
@@ -71,6 +74,10 @@ export default function ProfileBoard({
 
   /* =========================
      LIBRARY (EXACT SHELVES)
+     IMPORTANT: .shelf must be
+     a DIRECT CHILD of the board
+     so `.library-cell > .shelf`
+     selector continues to work.
   ========================== */
   const shelfRef = useRef<HTMLDivElement | null>(null);
 
@@ -292,6 +299,7 @@ export default function ProfileBoard({
   useEffect(() => {
     if (!isEditingAbout) return;
     if (activeTab !== "About") return;
+
     document.querySelectorAll<HTMLTextAreaElement>(".pb-about-textarea").forEach((ta) => autoExpand(ta));
   }, [isEditingAbout, activeTab, aboutBlocks.length]);
 
@@ -450,12 +458,13 @@ export default function ProfileBoard({
   };
 
   /* =========================
-     LETTERS
+     LETTERS (carousel + open + compose + fullscreen)
   ========================== */
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   const [isWriting, setIsWriting] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
+  const [lettersFullscreen, setLettersFullscreen] = useState(false);
 
   const [letters, setLetters] = useState<Letter[]>([
     {
@@ -478,19 +487,23 @@ export default function ProfileBoard({
   const [writerName, setWriterName] = useState("");
   const [recipientName, setRecipientName] = useState("");
 
+  // ESC closes fullscreen
+  useEffect(() => {
+    if (!lettersFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLettersFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lettersFullscreen]);
+
   const truncateName = (name: string) => (name.length > 20 ? name.slice(0, 20) + "..." : name);
 
   const centerCard = (card: HTMLElement, behavior: ScrollBehavior = "smooth") => {
     const wrap = carouselRef.current;
     if (!wrap) return;
-
-    const wrapRect = wrap.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-
-    const delta =
-      (cardRect.left + cardRect.width / 2) - (wrapRect.left + wrapRect.width / 2);
-
-    wrap.scrollTo({ left: wrap.scrollLeft + delta, behavior });
+    const target = card.offsetLeft + card.offsetWidth / 2 - wrap.clientWidth / 2;
+    wrap.scrollTo({ left: target, behavior });
   };
 
   const scrollCarousel = (direction: "left" | "right") => {
@@ -498,17 +511,15 @@ export default function ProfileBoard({
     if (!wrap) return;
 
     const cards = Array.from(wrap.querySelectorAll<HTMLElement>(".pb-letterCard"));
-    if (!cards.length) return;
+    if (cards.length === 0) return;
 
-    const wrapRect = wrap.getBoundingClientRect();
-    const wrapCenter = wrapRect.left + wrapRect.width / 2;
+    const wrapCenter = wrap.scrollLeft + wrap.clientWidth / 2;
 
     let closestIdx = 0;
     let best = Infinity;
 
-    cards.forEach((card, i) => {
-      const r = card.getBoundingClientRect();
-      const cCenter = r.left + r.width / 2;
+    cards.forEach((c, i) => {
+      const cCenter = c.offsetLeft + c.offsetWidth / 2;
       const dist = Math.abs(cCenter - wrapCenter);
       if (dist < best) {
         best = dist;
@@ -524,72 +535,34 @@ export default function ProfileBoard({
     centerCard(cards[nextIdx]);
   };
 
-  // Ensure true centering whenever entering Letters / list changes / resize
+  // Keep carousel centered when entering Letters and when list changes (only in carousel mode)
   useEffect(() => {
     if (activeTab !== "Letters") return;
-    if (selectedLetter) return; // only carousel view
-
-    const wrap = carouselRef.current;
-    if (!wrap) return;
-
-    const applyCardWidthAndCenter = () => {
-      const first = wrap.querySelector<HTMLElement>(".pb-letterCard");
-      if (!first) return;
-
-      const w = first.getBoundingClientRect().width;
-      wrap.style.setProperty("--pbCardW", `${w}px`);
-
-      // after updating padding, center the first card
-      centerCard(first, "auto");
-    };
-
-    requestAnimationFrame(applyCardWidthAndCenter);
-    window.addEventListener("resize", applyCardWidthAndCenter);
-
-    return () => window.removeEventListener("resize", applyCardWidthAndCenter);
-  }, [activeTab, letters.length, selectedLetter]);
-
-
-  // always center something when entering Letters carousel, and keep center on resize
-  useEffect(() => {
-    if (activeTab !== "Letters") return;
+    if (isWriting) return;
     if (selectedLetter) return;
 
-    const wrap = carouselRef.current;
-    if (!wrap) return;
-
-    const centerNearest = (behavior: ScrollBehavior = "smooth") => {
+    requestAnimationFrame(() => {
+      const wrap = carouselRef.current;
+      if (!wrap) return;
       const cards = Array.from(wrap.querySelectorAll<HTMLElement>(".pb-letterCard"));
       if (cards.length === 0) return;
 
+      // center the card closest to current center (or first if at start)
       const wrapCenter = wrap.scrollLeft + wrap.clientWidth / 2;
-
-      let closest = cards[0];
+      let bestIdx = 0;
       let best = Infinity;
-
-      for (const c of cards) {
+      cards.forEach((c, i) => {
         const cCenter = c.offsetLeft + c.offsetWidth / 2;
         const dist = Math.abs(cCenter - wrapCenter);
         if (dist < best) {
           best = dist;
-          closest = c;
+          bestIdx = i;
         }
-      }
+      });
 
-      centerCard(closest, behavior);
-    };
-
-    // initial center (first card) after layout
-    requestAnimationFrame(() => {
-      const first = wrap.querySelector<HTMLElement>(".pb-letterCard");
-      if (first) centerCard(first, "auto");
+      centerCard(cards[bestIdx], "auto");
     });
-
-    const onResize = () => centerNearest("auto");
-    window.addEventListener("resize", onResize);
-
-    return () => window.removeEventListener("resize", onResize);
-  }, [activeTab, letters.length, selectedLetter]);
+  }, [activeTab, letters.length, isWriting, selectedLetter, lettersFullscreen]);
 
   const updateLetterTextBlock = (index: number, val: string, target?: HTMLTextAreaElement | null) => {
     setWritingBlocks((prev) => {
@@ -610,6 +583,7 @@ export default function ProfileBoard({
     const hasContent = writingBlocks.some(
       (b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0)
     );
+
     if (!hasWriter || !hasRecipient || !hasContent) return;
 
     const letterToAdd: Letter = {
@@ -627,14 +601,22 @@ export default function ProfileBoard({
     setRecipientName("");
     setWritingBlocks([{ type: "text", value: "" }]);
     setIsWriting(false);
+  };
 
-    // after adding new card, center it once it renders
-    requestAnimationFrame(() => {
-      const wrap = carouselRef.current;
-      if (!wrap) return;
-      const first = wrap.querySelector<HTMLElement>(".pb-letterCard");
-      if (first) centerCard(first, "smooth");
-    });
+  const FullscreenToggle = ({ className = "" }: { className?: string }) => {
+    const Icon = lettersFullscreen ? Minimize2 : Maximize2;
+    const title = lettersFullscreen ? "Exit fullscreen" : "Fullscreen";
+
+    return (
+      <button
+        type="button"
+        className={["pb-lettersFsBtn", className].join(" ")}
+        onClick={() => setLettersFullscreen((v) => !v)}
+        title={title}
+      >
+        <Icon size={18} />
+      </button>
+    );
   };
 
   const renderLettersCompose = () => {
@@ -662,6 +644,9 @@ export default function ProfileBoard({
               onChange={(e) => setRecipientName(e.target.value)}
             />
           </div>
+
+          {/* Fullscreen toggle in compose too */}
+          <FullscreenToggle className="pb-lettersFsBtn--compose" />
         </div>
 
         <div className="pb-lettersComposeBody">
@@ -755,9 +740,14 @@ export default function ProfileBoard({
 
     return (
       <div className="pb-letterOpen pb-scrollbarLight">
-        <button type="button" className="pb-backBtn" onClick={() => setSelectedLetter(null)}>
-          <ArrowLeft size={16} /> Back
-        </button>
+        <div className="pb-letterOpenTopbar">
+          <button type="button" className="pb-backBtn" onClick={() => setSelectedLetter(null)}>
+            <ArrowLeft size={16} /> Back
+          </button>
+
+          {/* Fullscreen toggle in open view too */}
+          <FullscreenToggle className="pb-lettersFsBtn--open" />
+        </div>
 
         <div className="pb-letterHeader">
           <div className="pb-letterAvatar" aria-hidden />
@@ -862,6 +852,19 @@ export default function ProfileBoard({
           )}
         </div>
 
+        {/* Fullscreen button (left of write FAB) */}
+        {!lettersFullscreen && (
+          <button
+            type="button"
+            className="pb-letterFab pb-letterFab--fullscreen"
+            onClick={() => setLettersFullscreen(true)}
+            title="Fullscreen"
+          >
+            <Maximize2 size={20} />
+          </button>
+        )}
+
+
         <button type="button" className="pb-letterFab" onClick={() => setIsWriting(true)} title="Write letter">
           <PenTool size={20} />
         </button>
@@ -869,10 +872,54 @@ export default function ProfileBoard({
     );
   };
 
-  const renderLetters = () => {
+  const renderLettersInner = () => {
     if (isWriting) return renderLettersCompose();
     if (selectedLetter) return renderLettersOpen();
     return renderLettersCarousel();
+  };
+
+  // Fullscreen wrapper that applies to carousel + open + compose
+  const renderLetters = () => {
+    const inner = renderLettersInner();
+
+    if (!lettersFullscreen) return inner;
+
+    return (
+      <div
+        className="pb-lettersOverlay"
+        role="dialog"
+        aria-modal="true"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) setLettersFullscreen(false);
+        }}
+      >
+        <div className="pb-lettersModal">
+          {/* HEADER */}
+          <div className="pb-lettersModalHeader">
+            <div className="pb-lettersModalTitle">Letters</div>
+
+            <button
+              type="button"
+              className="pb-lettersModalClose"
+              onClick={() => setLettersFullscreen(false)}
+              title="Exit Fullscreen"
+            >
+              <Minimize2 size={18} />
+            </button>
+          </div>
+
+
+          {/* CONTENT */}
+          <div className="pb-lettersModalBody">
+            {isWriting
+              ? renderLettersCompose()
+              : selectedLetter
+              ? renderLettersOpen()
+              : renderLettersCarousel()}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   /* =========================
@@ -882,9 +929,11 @@ export default function ProfileBoard({
     setActiveTab(tab);
     onClearHover();
 
+    // If leaving letters, reset letters-specific UI
     if (tab !== "Letters") {
       setIsWriting(false);
       setSelectedLetter(null);
+      setLettersFullscreen(false);
     }
 
     if (tab !== "About") {
@@ -896,6 +945,7 @@ export default function ProfileBoard({
   return (
     <>
       <div className="pb-tabs">
+        {/* LEFT — Library */}
         <div className="pb-tabsLeft">
           {activeTab === "Library" ? (
             <Link to="/library" className="pb-tab pb-tab--library is-active" title="Go to Library »">
@@ -913,6 +963,7 @@ export default function ProfileBoard({
           )}
         </div>
 
+        {/* RIGHT — About / Forum / Letters */}
         <div className="pb-tabsRight">
           <button
             type="button"

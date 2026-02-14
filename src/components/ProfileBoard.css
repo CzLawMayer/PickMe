@@ -2733,3 +2733,209 @@
   scroll-snap-align: center;
   scroll-snap-stop: always;
 }
+/* =========================
+   LETTERS — Fullscreen modal
+========================= */
+
+.pb-lettersOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pb-lettersModal {
+  width: 80vw;
+  height: 80vh;
+  background: rgba(10, 10, 10, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  position: relative;
+  overflow: hidden;
+  padding: 14px;
+}
+
+/* Make the letters shell fill the modal */
+.pb-lettersModal .pb-lettersShell {
+  width: 100%;
+  height: 100%;
+}
+
+/* Close buttons */
+.pb-lettersModalClose,
+.pb-lettersModalMin {
+  position: absolute;
+  top: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.pb-lettersModalClose {
+  right: 10px;
+}
+
+.pb-lettersModalMin {
+  right: 52px;
+}
+
+/* Fullscreen FAB sits left of the write FAB */
+.pb-letterFab--fullscreen {
+  right: 92px; /* adjust if your write FAB is at right: 24px */
+}
+/* =========================
+   Open Letter top bar tweaks
+   1) add spacing between Back and fullscreen
+   ========================= */
+
+.pb-letterOpenTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px; /* creates breathing room */
+}
+
+/* If your Back button is tight, this keeps it neat */
+.pb-letterOpenTopbar .pb-backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Keep fullscreen toggle pushed to the far right */
+.pb-letterOpenTopbar .pb-lettersFsBtn--open {
+  margin-left: auto;
+}
+
+/* =========================
+   LETTERS — Clean Fullscreen
+========================= */
+
+.pb-lettersOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.6);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pb-lettersModal {
+  width: 80vw;
+  height: 80vh;
+  background: #0d0d0d;
+
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0; /* NO rounded corners */
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+/* Header */
+.pb-lettersModalHeader {
+  height: 60px;
+  padding: 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.4);
+}
+
+.pb-lettersModalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Single close button */
+.pb-lettersModalClose {
+  width: 36px;
+  height: 36px;
+
+  border: 1px solid rgba(255,255,255,0.16);
+  background: transparent;
+  color: white;
+
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+
+  border-radius: 0; /* square */
+}
+
+/* Body */
+.pb-lettersModalBody {
+  flex: 1;
+  overflow: hidden;
+
+  display: flex;
+}
+
+/* Make internal letters content fill */
+.pb-lettersModalBody .pb-lettersShell,
+.pb-lettersModalBody .pb-letterOpen,
+.pb-lettersModalBody .pb-lettersCompose {
+  width: 100%;
+  height: 100%;
+}
+
+
+
+/* =========================
+   Fullscreen header — clean, left aligned
+========================= */
+
+.pb-lettersModalHeader {
+  height: 60px;
+  padding: 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* title left, button right */
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+
+  background: transparent; /* remove dark strip */
+}
+
+/* Title LEFT */
+.pb-lettersModalTitle {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Single close button */
+.pb-lettersModalClose {
+  width: 36px;
+  height: 36px;
+
+  border: 1px solid rgba(255,255,255,0.16);
+  background: transparent;
+  color: white;
+
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+
+  border-radius: 0; /* no rounded corners */
+}
