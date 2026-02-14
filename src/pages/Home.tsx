@@ -1727,44 +1727,44 @@ export default function Home() {
             <span className="meta-writtenby">written by</span>
           </div>
 
-          <hr className="meta-hr" />
+          <div className="meta-user-zone">
+            <hr className="meta-hr" />
 
-          <div className="meta-header">
-            <Link
-              to="/profile"
-              className="meta-avatar-link"
-              aria-label="Open profile"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="meta-avatar" aria-hidden="true">
-                {profileAvatarSrc ? (
-                  <img src={profileAvatarSrc} alt="" />
-                ) : (
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-                    <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                    <path
-                      d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                )}
-              </div>
-            </Link>
+            <div className="meta-header">
+              <Link
+                to="/profile"
+                className="meta-avatar-link"
+                aria-label="Open profile"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="meta-avatar" aria-hidden="true">
+                  {profileAvatarSrc ? (
+                    <img src={profileAvatarSrc} alt="" />
+                  ) : (
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                      <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                      <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )}
+                </div>
+              </Link>
 
-            <Link
-              to="/profile"
-              className="meta-username"
-              title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {(centerBook as any)?.author ?? (centerBook as any)?.user ?? "Unknown Author"}
-            </Link>
+              <Link
+                to="/profile"
+                className="meta-username"
+                title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {(centerBook as any)?.author ?? (centerBook as any)?.user ?? "Unknown Author"}
+              </Link>
+            </div>
+
+            <hr className="meta-hr" />
           </div>
 
-          <hr className="meta-hr" />
+
+
 
           <div className="meta-actions">
             <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />

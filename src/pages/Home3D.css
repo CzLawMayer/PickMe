@@ -1435,3 +1435,68 @@
 .home3d-main .metadata .meta-actions .meta-icon-btn:focus-visible .meta-icon-glyph {
   translate: 0 -3px;
 }
+
+
+/* ============================================================
+   HOME3D — Center specific rows between their <hr> separators
+   (paste at VERY BOTTOM of Home3D.css)
+   ============================================================ */
+
+/* make separators contribute zero spacing */
+.home3d-main #metadata-panel .meta-hr,
+.home3d-main #metadata-panel hr {
+  margin: 0 !important;
+}
+
+/* USER ROW (avatar + name) */
+.home3d-main #metadata-panel .meta-header {
+  display: flex !important;
+  align-items: center !important;         /* ✅ vertical centering */
+  justify-content: flex-start !important;
+  gap: 12px !important;
+
+  margin: 0 !important;
+  padding: 8px 0 !important;             /* ✅ equal top/bottom space */
+  min-height: 40px !important;            /* ✅ consistent “zone” height */
+  box-sizing: border-box !important;
+}
+
+/* CHAPTERS row */
+.home3d-main #metadata-panel .meta-chapters {
+  display: flex !important;
+  align-items: center !important;         /* ✅ vertical centering */
+  justify-content: flex-start !important;
+
+  margin: 0 !important;
+  padding: 8px 0 !important;             /* ✅ equal top/bottom space */
+  min-height: 40px !important;            /* tune if you want */
+  box-sizing: border-box !important;
+}
+
+/* LANGUAGE row */
+.home3d-main #metadata-panel .meta-language {
+  display: flex !important;
+  align-items: center !important;         /* ✅ vertical centering */
+  justify-content: flex-start !important;
+
+  margin: 0 !important;
+  padding: 8px 0 !important;             /* ✅ equal top/bottom space */
+  min-height: 40px !important;            /* tune if you want */
+  box-sizing: border-box !important;
+}
+
+.home3d-main #metadata-panel .meta-avatar-link img {
+  display: block !important;
+}
+.home3d-main #metadata-panel .meta-avatar-link {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 0 !important; /* kills baseline extra space */
+  display: flex !important;
+  align-items: center !important;
+}
+
+
+.home3d-main #metadata-panel .meta-user-zone .meta-header {
+  margin: 4px 0 !important;
+}
