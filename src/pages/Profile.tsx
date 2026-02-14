@@ -1,11 +1,13 @@
+// src/pages/Profile.tsx
 import type React from "react";
-import { useState, useLayoutEffect, useRef, useState as useStateAlias, useMemo } from "react";
+import { useLayoutEffect, useRef, useState as useStateAlias, useMemo, useState } from "react";
 import "./Profile.css";
 import SideMenu from "@/components/SideMenu";
 import LikeButton from "@/components/LikeButton";
 import StarButton from "@/components/StarButton";
 import SaveButton from "@/components/SaveButton";
-import { Link } from "react-router-dom";
+import CommentButton from "@/components/CommentButton";
+import { Link, useNavigate } from "react-router-dom";
 import ReadingHeatmap from "@/components/ReadingHeatmap";
 import { profile, storyBooks, favoriteBooks, libraryBooks } from "@/profileData";
 import { flushSync } from "react-dom";
@@ -60,12 +62,13 @@ function formatCompact(n: unknown) {
 }
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
+
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Local state for the metadata actions
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [userRating, setUserRating] = useState(0);
+  // Per-book local state for the metadata actions (mirrors Home behavior)
+  const [likedById, setLikedById] = useState<Record<string, boolean>>({});
+  const [savedById, setSavedById] = useState<Record<string, boolean>>({});
 
   // Fit text for name/handle
   const nameFit = useFitText(12, 36);
@@ -102,7 +105,6 @@ export default function ProfilePage() {
   };
 
   const closePeopleModal = () => setPeopleModalOpen(false);
-
 
   const getBookById = (id?: string | null) => {
     if (!id) return null;
@@ -162,7 +164,6 @@ export default function ProfilePage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [peopleModalOpen]);
 
-
   const recomputeStories = () => {
     const vp = storiesRef.current;
     if (!vp) return;
@@ -209,8 +210,8 @@ export default function ProfilePage() {
     }, 0);
 
     const derivedBooksSaved =
-      allBooks.filter((b: any) => b?.saved === true || b?.isSaved === true || (b?.bookmarksByUser ?? 0) > 0)
-        .length || 0;
+      allBooks.filter((b: any) => b?.saved === true || b?.isSaved === true || (b?.bookmarksByUser ?? 0) > 0).length ||
+      0;
 
     return {
       booksCompleted:
@@ -341,6 +342,38 @@ export default function ProfilePage() {
     draggingRef.current = false;
   };
 
+  // ---- Feature card actions (match Home behavior) ----
+  const activeId = activeBook?.id != null ? String(activeBook.id) : "";
+  const liked = activeId ? !!likedById[activeId] : false;
+  const saved = activeId ? !!savedById[activeId] : false;
+
+  const displayLikes = (Number(activeBook?.likes ?? 0) || 0) + (liked ? 1 : 0);
+  const displaySaves = (Number(activeBook?.bookmarks ?? activeBook?.bookmarksByUser ?? 0) || 0) + (saved ? 1 : 0);
+
+  const toggleLike = () => {
+    if (!activeId) return;
+    setLikedById((m) => ({ ...m, [activeId]: !m[activeId] }));
+  };
+
+  const toggleSave = () => {
+    if (!activeId) return;
+    setSavedById((m) => ({ ...m, [activeId]: !m[activeId] }));
+  };
+
+  // These two mimic Home’s intent: open Home at the book and (optionally later) jump to comments/reviews there.
+  const openHomeAtBook = (mode?: "comments" | "reviews") => {
+    if (!activeId) return;
+    const qs = mode ? `/?book=${encodeURIComponent(activeId)}&open=${mode}` : `/?book=${encodeURIComponent(activeId)}`;
+    navigate(qs);
+  };
+
+  const hasUserCommentedCenter = false;
+  const hasUserReviewedCenter = false;
+
+  const combinedRating = Number(activeBook?.rating ?? 0) || 0;
+
+  const profileAvatarSrc = (profile as any)?.avatarUrl || (profile as any)?.photo || "";
+
   return (
     <div className="profile-app">
       {/* FIXED HEADER SHELL (cannot shrink) */}
@@ -358,7 +391,6 @@ export default function ProfilePage() {
         <div className="profile-grid">
           {/* LEFT COLUMN WRAPPER (Identity / Stories / Favorites) */}
           <div className="profile-leftCol">
-            {/* LEFT — Row 1: Identity (UPDATED AREA) */}
             {/* LEFT — Row 1: Identity */}
             <section className="cell identity-cell">
               <div className="profile-identity">
@@ -374,7 +406,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Right side: vertically centered to the avatar, 4 rows with 8px bottom margin */}
+                  {/* Right side */}
                   <div className="profile-identityMain">
                     <h2 className="profile-name profile-idRow" ref={nameFit.ref as React.RefObject<HTMLHeadingElement>}>
                       {profile.name}
@@ -421,7 +453,7 @@ export default function ProfilePage() {
                       </div>
                       <div className="profile-metric">
                         <div className="metric-number">{formatCompact(profileMetrics.likes)}</div>
-                        <div className="metric-label">Likes</div>
+                        <div className="metric-label">Books Read</div>
                       </div>
                     </div>
 
@@ -436,8 +468,7 @@ export default function ProfilePage() {
               </div>
             </section>
 
-
-            {/* LEFT — Row 2: Stories (NOW centered between Identity and Favorites) */}
+            {/* LEFT — Row 2: Stories */}
             <section className="cell stories-cell section">
               <h2 className="section-title">Stories</h2>
 
@@ -514,33 +545,35 @@ export default function ProfilePage() {
               <h2 className="section-title">Favorites</h2>
               <div className="strip favorites-strip" onMouseLeave={clearHover}>
                 <div className="favorites-grid">
-                  {favoriteBooks().slice(0, 5).map((book) => (
-                    <div
-                      key={book.id}
-                      className={
-                        "fav-cover" +
-                        (selectedSource === "favorites" && selectedBookId === String(book.id) ? " is-selected" : "")
-                      }
-                      title={book.title}
-                      aria-label={`Favorite: ${book.title}`}
-                      tabIndex={0}
-                      onMouseEnter={() => previewBook(book)}
-                      onPointerDown={() => flushSync(() => selectBook(book, "favorites"))}
-                      onClick={() => selectBook(book, "favorites")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          selectBook(book, "favorites");
+                  {favoriteBooks()
+                    .slice(0, 5)
+                    .map((book) => (
+                      <div
+                        key={book.id}
+                        className={
+                          "fav-cover" +
+                          (selectedSource === "favorites" && selectedBookId === String(book.id) ? " is-selected" : "")
                         }
-                      }}
-                      style={{
-                        backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        backgroundColor: "#1b1b1b",
-                      }}
-                    />
-                  ))}
+                        title={book.title}
+                        aria-label={`Favorite: ${book.title}`}
+                        tabIndex={0}
+                        onMouseEnter={() => previewBook(book)}
+                        onPointerDown={() => flushSync(() => selectBook(book, "favorites"))}
+                        onClick={() => selectBook(book, "favorites")}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            selectBook(book, "favorites");
+                          }
+                        }}
+                        style={{
+                          backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : undefined,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          backgroundColor: "#1b1b1b",
+                        }}
+                      />
+                    ))}
                 </div>
               </div>
             </section>
@@ -592,29 +625,70 @@ export default function ProfilePage() {
 
                     <hr className="meta-hr" />
 
+                    {/* AUTHOR ROW — avatar now matches Home (clickable + image) */}
                     <div className="feature-author">
-                      <span className="meta-avatar--sm" aria-hidden={true}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
-                          <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-                          <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                          <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      </span>
-                      <span className="feature-author-name">{activeBook.author}</span>
+                      <Link
+                        to="/profile"
+                        className="meta-avatar-link"
+                        aria-label="Open profile"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="meta-avatar--sm" aria-hidden={true}>
+                          {profileAvatarSrc ? (
+                            <img src={profileAvatarSrc} alt="" />
+                          ) : (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
+                              <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                              <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                              <path
+                                d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          )}
+                        </span>
+                      </Link>
+
+                      <Link
+                        to="/profile"
+                        className="meta-username"
+                        title={activeBook.author ?? ""}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="feature-author-name">{activeBook.author}</span>
+                      </Link>
                     </div>
 
                     <hr className="meta-hr" />
 
+                    {/* META ACTIONS — now 4 buttons (Home-style) */}
                     <div className="meta-actions">
-                      <LikeButton className="meta-icon-btn like" count={activeBook.likes ?? 0} active={liked} onToggle={() => setLiked((v) => !v)} />
-                      <StarButton
-                        className="meta-icon-btn star"
-                        rating={Number(activeBook.rating ?? 0)}
-                        userRating={userRating}
-                        active={userRating > 0}
-                        onRate={(v: number) => setUserRating((prev) => (prev === v ? 0 : v))}
+                      <LikeButton
+                        className="meta-icon-btn like"
+                        count={displayLikes}
+                        active={liked}
+                        onToggle={toggleLike}
                       />
-                      <SaveButton className="meta-icon-btn save" count={activeBook.bookmarks ?? 0} active={saved} onToggle={() => setSaved((v) => !v)} />
+
+                      <CommentButton
+                        active={hasUserCommentedCenter}
+                        onOpenComments={() => openHomeAtBook("comments")}
+                      />
+
+                      <StarButton
+                        rating={combinedRating}
+                        hasUserReviewed={hasUserReviewedCenter}
+                        onOpenReviews={() => openHomeAtBook("reviews")}
+                      />
+
+                      <SaveButton
+                        className="meta-icon-btn save"
+                        count={displaySaves}
+                        active={saved}
+                        onToggle={toggleSave}
+                      />
                     </div>
 
                     <hr className="meta-hr" />
@@ -729,12 +803,13 @@ export default function ProfilePage() {
             </div>
 
             <div className="peopleModalBody">
-              {/* TEMP: placeholder data (swap later to real followers/following arrays) */}
               {Array.from({ length: 24 }).map((_, i) => (
                 <div className="peopleRow" key={`${peopleTab}-${i}`}>
                   <div className="peopleAvatar" aria-hidden="true" />
                   <div className="peopleMeta">
-                    <div className="peopleName">{peopleTab === "followers" ? `Follower ${i + 1}` : `Following ${i + 1}`}</div>
+                    <div className="peopleName">
+                      {peopleTab === "followers" ? `Follower ${i + 1}` : `Following ${i + 1}`}
+                    </div>
                     <div className="peopleHandle">@handle{i + 1}</div>
                   </div>
 
@@ -747,11 +822,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-
-
-
-
-
 
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>

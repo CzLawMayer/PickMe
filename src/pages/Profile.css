@@ -2871,3 +2871,251 @@ a:focus,
 .pb-tabsRight {
   margin-left: auto; /* pushes About/Forum/Letters to the far right */
 }
+
+/* ============================================================
+   Profile — Feature card: make Home-style meta actions horizontal
+   (place at VERY BOTTOM of Profile.css)
+   ============================================================ */
+
+.profile-app .feature-card .meta-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between; /* same “spread” feel as Home */
+  gap: 14px;
+  flex-wrap: nowrap;
+}
+
+/* If any button wrapper is forcing full width / stacking, kill it */
+.profile-app .feature-card .meta-actions > * {
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   Profile — Feature card: avatar circle (Home-style)
+   ============================================================ */
+
+.profile-app .feature-card .meta-avatar--sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+}
+
+.profile-app .feature-card .meta-avatar--sm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9999px;
+  display: block;
+}
+/* ============================================================
+   Profile — Feature card: 4 meta buttons in one row (Home-style)
+   Place at VERY BOTTOM of Profile.css
+   ============================================================ */
+
+.profile-app .feature-card .meta-actions {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important; /* 4 buttons side-by-side */
+  gap: 0 !important;
+  align-items: center !important;
+  justify-content: normal !important;
+  width: 100% !important;
+  max-width: var(--fit-w) !important;
+  overflow: visible !important;
+}
+
+/* Make sure each button stays in its column and can shrink */
+.profile-app .feature-card .meta-actions .meta-icon-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+/* ============================================================
+   Profile — Feature author row: perfect vertical alignment
+   ============================================================ */
+
+.profile-app .feature-card .feature-author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Make the avatar’s box the true alignment reference */
+.profile-app .feature-card .meta-avatar--sm {
+  display: block;          /* removes inline-flex baseline quirks */
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  overflow: hidden;
+  transform: translateY(-1px); /* tiny optical nudge */
+}
+
+.profile-app .feature-card .meta-avatar--sm img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tighten the text line box so it centers visually with the avatar */
+.profile-app .feature-card .feature-author-name {
+  line-height: 1;
+  display: block;
+}
+/* ============================================================
+   Profile — Increase spacing between avatar and name
+   ============================================================ */
+
+/* If you're using Home's .meta-header */
+.profile-app .feature-card .meta-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px !important;
+}
+
+/* If you're using your own .feature-author wrapper */
+.profile-app .feature-card .feature-author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px !important;
+}
+
+/* Safety: remove any margin overrides that might collapse spacing */
+.profile-app .feature-card .meta-avatar--sm {
+  margin-right: 0 !important;
+}
+/* ============================================================
+   Profile — Perfect avatar + name alignment
+   ============================================================ */
+
+.profile-app .feature-card .meta-header,
+.profile-app .feature-card .feature-author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Avatar: remove baseline behavior */
+.profile-app .feature-card .meta-avatar--sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  overflow: hidden;
+  flex: 0 0 24px;
+  display: block;              /* IMPORTANT */
+}
+
+/* Make image fill container cleanly */
+.profile-app .feature-card .meta-avatar--sm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;              /* removes inline baseline shift */
+}
+
+/* Tighten text line box */
+.profile-app .feature-card .meta-username,
+.profile-app .feature-card .feature-author-name {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.profile-app .feature-card .meta-avatar--sm {
+  transform: translateY(0.5px);
+}
+
+
+
+
+/* ============================================================
+   Profile — Feature Card Optical Equalization
+   ============================================================ */
+
+/* Heart */
+.profile-app .feature-card .meta-actions .like .meta-icon-glyph {
+  transform: translateY(1px) scale(1.07);
+}
+
+/* Comment */
+.profile-app .feature-card .meta-actions .meta-comment-btn .meta-icon-glyph {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Star */
+.profile-app .feature-card .meta-actions .star .meta-icon-glyph {
+  transform: translateY(1px) scale(1.20);
+}
+
+/* Save */
+.profile-app .feature-card .meta-actions .save .meta-icon-glyph {
+  transform: translateY(1px) scale(1.15);
+}
+
+
+/* ============================================================
+   PROFILE — Feature card meta actions: FILLED active icons
+   (Material Symbols, same as Home3D)
+   ============================================================ */
+
+/* Default (inactive): outlined */
+.profile-app .feature-card .meta-actions .meta-icon-glyph {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 120,
+    "GRAD" 0,
+    "opsz" 24 !important;
+}
+
+/* Active (any icon): filled */
+.profile-app .feature-card .meta-actions .meta-icon-btn.is-active .meta-icon-glyph,
+.profile-app .feature-card .meta-actions .meta-icon-btn[aria-pressed="true"] .meta-icon-glyph {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 120,
+    "GRAD" 0,
+    "opsz" 24 !important;
+}
+
+/* ============================================================
+   PROFILE — Meta button micro-interactions (PRESS = MOVE, NO SCALE)
+   ============================================================ */
+
+/* Make sure nothing scales on press */
+.profile-app .feature-card .meta-actions .meta-icon-btn {
+  transition: none !important;
+}
+
+.profile-app .feature-card .meta-actions .meta-icon-btn:active {
+  transform: none !important;
+}
+
+/* Icon only animates */
+.profile-app .feature-card .meta-actions .meta-icon-glyph {
+  transition: translate 140ms ease, color 160ms ease !important;
+  translate: 0 0;
+}
+
+/* Hover: lift icon only */
+@media (hover: hover) {
+  .profile-app .feature-card .meta-actions .meta-icon-btn:hover .meta-icon-glyph {
+    translate: 0 -3px;
+  }
+}
+
+/* Press: push icon down only */
+.profile-app .feature-card .meta-actions .meta-icon-btn:active .meta-icon-glyph {
+  translate: 0 1px;
+}
+
+/* Keyboard: match hover lift */
+.profile-app .feature-card .meta-actions .meta-icon-btn:focus-visible .meta-icon-glyph {
+  translate: 0 -3px;
+}
