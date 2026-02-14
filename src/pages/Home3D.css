@@ -1500,3 +1500,12 @@
 .home3d-main #metadata-panel .meta-user-zone .meta-header {
   margin: 4px 0 !important;
 }
+.profile-avatarLarge {
+  width: 80px;
+  height: 80px;
+  border-radius: 0; /* changed */
+  overflow: hidden;
+}
+.profile-avatarLarge img {
+  border-radius: 0;
+}

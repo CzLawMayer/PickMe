@@ -1,5 +1,7 @@
+// src/components/ProfileBoard.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./ProfileBoard.css";
+import { Link } from "react-router-dom";
 
 import {
   Mail,
@@ -19,7 +21,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 
-import { libraryBooks } from "@/profileData";
+import { libraryBooks, profile } from "@/profileData";
 
 type Tab = "Library" | "About" | "Forum" | "Letters";
 
@@ -48,9 +50,7 @@ type AboutBlock =
       align: AboutAlign;
     };
 
-type LetterBlock =
-  | { type: "text"; value: string }
-  | { type: "image"; value: string };
+type LetterBlock = { type: "text"; value: string } | { type: "image"; value: string };
 
 type Letter = {
   id: number;
@@ -296,7 +296,6 @@ export default function ProfileBoard({
   useEffect(() => {
     if (!isEditingAbout) return;
     if (activeTab !== "About") return;
-
     document.querySelectorAll<HTMLTextAreaElement>(".pb-about-textarea").forEach((ta) => autoExpand(ta));
   }, [isEditingAbout, activeTab, aboutBlocks.length]);
 
@@ -509,10 +508,7 @@ export default function ProfileBoard({
   const handleSendLetter = () => {
     const hasWriter = writerName.trim().length > 0;
     const hasRecipient = recipientName.trim().length > 0;
-    const hasContent = writingBlocks.some(
-      (b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0)
-    );
-
+    const hasContent = writingBlocks.some((b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0));
     if (!hasWriter || !hasRecipient || !hasContent) return;
 
     const letterToAdd: Letter = {
@@ -520,9 +516,7 @@ export default function ProfileBoard({
       writer: writerName.trim(),
       recipient: recipientName.trim(),
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      content: writingBlocks.filter(
-        (b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0)
-      ),
+      content: writingBlocks.filter((b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0)),
     };
 
     setLetters((prev) => [letterToAdd, ...prev]);
@@ -791,32 +785,72 @@ export default function ProfileBoard({
   return (
     <>
       <div className="pb-tabs">
-        {(["Library", "About", "Forum", "Letters"] as Tab[]).map((tab) => (
+        {/* LEFT — Library */}
+        <div className="pb-tabsLeft">
+          {activeTab === "Library" ? (
+            <Link
+              to="/library"
+              className="pb-tab pb-tab--library is-active"
+              title="Go to Library »"
+            >
+              Go to Library »
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="pb-tab pb-tab--library"
+              onClick={() => switchTab("Library")}
+              title="Library"
+            >
+              Library
+            </button>
+          )}
+        </div>
+
+        {/* RIGHT — About / Forum / Letters */}
+        <div className="pb-tabsRight">
           <button
-            key={tab}
             type="button"
-            className={["pb-tab", activeTab === tab ? "is-active" : ""].join(" ")}
-            onClick={() => switchTab(tab)}
-            title={tab}
+            className={["pb-tab pb-tab--about", activeTab === "About" ? "is-active" : ""].join(" ")}
+            onClick={() => switchTab("About")}
+            title="About"
           >
-            {tab}
+            About
           </button>
-        ))}
+
+          <button
+            type="button"
+            className={["pb-tab pb-tab--forum", activeTab === "Forum" ? "is-active" : ""].join(" ")}
+            onClick={() => switchTab("Forum")}
+            title="Forum"
+          >
+            Forum
+          </button>
+
+          <button
+            type="button"
+            className={["pb-tab pb-tab--letters", activeTab === "Letters" ? "is-active" : ""].join(" ")}
+            onClick={() => switchTab("Letters")}
+            title="Letters"
+          >
+            Letters
+          </button>
+        </div>
       </div>
 
-      {activeTab === "Library"
-        ? renderLibraryDirectChild()
-        : activeTab === "About"
-        ? renderAbout()
-        : activeTab === "Forum"
-        ? (
-          <div className="pb-pane pb-pane--light">
-            <MessageSquare size={64} className="pb-paneIcon" />
-            <div className="pb-placeholderTitle">Community Forum</div>
-            <div className="pb-placeholderSub">Threads coming soon...</div>
-          </div>
-        )
-        : renderLetters()}
+      {activeTab === "Library" ? (
+        renderLibraryDirectChild()
+      ) : activeTab === "About" ? (
+        renderAbout()
+      ) : activeTab === "Forum" ? (
+        <div className="pb-pane pb-pane--light">
+          <MessageSquare size={64} className="pb-paneIcon" />
+          <div className="pb-placeholderTitle">Community Forum</div>
+          <div className="pb-placeholderSub">Threads coming soon...</div>
+        </div>
+      ) : (
+        renderLetters()
+      )}
     </>
   );
 }

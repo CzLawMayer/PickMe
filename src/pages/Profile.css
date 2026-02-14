@@ -2847,3 +2847,27 @@ a:focus,
 .peopleModalBody {
   border-radius: 0 !important;
 }
+
+/* Profile avatar: square (override any earlier circle rules) */
+.profile-avatarRect,
+.profile-avatarRect img,
+.profile-avatarFallback {
+  border-radius: 0 !important;
+}
+.pb-tabs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start; /* don't space them evenly */
+  width: 100%;
+}
+
+.pb-tabsLeft,
+.pb-tabsRight {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+}
+
+.pb-tabsRight {
+  margin-left: auto; /* pushes About/Forum/Letters to the far right */
+}

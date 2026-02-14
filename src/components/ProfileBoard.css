@@ -2583,3 +2583,109 @@
   outline: none !important;
   box-shadow: none !important;
 }
+.pb-tabs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start; /* NO space-between */
+  width: 100%;
+}
+
+.pb-tabsLeft,
+.pb-tabsRight {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+}
+
+.pb-tabsRight {
+  margin-left: auto; /* pushes Library to far right */
+}
+.pb-tab {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Layout */
+.pb-tabs {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.pb-tabsLeft {
+  display: flex;
+  min-width: 0;
+}
+
+.pb-tabsRight {
+  display: flex;
+  margin-left: auto;
+}
+
+/* Reset Link styling */
+.pb-tab {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* =========================================
+   FORCE TAB COLORS (put at VERY BOTTOM)
+   ========================================= */
+
+.pb-tabs .pb-tab.is-active {
+  background: transparent; /* reset any old active background */
+}
+
+/* Highest-specificity overrides */
+.pb-tabs .pb-tab.pb-tab--library.is-active {
+  background: #ef5623 !important;  /* orange */
+}
+
+.pb-tabs .pb-tab.pb-tab--about.is-active {
+  background: #e41f6c !important;  /* pink */
+}
+
+.pb-tabs .pb-tab.pb-tab--forum.is-active {
+  background: #6a1b9a !important;  /* purple */
+}
+
+.pb-tabs .pb-tab.pb-tab--letters.is-active {
+  background: #1e88e5 !important;  /* blue */
+}
+/* =========================================
+   FORCE ACTIVE TAB OUTLINES (put at VERY BOTTOM)
+   ========================================= */
+
+/* Ensure active tabs actually have a visible outline */
+.pb-tabs .pb-tab.is-active {
+  border-top: 1px solid transparent !important;
+  border-left: 1px solid transparent !important;
+  border-right: 1px solid transparent !important;
+}
+
+/* Match outline to each tab color */
+.pb-tabs .pb-tab.pb-tab--library.is-active {
+  border-top-color: #ef5623 !important;
+  border-left-color: #ef5623 !important;
+  border-right-color: #ef5623 !important;
+}
+
+.pb-tabs .pb-tab.pb-tab--about.is-active {
+  border-top-color: #e41f6c !important;
+  border-left-color: #e41f6c !important;
+  border-right-color: #e41f6c !important;
+}
+
+.pb-tabs .pb-tab.pb-tab--forum.is-active {
+  border-top-color: #6a1b9a !important;
+  border-left-color: #6a1b9a !important;
+  border-right-color: #6a1b9a !important;
+}
+
+.pb-tabs .pb-tab.pb-tab--letters.is-active {
+  border-top-color: #1e88e5 !important;
+  border-left-color: #1e88e5 !important;
+  border-right-color: #1e88e5 !important;
+}
