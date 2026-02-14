@@ -71,10 +71,6 @@ export default function ProfileBoard({
 
   /* =========================
      LIBRARY (EXACT SHELVES)
-     IMPORTANT: .shelf must be
-     a DIRECT CHILD of the board
-     so `.library-cell > .shelf`
-     selector continues to work.
   ========================== */
   const shelfRef = useRef<HTMLDivElement | null>(null);
 
@@ -454,7 +450,7 @@ export default function ProfileBoard({
   };
 
   /* =========================
-     LETTERS (working)
+     LETTERS
   ========================== */
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
@@ -482,15 +478,118 @@ export default function ProfileBoard({
   const [writerName, setWriterName] = useState("");
   const [recipientName, setRecipientName] = useState("");
 
-  const scrollCarousel = (direction: "left" | "right") => {
-    const el = carouselRef.current;
-    if (!el) return;
-    const w = el.offsetWidth;
-    const amt = direction === "left" ? -w * 0.8 : w * 0.8;
-    el.scrollBy({ left: amt, behavior: "smooth" });
+  const truncateName = (name: string) => (name.length > 20 ? name.slice(0, 20) + "..." : name);
+
+  const centerCard = (card: HTMLElement, behavior: ScrollBehavior = "smooth") => {
+    const wrap = carouselRef.current;
+    if (!wrap) return;
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+
+    const delta =
+      (cardRect.left + cardRect.width / 2) - (wrapRect.left + wrapRect.width / 2);
+
+    wrap.scrollTo({ left: wrap.scrollLeft + delta, behavior });
   };
 
-  const truncateName = (name: string) => (name.length > 20 ? name.slice(0, 20) + "..." : name);
+  const scrollCarousel = (direction: "left" | "right") => {
+    const wrap = carouselRef.current;
+    if (!wrap) return;
+
+    const cards = Array.from(wrap.querySelectorAll<HTMLElement>(".pb-letterCard"));
+    if (!cards.length) return;
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const wrapCenter = wrapRect.left + wrapRect.width / 2;
+
+    let closestIdx = 0;
+    let best = Infinity;
+
+    cards.forEach((card, i) => {
+      const r = card.getBoundingClientRect();
+      const cCenter = r.left + r.width / 2;
+      const dist = Math.abs(cCenter - wrapCenter);
+      if (dist < best) {
+        best = dist;
+        closestIdx = i;
+      }
+    });
+
+    const nextIdx =
+      direction === "left"
+        ? Math.max(0, closestIdx - 1)
+        : Math.min(cards.length - 1, closestIdx + 1);
+
+    centerCard(cards[nextIdx]);
+  };
+
+  // Ensure true centering whenever entering Letters / list changes / resize
+  useEffect(() => {
+    if (activeTab !== "Letters") return;
+    if (selectedLetter) return; // only carousel view
+
+    const wrap = carouselRef.current;
+    if (!wrap) return;
+
+    const applyCardWidthAndCenter = () => {
+      const first = wrap.querySelector<HTMLElement>(".pb-letterCard");
+      if (!first) return;
+
+      const w = first.getBoundingClientRect().width;
+      wrap.style.setProperty("--pbCardW", `${w}px`);
+
+      // after updating padding, center the first card
+      centerCard(first, "auto");
+    };
+
+    requestAnimationFrame(applyCardWidthAndCenter);
+    window.addEventListener("resize", applyCardWidthAndCenter);
+
+    return () => window.removeEventListener("resize", applyCardWidthAndCenter);
+  }, [activeTab, letters.length, selectedLetter]);
+
+
+  // always center something when entering Letters carousel, and keep center on resize
+  useEffect(() => {
+    if (activeTab !== "Letters") return;
+    if (selectedLetter) return;
+
+    const wrap = carouselRef.current;
+    if (!wrap) return;
+
+    const centerNearest = (behavior: ScrollBehavior = "smooth") => {
+      const cards = Array.from(wrap.querySelectorAll<HTMLElement>(".pb-letterCard"));
+      if (cards.length === 0) return;
+
+      const wrapCenter = wrap.scrollLeft + wrap.clientWidth / 2;
+
+      let closest = cards[0];
+      let best = Infinity;
+
+      for (const c of cards) {
+        const cCenter = c.offsetLeft + c.offsetWidth / 2;
+        const dist = Math.abs(cCenter - wrapCenter);
+        if (dist < best) {
+          best = dist;
+          closest = c;
+        }
+      }
+
+      centerCard(closest, behavior);
+    };
+
+    // initial center (first card) after layout
+    requestAnimationFrame(() => {
+      const first = wrap.querySelector<HTMLElement>(".pb-letterCard");
+      if (first) centerCard(first, "auto");
+    });
+
+    const onResize = () => centerNearest("auto");
+    window.addEventListener("resize", onResize);
+
+    return () => window.removeEventListener("resize", onResize);
+  }, [activeTab, letters.length, selectedLetter]);
 
   const updateLetterTextBlock = (index: number, val: string, target?: HTMLTextAreaElement | null) => {
     setWritingBlocks((prev) => {
@@ -508,7 +607,9 @@ export default function ProfileBoard({
   const handleSendLetter = () => {
     const hasWriter = writerName.trim().length > 0;
     const hasRecipient = recipientName.trim().length > 0;
-    const hasContent = writingBlocks.some((b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0));
+    const hasContent = writingBlocks.some(
+      (b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0)
+    );
     if (!hasWriter || !hasRecipient || !hasContent) return;
 
     const letterToAdd: Letter = {
@@ -516,7 +617,9 @@ export default function ProfileBoard({
       writer: writerName.trim(),
       recipient: recipientName.trim(),
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      content: writingBlocks.filter((b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0)),
+      content: writingBlocks.filter(
+        (b) => b.type === "image" || (b.type === "text" && b.value.trim().length > 0)
+      ),
     };
 
     setLetters((prev) => [letterToAdd, ...prev]);
@@ -524,6 +627,14 @@ export default function ProfileBoard({
     setRecipientName("");
     setWritingBlocks([{ type: "text", value: "" }]);
     setIsWriting(false);
+
+    // after adding new card, center it once it renders
+    requestAnimationFrame(() => {
+      const wrap = carouselRef.current;
+      if (!wrap) return;
+      const first = wrap.querySelector<HTMLElement>(".pb-letterCard");
+      if (first) centerCard(first, "smooth");
+    });
   };
 
   const renderLettersCompose = () => {
@@ -785,14 +896,9 @@ export default function ProfileBoard({
   return (
     <>
       <div className="pb-tabs">
-        {/* LEFT — Library */}
         <div className="pb-tabsLeft">
           {activeTab === "Library" ? (
-            <Link
-              to="/library"
-              className="pb-tab pb-tab--library is-active"
-              title="Go to Library »"
-            >
+            <Link to="/library" className="pb-tab pb-tab--library is-active" title="Go to Library »">
               Go to Library »
             </Link>
           ) : (
@@ -807,7 +913,6 @@ export default function ProfileBoard({
           )}
         </div>
 
-        {/* RIGHT — About / Forum / Letters */}
         <div className="pb-tabsRight">
           <button
             type="button"

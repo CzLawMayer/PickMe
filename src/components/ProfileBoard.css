@@ -2689,3 +2689,47 @@
   border-left-color: #1e88e5 !important;
   border-right-color: #1e88e5 !important;
 }
+.pb-carousel {
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 10%;
+}
+
+.pb-letterCard {
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  flex: 0 0 80%; /* instead of min-width: 80% */
+}
+.pb-carousel{
+  padding: 24px 10%;
+}
+.pb-carousel { padding: 24px 10%; }
+/* === Letters carousel: true center snap === */
+.pb-carousel {
+  display: flex;
+  gap: 28px;                  /* keep your spacing */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+
+  /* the magic: center gutters computed from a CSS var */
+  padding-left: calc(50% - (var(--pbCardW, 520px) / 2));
+  padding-right: calc(50% - (var(--pbCardW, 520px) / 2));
+
+  /* optional but helps on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+.pb-letterCard {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+.pb-letterCard {
+  flex: 0 0 auto;
+  width: clamp(360px, 62vw, 520px);
+  min-width: clamp(360px, 62vw, 520px);
+  box-sizing: border-box;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
