@@ -2939,3 +2939,136 @@
 
   border-radius: 0; /* no rounded corners */
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================
+   BADGES — Graphite Shelf (Neutral Black)
+========================= */
+
+/* Outer frame */
+.shelf--badges {
+  background: #111111; /* neutral graphite */
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  padding: 22px 18px;
+}
+
+/* Inner bays (where books would sit) */
+.shelf--badges .shelf-row {
+  background:
+    radial-gradient(120% 140% at 50% 10%, rgba(255,255,255,0.04), transparent 60%),
+    linear-gradient(#141414, #0d0d0d);
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow:
+    inset 0 20px 50px rgba(0,0,0,0.85),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shelf plank depth line */
+.shelf--badges .shelf-row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 22px;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.07),
+      rgba(255,255,255,0.02) 20%,
+      rgba(0,0,0,0.6) 65%,
+      rgba(0,0,0,0.9)
+    );
+  pointer-events: none;
+}
+
+/* Remove inherited wood */
+.shelf--badges::before,
+.shelf--badges::after {
+  display: none !important;
+}
+
+/* No spines in badges */
+.shelf--badges .book-spine {
+  display: none !important;
+}
+
+
+/* =========================================
+   FORCE ACTIVE TAB COLORS (FINAL OVERRIDE)
+   Put at VERY BOTTOM of ProfileBoard.css
+   ========================================= */
+
+.pb-tabs .pb-tab.is-active {
+  background: transparent !important; /* reset */
+}
+
+/* Library = orange */
+.pb-tabs .pb-tab.pb-tab--library.is-active {
+  background: #ef5623 !important;
+}
+
+/* About = pink */
+.pb-tabs .pb-tab.pb-tab--about.is-active {
+  background: #e41f6c !important;
+}
+
+/* Badges = purple (NEW) */
+.pb-tabs .pb-tab.pb-tab--badges.is-active {
+  background: #6a1b9a !important;
+}
+
+/* Letters = blue */
+.pb-tabs .pb-tab.pb-tab--letters.is-active {
+  background: #1e88e5 !important;
+}
+
+/* =========================================
+   FORCE ACTIVE TAB OUTLINES (FINAL OVERRIDE)
+   ========================================= */
+
+.pb-tabs .pb-tab.is-active {
+  border-top: 1px solid transparent !important;
+  border-left: 1px solid transparent !important;
+  border-right: 1px solid transparent !important;
+}
+
+.pb-tabs .pb-tab.pb-tab--library.is-active {
+  border-top-color: #ef5623 !important;
+  border-left-color: #ef5623 !important;
+  border-right-color: #ef5623 !important;
+}
+
+.pb-tabs .pb-tab.pb-tab--about.is-active {
+  border-top-color: #e41f6c !important;
+  border-left-color: #e41f6c !important;
+  border-right-color: #e41f6c !important;
+}
+
+.pb-tabs .pb-tab.pb-tab--badges.is-active {
+  border-top-color: #6a1b9a !important;
+  border-left-color: #6a1b9a !important;
+  border-right-color: #6a1b9a !important;
+}
+
+.pb-tabs .pb-tab.pb-tab--letters.is-active {
+  border-top-color: #1e88e5 !important;
+  border-left-color: #1e88e5 !important;
+  border-right-color: #1e88e5 !important;
+}

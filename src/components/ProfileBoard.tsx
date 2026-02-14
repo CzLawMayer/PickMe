@@ -26,7 +26,7 @@ import {
 
 import { libraryBooks, profile } from "@/profileData";
 
-type Tab = "Library" | "About" | "Forum" | "Letters";
+type Tab = "Library" | "About" | "Badges" | "Letters";
 
 type Props = {
   selectedBookId: string | null;
@@ -942,6 +942,27 @@ export default function ProfileBoard({
     }
   };
 
+
+
+  const renderBadgesShelves = () => {
+    const ROWS = 3;
+
+    return (
+      <div
+        className="shelf shelf--badges"
+        style={{ flex: "1 1 auto", minHeight: 0 }}
+        aria-label="Badges shelf"
+      >
+        {Array.from({ length: ROWS }, (_, i) => (
+          <div key={i} className="shelf-row shelf-row--badges" />
+        ))}
+      </div>
+    );
+  };
+
+
+
+
   return (
     <>
       <div className="pb-tabs">
@@ -976,12 +997,16 @@ export default function ProfileBoard({
 
           <button
             type="button"
-            className={["pb-tab pb-tab--forum", activeTab === "Forum" ? "is-active" : ""].join(" ")}
-            onClick={() => switchTab("Forum")}
-            title="Forum"
+            className={[
+              "pb-tab pb-tab--badges",
+              activeTab === "Badges" ? "is-active" : "",
+            ].join(" ")}
+            onClick={() => switchTab("Badges")}
+            title="Badges"
           >
-            Forum
+            Badges
           </button>
+
 
           <button
             type="button"
@@ -998,12 +1023,8 @@ export default function ProfileBoard({
         renderLibraryDirectChild()
       ) : activeTab === "About" ? (
         renderAbout()
-      ) : activeTab === "Forum" ? (
-        <div className="pb-pane pb-pane--light">
-          <MessageSquare size={64} className="pb-paneIcon" />
-          <div className="pb-placeholderTitle">Community Forum</div>
-          <div className="pb-placeholderSub">Threads coming soon...</div>
-        </div>
+      ) : activeTab === "Badges" ? (
+        renderBadgesShelves()
       ) : (
         renderLetters()
       )}
