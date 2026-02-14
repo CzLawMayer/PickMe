@@ -350,40 +350,7 @@ a:focus,
   background: #1e88e5;                           /* default */
 }
 
-/* ===== Color cycle to mimic a varied bookshelf (15 colors) ===== */
-.shelf-row .book-spine:nth-child(15n+1)  { background: #fc5f2e; }  /* orange */
-.shelf-row .book-spine:nth-child(15n+2)  { background: #d81b60; }  /* pink */
-.shelf-row .book-spine:nth-child(15n+3)  { background: #6a1b9a; }  /* purple */
-.shelf-row .book-spine:nth-child(15n+4)  { background: #1e88e5; }  /* blue */
-.shelf-row .book-spine:nth-child(15n+5)  { background: #00bcd4; }  /* teal */
-.shelf-row .book-spine:nth-child(15n+6)  { background: #43a047; }  /* green */
-.shelf-row .book-spine:nth-child(15n+7)  { background: #ffd54f; }  /* yellow */
-.shelf-row .book-spine:nth-child(15n+8)  { background: #ff9800; }  /* amber */
-.shelf-row .book-spine:nth-child(15n+9)  { background: #7b1fa2; }  /* deep purple */
-.shelf-row .book-spine:nth-child(15n+10) { background: #ec407a; }  /* pink 300 */
-.shelf-row .book-spine:nth-child(15n+11) { background: #ef5350; }  /* red 400 */
-.shelf-row .book-spine:nth-child(15n+12) { background: #26c6da; }  /* cyan 300 */
-.shelf-row .book-spine:nth-child(15n+13) { background: #8bc34a; }  /* light green */
-.shelf-row .book-spine:nth-child(15n+14) { background: #f48fb1; }  /* light pink */
-.shelf-row .book-spine:nth-child(15n+15) { background: #42a5f5; }  /* sky blue */
 
-/* ===== Invert colors for the middle shelf (row 2) ===== */
-/* ===== Row 2: exact mirror of Row 1 (right → left) ===== */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+1)  { background: #42a5f5 !important; } /* sky blue (15) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+2)  { background: #f48fb1 !important; } /* light pink (14) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+3)  { background: #8bc34a !important; } /* light green (13) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+4)  { background: #26c6da !important; } /* cyan (12) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+5)  { background: #ef5350 !important; } /* red (11) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+6)  { background: #ec407a !important; } /* pink 300 (10) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+7)  { background: #7b1fa2 !important; } /* deep purple (9) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+8)  { background: #ff9800 !important; } /* amber (8) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+9)  { background: #ffd54f !important; } /* yellow (7) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+10) { background: #43a047 !important; } /* green (6) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+11) { background: #00bcd4 !important; } /* teal (5) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+12) { background: #1e88e5 !important; } /* blue (4) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+13) { background: #6a1b9a !important; } /* purple (3) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+14) { background: #d81b60 !important; } /* pink (2) */
-.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+15) { background: #fc5f2e !important; } /* orange (1) */
 
 
 
@@ -3118,4 +3085,113 @@ a:focus,
 /* Keyboard: match hover lift */
 .profile-app .feature-card .meta-actions .meta-icon-btn:focus-visible .meta-icon-glyph {
   translate: 0 -3px;
+}
+
+/* ============================================================
+   PICKME — Thriller Bookshelf (Balanced + Brand Integrated)
+   15 spines per row
+   Each row contains the 4 brand colors once
+   Orange softened with copper + rust bridge tones
+   No adjacent same-family hues
+   ============================================================ */
+
+:root{
+  /* Brand colors */
+  --brand-o: #fc5f2e;  /* orange */
+  --brand-p: #d81b60;  /* pink */
+  --brand-u: #6a1b9a;  /* purple */
+  --brand-b: #1e88e5;  /* blue */
+
+  /* Bridge tones to soften orange */
+  --bridge-copper: #c44a2a;
+  --bridge-rust:   #b33a1e;
+
+  /* Supporting thriller tones */
+  --deep-red: #8b1e2d;
+  --crimson: #b22234;
+  --wine: #7f1734;
+  --blood: #9d0208;
+
+  --navy: #102f6b;
+  --midnight: #132a52;
+  --royal: #1b3c88;
+  --indigo: #2a2a72;
+  --steel: #243a73;
+
+  --pop-red: #e63946;
+}
+
+
+/* =========================
+   ROW 1
+   Brand order: PURPLE → ORANGE → PINK → BLUE
+   ========================= */
+
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+1)  { background: var(--deep-red); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+2)  { background: var(--navy); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+3)  { background: var(--crimson); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+4)  { background: var(--brand-u); } /* brand purple */
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+5)  { background: var(--bridge-rust); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+6)  { background: var(--steel); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+7)  { background: var(--wine); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+8)  { background: var(--royal); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+9)  { background: var(--brand-o); } /* brand orange */
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+10) { background: var(--indigo); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+11) { background: var(--brand-p); } /* brand pink */
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+12) { background: var(--midnight); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+13) { background: var(--bridge-copper); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+14) { background: var(--blood); }
+.shelf .shelf-row:nth-child(1) .book-spine:nth-child(15n+15) { background: var(--brand-b); } /* brand blue */
+
+
+/* =========================
+   ROW 2
+   Brand order: PINK → BLUE → ORANGE → PURPLE
+   ========================= */
+
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+1)  { background: var(--steel); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+2)  { background: var(--blood); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+3)  { background: var(--royal); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+4)  { background: var(--brand-p); } /* brand pink */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+5)  { background: var(--brand-o); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+6)  { background: var(--deep-red); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+7)  { background: var(--bridge-copper); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+8)  { background: var(--midnight); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+9)  { background: var(--brand-b); } /* brand blue */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+10) { background: var(--bridge-rust); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+11) { background: var(--indigo); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+12) { background: var(--navy); } /* brand orange */
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+13) { background: var(--wine); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+14) { background: var(--pop-red); }
+.shelf .shelf-row:nth-child(2) .book-spine:nth-child(15n+15) { background: var(--brand-u); } /* brand purple */
+
+
+/* =========================
+   ROW 3
+   Brand order: BLUE → PURPLE → PINK → ORANGE
+   ========================= */
+
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+1)  { background: var(--wine); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+2)  { background: var(--brand-b); } /* brand blue */
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+3)  { background: var(--bridge-copper); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+4)  { background: var(--indigo); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+5)  { background: var(--midnight); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+6)  { background: var(--pop-red); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+7)  { background: var(--brand-u); } /* brand purple */
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+8)  { background: var(--navy); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+9)  { background: var(--brand-p); } /* brand pink */
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+10) { background: var(--royal); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+11) { background: var(--deep-red); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+12) { background: var(--steel); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+13) { background: var(--crimson); }
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+14) { background: var(--brand-o); } /* brand orange */
+.shelf .shelf-row:nth-child(3) .book-spine:nth-child(15n+15) { background: var(--bridge-rust); }
+
+
+
+.book-spine {
+  background-blend-mode: overlay;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 -8px 18px rgba(0,0,0,0.35);
 }
