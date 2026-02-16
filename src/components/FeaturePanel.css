@@ -1,0 +1,149 @@
+/* ============================================================
+   FeaturePanel — Match Profile Feature card styling
+   Put this at VERY BOTTOM of FeaturePanel.css
+   ============================================================ */
+
+/* 4 buttons in one row */
+.feature-card .meta-actions {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0 !important;
+  align-items: center !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+/* Each button stays in its column */
+.feature-card .meta-actions > * {
+  min-width: 0 !important;
+}
+
+/* If your Like/Star/Save use .meta-icon-btn, make them fill their column */
+.feature-card .meta-actions .meta-icon-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Avatar circle */
+.feature-card .meta-avatar--sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  overflow: hidden;
+  flex: 0 0 24px;
+  display: block; /* removes baseline quirks */
+}
+
+.feature-card .meta-avatar--sm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Author row alignment + spacing (matches Profile) */
+.feature-card .feature-author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px !important;
+}
+
+/* Tighten text line box for perfect visual centering */
+.feature-card .meta-username,
+.feature-card .feature-author-name {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Tiny optical nudge (optional; keep if you liked it) */
+.feature-card .meta-avatar--sm {
+  transform: translateY(0.5px);
+}
+
+/* ============================================================
+   FeaturePanel — Icon optical equalization
+   (same as your Profile rules)
+   ============================================================ */
+
+/* Heart */
+.feature-card .meta-actions .like .meta-icon-glyph {
+  transform: translateY(1px) scale(1.07);
+}
+
+/* Comment (your CommentButton likely uses a different wrapper class;
+   keep this AND add the generic fallback below) */
+.feature-card .meta-actions .meta-comment-btn .meta-icon-glyph {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Fallback: if your comment button uses .comment or .meta-icon-btn.comment */
+.feature-card .meta-actions .comment .meta-icon-glyph,
+.feature-card .meta-actions .meta-icon-btn.comment .meta-icon-glyph {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Star */
+.feature-card .meta-actions .star .meta-icon-glyph {
+  transform: translateY(1px) scale(1.29);
+}
+
+/* Save */
+.feature-card .meta-actions .save .meta-icon-glyph {
+  transform: translateY(1px) scale(1.15);
+}
+
+/* ============================================================
+   FeaturePanel — Filled active icons (Material Symbols)
+   ============================================================ */
+
+/* Default (inactive): outlined */
+.feature-card .meta-actions .meta-icon-glyph {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 120,
+    "GRAD" 0,
+    "opsz" 24 !important;
+}
+
+/* Active (filled) */
+.feature-card .meta-actions .meta-icon-btn.is-active .meta-icon-glyph,
+.feature-card .meta-actions .meta-icon-btn[aria-pressed="true"] .meta-icon-glyph {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 120,
+    "GRAD" 0,
+    "opsz" 24 !important;
+}
+
+/* ============================================================
+   FeaturePanel — Micro-interactions (press moves icon, no scale)
+   ============================================================ */
+
+.feature-card .meta-actions .meta-icon-btn {
+  transition: none !important;
+}
+
+.feature-card .meta-actions .meta-icon-btn:active {
+  transform: none !important;
+}
+
+.feature-card .meta-actions .meta-icon-glyph {
+  transition: translate 140ms ease, color 160ms ease !important;
+  translate: 0 0;
+}
+
+@media (hover: hover) {
+  .feature-card .meta-actions .meta-icon-btn:hover .meta-icon-glyph {
+    translate: 0 -3px;
+  }
+}
+
+.feature-card .meta-actions .meta-icon-btn:active .meta-icon-glyph {
+  translate: 0 1px;
+}
+
+.feature-card .meta-actions .meta-icon-btn:focus-visible .meta-icon-glyph {
+  translate: 0 -3px;
+}

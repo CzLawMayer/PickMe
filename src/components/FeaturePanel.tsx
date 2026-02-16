@@ -1,10 +1,14 @@
 // src/components/FeaturePanel.tsx
-import React, { useLayoutEffect, useRef, useState, useEffect } from "react";
+import React, { useLayoutEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import LikeButton from "@/components/LikeButton";
 import StarButton from "@/components/StarButton";
 import SaveButton from "@/components/SaveButton";
+import CommentButton from "@/components/CommentButton";
+
+import "./FeaturePanel.css";
+
 
 export type Bookish = {
   id: string | number;
@@ -22,23 +26,96 @@ export type Bookish = {
 
 export interface FeaturePanelProps {
   book?: Bookish | null;
+
   liked?: boolean;
   saved?: boolean;
   userRating?: number;
+
+  // NEW: author avatar + author profile link (so it matches Profile page)
+  authorAvatarUrl?: string;
+  authorProfileTo?: string; // default "/profile"
+
+  // NEW: comment/review affordances (so it matches Profile page)
+  hasUserCommented?: boolean;
+  hasUserReviewed?: boolean;
+  onOpenComments?: () => void;
+  onOpenReviews?: () => void;
+
   onToggleLike?: () => void;
   onToggleSave?: () => void;
   onRate?: (value: number) => void;
+
   emptyBrand?: React.ReactNode;
+}
+
+/**
+ * “Library spine” palette (deeper/brighter bookish tones)
+ * IMPORTANT: excludes the 4 brand colors:
+ *   #fc5f2e, #d81b60, #6a1b9a, #1e88e5
+ */
+const BRAND_COLORS = new Set(["#fc5f2e", "#d81b60", "#6a1b9a", "#1e88e5"]);
+const LIBRARY_SPINE_COLORS_RAW = [
+  "#b11226",
+  "#c0182a",
+  "#8e0f1f",
+  "#a4162a",
+  "#7b0b1a",
+  "#c8372d",
+  "#9b1c31",
+  "#6f0a18",
+
+  "#4b136e",
+  "#5a177f",
+  "#3a0f5c",
+  "#2f0b4a",
+
+  "#0b2a5b",
+  "#143a7a",
+  "#1c4a9b",
+  "#0a1f3f",
+  "#2a3f75",
+
+  "#b84b1f",
+  "#a53a18",
+  "#7a2a14",
+
+  "#2a2a2e",
+  "#1f1f23",
+  "#3a2a2a",
+] as const;
+
+const LIBRARY_SPINE_COLORS = LIBRARY_SPINE_COLORS_RAW
+  .map((c) => c.toLowerCase())
+  .filter((c) => !BRAND_COLORS.has(c));
+
+function hashToIndex(input: string, modulo: number) {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h) % Math.max(1, modulo);
 }
 
 const FeaturePanel: React.FC<FeaturePanelProps> = ({
   book,
+
   liked = false,
   saved = false,
   userRating = 0,
+
+  authorAvatarUrl = "",
+  authorProfileTo = "/profile",
+
+  hasUserCommented = false,
+  hasUserReviewed = false,
+  onOpenComments,
+  onOpenReviews,
+
   onToggleLike,
   onToggleSave,
   onRate,
+
   emptyBrand,
 }) => {
   const titleRef = useRef<HTMLHeadingElement | null>(null);
@@ -47,12 +124,14 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
   useLayoutEffect(() => {
     if (!book || !titleRef.current) return;
     const el = titleRef.current;
+
     const compute = () => {
       const cs = getComputedStyle(el);
       const lh = parseFloat(cs.lineHeight || "1.1");
       const lines = Math.max(1, Math.round(el.scrollHeight / lh));
       setTitleLines(Math.min(lines, 2));
     };
+
     compute();
     const ro = new ResizeObserver(compute);
     ro.observe(el);
@@ -63,25 +142,11 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     };
   }, [book?.title]);
 
-  // Solid color rotation (no gradients, no transitions)
-  const C1 = "#fc5f2e";
-  const C2 = "#d81b60";
-  const C3 = "#6a1b9a";
-  const C4 = "#1e88e5";
-  const colorPalette = [C1, C2, C3, C4] as const;
-
-  const colorIdxRef = useRef(0);
-  const prevBookIdRef = useRef<string | number | null>(null);
-  const [panelBgColor, setPanelBgColor] = useState<string>("#000");
-
-  useEffect(() => {
-    if (!book) return;
-    const currId = book.id;
-    if (currId !== prevBookIdRef.current) {
-      setPanelBgColor(colorPalette[colorIdxRef.current]);
-      colorIdxRef.current = (colorIdxRef.current + 1) % colorPalette.length;
-      prevBookIdRef.current = currId;
-    }
+  // Panel background: deterministic “library spine” color
+  const panelBgColor = useMemo(() => {
+    if (!book) return "#000";
+    const idx = hashToIndex(String(book.id), LIBRARY_SPINE_COLORS.length);
+    return LIBRARY_SPINE_COLORS[idx] ?? "#000";
   }, [book]);
 
   const Brand =
@@ -93,11 +158,7 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     );
 
   const avgRatingNum = book
-    ? parseFloat(
-        typeof book.rating === "string"
-          ? book.rating
-          : (book.rating ?? "0").toString()
-      )
+    ? parseFloat(typeof book.rating === "string" ? book.rating : (book.rating ?? "0").toString())
     : 0;
 
   if (!book) {
@@ -112,19 +173,31 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
     );
   }
 
+  const bookIdParam = encodeURIComponent(String(book.id ?? ""));
+
   return (
     <div
       className="feature-card"
       style={{
-        backgroundColor: panelBgColor, // instant swap, no transition
+        backgroundColor: panelBgColor,
         boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)",
       }}
     >
       <div className="feature-stack">
+        {/* Keep arrow LEFT (already working in your app) */}
         {book.coverUrl ? (
           <div className="feature-cover-row">
             <Link
-              to={`/?book=${encodeURIComponent(String(book.id ?? ""))}`}
+              to={`/?book=${bookIdParam}`}
+              className="feature-jump feature-jump--left"
+              aria-label={`Go to "${book.title}" on Home`}
+              title={`Go to "${book.title}" on Home`}
+            >
+              ‹‹
+            </Link>
+
+            <Link
+              to={`/?book=${bookIdParam}`}
               className="feature-cover-link"
               aria-label={`Open "${book.title}" on Home`}
               title={`Open "${book.title}" on Home`}
@@ -139,21 +212,20 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
                 }}
               />
             </Link>
+          </div>
+        ) : (
+          <div className="feature-cover-row">
             <Link
-              to={`/?book=${encodeURIComponent(String(book.id ?? ""))}`}
-              className="feature-jump"
+              to={`/?book=${bookIdParam}`}
+              className="feature-jump feature-jump--left"
               aria-label={`Go to "${book.title}" on Home`}
               title={`Go to "${book.title}" on Home`}
             >
               ‹‹
             </Link>
+
+            <div className="feature-cover-placeholder" aria-label="Featured book cover placeholder" style={{ background: "#000" }} />
           </div>
-        ) : (
-          <div
-            className="feature-cover-placeholder"
-            aria-label="Featured book cover placeholder"
-            style={{ background: "#000" }}
-          />
         )}
 
         <div className="feature-info">
@@ -165,10 +237,18 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
 
           <hr className="meta-hr" />
 
-          {(book.author ?? "").trim() !== "" && (
-            <>
-              <div className="feature-author">
-                <span className="meta-avatar--sm" aria-hidden={true}>
+          {/* AUTHOR ROW — profile picture like Profile page */}
+          <div className="feature-author">
+            <Link
+              to={authorProfileTo}
+              className="meta-avatar-link"
+              aria-label="Open profile"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="meta-avatar--sm" aria-hidden={true}>
+                {authorAvatarUrl ? (
+                  <img src={authorAvatarUrl} alt="" />
+                ) : (
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
                     <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
                     <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
@@ -179,14 +259,23 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
                       strokeLinecap="round"
                     />
                   </svg>
-                </span>
-                <span className="feature-author-name">{book.author}</span>
-              </div>
+                )}
+              </span>
+            </Link>
 
-              <hr className="meta-hr" />
-            </>
-          )}
+            <Link
+              to={authorProfileTo}
+              className="meta-username"
+              title={book.author ?? ""}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="feature-author-name">{book.author}</span>
+            </Link>
+          </div>
 
+          <hr className="meta-hr" />
+
+          {/* META ACTIONS — 4 buttons (Like / Comment / Star / Save) like Profile page */}
           <div className="meta-actions">
             <LikeButton
               className="meta-icon-btn like"
@@ -194,13 +283,19 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
               count={book.likes ?? 0}
               onToggle={onToggleLike}
             />
+
+            <CommentButton active={hasUserCommented} onOpenComments={() => onOpenComments?.()} />
+
             <StarButton
               className="meta-icon-btn star"
               rating={Number.isFinite(avgRatingNum) ? avgRatingNum : 0}
               userRating={userRating}
               active={userRating > 0}
+              hasUserReviewed={hasUserReviewed}
+              onOpenReviews={() => onOpenReviews?.()}
               onRate={(v: number) => onRate?.(v)}
             />
+
             <SaveButton
               className="meta-icon-btn save"
               active={Boolean(saved)}
@@ -211,8 +306,7 @@ const FeaturePanel: React.FC<FeaturePanelProps> = ({
 
           <hr className="meta-hr" />
 
-          {(Number.isFinite(book.currentChapter) ||
-            Number.isFinite(book.totalChapters)) && (
+          {(Number.isFinite(book.currentChapter) || Number.isFinite(book.totalChapters)) && (
             <>
               <div className="align-left">
                 <p className="meta-chapters">

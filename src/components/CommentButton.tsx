@@ -27,7 +27,7 @@ export default function CommentButton({ count = 0, active, onOpenComments }: Pro
       }}
     >
       <span className="meta-icon-slot" aria-hidden="true">
-        <span className="material-symbols-outlined meta-icon-glyph">tooltip_2</span>
+        <span className="material-symbols-outlined meta-icon-glyph">tooltip</span>
       </span>
       <span className="meta-icon-count">{count}</span>
     </button>
