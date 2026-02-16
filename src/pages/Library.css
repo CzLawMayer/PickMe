@@ -1657,3 +1657,30 @@ aside.library-feature .feature-card .feature-cover-row {
 }
 
 .library-app { min-height: 100svh; display: flex; flex-direction: column; }
+
+/* ============================================================
+   LIBRARY HERO — Force the 4-color bar row to start on the LEFT
+   (Place at VERY BOTTOM of Library.css)
+   ============================================================ */
+
+/* Make the identity text column left-aligned (name/handle/bars) */
+.library-app .lib-hero .profile-card .profile-id {
+  text-align: left !important;
+  align-items: flex-start !important; /* if it's a flex column */
+  justify-items: start !important;    /* if it's a grid */
+}
+
+/* The bars row: left anchored (not centered), no auto margins */
+.library-app .lib-hero .profile-card .profile-bars,
+.library-app .lib-hero .profile-card .bar-row {
+  justify-content: flex-start !important;
+  align-self: flex-start !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Optional: control the bar row width so it doesn't look "centered" by being too wide */
+.library-app .lib-hero .profile-card .profile-bars {
+  width: clamp(180px, 22vw, 260px) !important;
+  max-width: 100% !important;
+}
