@@ -633,15 +633,165 @@
 .app-header .logo {
   margin: 0;
 
-  font-family: "Workbench", sans-serif;
+  font-family: "DM Serif Display", sans-serif;
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
   font-variation-settings:
     "BLED" 0,
-    "SCAN" -9;
-
+    "SCAN" -9,
+    "SOFT" 0, 
+    "WONK" 1;
   font-size: clamp(32px, 2.8vw, 40px);
   line-height: 1;
   letter-spacing: 0.5px;
+}
+
+/* ===== LOGO TEXT ===== */
+
+.logo-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;                 /* spacing between title and bar */
+  text-decoration: none;
+}
+
+.logo-word {
+  font-family: "DM Serif Display", serif;
+  font-weight: 400;
+
+  font-size: clamp(24px, 2.2vw, 34px);  /* smaller + elegant */
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+
+  color: #ffffff !important;
+  display: inline-block;
+}
+
+
+/* Italic pieces */
+.logo-ital {
+  font-style: italic;
+  color: #ffffff;
+}
+
+/* Normal pieces */
+.logo-roman {
+  font-style: normal;
+  color: #ffffff;
+}
+
+/* ===== 4-COLOR BAR ===== */
+
+.logo-bar {
+  width: 100%;            /* EXACT width of the word */
+  height: 4px;            /* slightly slimmer = more elegant */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;                 /* no space between segments */
+}
+
+/* color segments */
+.logo-bar .seg-1 { background: #fc5f2e; }
+.logo-bar .seg-2 { background: #d81b60; }
+.logo-bar .seg-3 { background: #6a1b9a; }
+.logo-bar .seg-4 { background: #1e88e5; }
+.logo-word {
+  font-family: "DM Serif Display", serif;
+  font-weight: 400;
+
+  font-size: clamp(24px, 2.2vw, 34px);  /* smaller + elegant */
+  line-height: 0.95;
+  letter-spacing: 0.015em;
+
+  color: #ffffff !important;
+  display: inline-block;
+}
+.logo-link,
+.logo-link:visited,
+.logo-link:hover,
+.logo-link:active {
+  color: #ffffff !important;
+}
+/* ===== FINAL LOGO OVERRIDES (put at END of file) ===== */
+
+.app-header .logo-link,
+.app-header .logo-link:visited,
+.app-header .logo-link:hover,
+.app-header .logo-link:active {
+  color: #ffffff !important;
+}
+
+.app-header .logo-word,
+.app-header .logo-word *,
+.app-header .logo-ital,
+.app-header .logo-roman {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* This is the key: makes white look "truly white" (anti-alias compensation) */
+.app-header .logo-word {
+  /* keep your sizing */
+  font-size: clamp(28px, 2.6vw, 38px);
+  line-height: 0.95 !important;
+
+  /* optically brighten without looking like a shadow */
+  text-shadow: 0 0 0 #ffffff, 0 0 0 #ffffff !important;
+
+  /* optional: tiny stroke to kill gray edges (safe + subtle) */
+  -webkit-text-stroke: 0.25px rgba(255, 255, 255, 0.55) !important;
+
+  /* smoothing tweaks */
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: geometricPrecision !important;
+}
+
+/* Make the underline exactly as long as the title */
+.app-header .logo-link {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  width: fit-content !important;  /* <— important */
+  gap: 4px !important;
+}
+
+.app-header .logo-bar {
+  width: 100% !important;         /* matches the word */
+  height: 3px !important;         /* slightly thicker reads cleaner */
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0 !important;
+}
+/* === Center the logo block perfectly in the AppHeader === */
+.app-header .logo {
+  margin: 0 !important;
+  height: var(--app-header-h, 64px) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* The stacked logo (word + bar) */
+.app-header .logo-link {
+  justify-content: center !important;
+  gap: 4px !important;
+}
+
+/* Optional micro-nudge if it still feels 1px low */
+.app-header .logo-link {
+  transform: translateY(-1px) !important;
+}
+
+.logo-ital {
+  font-style: italic;
+  color: #ffffff;
+}
+
+.logo-roman {
+  font-style: normal;
+  color: #ffffff;
 }

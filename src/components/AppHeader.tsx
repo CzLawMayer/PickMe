@@ -1,3 +1,4 @@
+// src/components/AppHeader.tsx (or src/AppHeader.tsx — wherever yours lives)
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import StaggeredMenu from "@/components/StaggeredMenu";
@@ -21,20 +22,34 @@ export default function AppHeader({ onClickWrite }: Props) {
     >
       <h1 className="logo">
         <Link to="/" className="logo-link" aria-label="Go to home">
-          OddChapter
+          <span className="logo-word">
+            <span className="logo-ital">Odd</span>
+            <span className="logo-roman">Chapter</span>
+          </span>
+
+          <span className="logo-bar">
+            <span className="seg-1" />
+            <span className="seg-2" />
+            <span className="seg-3" />
+            <span className="seg-4" />
+          </span>
         </Link>
       </h1>
 
       <div className="header-icons">
         {/* Search */}
         <Link to="/search" className="header-icon-btn" aria-label="Search">
-          <span className="material-symbols-outlined" aria-hidden="true">search</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            search
+          </span>
           <span className="sr-only">Search</span>
         </Link>
 
         {/* Write -> Submit page */}
         <Link to="/submit" className="header-icon-btn" aria-label="Submit a story">
-          <span className="material-symbols-outlined" aria-hidden="true">edit</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            edit
+          </span>
           <span className="sr-only">Submit</span>
         </Link>
       </div>
