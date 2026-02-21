@@ -1,5 +1,5 @@
+// src/pages/Stories.tsx
 import { useState, useMemo, useEffect, useRef } from "react";
-import { NavLink } from "react-router-dom";
 
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
@@ -11,6 +11,8 @@ import AppHeader from "@/components/AppHeader";
 
 import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
+
+import LibraryTabs from "@/components/LibraryTabs";
 
 // tiny helper for the personal stars row on row 5
 function UserRatingStars({ value }: { value: number }) {
@@ -264,19 +266,17 @@ export default function StoriesPage() {
     });
   };
 
-  const activeState = activeBook
-    ? bookStates[String(activeBook.id)]
-    : undefined;
+  const activeState = activeBook ? bookStates[String(activeBook.id)] : undefined;
 
   return (
     <div className="library-app">
       {/* ===== HEADER (top banner + menu) ===== */}
-    <AppHeader
+      <AppHeader
         menuOpen={menuOpen}
         onToggleMenu={() => setMenuOpen((o) => !o)}
         onClickWrite={() => { /* optional: open compose */ }}
         onClickSearch={() => { /* optional: open search */ }}
-    />
+      />
 
       {/* ===== BODY LAYOUT ===== */}
       <main className="library-layout">
@@ -288,21 +288,7 @@ export default function StoriesPage() {
               <ProfileIdentity compact />
             </div>
 
-            {/* Tab order exactly as you set everywhere */}
-            <nav className="lib-tabs" aria-label="Library sections">
-              <NavLink to="/library" className="lib-tab">
-                Library
-              </NavLink>
-              <NavLink to="/stories" end className="lib-tab">
-                Stories
-              </NavLink>
-              <NavLink to="/read" className="lib-tab">
-                Read
-              </NavLink>
-              <NavLink to="/reviews" className="lib-tab">
-                Reviews
-              </NavLink>
-            </nav>
+            <LibraryTabs active="stories" />
 
             <div className="lib-hero-cta">
               {/* SEARCH ICON BUTTON */}

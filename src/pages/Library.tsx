@@ -1,6 +1,5 @@
 // src/pages/Library.tsx
 import { useState, useMemo, useEffect, useRef } from "react";
-import { NavLink } from "react-router-dom";
 
 import FeaturePanel from "@/components/FeaturePanel";
 import ProfileIdentity from "@/components/ProfileIdentity";
@@ -14,9 +13,7 @@ import LikeButton from "@/components/LikeButton";
 import SaveButton from "@/components/SaveButton";
 import { userLibraryBooks } from "@/profileData";
 
-// ⬇️ removed: StaggeredMenu + nav constants
-// import StaggeredMenu from "@/components/StaggeredMenu";
-// import { menuItems, socialItems } from "@/constants/nav";
+import LibraryTabs from "@/components/LibraryTabs";
 
 // tiny helper for the personal stars row on row 5
 function UserRatingStars({ value }: { value: number }) {
@@ -186,7 +183,7 @@ export default function LibraryPage() {
   // =========================
   // PER-BOOK LIKE / SAVE STATE
   // =========================
-  type BookState = { liked: boolean; saved: boolean; likeCount: number; saveCount: number; };
+  type BookState = { liked: boolean; saved: boolean; likeCount: number; saveCount: number };
 
   const initialStates = useMemo(() => {
     const obj: Record<string, BookState> = {};
@@ -241,12 +238,7 @@ export default function LibraryPage() {
               <ProfileIdentity compact />
             </div>
 
-            <nav className="lib-tabs" aria-label="Library sections">
-              <NavLink to="/library" className="lib-tab">Library</NavLink>
-              <NavLink to="/stories" end className="lib-tab">Stories</NavLink>
-              <NavLink to="/read" className="lib-tab">Read</NavLink>
-              <NavLink to="/reviews" className="lib-tab">Reviews</NavLink>
-            </nav>
+            <LibraryTabs active="library" />
 
             <div className="lib-hero-cta">
               {/* SEARCH ICON BUTTON */}
@@ -473,8 +465,6 @@ export default function LibraryPage() {
           />
         </aside>
       </main>
-
-      {/* ⬇️ removed: page-level StaggeredMenu (now in AppHeader) */}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 // src/pages/Reviews.tsx
 import { useState, useMemo, useEffect, useRef } from "react";
-import { NavLink } from "react-router-dom";
 
 import SideMenu from "@/components/SideMenu";
 import FeaturePanel from "@/components/FeaturePanel";
@@ -11,6 +10,8 @@ import SaveButton from "@/components/SaveButton";
 import { profile, userReviewBooks } from "@/profileData";
 import "./Reviews.css";
 import AppHeader from "@/components/AppHeader";
+
+import LibraryTabs from "@/components/LibraryTabs";
 
 type ReviewBook = {
   id: string | number;
@@ -230,7 +231,6 @@ export default function ReviewsPage() {
         onClickSearch={() => { /* optional: open search */ }}
       />
 
-
       {/* ===== BODY ===== */}
       <main className="library-layout">
         {/* LEFT */}
@@ -240,12 +240,7 @@ export default function ReviewsPage() {
               <ProfileIdentity compact />
             </div>
 
-            <nav className="lib-tabs" aria-label="Library sections">
-              <NavLink to="/library" className="lib-tab">Library</NavLink>
-              <NavLink to="/stories" className="lib-tab">Stories</NavLink>
-              <NavLink to="/read" end className="lib-tab">Read</NavLink>
-              <NavLink to="/reviews" end className="lib-tab is-active">Reviews</NavLink>
-            </nav>
+            <LibraryTabs active="reviews" />
 
             <div className="lib-hero-cta">
               <button
@@ -350,42 +345,42 @@ export default function ReviewsPage() {
 
                         {/* OVERLAY */}
                         <div className="review-overlay" aria-hidden="true">
-                            <div className="review-overlay-inner">
-                                {/* HEADER stays fixed */}
-                                <div className="review-header">
-                                <div className="review-title" title={book.title}>{book.title}</div>
+                          <div className="review-overlay-inner">
+                            {/* HEADER stays fixed */}
+                            <div className="review-header">
+                              <div className="review-title" title={book.title}>{book.title}</div>
 
-                                <div className="review-meta">
-                                    <span className="user-rating-avatar" aria-hidden="true">
-                                    <img
-                                        src={(profile as any)?.avatarUrl || (profile as any)?.photo || (profile as any)?.avatar || ""}
-                                        alt=""
-                                    />
-                                    </span>
-                                    <span className="user-stars-wrap" aria-label={`Your rating for ${book.title}`}>
-                                    <UserRatingStars value={book.userRating ?? 0} />
-                                    </span>
-                                </div>
+                              <div className="review-meta">
+                                <span className="user-rating-avatar" aria-hidden="true">
+                                  <img
+                                    src={(profile as any)?.avatarUrl || (profile as any)?.photo || (profile as any)?.avatar || ""}
+                                    alt=""
+                                  />
+                                </span>
+                                <span className="user-stars-wrap" aria-label={`Your rating for ${book.title}`}>
+                                  <UserRatingStars value={book.userRating ?? 0} />
+                                </span>
+                              </div>
 
-                                <div className="review-divider" />
-                                </div>
-
-                                {/* BODY scrolls if long */}
-                                <div className="review-scroll" role="region" aria-label="Review text">
-                                {Array.isArray((book as any)?.reviews) && (book as any).reviews.length > 0
-                                    ? (book as any).reviews.map((line: string, i: number) => (
-                                        <div
-                                            className="review-line"
-                                            key={i}
-                                            style={{ fontSize: "16px", lineHeight: 1.5, margin: "0 0 10px 0" }}
-                                        >
-                                            {line}
-                                        </div>
-                                        ))
-                                    : <div className="review-line" style={{ fontSize: "16px", lineHeight: 1.5 }}>No review yet</div>
-                                }
-                                </div>
+                              <div className="review-divider" />
                             </div>
+
+                            {/* BODY scrolls if long */}
+                            <div className="review-scroll" role="region" aria-label="Review text">
+                              {Array.isArray((book as any)?.reviews) && (book as any).reviews.length > 0
+                                ? (book as any).reviews.map((line: string, i: number) => (
+                                  <div
+                                    className="review-line"
+                                    key={i}
+                                    style={{ fontSize: "16px", lineHeight: 1.5, margin: "0 0 10px 0" }}
+                                  >
+                                    {line}
+                                  </div>
+                                ))
+                                : <div className="review-line" style={{ fontSize: "16px", lineHeight: 1.5 }}>No review yet</div>
+                              }
+                            </div>
+                          </div>
                         </div>
                       </div>
 
