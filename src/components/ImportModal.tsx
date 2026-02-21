@@ -1,7 +1,14 @@
 // src/components/ImportModal.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { extractTextFromFile } from "@/importer/extractText";
+
+// ✅ IMPORTANT: extractTextFromFile should NOT come from reflowPdfText.ts
+// Put your extractor in something like: src/importer/extractTextFromFile.ts
+import { extractTextFromFile } from "@/importer/extractTextFromFile";
+
+// ✅ reflow comes from your new file
+import { reflowPdfText } from "@/importer/reflowPdfText";
+
 import { splitIntoChapters, type ChapterDraft } from "@/importer/splitChapters";
 import "./ImportModal.css";
 
@@ -76,17 +83,31 @@ export default function ImportModal({
     setError("");
 
     try {
-      const text = await extractTextFromFile(file);
-      const draft = splitIntoChapters(text, {
-        fileName: file.name,
-        maxFallbackChapters: 12,
+      // 1) extract raw text from file
+      const extracted = await extractTextFromFile(file);
+
+      // 2) reflow only for PDFs (recommended)
+      const processed =
+        file.type === "application/pdf" ? reflowPdfText(extracted) : extracted;
+
+      // 3) split into chapters using improved text
+      const draft = splitIntoChapters(processed, {
+        hintTitle: bookTitle.trim() || file.name.replace(/\.[^/.]+$/, ""),
+        hintAuthor: author.trim(),
       });
+
+      if (!draft.length) {
+        throw new Error(
+          "We couldn’t find readable text in this file. If it’s a scanned PDF, please try a text-based PDF, DOCX, TXT, or MD."
+        );
+      }
 
       setChapters(draft);
       setSelectedId(draft[0]?.id ?? "");
 
+      // Default title from filename if empty
       const base = file.name.replace(/\.[^/.]+$/, "");
-      setBookTitle(base || "Untitled import");
+      setBookTitle((prev) => (prev.trim() ? prev : base || "Untitled import"));
 
       setStep("preview");
     } catch (err: any) {
@@ -122,13 +143,20 @@ export default function ImportModal({
   if (!open) return null;
 
   return createPortal(
-    <div className="import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="import-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="import-modal" onMouseDown={(e) => e.stopPropagation()}>
-        <button className="import-close" onClick={onClose}>×</button>
+        <button className="import-close" onClick={onClose}>
+          ×
+        </button>
 
         <div className="import-header">
           <div className="import-title">Import</div>
-          <div className="import-supported">Supported: DOCX, PDF (text-based), TXT, MD</div>
+          <div className="import-supported">
+            Supported: DOCX, PDF (text-based), TXT, MD
+          </div>
         </div>
 
         {error && (
@@ -147,13 +175,22 @@ export default function ImportModal({
               hidden
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) setFile(f);
+                if (f) {
+                  setFile(f);
+                  // reset title/author defaults when picking a new file
+                  const base = f.name.replace(/\.[^/.]+$/, "");
+                  setBookTitle(base || "");
+                  setAuthor("");
+                }
               }}
             />
 
             <div className="import-drop">
               <div className="import-drop-title">Choose file to import</div>
-              <button className="btn save" onClick={() => fileInputRef.current?.click()}>
+              <button
+                className="btn save"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 Select file
               </button>
 
@@ -161,12 +198,10 @@ export default function ImportModal({
             </div>
 
             <div className="import-actions">
-              <button className="btn cancel" onClick={onClose}>Cancel</button>
-              <button
-                className="btn save"
-                disabled={!file}
-                onClick={startImport}
-              >
+              <button className="btn cancel" onClick={onClose}>
+                Cancel
+              </button>
+              <button className="btn save" disabled={!file} onClick={startImport}>
                 {step === "parsing" ? "Importing…" : "Import"}
               </button>
             </div>
@@ -180,11 +215,17 @@ export default function ImportModal({
               <div className="import-meta">
                 <label>
                   Title
-                  <input value={bookTitle} onChange={(e) => setBookTitle(e.target.value)} />
+                  <input
+                    value={bookTitle}
+                    onChange={(e) => setBookTitle(e.target.value)}
+                  />
                 </label>
                 <label>
                   Author
-                  <input value={author} onChange={(e) => setAuthor(e.target.value)} />
+                  <input
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
+                  />
                 </label>
               </div>
 
@@ -238,8 +279,12 @@ export default function ImportModal({
               )}
 
               <div className="import-footer">
-                <button className="btn cancel" onClick={onClose}>Cancel</button>
-                <button className="btn save" onClick={confirm}>Send to Write</button>
+                <button className="btn cancel" onClick={onClose}>
+                  Cancel
+                </button>
+                <button className="btn save" onClick={confirm}>
+                  Send to Write
+                </button>
               </div>
             </div>
           </div>
