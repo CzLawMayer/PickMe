@@ -4,9 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import AppHeader from "@/components/AppHeader";
 import ProfileIdentity from "@/components/ProfileIdentity";
-import SubmissionModal, {
-  type SubmitFormData,
-} from "@/components/SubmissionModal";
+import SubmissionModal, { type SubmitFormData } from "@/components/SubmissionModal";
+import ImportModal, { type ImportedProjectPayload } from "@/components/ImportModal";
 
 import { inProgressBooks, publishedBooks } from "@/SubmitData";
 
@@ -257,6 +256,11 @@ export default function SubmitPage() {
   const openSubmission = () => setShowModal(true);
   const closeSubmission = () => setShowModal(false);
 
+  // import modal
+  const [showImport, setShowImport] = useState(false);
+  const openImport = () => setShowImport(true);
+  const closeImport = () => setShowImport(false);
+
   const handleSave = (data: SubmitFormData) => {
     const project = {
       submission: {
@@ -279,6 +283,19 @@ export default function SubmitPage() {
     navigate("/write", {
       state: {
         project,
+        status: "inProgress" as const,
+      },
+    });
+  };
+
+  const handleImportConfirm = (payload: ImportedProjectPayload) => {
+    // Keep it aligned with your existing /write contract:
+    // navigate("/write", { state: { project, status } })
+    closeImport();
+
+    navigate("/write", {
+      state: {
+        project: payload.project,
         status: "inProgress" as const,
       },
     });
@@ -317,7 +334,17 @@ export default function SubmitPage() {
               </button>
             </nav>
 
-            <div className="lib-hero-cta">
+            <div className="lib-hero-cta" style={{ display: "flex", gap: 10 }}>
+              {/* ✅ NEW: Import button (left of Add book) */}
+              <button
+                className="add-book-btn"
+                type="button"
+                onClick={openImport}
+                aria-label="Import a book file"
+              >
+                Import
+              </button>
+
               <button
                 className="add-book-btn"
                 type="button"
@@ -553,6 +580,13 @@ export default function SubmitPage() {
         open={showModal}
         onClose={closeSubmission}
         onSave={handleSave}
+      />
+
+      {/* ✅ NEW: Import modal */}
+      <ImportModal
+        open={showImport}
+        onClose={closeImport}
+        onConfirm={handleImportConfirm}
       />
     </div>
   );
