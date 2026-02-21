@@ -795,3 +795,95 @@
   font-style: normal;
   color: #ffffff;
 }
+
+
+
+
+
+
+
+
+
+
+/* Keep link pure white always */
+.logo-link,
+.logo-link:visited,
+.logo-link:hover,
+.logo-link:active {
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+/* Wrapper */
+.logo-split {
+  display: inline-flex;
+  align-items: baseline; /* aligns “OddCha” + “pter” nicely */
+}
+
+/* Left chunk (OddCha + underline) */
+.logo-left {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* The actual word row */
+.logo-left-text {
+  display: inline-block;
+  color: #ffffff !important;
+}
+
+/* Right chunk (pter) */
+.logo-right {
+  display: inline-block;
+  color: #ffffff !important;
+}
+
+/* Font + sizing (inherits your DM Serif Display setup) */
+.logo-left-text,
+.logo-right {
+  font-family: "DM Serif Display", serif;
+  font-weight: 400;
+  font-size: clamp(28px, 2.4vw, 38px);
+  line-height: 1;
+  letter-spacing: 0.04em; /* your “tiny bit” */
+}
+
+/* Odd italic only */
+.logo-ital { font-style: italic; color: #fff !important; }
+.logo-roman { font-style: normal; color: #fff !important; }
+
+/* The 4-color bar is EXACTLY the width of “OddCha” */
+.logo-bar {
+  width: calc(100% - 4px) !important;
+  height: 3px;
+  margin-top: -1px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.logo-bar .seg-1 { background: #fc5f2e; }
+.logo-bar .seg-2 { background: #d81b60; }
+.logo-bar .seg-3 { background: #6a1b9a; }
+.logo-bar .seg-4 { background: #1e88e5; }
+
+
+.logo-bar {
+  height: 4px !important;
+  min-height: 4px !important;
+  max-height: 4px !important;
+}
+
+.logo-bar > span {
+  height: 100% !important;
+  display: block !important;
+}
+
+/* FINAL OVERRIDE — logo bar width tweak */
+.app-header .logo-link .logo-bar{
+  width: calc(100% - 4px) !important;  /* 2px each side */
+  margin-left: 2px !important;
+  margin-right: 2px !important;
+  box-sizing: border-box !important;
+}

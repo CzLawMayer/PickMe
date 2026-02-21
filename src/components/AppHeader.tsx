@@ -22,17 +22,28 @@ export default function AppHeader({ onClickWrite }: Props) {
     >
       <h1 className="logo">
         <Link to="/" className="logo-link" aria-label="Go to home">
-          <span className="logo-word">
-            <span className="logo-ital">Odd</span>
-            <span className="logo-roman">Chapter</span>
+          <span className="logo-split" aria-hidden="true">
+            <span className="logo-left">
+              <span className="logo-left-text">
+                <span className="logo-ital">Odd</span>
+                <span className="logo-roman">Cha</span>
+              </span>
+
+              <span className="logo-bar" aria-hidden="true">
+                <span className="seg-1" />
+                <span className="seg-2" />
+                <span className="seg-3" />
+                <span className="seg-4" />
+              </span>
+            </span>
+
+            <span className="logo-right">
+              <span className="logo-roman">pter</span>
+            </span>
           </span>
 
-          <span className="logo-bar">
-            <span className="seg-1" />
-            <span className="seg-2" />
-            <span className="seg-3" />
-            <span className="seg-4" />
-          </span>
+          {/* screenreader label */}
+          <span className="sr-only">OddChapter</span>
         </Link>
       </h1>
 
