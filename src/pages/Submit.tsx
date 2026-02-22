@@ -261,7 +261,23 @@ export default function SubmitPage() {
   const openImport = () => setShowImport(true);
   const closeImport = () => setShowImport(false);
 
+  // ✅ pending imported draft (so "Send to Write" opens SubmissionModal first)
+  const [pendingImport, setPendingImport] = useState<null | {
+    sourceFileName: string;
+    initialTitle: string;
+    initialAuthor: string;
+    chapters: { id: string; title: string; content: string }[];
+  }>(null);
+
   const handleSave = (data: SubmitFormData) => {
+    const chapters =
+      pendingImport?.chapters ??
+      [
+        { id: crypto.randomUUID(), title: "Chapter 1", content: "" },
+        { id: crypto.randomUUID(), title: "Chapter 2", content: "" },
+        { id: crypto.randomUUID(), title: "Chapter 3", content: "" },
+      ];
+
     const project = {
       submission: {
         title: data.title,
@@ -271,13 +287,10 @@ export default function SubmitPage() {
         backCoverFile: data.backCoverFile ?? null,
         dedication: data.dedication ?? "",
       },
-      chapters: [
-        { id: crypto.randomUUID(), title: "Chapter 1", content: "" },
-        { id: crypto.randomUUID(), title: "Chapter 2", content: "" },
-        { id: crypto.randomUUID(), title: "Chapter 3", content: "" },
-      ],
+      chapters,
     };
 
+    setPendingImport(null);
     closeSubmission();
 
     navigate("/write", {
@@ -289,16 +302,22 @@ export default function SubmitPage() {
   };
 
   const handleImportConfirm = (payload: ImportedProjectPayload) => {
-    // Keep it aligned with your existing /write contract:
-    // navigate("/write", { state: { project, status } })
+    // ✅ ImportModal no longer navigates directly.
+    // It returns chapters + initial title/author, then we open SubmissionModal first.
     closeImport();
 
-    navigate("/write", {
-      state: {
-        project: payload.project,
-        status: "inProgress" as const,
-      },
+    setPendingImport({
+      sourceFileName: payload.sourceFileName,
+      initialTitle: payload.initialSubmission.title,
+      initialAuthor: payload.initialSubmission.author,
+      chapters: payload.chapters.map((c, i) => ({
+        id: crypto.randomUUID(),
+        title: (c.title || `Chapter ${i + 1}`).trim(),
+        content: c.content ?? "",
+      })),
     });
+
+    setShowModal(true);
   };
 
   return (
@@ -335,7 +354,7 @@ export default function SubmitPage() {
             </nav>
 
             <div className="lib-hero-cta" style={{ display: "flex", gap: 10 }}>
-              {/* ✅ NEW: Import button (left of Add book) */}
+              {/* ✅ Import button (left of Add book) */}
               <button
                 className="add-book-btn"
                 type="button"
@@ -578,11 +597,22 @@ export default function SubmitPage() {
 
       <SubmissionModal
         open={showModal}
-        onClose={closeSubmission}
+        onClose={() => {
+          closeSubmission();
+          setPendingImport(null);
+        }}
         onSave={handleSave}
+        initial={
+          pendingImport
+            ? {
+                title: pendingImport.initialTitle,
+                author: pendingImport.initialAuthor,
+              }
+            : undefined
+        }
       />
 
-      {/* ✅ NEW: Import modal */}
+      {/* Import modal */}
       <ImportModal
         open={showImport}
         onClose={closeImport}

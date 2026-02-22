@@ -2,32 +2,30 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-// ✅ IMPORTANT: extractTextFromFile should NOT come from reflowPdfText.ts
-// Put your extractor in something like: src/importer/extractTextFromFile.ts
 import { extractTextFromFile } from "@/importer/extractTextFromFile";
-
-// ✅ reflow comes from your new file
 import { reflowPdfText } from "@/importer/reflowPdfText";
-
 import { splitIntoChapters, type ChapterDraft } from "@/importer/splitChapters";
 import "./ImportModal.css";
 
 export type ImportedProjectPayload = {
   sourceFileName: string;
-  project: {
-    submission: {
-      title: string;
-      author: string;
-      mainGenre?: string;
-      dedication?: string;
-      coverFile?: File | null;
-      backCoverFile?: File | null;
-    };
-    chapters: { id: string; title: string; content: string }[];
+  initialSubmission: {
+    title: string;
+    author: string;
   };
+  chapters: ChapterDraft[];
 };
 
 type Step = "pick" | "parsing" | "preview";
+
+type HistorySnap = {
+  chapters: ChapterDraft[];
+  selectedId: string;
+};
+
+function deepCloneChapters(chs: ChapterDraft[]) {
+  return chs.map((c) => ({ ...c }));
+}
 
 export default function ImportModal({
   open,
@@ -51,19 +49,50 @@ export default function ImportModal({
   const [bookTitle, setBookTitle] = useState("");
   const [author, setAuthor] = useState("");
 
+  // --- Undo history (one-level stack, can be many undos) ---
+  const [history, setHistory] = useState<HistorySnap[]>([]);
+
   const selected = useMemo(
     () => chapters.find((c) => c.id === selectedId) || null,
     [chapters, selectedId]
   );
 
+  const selectedIndex = useMemo(() => {
+    if (!selectedId) return -1;
+    return chapters.findIndex((c) => c.id === selectedId);
+  }, [chapters, selectedId]);
+
+  const pushHistory = () => {
+    setHistory((prev) => [
+      ...prev,
+      { chapters: deepCloneChapters(chapters), selectedId },
+    ]);
+  };
+
+  const undo = () => {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setChapters(deepCloneChapters(last.chapters));
+      setSelectedId(last.selectedId);
+      return prev.slice(0, -1);
+    });
+  };
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      // Ctrl/Cmd + Z undo (nice UX)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        undo();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, onClose, history, chapters, selectedId]);
 
   useEffect(() => {
     if (!open) return;
@@ -74,6 +103,7 @@ export default function ImportModal({
     setSelectedId("");
     setBookTitle("");
     setAuthor("");
+    setHistory([]);
   }, [open]);
 
   const startImport = async () => {
@@ -83,16 +113,13 @@ export default function ImportModal({
     setError("");
 
     try {
-      // 1) extract raw text from file
       const extracted = await extractTextFromFile(file);
-
-      // 2) reflow only for PDFs (recommended)
       const processed =
         file.type === "application/pdf" ? reflowPdfText(extracted) : extracted;
 
-      // 3) split into chapters using improved text
+      const baseName = file.name.replace(/\.[^/.]+$/, "");
       const draft = splitIntoChapters(processed, {
-        hintTitle: bookTitle.trim() || file.name.replace(/\.[^/.]+$/, ""),
+        hintTitle: bookTitle.trim() || baseName,
         hintAuthor: author.trim(),
       });
 
@@ -104,11 +131,9 @@ export default function ImportModal({
 
       setChapters(draft);
       setSelectedId(draft[0]?.id ?? "");
+      setHistory([]);
 
-      // Default title from filename if empty
-      const base = file.name.replace(/\.[^/.]+$/, "");
-      setBookTitle((prev) => (prev.trim() ? prev : base || "Untitled import"));
-
+      setBookTitle((prev) => (prev.trim() ? prev : baseName || "Untitled import"));
       setStep("preview");
     } catch (err: any) {
       setError(err?.message || "Import failed.");
@@ -118,27 +143,115 @@ export default function ImportModal({
 
   const confirm = () => {
     if (!file) return;
-
-    const finalChapters = chapters.map((c, i) => ({
-      id: crypto.randomUUID(),
-      title: c.title || `Chapter ${i + 1}`,
-      content: c.content.trim(),
-    }));
+    if (!chapters.length) return;
 
     onConfirm({
       sourceFileName: file.name,
-      project: {
-        submission: {
-          title: bookTitle.trim(),
-          author: author.trim(),
-          dedication: "",
-          coverFile: null,
-          backCoverFile: null,
-        },
-        chapters: finalChapters,
+      initialSubmission: {
+        title: bookTitle.trim() || file.name.replace(/\.[^/.]+$/, ""),
+        author: author.trim(),
       },
+      chapters: deepCloneChapters(chapters),
     });
   };
+
+  // -----------------------
+  // Chapter tools (with undo)
+  // -----------------------
+
+  const mergeWithPrevious = () => {
+    if (!selected) return;
+    const idx = selectedIndex;
+    if (idx <= 0) return;
+
+    pushHistory();
+
+    setChapters((prev) => {
+      const before = prev[idx - 1];
+      const current = prev[idx];
+
+      const mergedContent = [before.content?.trim(), current.content?.trim()]
+        .filter(Boolean)
+        .join("\n\n");
+
+      const mergedTitle = before.title?.trim() || `Chapter ${idx}`;
+
+      const next = prev.slice();
+      next[idx - 1] = { ...before, title: mergedTitle, content: mergedContent };
+      next.splice(idx, 1);
+      return next;
+    });
+
+    const prevId = chapters[idx - 1]?.id;
+    if (prevId) setSelectedId(prevId);
+  };
+
+  const splitAtCursor = () => {
+    if (!selected) return;
+    const idx = selectedIndex;
+    if (idx < 0) return;
+
+    const ta = textRef.current;
+    const pos = ta?.selectionStart ?? -1;
+
+    const text = selected.content ?? "";
+    const cut = pos >= 0 ? pos : Math.floor(text.length / 2);
+
+    const left = text.slice(0, cut).trim();
+    const right = text.slice(cut).trim();
+
+    if (!left || !right) return;
+
+    pushHistory();
+
+    const newChapter: ChapterDraft = {
+      id: crypto.randomUUID(),
+      title: "",
+      content: right,
+    };
+
+    setChapters((prev) => {
+      const next = prev.slice();
+      next[idx] = { ...prev[idx], content: left };
+      next.splice(idx + 1, 0, newChapter);
+      return next;
+    });
+
+    setSelectedId(newChapter.id);
+
+    requestAnimationFrame(() => {
+      const el = textRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(0, 0);
+    });
+  };
+
+  const removeChapter = () => {
+    if (!selected) return;
+    if (chapters.length <= 1) return;
+
+    const idx = selectedIndex;
+    if (idx < 0) return;
+
+    pushHistory();
+
+    const nextId = chapters[idx + 1]?.id ?? chapters[idx - 1]?.id ?? "";
+
+    setChapters((prev) => {
+      const next = prev.slice();
+      next.splice(idx, 1);
+      return next;
+    });
+
+    setSelectedId(nextId);
+  };
+
+  const canMergePrev = step === "preview" && selectedIndex > 0;
+  const canSplit =
+    step === "preview" && !!selected && (selected.content?.trim().length ?? 0) > 20;
+  const canRemove = step === "preview" && chapters.length > 1;
+  const canUndo = step === "preview" && history.length > 0;
 
   if (!open) return null;
 
@@ -177,7 +290,6 @@ export default function ImportModal({
                 const f = e.target.files?.[0];
                 if (f) {
                   setFile(f);
-                  // reset title/author defaults when picking a new file
                   const base = f.name.replace(/\.[^/.]+$/, "");
                   setBookTitle(base || "");
                   setAuthor("");
@@ -185,23 +297,84 @@ export default function ImportModal({
               }}
             />
 
-            <div className="import-drop">
-              <div className="import-drop-title">Choose file to import</div>
-              <button
-                className="btn save"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Select file
-              </button>
+            <div
+              className={`import-dropzone ${file ? "has-file" : ""}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const f = e.dataTransfer.files?.[0];
+                if (f) {
+                  setFile(f);
+                  const base = f.name.replace(/\.[^/.]+$/, "");
+                  setBookTitle(base || "");
+                  setAuthor("");
+                }
+              }}
+            >
+              <div className="import-dropzone-inner">
+                <div className="import-dropzone-icon" aria-hidden="true">
+                  <span className="material-symbols-outlined">cloud_upload</span>
+                </div>
 
-              {file && <div className="import-file">{file.name}</div>}
+                <div className="import-dropzone-title">Upload your file here</div>
+                <div className="import-dropzone-sub">
+                  Files supported: DOCX, PDF (text-based), TXT, MD
+                </div>
+
+                <div className="import-dropzone-or">
+                  <span />
+                  <em>OR</em>
+                  <span />
+                </div>
+
+                <button
+                  className="import-browse"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Browse
+                </button>
+
+                <div className="import-dropzone-max">Maximum size: 20MB</div>
+              </div>
             </div>
 
+            {file && (
+              <div className="import-file-row">
+                <div className="import-file-left">
+                  <span className="material-symbols-outlined" aria-hidden="true">
+                    description
+                  </span>
+                  <div className="import-file-meta">
+                    <div className="import-file-name">{file.name}</div>
+                    <div className="import-file-size">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="import-file-remove"
+                  aria-label="Remove file"
+                  onClick={() => setFile(null)}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">
+                    delete
+                  </span>
+                </button>
+              </div>
+            )}
+
             <div className="import-actions">
-              <button className="btn cancel" onClick={onClose}>
+              <button className="btn secondary" onClick={onClose}>
                 Cancel
               </button>
-              <button className="btn save" disabled={!file} onClick={startImport}>
+              <button className="btn primary" disabled={!file} onClick={startImport}>
                 {step === "parsing" ? "Importing…" : "Import"}
               </button>
             </div>
@@ -222,10 +395,7 @@ export default function ImportModal({
                 </label>
                 <label>
                   Author
-                  <input
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                  />
+                  <input value={author} onChange={(e) => setAuthor(e.target.value)} />
                 </label>
               </div>
 
@@ -236,7 +406,7 @@ export default function ImportModal({
                     className={`chapter-item ${c.id === selectedId ? "active" : ""}`}
                     onClick={() => setSelectedId(c.id)}
                   >
-                    {i + 1}. {c.title}
+                    {i + 1}. {c.title || `Chapter ${i + 1}`}
                   </button>
                 ))}
               </div>
@@ -271,18 +441,50 @@ export default function ImportModal({
                   />
 
                   <div className="chapter-tools">
-                    <button className="btn small cancel">Merge with previous</button>
-                    <button className="btn small cancel">Split at cursor</button>
-                    <button className="btn small cancel">Remove chapter</button>
+                    <button
+                      className="btn secondary"
+                      onClick={mergeWithPrevious}
+                      disabled={!canMergePrev}
+                      title={!canMergePrev ? "Select a chapter after the first one." : undefined}
+                    >
+                      Merge with previous
+                    </button>
+
+                    <button
+                      className="btn secondary"
+                      onClick={splitAtCursor}
+                      disabled={!canSplit}
+                      title={!canSplit ? "Place your cursor where you want to split." : undefined}
+                    >
+                      Split at cursor
+                    </button>
+
+                    <button
+                      className="btn danger"
+                      onClick={removeChapter}
+                      disabled={!canRemove}
+                      title={!canRemove ? "You must keep at least one chapter." : undefined}
+                    >
+                      Remove chapter
+                    </button>
+
+                    <button
+                      className="btn secondary"
+                      onClick={undo}
+                      disabled={!canUndo}
+                      title={!canUndo ? "Nothing to undo." : "Undo (Ctrl/Cmd+Z)"}
+                    >
+                      Undo
+                    </button>
                   </div>
                 </>
               )}
 
               <div className="import-footer">
-                <button className="btn cancel" onClick={onClose}>
+                <button className="btn secondary" onClick={onClose}>
                   Cancel
                 </button>
-                <button className="btn save" onClick={confirm}>
+                <button className="btn primary" onClick={confirm}>
                   Send to Write
                 </button>
               </div>

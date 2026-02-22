@@ -149,7 +149,18 @@ export default function SubmissionModal({
     backCoverFile: null,
     ...initial,
   });
+  // ✅ When modal opens (or initial changes), prefill title/author from initial
+  useEffect(() => {
+    if (!open) return;
 
+    setForm((prev) => ({
+      ...prev,
+      ...(initial ?? {}),
+      // explicitly prioritize initial title/author when provided
+      title: typeof initial?.title === "string" ? initial.title : prev.title,
+      author: typeof initial?.author === "string" ? initial.author : prev.author,
+    }));
+  }, [open, initial?.title, initial?.author]);
   // 2) useMemo
   const coverUrl = useMemo(
     () => (form.coverFile instanceof File ? URL.createObjectURL(form.coverFile) : ""),

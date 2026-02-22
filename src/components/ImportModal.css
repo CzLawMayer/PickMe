@@ -172,3 +172,714 @@
   display: flex;
   justify-content: space-between;
 }
+
+
+/* =========================================
+   ImportModal — PICK STEP (Upload widget)
+   Dark theme, square corners, dashed dropzone
+========================================= */
+
+.import-pick {
+  display: grid;
+  gap: 14px;
+}
+
+/* Main dropzone card */
+.import-dropzone {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  border-radius: 0;
+  padding: 18px;
+}
+
+.import-dropzone-inner {
+  border: 2px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 0;
+  padding: 22px 18px;
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.import-dropzone.has-file .import-dropzone-inner {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Icon */
+.import-dropzone-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  margin-bottom: 8px;
+}
+
+.import-dropzone-icon .material-symbols-outlined {
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Title + sub */
+.import-dropzone-title {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.95);
+  margin-top: 4px;
+}
+
+.import-dropzone-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* OR separator */
+.import-dropzone-or {
+  width: min(420px, 100%);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 14px;
+}
+
+.import-dropzone-or span {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.import-dropzone-or em {
+  font-style: normal;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.6px;
+}
+
+/* Browse button */
+.import-browse {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+}
+
+.import-browse:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.import-dropzone-max {
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Selected file row */
+.import-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0;
+  padding: 10px 12px;
+}
+
+.import-file-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.import-file-left .material-symbols-outlined {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.import-file-meta {
+  min-width: 0;
+}
+
+.import-file-name {
+  font-weight: 800;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 540px;
+}
+
+.import-file-size {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
+/* Delete button */
+.import-file-remove {
+  width: 34px;
+  height: 34px;
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.import-file-remove:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.import-file-remove .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* src/components/ImportModal.css */
+
+/* =========================
+   Overlay + Modal shell
+========================= */
+.import-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.75);
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+
+.import-modal {
+  width: min(1200px, calc(100vw - 44px));
+  height: min(760px, calc(100vh - 44px));
+  background: #0b0b0b;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65);
+  border-radius: 0;
+  position: relative;
+  overflow: hidden;
+
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+
+/* Close button */
+.import-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 0;
+  display: grid;
+  place-items: center;
+}
+.import-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.import-close:active {
+  transform: translateY(1px);
+}
+
+/* =========================
+   Header
+========================= */
+.import-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0));
+}
+
+/* Left title */
+.import-title {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* Right supported text (ensure it never overlaps X) */
+.import-supported {
+  font-size: 12px;
+  opacity: 0.75;
+  padding-right: 54px; /* ensures it doesn't collide with the X */
+  white-space: nowrap;
+}
+
+/* =========================
+   Error note
+========================= */
+.import-error {
+  margin: 12px 16px 0 16px;
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  background: rgba(255, 80, 80, 0.10);
+  padding: 10px 12px;
+  border-radius: 0;
+}
+.import-error strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* =========================
+   Global buttons (matches your style)
+========================= */
+.btn {
+  border-radius: 0;
+  border: none;
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+/* Keep your existing button classes, but give them consistent feel */
+.btn.save {
+  background: #2e8b57;
+  color: #fff;
+}
+.btn.save:hover {
+  filter: brightness(1.05);
+}
+.btn.cancel {
+  background: #d83a3a;
+  color: #fff;
+}
+.btn.cancel:hover {
+  filter: brightness(1.05);
+}
+
+.btn.small {
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Disabled state */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================
+   STEP: Pick (upload screen)
+   Make it fill + centered like your reference
+========================= */
+.import-pick {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: 16px;
+  gap: 14px;
+}
+
+/* Big “upload” panel */
+.import-drop {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  min-height: 0;
+}
+
+/* inner dashed box */
+.import-drop::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border: 2px dashed rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+/* Center stack */
+.import-drop-title {
+  font-size: 22px;
+  font-weight: 900;
+  margin-top: 8px;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+/* Optional: file name line */
+.import-file {
+  margin-top: 12px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Actions row bottom */
+.import-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Make these “bars” like your screenshot */
+.import-actions .btn {
+  height: 32px;
+  font-size: 14px;
+}
+
+/* Browse button inside panel */
+.import-drop .btn.save {
+  padding: 10px 18px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.import-drop .btn.save:hover {
+  background: rgba(255,255,255,0.10);
+}
+
+/* =========================
+   STEP: Preview layout
+========================= */
+.import-body {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+}
+
+/* LEFT: sidebar */
+.import-sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.10);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+
+/* Title/Author block */
+.import-meta {
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  display: grid;
+  gap: 10px;
+}
+
+.import-meta label {
+  display: grid;
+  grid-template-columns: 72px 1fr; /* aligns Title/Author nicely */
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.import-meta input {
+  height: 34px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: none;
+  border-radius: 0;
+}
+.import-meta input:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Chapter list (scrollable) */
+.import-chapters {
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+/* Chapter button */
+.chapter-item {
+  text-align: left;
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  padding: 12px 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.chapter-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.chapter-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* =========================
+   RIGHT: Preview editor
+========================= */
+.import-preview {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  padding: 14px;
+  gap: 10px;
+}
+
+/* Chapter title input */
+.chapter-title-input {
+  height: 34px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: none;
+  border-radius: 0;
+  font-weight: 900;
+}
+.chapter-title-input:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Chapter content textarea */
+.import-preview textarea {
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: none;
+  border-radius: 0;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+/* Tools row (small buttons, always reachable) */
+.chapter-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+}
+.chapter-tools .btn {
+  height: 28px;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+/* Bottom footer (Cancel / Send) */
+.import-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.import-footer .btn {
+  height: 32px;
+  font-size: 14px;
+}
+
+/* =========================
+   Dark scrollbars
+========================= */
+/* Firefox */
+.import-chapters,
+.import-preview textarea {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.18) rgba(255,255,255,0.04);
+}
+
+/* Chromium / Webkit */
+.import-chapters::-webkit-scrollbar,
+.import-preview textarea::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.import-chapters::-webkit-scrollbar-track,
+.import-preview textarea::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+.import-chapters::-webkit-scrollbar-thumb,
+.import-preview textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid rgba(255, 255, 255, 0.04);
+}
+.import-chapters::-webkit-scrollbar-thumb:hover,
+.import-preview textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* =========================
+   Responsive tweaks
+========================= */
+@media (max-width: 980px) {
+  .import-modal {
+    width: min(980px, calc(100vw - 28px));
+    height: min(820px, calc(100vh - 28px));
+  }
+  .import-body {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .import-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 280px 1fr;
+  }
+  .import-sidebar {
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    grid-template-rows: auto 1fr;
+  }
+  .chapter-tools {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* =========================================
+   STEP 1: Make Import buttons thicker
+   (match SubmissionModal vibe)
+========================================= */
+
+.import-modal .btn {
+  height: 56px;              /* thicker */
+  padding: 0 18px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.import-modal .btn.small {
+  height: 52px;              /* thicker tools row too */
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+/* Keep the bottom bars feeling substantial */
+.import-actions .btn,
+.import-footer .btn {
+  height: 58px;
+}
+
+/* =========================================
+   PROFESSIONAL DARK BUTTON SYSTEM
+========================================= */
+
+.import-modal .btn {
+  min-height: 56px;
+  padding: 0 22px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+/* --- Primary (Send / Import) --- */
+.import-modal .btn.primary {
+  background: #1f6feb; /* deep blue */
+  color: white;
+  border-color: #1f6feb;
+}
+
+.import-modal .btn.primary:hover {
+  background: #2f81f7;
+  border-color: #2f81f7;
+}
+
+/* --- Secondary (Cancel) --- */
+.import-modal .btn.secondary {
+  background: #1c1c1f;
+  color: #d1d5db;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.import-modal .btn.secondary:hover {
+  background: #242428;
+  color: white;
+}
+
+/* --- Danger (Remove Chapter) --- */
+.import-modal .btn.danger {
+  background: #2a1b1b;
+  color: #ffb4b4;
+  border-color: rgba(255,80,80,0.2);
+}
+
+.import-modal .btn.danger:hover {
+  background: #3a2020;
+  color: #ff8080;
+}
+
+/* --- Tool buttons (merge/split/undo row) --- */
+.import-tools .btn {
+  min-height: 48px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* =========================================
+   HEAVIER, MORE PREMIUM BUTTON SYSTEM
+========================================= */
+
+.import-modal .btn {
+  min-height: 64px;               /* was 56 */
+  padding: 0 28px;                /* more horizontal presence */
+  font-size: 16px;                /* larger text */
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  border-radius: 10px;            /* slightly rounder */
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Tool buttons (merge/split/etc) */
+.import-tools .btn {
+  min-height: 56px;               /* slightly smaller than main */
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Bottom action buttons bigger */
+.import-footer .btn,
+.import-actions .btn {
+  min-height: 70px;               /* thicker bottom bar */
+  font-size: 17px;
+  font-weight: 800;
+}
+
+/* Add subtle elevation */
+.import-modal .btn.primary {
+  box-shadow: 0 6px 18px rgba(31,111,235,0.25);
+}
+
+.import-modal .btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(31,111,235,0.35);
+}
+
+.import-modal .btn.secondary:hover,
+.import-modal .btn.danger:hover {
+  transform: translateY(-1px);
+}
