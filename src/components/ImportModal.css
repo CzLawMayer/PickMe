@@ -883,3 +883,178 @@
 .import-modal .btn.danger:hover {
   transform: translateY(-1px);
 }
+
+/* Shift Title & Author inputs 16px to the left */
+.import-meta input {
+  position: relative;
+  left: -16px;
+}
+
+.import-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+
+  color: rgba(255,255,255,0.85);
+  font-size: 20px;
+  font-weight: 600;
+
+  cursor: pointer;
+  z-index: 1000;         /* ensure it's above everything */
+  pointer-events: auto;  /* explicitly allow clicks */
+}
+
+/* VERY IMPORTANT */
+.import-close * {
+  pointer-events: none;  /* make inner X not block clicks */
+}
+
+.import-close:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* =========================================================
+   HARD FIX: Preview step must NEVER collapse (1 chapter, etc.)
+   Paste at END of ImportModal.css
+========================================================= */
+
+/* Make modal a classic fixed shell: header + content */
+.import-modal {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Body must fill remaining space */
+.import-body {
+  flex: 1 !important;
+  min-height: 0 !important; /* critical for children scrolling */
+}
+
+/* Sidebar + preview must also be allowed to stretch */
+.import-sidebar,
+.import-preview {
+  min-height: 0 !important;
+}
+
+/* Keep the 2-column layout stable */
+.import-body {
+  display: grid !important;
+  grid-template-columns: 360px 1fr !important;
+  height: 100% !important;
+}
+
+/* Sidebar structure: meta fixed, chapters fill */
+.import-sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.import-chapters {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+/* RIGHT SIDE: FORCE a fixed vertical layout */
+.import-preview {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 14px !important;
+  gap: 10px !important;
+}
+
+/* Title input fixed height */
+.chapter-title-input {
+  flex: 0 0 auto !important;
+  height: 44px !important;
+  margin: 0 !important; /* remove margins that break sizing */
+}
+
+/* Textarea MUST fill the remaining space */
+.import-preview textarea {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;     /* remove margins that collapse layout */
+  resize: none !important;
+}
+
+/* Tools row fixed */
+.chapter-tools {
+  flex: 0 0 auto !important;
+  margin-top: 0 !important;
+}
+
+/* Footer fixed and always at bottom */
+.import-footer {
+  flex: 0 0 auto !important;
+  margin-top: auto !important; /* pushes footer to bottom */
+}
+
+/* Optional: keep tool/footer buttons thick consistently */
+.chapter-tools .btn {
+  min-height: 52px !important;
+}
+
+.import-footer .btn {
+  min-height: 66px !important;
+}
+
+.import-chapters {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  display: flex;          /* change from grid */
+  flex-direction: column; /* stack vertically */
+  align-items: stretch;
+  gap: 10px;
+}
+
+.chapter-item {
+  flex: 0 0 auto;   /* prevents stretching */
+  min-height: 48px; /* consistent compact height */
+}
+
+/* =========================================================
+   MAKE DROPZONE FILL ENTIRE STEP
+========================================================= */
+
+/* Pick step should fully fill available space */
+.import-pick {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+/* Dropzone container expands */
+.import-dropzone {
+  flex: 1 !important;
+  display: flex !important;
+  min-height: 0 !important;
+}
+
+/* Dashed inner area fills entire height */
+.import-dropzone-inner {
+  flex: 1 !important;
+  min-height: 0 !important;
+
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center; /* keeps content centered */
+  align-items: center;
+}
