@@ -62,15 +62,9 @@ function toLibBook(b: any): LibBook {
         ? b.saves
         : 0,
     rating:
-      typeof b.rating === "string" || typeof b.rating === "number"
-        ? b.rating
-        : 0,
+      typeof b.rating === "string" || typeof b.rating === "number" ? b.rating : 0,
     userRating: typeof b.userRating === "number" ? b.userRating : 0,
-    tags: Array.isArray(b.tags)
-      ? b.tags
-      : Array.isArray(b.subGenres)
-      ? b.subGenres
-      : [],
+    tags: Array.isArray(b.tags) ? b.tags : Array.isArray(b.subGenres) ? b.subGenres : [],
   };
 }
 
@@ -104,6 +98,15 @@ function getCoverSrcForBook(b: BookWithStatus): string | null {
   return null;
 }
 
+type BookState = {
+  liked: boolean;
+  saved: boolean;
+  likeCount: number;
+  saveCount: number;
+};
+
+
+
 export default function SubmitPage() {
   const navigate = useNavigate();
   const location = useLocation() as any;
@@ -136,8 +139,7 @@ export default function SubmitPage() {
     const incoming = location.state as any;
     if (!incoming || !incoming.shelfBook) return;
 
-    const status: Status =
-      incoming.status === "published" ? "published" : "inProgress";
+    const status: Status = incoming.status === "published" ? "published" : "inProgress";
 
     const raw = incoming.shelfBook as LibBook;
     const project = incoming.project;
@@ -162,9 +164,6 @@ export default function SubmitPage() {
     setSelectedBookId(String(base.id));
     setActiveBook(base);
     setActiveTab(status);
-
-    // Optional: clear state so refresh doesn't re-add
-    // navigate(location.pathname, { replace: true });
   }, [location.state]);
 
   const visibleBooks = useMemo(
@@ -190,14 +189,6 @@ export default function SubmitPage() {
     setActiveBook(sel || null);
   };
 
-  // per-book like/save local state
-  type BookState = {
-    liked: boolean;
-    saved: boolean;
-    likeCount: number;
-    saveCount: number;
-  };
-
   const initialStates = useMemo(() => {
     const obj: Record<string, BookState> = {};
     for (const b of allBooks) {
@@ -211,9 +202,7 @@ export default function SubmitPage() {
     return obj;
   }, [allBooks]);
 
-  const [bookStates, setBookStates] = useState<Record<string, BookState>>(
-    initialStates
-  );
+  const [bookStates, setBookStates] = useState<Record<string, BookState>>(initialStates);
 
   const toggleLike = (bookId: string | number) => {
     setBookStates((prev) => {
@@ -221,9 +210,7 @@ export default function SubmitPage() {
       const st = prev[id];
       if (!st) return prev;
       const nextLiked = !st.liked;
-      const nextLikeCount = nextLiked
-        ? st.likeCount + 1
-        : Math.max(0, st.likeCount - 1);
+      const nextLikeCount = nextLiked ? st.likeCount + 1 : Math.max(0, st.likeCount - 1);
       return {
         ...prev,
         [id]: { ...st, liked: nextLiked, likeCount: nextLikeCount },
@@ -237,9 +224,7 @@ export default function SubmitPage() {
       const st = prev[id];
       if (!st) return prev;
       const nextSaved = !st.saved;
-      const nextSaveCount = nextSaved
-        ? st.saveCount + 1
-        : Math.max(0, st.saveCount - 1);
+      const nextSaveCount = nextSaved ? st.saveCount + 1 : Math.max(0, st.saveCount - 1);
       return {
         ...prev,
         [id]: { ...st, saved: nextSaved, saveCount: nextSaveCount },
@@ -247,9 +232,7 @@ export default function SubmitPage() {
     });
   };
 
-  const activeState = activeBook
-    ? bookStates[String(activeBook.id)]
-    : undefined;
+  const activeState = activeBook ? bookStates[String(activeBook.id)] : undefined;
 
   // submission modal
   const [showModal, setShowModal] = useState(false);
@@ -271,8 +254,7 @@ export default function SubmitPage() {
 
   const handleSave = (data: SubmitFormData) => {
     const chapters =
-      pendingImport?.chapters ??
-      [
+      pendingImport?.chapters ?? [
         { id: crypto.randomUUID(), title: "Chapter 1", content: "" },
         { id: crypto.randomUUID(), title: "Chapter 2", content: "" },
         { id: crypto.randomUUID(), title: "Chapter 3", content: "" },
@@ -302,8 +284,6 @@ export default function SubmitPage() {
   };
 
   const handleImportConfirm = (payload: ImportedProjectPayload) => {
-    // ✅ ImportModal no longer navigates directly.
-    // It returns chapters + initial title/author, then we open SubmissionModal first.
     closeImport();
 
     setPendingImport({
@@ -335,18 +315,14 @@ export default function SubmitPage() {
             <nav className="lib-tabs" aria-label="Submission sections">
               <button
                 type="button"
-                className={
-                  "lib-tab" + (activeTab === "inProgress" ? " is-active" : "")
-                }
+                className={"lib-tab" + (activeTab === "inProgress" ? " is-active" : "")}
                 onClick={() => setActiveTab("inProgress")}
               >
                 In progress
               </button>
               <button
                 type="button"
-                className={
-                  "lib-tab" + (activeTab === "published" ? " is-active" : "")
-                }
+                className={"lib-tab" + (activeTab === "published" ? " is-active" : "")}
                 onClick={() => setActiveTab("published")}
               >
                 Published
@@ -364,11 +340,7 @@ export default function SubmitPage() {
                 Import
               </button>
 
-              <button
-                className="add-book-btn"
-                type="button"
-                onClick={openSubmission}
-              >
+              <button className="add-book-btn" type="button" onClick={openSubmission}>
                 Add book
               </button>
             </div>
@@ -376,11 +348,7 @@ export default function SubmitPage() {
 
           <section
             className="lib-scroll"
-            aria-label={
-              activeTab === "inProgress"
-                ? "In progress books"
-                : "Published books"
-            }
+            aria-label={activeTab === "inProgress" ? "In progress books" : "Published books"}
             onMouseLeave={clearHover}
           >
             <div className="lib-row">
@@ -390,14 +358,12 @@ export default function SubmitPage() {
                 const saveActive = st?.saved ?? false;
                 const likeCount = st?.likeCount ?? 0;
                 const saveCount = st?.saveCount ?? 0;
-                const avgRatingNum = parseFloat(
-                  typeof book.rating === "string"
-                    ? book.rating
-                    : (book.rating ?? "0").toString()
-                );
-                const coverIsSelected =
-                  selectedBookId === String(book.id) ? " is-selected" : "";
 
+                const avgRatingNum = parseFloat(
+                  typeof book.rating === "string" ? book.rating : (book.rating ?? "0").toString()
+                );
+
+                const coverIsSelected = selectedBookId === String(book.id) ? " is-selected" : "";
                 const coverSrc = getCoverSrcForBook(book);
 
                 return (
@@ -460,11 +426,7 @@ export default function SubmitPage() {
 
                         <div
                           className="lib-line lib-year-line"
-                          style={{
-                            marginTop: "6px",
-                            fontSize: "12px",
-                            lineHeight: 1.2,
-                          }}
+                          style={{ marginTop: "6px", fontSize: "12px", lineHeight: 1.2 }}
                         >
                           {book.year ? book.year : "—"}
                         </div>
@@ -498,9 +460,7 @@ export default function SubmitPage() {
                           onMouseEnter={() => previewBook(book)}
                         >
                           <LikeButton
-                            className={`meta-icon-btn like ${
-                              likeActive ? "is-active" : ""
-                            }`}
+                            className={`meta-icon-btn like ${likeActive ? "is-active" : ""}`}
                             glyphClass="meta-icon-glyph"
                             countClass="meta-icon-count"
                             active={likeActive}
@@ -510,25 +470,17 @@ export default function SubmitPage() {
                           />
                           <button
                             type="button"
-                            className={`meta-icon-btn star ${
-                              (book.userRating ?? 0) > 0 ? "is-active" : ""
-                            }`}
+                            className={`meta-icon-btn star ${(book.userRating ?? 0) > 0 ? "is-active" : ""}`}
                             aria-pressed={(book.userRating ?? 0) > 0}
                             title="Average rating"
                           >
-                            <span className="material-symbols-outlined meta-icon-glyph">
-                              star
-                            </span>
+                            <span className="material-symbols-outlined meta-icon-glyph">star</span>
                             <span className="meta-icon-count">
-                              {Number.isFinite(avgRatingNum)
-                                ? `${avgRatingNum.toFixed(1)}/5`
-                                : "—"}
+                              {Number.isFinite(avgRatingNum) ? `${avgRatingNum.toFixed(1)}/5` : "—"}
                             </span>
                           </button>
                           <SaveButton
-                            className={`meta-icon-btn save ${
-                              saveActive ? "is-active" : ""
-                            }`}
+                            className={`meta-icon-btn save ${saveActive ? "is-active" : ""}`}
                             glyphClass="meta-icon-glyph"
                             countClass="meta-icon-count"
                             active={saveActive}
@@ -538,10 +490,7 @@ export default function SubmitPage() {
                           />
                         </div>
 
-                        <div
-                          className="lib-line lib-genre-row"
-                          onMouseEnter={() => previewBook(book)}
-                        >
+                        <div className="lib-line lib-genre-row" onMouseEnter={() => previewBook(book)}>
                           {Array.isArray(book.tags) && book.tags.length > 0
                             ? (() => {
                                 const tag = book.tags[0];
@@ -591,7 +540,12 @@ export default function SubmitPage() {
         </div>
 
         <aside className="library-feature" aria-label="Project details">
-          <SubmitFeaturePanel book={activeBook || undefined} />
+          <SubmitFeaturePanel
+            book={activeBook || undefined}
+            metaState={activeBook ? bookStates[String(activeBook.id)] : undefined}
+            onToggleLike={activeBook ? () => toggleLike(activeBook.id) : undefined}
+            onToggleSave={activeBook ? () => toggleSave(activeBook.id) : undefined}
+          />
         </aside>
       </main>
 
@@ -604,20 +558,13 @@ export default function SubmitPage() {
         onSave={handleSave}
         initial={
           pendingImport
-            ? {
-                title: pendingImport.initialTitle,
-                author: pendingImport.initialAuthor,
-              }
+            ? { title: pendingImport.initialTitle, author: pendingImport.initialAuthor }
             : undefined
         }
       />
 
       {/* Import modal */}
-      <ImportModal
-        open={showImport}
-        onClose={closeImport}
-        onConfirm={handleImportConfirm}
-      />
+      <ImportModal open={showImport} onClose={closeImport} onConfirm={handleImportConfirm} />
     </div>
   );
 }

@@ -1,6 +1,13 @@
 // src/components/SubmitFeaturePanel.tsx
 import React, { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import LikeButton from "@/components/LikeButton";
+import CommentButton from "@/components/CommentButton";
+import StarButton from "@/components/StarButton";
+import SaveButton from "@/components/SaveButton";
+
+import { profile } from "@/profileData";
 
 type Status = "inProgress" | "published";
 
@@ -10,6 +17,7 @@ type SubmitPanelBook = {
   author?: string;
   coverUrl?: string | null;
   tags?: string[];
+  rating?: number | string;
   status: Status;
   project?: {
     submission?: {
@@ -39,15 +47,30 @@ function getCoverSrcFromBook(book?: SubmitPanelBook | null): string | null {
   return null;
 }
 
+export type SubmitFeatureMetaState = {
+  liked: boolean;
+  saved: boolean;
+  likeCount: number;
+  saveCount: number;
+};
+
 interface SubmitFeaturePanelProps {
   book?: SubmitPanelBook | null;
+  metaState?: SubmitFeatureMetaState;
+  onToggleLike?: () => void;
+  onToggleSave?: () => void;
 }
 
-const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
+const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
+  book,
+  metaState,
+  onToggleLike,
+  onToggleSave,
+}) => {
   const navigate = useNavigate();
   const coverSrc = useMemo(() => getCoverSrcFromBook(book), [book]);
 
-  // ✅ Empty state: special class "is-empty"
+  // Empty state
   if (!book) {
     return (
       <div className="submit-feature-shell is-empty">
@@ -64,11 +87,38 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
   }
 
   const chapterCount = book.project?.chapters?.length ?? 0;
-  const mainGenre =
-    book.project?.submission?.mainGenre ??
-    (book.tags && book.tags.length > 0 ? book.tags[0] : "");
 
-  const isPublished = book.status === "published";
+  const submission = book.project?.submission ?? {};
+  const authorLabel =
+    (submission.author?.trim() || book.author?.trim() || "Unknown author");
+
+  const tags =
+    Array.isArray(book.tags) && book.tags.length > 0
+      ? book.tags
+      : submission.mainGenre
+      ? [submission.mainGenre]
+      : [];
+
+  const liked = metaState?.liked ?? false;
+  const saved = metaState?.saved ?? false;
+  const displayLikes = metaState?.likeCount ?? 0;
+  const displaySaves = metaState?.saveCount ?? 0;
+
+  const combinedRating = Number(book?.rating ?? 0) || 0;
+  const hasUserCommentedCenter = false;
+  const hasUserReviewedCenter = false;
+
+  const profileAvatarSrc =
+    (profile as any)?.avatarUrl || (profile as any)?.photo || "";
+
+  const openHomeAtBook = (mode?: "comments" | "reviews") => {
+    const id = String(book.id ?? "");
+    if (!id) return;
+    const qs = mode
+      ? `/?book=${encodeURIComponent(id)}&open=${mode}`
+      : `/?book=${encodeURIComponent(id)}`;
+    navigate(qs);
+  };
 
   const handleEdit = () => {
     navigate("/write", {
@@ -77,8 +127,8 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
         shelfBook: {
           id: book.id,
           title: book.title,
-          author: book.author ?? "",
-          tags: book.tags ?? [],
+          author: authorLabel,
+          tags,
           coverUrl: book.coverUrl ?? null,
         },
         status: book.status,
@@ -90,15 +140,14 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
     if (!book.project) return;
 
     const chapters = book.project.chapters ?? [];
-    const submission = book.project.submission ?? {};
 
     navigate("/preview", {
       state: {
         book: {
           id: String(book.id),
           title: book.title,
-          author: submission.author ?? book.author ?? "",
-          tags: book.tags ?? [],
+          author: authorLabel,
+          tags,
           dedication: submission.dedication ?? "",
           chapters: chapters.map((c) => c.title),
           chapterTexts: chapters.map((c) => c.content),
@@ -107,14 +156,12 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
           backCoverFile: submission.backCoverFile ?? null,
         },
         project: book.project,
-        originStatus: book.status,
+        status: book.status,
       },
     });
   };
 
-  const handlePublishToggle = () => {
-    // no-op here; SubmitPage owns status via navigation
-  };
+  const isPublished = book.status === "published";
 
   return (
     <div className="submit-feature-shell">
@@ -132,35 +179,108 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({ book }) => {
             </div>
           </div>
 
-          <div className="rm-meta">
-            <div className="rm-chapters">
-              {chapterCount} chapter{chapterCount === 1 ? "" : "s"}
+          {/* PROFILE ROW */}
+          <hr className="meta-hr" />
+          <div className="feature-author">
+            <Link
+              to="/profile"
+              className="meta-avatar-link"
+              aria-label="Open profile"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="meta-avatar--sm" aria-hidden={true}>
+                {profileAvatarSrc ? (
+                  <img src={profileAvatarSrc} alt="" />
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
+                    <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+                    <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
+                    <path
+                      d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                )}
+              </span>
+            </Link>
+
+            <Link
+              to="/profile"
+              className="meta-username"
+              title={authorLabel}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="feature-author-name">{authorLabel}</span>
+            </Link>
+          </div>
+
+          {/* BUTTONS */}
+          <hr className="meta-hr" />
+          <div className="meta-actions">
+            <LikeButton
+              className="meta-icon-btn like"
+              count={displayLikes}
+              active={liked}
+              onToggle={onToggleLike}
+            />
+
+            <CommentButton
+              active={hasUserCommentedCenter}
+              onOpenComments={() => openHomeAtBook("comments")}
+            />
+
+            <StarButton
+              rating={combinedRating}
+              hasUserReviewed={hasUserReviewedCenter}
+              onOpenReviews={() => openHomeAtBook("reviews")}
+            />
+
+            <SaveButton
+              className="meta-icon-btn save"
+              count={displaySaves}
+              active={saved}
+              onToggle={onToggleSave}
+            />
+          </div>
+
+          {/* CHAPTERS */}
+          <hr className="meta-hr" />
+          <div className="align-left">
+            <p className="meta-chapters">
+              <span>
+                {chapterCount} chapter{chapterCount === 1 ? "" : "s"}
+              </span>
+            </p>
+          </div>
+
+          {/* GENRES */}
+          <hr className="meta-hr" />
+          <div className="align-left">
+            <div className="meta-tags-block">
+              <ul className="meta-tags meta-tags--outline">
+                {tags.map((t) => (
+                  <li key={t}>
+                    <span className="genre-pill" title={t}>
+                      {t}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className="rm-separator" />
-            <div className="rm-genre">{mainGenre}</div>
           </div>
         </div>
 
+        {/* CTA buttons */}
         <div className="rm-actions">
-          <button
-            type="button"
-            className="rm-btn rm-btn-preview"
-            onClick={handleEdit}
-          >
+          <button type="button" className="rm-btn rm-btn-preview" onClick={handleEdit}>
             Edit
           </button>
-          <button
-            type="button"
-            className="rm-btn rm-btn-save"
-            onClick={handlePreview}
-          >
+          <button type="button" className="rm-btn rm-btn-save" onClick={handlePreview}>
             Preview
           </button>
-          <button
-            type="button"
-            className="rm-btn rm-btn-publish"
-            onClick={handlePublishToggle}
-          >
+          <button type="button" className="rm-btn rm-btn-publish" onClick={() => {}}>
             {isPublished ? "Unpublish" : "Publish"}
           </button>
         </div>
