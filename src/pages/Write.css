@@ -1944,3 +1944,66 @@
 @media (prefers-reduced-motion: reduce){
   .rm-genre:hover::after{ animation: none; opacity: 0.15; }
 }
+
+
+/* =========================
+   WRITE — Responsive safety rails (no overlap)
+   Paste at VERY BOTTOM
+   ========================= */
+
+/* how much breathing room we want between editor and side UI */
+.write-shell{
+  --edge-gap: 18px;
+
+  /* side tabs stick outside panels; account for them */
+  --side-tabs: calc(var(--tab-w) * 2);
+
+  /* "reserved" space if panels are open (best-effort; you can tweak) */
+  --side-left:  calc(var(--panel-w) + var(--tab-w) + var(--edge-gap));
+  --side-right: calc(var(--panel-w) + var(--tab-w) + var(--edge-gap));
+
+  /* total possible reserved width */
+  --side-total: calc(var(--side-left) + var(--side-right));
+}
+
+/* Editor column becomes "safe-width": never larger than viewport minus panels */
+.editor-wrap{
+  /* maximum width available in viewport when both sides exist */
+  --safe-max: calc(100vw - var(--side-total));
+
+  /* keep your preferred width, but never exceed safe max */
+  width: min(720px, calc(100vw - (var(--pad, 0px))), 82vw, var(--safe-max));
+  max-width: var(--safe-max);
+
+  /* keep it centered and not touching edges */
+  margin-inline: auto;
+}
+
+
+/* =========================
+   Overlay mode (tablet / phone)
+   Panels float over editor, editor uses full width
+   ========================= */
+
+@media (max-width: 980px){
+  /* panels overlay instead of "reserving" space */
+  .write-shell{
+    --side-left:  calc(var(--tab-w) + var(--edge-gap));
+    --side-right: calc(var(--tab-w) + var(--edge-gap));
+  }
+
+  .editor-wrap{
+    width: min(720px, 92vw);
+    max-width: 92vw;
+    padding-inline: 16px;
+  }
+}
+
+/* Right panel: denser meta on narrow screens */
+@media (max-width: 980px){
+  .rm-stats-card{ gap: 6px; padding: 8px; }
+  .rm-stat{ padding: 7px 8px; }
+  .rm-stat-label{ font-size: 9px; }
+  .rm-stat-value{ font-size: 12px; }
+  .rm-btn{ font-size: 15px; padding: 7px 10px; }
+}

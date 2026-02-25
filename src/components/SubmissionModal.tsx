@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./SubmissionModal.css";
+import { useConfirm } from "@/components/ConfirmPopover";
 
 /* ===== Genre options (names only) ===== */
 const GENRE_OPTIONS = [
