@@ -89,7 +89,13 @@ export default function WritePage() {
   const [submission, setSubmission] = useState<SubmissionSnapshot | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
+  // target words (editable)
+  const [targetWords, setTargetWords] = useState<number>(80000);
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+  const [targetDraft, setTargetDraft] = useState<string>("80000");
+
   // Hydrate from incoming project (from Submit or Preview)
+  const resetSessionRef = useRef(true);
   useEffect(() => {
     const incoming = location.state?.project as ProjectState | undefined;
     if (!incoming) return;
@@ -100,6 +106,7 @@ export default function WritePage() {
     if (incoming.chapters && incoming.chapters.length > 0) {
       setChapters(incoming.chapters);
       setActiveId(incoming.chapters[0].id);
+      resetSessionRef.current = true; // reset session baseline when a project is loaded
     }
   }, [location.state]);
 
@@ -116,10 +123,59 @@ export default function WritePage() {
     return txt.replace(/\n/g, "\n\n");
   };
 
+  // word count helpers
+  const htmlToPlainText = (html: string): string => {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return (div.innerText || "").replace(/\u200B/g, " ").trim();
+  };
+
+  const countWords = (text: string): number => {
+    const t = (text || "").trim();
+    if (!t) return 0;
+    return t.split(/\s+/).filter(Boolean).length;
+  };
+
+  const totalWordCount = useMemo(() => {
+    return chapters.reduce((sum, ch) => {
+      const plain = htmlToPlainText(ch.content || "");
+      return sum + countWords(plain);
+    }, 0);
+  }, [chapters]);
+
   const active = useMemo(
     () => chapters.find((c) => c.id === activeId) ?? chapters[0],
     [chapters, activeId]
   );
+
+  const activeWordCount = useMemo(() => {
+    if (!active) return 0;
+    const plain = htmlToPlainText(active.content || "");
+    return countWords(plain);
+  }, [active]);
+
+  // reading time (approx.)
+  const readingTimeMinutes = useMemo(() => {
+    if (!totalWordCount) return 0;
+    return Math.max(1, Math.ceil(totalWordCount / 225));
+  }, [totalWordCount]);
+
+  // progress toward target
+  const progressPercent = useMemo(() => {
+    if (!targetWords || targetWords <= 0) return 0;
+    return Math.min(100, Math.round((totalWordCount / targetWords) * 100));
+  }, [totalWordCount, targetWords]);
+
+  // session word count (since load / project hydration)
+  const sessionBaselineRef = useRef(0);
+  useEffect(() => {
+    if (!resetSessionRef.current) return;
+    sessionBaselineRef.current = totalWordCount;
+    resetSessionRef.current = false;
+  }, [totalWordCount]);
+
+  const sessionWordDelta = totalWordCount - sessionBaselineRef.current;
 
   useEffect(() => {
     if (!submission?.coverFile) {
@@ -454,11 +510,12 @@ export default function WritePage() {
         else if (isLeftOpen) setLeftOpen(false);
         else if (isRightOpen) setRightOpen(false);
         else if (showNotes) setShowNotes(false);
+        else if (isEditingTarget) setIsEditingTarget(false);
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [isLeftOpen, isRightOpen, showSubmission, showNotes]);
+  }, [isLeftOpen, isRightOpen, showSubmission, showNotes, isEditingTarget]);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -486,6 +543,8 @@ export default function WritePage() {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {
+      window.removeAllListeners?.("mousemove"); // harmless if not present
+      window.removeAllListeners?.("mouseup");
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
@@ -513,10 +572,17 @@ export default function WritePage() {
   const shellClass =
     "write-shell" + (isLightMode ? " write-shell--light" : "");
 
-  const projectTitle =
-    submission?.title?.trim() || "Project title not set";
+  const projectTitle = submission?.title?.trim() || "Project title not set";
   const mainGenreLabel =
     submission?.mainGenre?.trim() || "Main genre not selected";
+
+  const commitTargetWords = (raw: string) => {
+    const n = Number(String(raw).replace(/[^\d]/g, ""));
+    const safe = Number.isFinite(n) ? Math.max(0, Math.min(2000000, n)) : 0;
+    setTargetWords(safe);
+    setTargetDraft(String(safe || ""));
+    setIsEditingTarget(false);
+  };
 
   return (
     <div
@@ -556,9 +622,7 @@ export default function WritePage() {
                         className="lm-edit-input"
                         defaultValue={ch.title}
                         autoFocus
-                        onFocus={(e) => {
-                          e.target.select();
-                        }}
+                        onFocus={(e) => e.target.select()}
                         onBlur={(e) =>
                           commitRename(ch.id, e.currentTarget.value)
                         }
@@ -659,12 +723,107 @@ export default function WritePage() {
                 </div>
               </button>
 
+              {/* NEW compact meta layout for the CSS you added */}
               <div className="rm-meta">
-                <div className="rm-chapters">
-                  {chapters.length} chapter
-                  {chapters.length === 1 ? "" : "s"}
+                <div className="rm-stats-card" aria-label="Project stats">
+                  <div className="rm-stat">
+                    <span className="rm-stat-label">Chapters</span>
+                    <span className="rm-stat-value">{chapters.length}</span>
+                  </div>
+
+                  <div className="rm-stat">
+                    <span className="rm-stat-label">Total words</span>
+                    <span className="rm-stat-value">
+                      {totalWordCount.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="rm-stat">
+                    <span className="rm-stat-label">This chapter</span>
+                    <span className="rm-stat-value">
+                      {activeWordCount.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="rm-stat">
+                    <span className="rm-stat-label">Read time</span>
+                    <span className="rm-stat-value">~{readingTimeMinutes} min</span>
+                  </div>
                 </div>
-                <div className="rm-separator" />
+
+                <div className="rm-target-shell" aria-label="Target progress">
+                  <div className="rm-target-row">
+                    <div className="rm-target-label">Target</div>
+
+                    {!isEditingTarget ? (
+                      <div className="rm-target-value">
+                        {targetWords.toLocaleString()} words
+                        <button
+                          type="button"
+                          className="rm-target-edit"
+                          onClick={() => {
+                            setTargetDraft(String(targetWords || ""));
+                            setIsEditingTarget(true);
+                          }}
+                          title="Edit target"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="rm-target-editing">
+                        <input
+                          className="rm-target-input"
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          step={100}
+                          value={targetDraft}
+                          autoFocus
+                          onChange={(e) => setTargetDraft(e.target.value)}
+                          onBlur={() => commitTargetWords(targetDraft)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              commitTargetWords(targetDraft);
+                            }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsEditingTarget(false);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="rm-target-save"
+                          onClick={() => commitTargetWords(targetDraft)}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rm-progress">
+                    <div className="rm-progress-track">
+                      <div
+                        className="rm-progress-bar"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                    <div className="rm-progress-label">
+                      {progressPercent}% complete
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rm-session-words">
+                  Current Session: {sessionWordDelta >= 0 ? "" : ""}
+                  {sessionWordDelta.toLocaleString()} words
+                </div>
+
                 <div className="rm-genre">{mainGenreLabel}</div>
               </div>
             </div>
@@ -688,8 +847,7 @@ export default function WritePage() {
                     state: {
                       book: {
                         id: "preview",
-                        title:
-                          submission?.title?.trim() || "Untitled Project",
+                        title: submission?.title?.trim() || "Untitled Project",
                         author: submission?.author?.trim() || "",
                         coverFile: submission?.coverFile ?? null,
                         backCoverFile: submission?.backCoverFile ?? null,
@@ -697,9 +855,7 @@ export default function WritePage() {
                         chapters: chapterTitles,
                         chapterTexts,
                         totalChapters: chapters.length,
-                        tags: submission?.mainGenre
-                          ? [submission.mainGenre]
-                          : [],
+                        tags: submission?.mainGenre ? [submission.mainGenre] : [],
                       },
                       project,
                       status: statusFromLocation,
@@ -718,8 +874,7 @@ export default function WritePage() {
                   const project = buildProject();
 
                   const id = crypto.randomUUID();
-                  const title =
-                    submission?.title?.trim() || "Untitled Project";
+                  const title = submission?.title?.trim() || "Untitled Project";
 
                   const shelfBook = {
                     id,
@@ -731,9 +886,7 @@ export default function WritePage() {
                     bookmarks: 0,
                     rating: 0,
                     userRating: 0,
-                    tags: submission?.mainGenre
-                      ? [submission.mainGenre]
-                      : [],
+                    tags: submission?.mainGenre ? [submission.mainGenre] : [],
                   };
 
                   const effectiveStatus =
@@ -776,7 +929,9 @@ export default function WritePage() {
                   };
 
                   const nextStatus =
-                    statusFromLocation === "published" ? "inProgress" : "published";
+                    statusFromLocation === "published"
+                      ? "inProgress"
+                      : "published";
 
                   navigate("/submit", {
                     state: {
@@ -789,7 +944,6 @@ export default function WritePage() {
               >
                 {statusFromLocation === "published" ? "Unpublish" : "Publish"}
               </button>
-
             </div>
           </div>
         </div>
@@ -1058,13 +1212,25 @@ export default function WritePage() {
               <svg id="cloud-3" className="cloud-dark" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg id="cloud-4" className="cloud-light" viewBox="0 0 100 100">
+              <svg
+                id="cloud-4"
+                className="cloud-light"
+                viewBox="0 0 100 100"
+              >
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg id="cloud-5" className="cloud-light" viewBox="0 0 100 100">
+              <svg
+                id="cloud-5"
+                className="cloud-light"
+                viewBox="0 0 100 100"
+              >
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg id="cloud-6" className="cloud-light" viewBox="0 0 100 100">
+              <svg
+                id="cloud-6"
+                className="cloud-light"
+                viewBox="0 0 100 100"
+              >
                 <circle cx="50" cy="50" r="50" />
               </svg>
             </span>

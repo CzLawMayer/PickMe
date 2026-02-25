@@ -1448,3 +1448,426 @@
   min-height: calc(100dvh - var(--app-header-h));
 }
 
+/* ============================================================
+   WRITE — Right panel meta (compact, professional, fits)
+   Works with:
+   .rm-meta > .rm-stats-card > .rm-stat(.label/.value)
+   plus your existing .rm-target-shell, .rm-session-words, etc.
+   ============================================================ */
+
+.rm-meta{
+  width: 100%;
+  max-width: 260px;
+  margin: 10px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- Stats Card (2x2 grid) ---------- */
+.rm-stats-card{
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background:
+    radial-gradient(120% 120% at 15% 0%,
+      rgba(255,255,255,0.10) 0%,
+      rgba(255,255,255,0.05) 40%,
+      rgba(255,255,255,0.03) 100%);
+  box-shadow: 0 14px 42px rgba(0,0,0,0.28);
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+
+/* Each stat is a mini “tile” */
+.rm-stat{
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.14);
+  padding: 9px 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  min-width: 0; /* allow text to shrink */
+}
+
+.rm-stat-label{
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  opacity: 0.72;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.rm-stat-value{
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  line-height: 1.05;
+  opacity: 0.98;
+
+  /* prevents overflow if numbers get large */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Make the card denser on short heights */
+@media (max-height: 760px){
+  .rm-stats-card{ padding: 10px; gap: 8px 10px; }
+  .rm-stat{ padding: 8px 9px; gap: 5px; }
+  .rm-stat-value{ font-size: 13px; }
+}
+
+/* ---------- Target Card (tightened) ---------- */
+.rm-target-shell{
+  width: 100%;
+  padding: 11px 12px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 14px 42px rgba(0,0,0,0.22);
+}
+
+/* Header row */
+.rm-target-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 8px;
+}
+
+.rm-target-label{
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  opacity: 0.72;
+  font-weight: 800;
+}
+
+.rm-target-value{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rm-target-edit{
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.18);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.rm-target-edit:hover{
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.24);
+}
+
+/* Editing state */
+.rm-target-editing{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.rm-target-input{
+  width: 120px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.28);
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  outline: none;
+}
+
+.rm-target-input:focus{
+  border-color: rgba(255,255,255,0.30);
+  background: rgba(0,0,0,0.34);
+}
+
+.rm-target-save{
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.rm-target-save:hover{
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.24);
+}
+
+/* Progress */
+.rm-progress{ width: 100%; }
+
+.rm-progress-track{
+  width: 100%;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+.rm-progress-bar{
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.35),
+    rgba(255,255,255,0.78));
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+.rm-progress-label{
+  margin-top: 7px;
+  font-size: 11px;
+  font-weight: 750;
+  opacity: 0.82;
+  text-align: center;
+}
+
+/* ---------- Session chip ---------- */
+.rm-session-words{
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.2px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  box-shadow: 0 12px 34px rgba(0,0,0,0.22);
+}
+
+/* ---------- Separator + genre ---------- */
+.rm-separator{
+  margin: 2px 0 0;
+  opacity: 0.7;
+}
+
+.rm-genre{
+  margin-top: 2px;
+  text-align: center;
+  font-weight: 750;
+  opacity: 0.95;
+}
+
+/* ---------- Tight mode for small right panels ---------- */
+@media (max-height: 700px){
+  .rm-meta{ gap: 8px; }
+  .rm-stats-card{ padding: 10px; }
+  .rm-target-shell{ padding: 10px 12px 9px; }
+  .rm-session-words{ padding: 7px 12px; }
+}
+
+/* ============================================================
+   WRITE — Ultra-compact right panel meta (LESS TALL)
+   Paste at the VERY BOTTOM of Write.css
+   ============================================================ */
+
+.rm-meta{
+  max-width: 260px;
+  gap: 8px; /* tighter stack */
+}
+
+/* ---------- STATS: one row (4 columns) ---------- */
+.rm-stats-card{
+  padding: 8px 10px;
+  border-radius: 12px;
+  grid-template-columns: repeat(4, 1fr); /* 1 row */
+  gap: 8px;
+}
+
+/* Smaller tiles */
+.rm-stat{
+  padding: 7px 8px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+/* Labels smaller and tighter */
+.rm-stat-label{
+  font-size: 9px;
+  letter-spacing: 0.7px;
+  opacity: 0.70;
+}
+
+/* Values smaller */
+.rm-stat-value{
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* If you want even less height: hide labels and rely on layout */
+@media (max-height: 760px){
+  .rm-stat-label{ display: none; }
+  .rm-stat{ padding: 8px 8px; }
+  .rm-stat-value{ font-size: 12px; }
+  .rm-stats-card{ padding: 8px; }
+}
+
+/* ---------- TARGET: tighter + smaller progress ---------- */
+.rm-target-shell{
+  padding: 9px 10px 9px;
+  border-radius: 12px;
+}
+
+.rm-target-row{
+  margin-bottom: 6px;
+}
+
+.rm-target-label{
+  font-size: 9px;
+  letter-spacing: 0.8px;
+}
+
+.rm-target-value{
+  font-size: 12px;
+  gap: 8px;
+}
+
+.rm-target-edit{
+  height: 20px;
+  padding: 0 9px;
+  font-size: 11px;
+}
+
+/* smaller bar */
+.rm-progress-track{
+  height: 7px;
+}
+
+.rm-progress-label{
+  margin-top: 5px;
+  font-size: 10.5px;
+}
+
+/* ---------- SESSION: make it a slim bar ---------- */
+.rm-session-words{
+  padding: 6px 10px;
+  font-size: 11.5px;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.18);
+}
+
+/* ---------- Separator + genre tighter ---------- */
+.rm-separator{
+  margin-top: 0;
+}
+
+.rm-genre{
+  margin-top: 0;
+  font-size: 12px;
+}
+
+/* ============================================================
+   WRITE — Compact 2x2 Oval Stats (label above, value below)
+   Ultra clean + less tall
+   ============================================================ */
+
+/* Smaller outer card */
+.rm-stats-card{
+  padding: 8px 8px;              /* smaller container */
+  border-radius: 0px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Slim oval pills */
+.rm-stat{
+  border-radius: 999px;
+  padding: 8px 10px 7px;          /* tighter vertical */
+  min-height: 44px;               /* controlled height */
+  display: flex;
+  flex-direction: column;         /* STACK label + number */
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+}
+
+/* Title */
+.rm-stat-label{
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  font-weight: 800;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+/* Number */
+.rm-stat-value{
+  font-size: 14px;                /* bigger now that it's below */
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Make card feel less bulky */
+.rm-meta{
+  gap: 7px;                       /* less vertical stacking */
+}
+
+/* Slightly tighter target card */
+.rm-target-shell{
+  padding: 8px 10px;
+  border-radius: 0px;
+}
+
+.rm-progress-track{
+  height: 7px;
+}
+
+.rm-progress-label{
+  margin-top: 4px;
+  font-size: 10.5px;
+}
+
+/* Slim session chip */
+.rm-session-words{
+  padding: 6px 10px;
+  font-size: 11.5px;
+  border-radius: 0px;
+}
+
+/* 4px space between cover and stats */
+.rm-middle{
+  display: flex;
+  flex-direction: column;
+  gap: 0px; /* <-- this is the separation */
+}
