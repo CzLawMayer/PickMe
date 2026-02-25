@@ -2016,3 +2016,180 @@ aside.library-feature .rm-shell {
   background-color: #1e88e5 !important;   /* blue */
   color: #fff !important;
 }
+
+
+
+
+/* =========================================================
+   FIX: author + chapters/pill padding + true centering
+   (PUT AT VERY BOTTOM)
+========================================================= */
+
+/* 1) One shared "lane" width for divider + centered blocks */
+.submit-feature-shell{
+  --sf-lane-w: var(--sf-cover-w, min(320px, 70%));
+}
+
+/* dividers: consistent and centered */
+.submit-feature-shell hr.meta-hr{
+  width: var(--sf-lane-w) !important;
+  margin: 6px auto !important;
+}
+
+/* 2) AUTHOR: center it inside the same lane + exact padding */
+.submit-feature-shell .feature-author{
+  width: var(--sf-lane-w) !important;
+  margin: 0 auto !important;
+
+  padding: 2px 0 !important;     /* <-- your “2px up/down” */
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+
+  line-height: 1 !important;
+}
+
+/* kill hidden spacing inside author text/link */
+.submit-feature-shell .feature-author .meta-username,
+.submit-feature-shell .feature-author .feature-author-name{
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+/* 3) CHAPTERS + PILL ROW: same lane, tight + aligned */
+.submit-feature-shell .align-left{
+  width: var(--sf-lane-w) !important;  /* stop full-width “ceiling” effects */
+  margin: 0 auto !important;
+  padding: 0 !important;
+
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.submit-feature-shell .meta-chapters-row{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 10px !important;
+  padding: 2px 0 !important;      /* <-- consistent 2px up/down */
+  margin: 0 !important;
+
+  line-height: 1 !important;
+}
+
+.submit-feature-shell .meta-chapters{
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* 4) PILL: keep pill shape + remove weird vertical offsets */
+.submit-feature-shell .meta-chapters-row .genre-pill{
+  margin: 0 !important;
+  transform: none !important;
+
+  padding: 4px 10px !important;   /* pill feel */
+  border-radius: 999px !important;
+  line-height: 1 !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+
+/* =========================================================
+   FINAL HARD OVERRIDES — fix title/author/chapters spacing
+   (PASTE AS THE LAST THING IN THE FILE)
+========================================================= */
+
+.submit-feature-shell{
+  --sf-lane-w: var(--sf-cover-w, min(320px, 70%));
+}
+
+/* Title: EXACTLY 2px up/down (kills the accidental 20px margin) */
+.submit-feature-shell .rm-title{
+  margin: 0 !important;
+  padding: 2px 0 !important;
+  line-height: 1.05 !important;
+  width: var(--sf-lane-w) !important;
+}
+
+/* All dividers: same width + same spacing */
+.submit-feature-shell hr.meta-hr{
+  width: var(--sf-lane-w) !important;
+  margin: 6px auto !important;
+}
+
+/* Author row: same lane, exact padding */
+.submit-feature-shell .feature-author{
+  width: var(--sf-lane-w) !important;
+  margin: 0 auto !important;
+  padding: 2px 0 !important;
+  line-height: 1 !important;
+}
+
+/* remove any hidden spacing in the author text/link */
+.submit-feature-shell .feature-author .meta-username,
+.submit-feature-shell .feature-author .feature-author-name{
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Chapters + pill: same lane + exact padding */
+.submit-feature-shell .align-left{
+  width: var(--sf-lane-w) !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+}
+
+.submit-feature-shell .meta-chapters-row{
+  margin: 0 !important;
+  padding: 2px 0 !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+}
+
+.submit-feature-shell .meta-chapters{
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.submit-feature-shell .meta-chapters-row .genre-pill{
+  margin: 0 !important;
+  transform: none !important;
+  line-height: 1 !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+}
+
+/* =========================================================
+   FIX: author has more space BELOW (tighten the divider after it)
+   (PASTE AT VERY BOTTOM)
+========================================================= */
+
+/* Author row stays 2px up/down */
+.submit-feature-shell .feature-author{
+  padding: 2px 0 !important;
+  margin: 0 !important;
+}
+
+/* The divider right after the author: make its TOP margin smaller */
+.submit-feature-shell .feature-author + hr.meta-hr{
+  margin-top: 2px !important;     /* was effectively larger */
+  margin-bottom: 6px !important;  /* keep overall rhythm */
+}
+
+.submit-feature-shell .rm-title{
+  margin: 16px 0 !important;   /* <- this is NOT 2px, it’s 20px */
+}
