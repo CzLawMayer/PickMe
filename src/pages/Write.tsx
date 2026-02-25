@@ -824,7 +824,7 @@ export default function WritePage() {
                   {sessionWordDelta.toLocaleString()} words
                 </div>
 
-                <div className="rm-genre">{mainGenreLabel}</div>
+
               </div>
             </div>
 

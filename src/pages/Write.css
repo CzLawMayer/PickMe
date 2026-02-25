@@ -1871,3 +1871,76 @@
   flex-direction: column;
   gap: 0px; /* <-- this is the separation */
 }
+
+
+
+/* =========================
+   WRITE — Genre pill (match Submit page)
+========================= */
+
+.rm-genre{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 2px 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+
+  color: rgba(255,255,255,0.88);
+  font-size: 13px;
+  font-weight: 700;
+
+  background: transparent;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================
+   WRITE — genre pill = Library genre-pill shine
+   (paste at very bottom of Write.css)
+========================= */
+
+.rm-genre{
+  position: relative;
+  overflow: hidden;
+  transition: filter 200ms ease;
+}
+
+.rm-genre:hover{
+  filter: brightness(1.08);
+}
+
+.rm-genre::after{
+  content: "";
+  position: absolute;
+  inset: -40% -120% -40% -120%;
+  background: linear-gradient(
+    75deg,
+    transparent 0%,
+    rgba(255,255,255,0.10) 35%,
+    rgba(255,255,255,0.35) 50%,
+    rgba(255,255,255,0.10) 65%,
+    transparent 100%
+  );
+  transform: translateX(-60%) rotate(8deg);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.rm-genre:hover::after{
+  animation: pill-shine 700ms ease-out forwards;
+  opacity: 1;
+}
+
+/* reuse the same keyframes name */
+@keyframes pill-shine{
+  from{ transform: translateX(-60%) rotate(8deg); }
+  to  { transform: translateX(60%)  rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .rm-genre:hover::after{ animation: none; opacity: 0.15; }
+}
