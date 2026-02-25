@@ -1995,3 +1995,24 @@ aside.library-feature .rm-shell {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+
+
+
+/* =========================================
+   Hero CTA buttons — separate colors
+========================================= */
+
+/* IMPORT (first button) */
+.lib-hero-cta .add-book-btn:first-child{
+  background-color: #6c2ea8 !important;   /* purple */
+  color: #fff !important;
+}
+
+
+
+/* ADD BOOK (second button) */
+.lib-hero-cta .add-book-btn:last-child{
+  background-color: #1e88e5 !important;   /* blue */
+  color: #fff !important;
+}
