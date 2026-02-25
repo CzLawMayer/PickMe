@@ -1402,87 +1402,596 @@ aside.library-feature .rm-shell {
   margin: 2px 0 !important;
 }
 
-/* ============================================================
-   ONLY CHANGE: SUBMIT FEATURE GENRE PILLS
-   Make them behave EXACTLY like the main page pill.
-   (same sizing + same shine, and remove the <li> capsule)
-============================================================ */
-
-/* remove the capsule created by .meta-tags--outline li */
-.submit-feature-shell .meta-tags--outline li{
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  color: inherit !important;
-  font-size: inherit !important;
-  font-weight: inherit !important;
-  display: contents !important; /* key: no encasing box */
+/* Smaller genre pills in SubmitFeaturePanel */
+.submit-feature-shell .meta-tags{
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
 }
 
-/* EXACT clone of .library-app .lib-card .genre-pill */
+.submit-feature-shell .meta-tags .genre-pill{
+  display: inline-flex;
+  align-items: center;
+
+  padding: 4px 8px;          /* smaller */
+  border-radius: 999px !important;
+
+  border: 1px solid;         /* inline borderColor still applies */
+  white-space: nowrap;
+  line-height: 1;
+  font-size: 11px;           /* smaller */
+  font-weight: 700;
+}
+
+
+/* ================================
+   SubmitFeaturePanel — action row (balanced)
+================================ */
+
+/* Make the row compact + centered (not space-between) */
+.submit-feature-shell .meta-actions{
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+
+  gap: 0px !important;          /* spacing between the 4 icons */
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Give each icon its own consistent lane so they don't collide */
+.submit-feature-shell .meta-actions > *{
+  flex: 0 0 62px !important;     /* lane width */
+  width: 62px !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+/* If Like/Save internally are flex rows, keep them centered */
+.submit-feature-shell .meta-actions .meta-icon-btn,
+.submit-feature-shell .meta-actions .comment-btn,
+.submit-feature-shell .meta-actions .star-btn{
+  flex: 0 0 auto !important;
+  width: 62px !important;
+}
+/* =========================================================
+   SubmitFeaturePanel — remove vertical space around genre pill
+   (tight block, sits right under the chapter divider)
+========================================================= */
+
+/* This selects: chapters .align-left  +  hr  +  genres .align-left */
+.submit-feature-shell .rm-middle .align-left + hr.meta-hr{
+  margin-bottom: 2px !important;    /* divider below chapters */
+}
+
+.submit-feature-shell .rm-middle .align-left + hr.meta-hr + .align-left{
+  margin: 0 !important;
+  padding: 0 !important;
+
+  /* IMPORTANT: kill any inherited “center everything” flex that adds height */
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Tighten the inner wrappers */
+.submit-feature-shell .rm-middle .align-left + hr.meta-hr + .align-left .meta-tags-block{
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+.submit-feature-shell .rm-middle .align-left + hr.meta-hr + .align-left .meta-tags{
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Only first pill */
+.submit-feature-shell .rm-middle .align-left + hr.meta-hr + .align-left .genre-pill:nth-of-type(n+2){
+  display: none !important;
+}
+
+/* =========================================================
+   SubmitFeaturePanel — Final vertical tightening pass
+   Only vertical spacing adjustments
+========================================================= */
+
+/* 1️⃣ Bring cover closer to title */
+.submit-feature-shell .rm-title{
+  margin-bottom: -40px !important;
+}
+
+.submit-feature-shell .rm-cover-btn{
+  margin-top: 0 !important;
+}
+
+/* 2️⃣ Push author name slightly lower (2px) */
+.submit-feature-shell .feature-author{
+  margin-top: 8px !important;   /* was ~6 */
+  margin-bottom: 4px !important;
+}
+
+/* 3️⃣ Reduce divider spacing */
+.submit-feature-shell hr.meta-hr{
+  margin: 6px 0 !important;
+}
+
+/* 4️⃣ Tighten icon row vertical breathing */
+.submit-feature-shell .meta-actions{
+  margin: -8px 0 !important;
+  padding: 0 !important;
+}
+
+/* 5️⃣ Bring counts closer to icons */
+.submit-feature-shell .meta-icon-count{
+  margin-top: -12px !important;
+}
+
+/* 6️⃣ Reduce spacing around chapters text */
+.submit-feature-shell .meta-chapters{
+  margin: 0px 0 !important;
+  padding: 0 !important;
+}
+
+/* 7️⃣ Keep genre tight under divider */
+.submit-feature-shell .genre-pill{
+  margin-top: 4px !important;
+}
+
+/* =========================================================
+   SubmitFeaturePanel — tighten icon ↔ count spacing (HARD)
+========================================================= */
+
+/* Kill any internal gap/margins the button components add */
+.submit-feature-shell .meta-actions .meta-icon-btn,
+.submit-feature-shell .meta-actions .comment-btn,
+.submit-feature-shell .meta-actions .star-btn{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;          /* THIS is usually the real culprit */
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Remove any hidden margins on the icon + count nodes */
+.submit-feature-shell .meta-actions .meta-icon-glyph,
+.submit-feature-shell .meta-actions .material-symbols-outlined,
+.submit-feature-shell .meta-actions svg{
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.submit-feature-shell .meta-actions .meta-icon-count{
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+/* If any component wraps the count in <p> or similar, nuke that too */
+.submit-feature-shell .meta-actions p,
+.submit-feature-shell .meta-actions span{
+  margin-block: 0 !important;
+}
+
+/* 4️⃣ Tighten icon row vertical breathing */
+.submit-feature-shell .meta-actions{
+  margin: -8px 0 !important;
+  padding: 0 !important;
+}
+
+/* =========================================
+   SubmitFeaturePanel — add vertical air
+   around icon + count block only
+========================================= */
+
+.submit-feature-shell .meta-actions{
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+}
+
+/* If you want slightly more space below the counts only */
+.submit-feature-shell .meta-actions .meta-icon-btn{
+  padding-bottom: 0px !important;
+}
+
+/* =========================================================
+   SubmitFeaturePanel — dividers match cover width (FIXED)
+========================================================= */
+
+/* One shared width for BOTH the cover and the dividers */
+.submit-feature-shell{
+  --sf-cover-w: min(320px, 70%);
+}
+
+/* Cover uses the shared width */
+.submit-feature-shell .rm-cover-box{
+  width: var(--sf-cover-w) !important;
+}
+
+/* Dividers use the exact same shared width */
+.submit-feature-shell hr.meta-hr{
+  width: var(--sf-cover-w) !important;
+  margin: 10px auto !important;       /* keep your spacing feel; tweak if needed */
+  border: 0 !important;
+  height: 1px !important;
+  background: rgba(255, 255, 255, 0.18) !important; /* make sure it's visible */
+}
+
+/* =========================================================
+   SubmitFeaturePanel — place genre pill to the right of chapters
+========================================================= */
+
+/* Make the chapters row a horizontal flex row */
+.submit-feature-shell .meta-chapters-row{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;        /* space between text and pill */
+}
+
+/* Remove the old divider spacing between them */
+.submit-feature-shell .meta-tags-block{
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* SubmitFeaturePanel: kill ONLY the pill's extra vertical spacing */
+.submit-feature-shell .meta-chapters-row .genre-pill{
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+
+  /* keep it pill-shaped but remove the “floating” vertical padding */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+
+  /* keep horizontal padding so it still looks like a pill */
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+
+  line-height: 18px !important;      /* gives it height without padding */
+  height: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* SubmitFeaturePanel: chapters + pill perfectly centered */
+.submit-feature-shell .meta-chapters-row{
+  display: inline-flex;
+  align-items: center;       /* vertical align */
+  justify-content: center;   /* center the pair */
+  gap: 10px;
+  line-height: 1;
+}
+
+/* remove default <p> spacing */
+.submit-feature-shell .meta-chapters{
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* pill baseline alignment */
+.submit-feature-shell .genre-pill{
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  transform: translateY(-0.5px); /* tiny optical align */
+}
+
+
+/* =========================================================
+   SubmitFeaturePanel — FORCE genre pill shape (final)
+   Put this at the VERY BOTTOM
+========================================================= */
+
 .submit-feature-shell .genre-pill{
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  font-size: 11px !important;
+  justify-content: center !important;
+
+  height: auto !important;
   line-height: 1 !important;
-  font-weight: 600 !important;
-  padding: 4px 8px !important;
-  border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  color: #fff !important;
+
+  padding: 4px 10px !important;        /* pill padding */
+  border-radius: 999px !important;     /* pill shape */
+
   white-space: nowrap !important;
   max-width: 100% !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 
-  position: relative !important;
-  overflow: hidden !important;
-  transition: transform 120ms ease, filter 120ms ease !important;
+  margin: 0 !important;                /* kill the “floating” */
+  transform: none !important;
 }
 
-/* prevent any “button” effects from elsewhere */
-.submit-feature-shell .genre-pill,
-.submit-feature-shell .genre-pill:hover,
-.submit-feature-shell .genre-pill:focus{
-  transform: none !important;
-  box-shadow: none !important;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   SubmitFeaturePanel — bring the 4 icons closer together (+ stay within dividers)
+   (PUT AT VERY BOTTOM)
+========================================================= */
+
+.submit-feature-shell .rm-middle .meta-actions{
+  width: var(--sf-cover-w) !important;     /* match divider/cover width */
+  margin: 0 auto !important;
+
+  display: flex !important;
+  justify-content: center !important;      /* stop space-evenly spreading */
+  align-items: flex-start !important;
+
+  gap: 4px !important;                   /* <- 4px closer (was 22px) */
+}
+
+/* Kill the “lane widths” that keep them far apart */
+.submit-feature-shell .rm-middle .meta-actions > *{
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.submit-feature-shell .rm-middle .meta-actions .meta-icon-btn,
+.submit-feature-shell .rm-middle .meta-actions .comment-btn,
+.submit-feature-shell .rm-middle .meta-actions .star-btn{
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+
+/* =========================================================
+   SubmitFeaturePanel — per-button ICON scale multipliers
+   (position-based, works even if class names differ)
+========================================================= */
+
+.submit-feature-shell{
+  --like-scale: 1.00;
+  --comment-scale: 0.95;
+  --star-scale: 1.13;
+  --save-scale: 1.08;
+}
+
+/* helper: scale ONLY the icon (not the count) */
+.submit-feature-shell .meta-actions > :nth-child(1) .material-symbols-outlined,
+.submit-feature-shell .meta-actions > :nth-child(1) svg{
+  transform: scale(var(--like-scale));
+  transform-origin: center;
+}
+
+.submit-feature-shell .meta-actions > :nth-child(2) .material-symbols-outlined,
+.submit-feature-shell .meta-actions > :nth-child(2) svg{
+  transform: scale(var(--comment-scale));
+  transform-origin: center;
+}
+
+.submit-feature-shell .meta-actions > :nth-child(3) .material-symbols-outlined,
+.submit-feature-shell .meta-actions > :nth-child(3) svg{
+  transform: scale(var(--star-scale));
+  transform-origin: center;
+}
+
+.submit-feature-shell .meta-actions > :nth-child(4) .material-symbols-outlined,
+.submit-feature-shell .meta-actions > :nth-child(4) svg{
+  transform: scale(var(--save-scale));
+  transform-origin: center;
+}
+
+
+/* =========================================================
+   SubmitFeaturePanel — new cover-first layout polish
+========================================================= */
+
+.submit-feature-shell .rm-cover-btn{
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.submit-feature-shell .rm-title{
+  text-align: center;
+  margin: 14px 18px 6px;
+}
+
+.submit-feature-shell > .meta-hr{
+  margin: 8px auto 10px;
+}
+
+/* =========================================================
+   SubmitFeaturePanel — precise spacing adjustments
+========================================================= */
+
+/* 1️⃣ 8px padding above the book cover */
+.submit-feature-shell .rm-cover-btn{
+  padding-top: 8px !important;
+}
+
+/* 2️⃣ Title: 4px padding above & below + smaller font */
+.submit-feature-shell .rm-title{
+  padding: 4px 0 !important;          /* 4px top & bottom */
+  margin: 0 !important;               /* remove extra margin */
+  font-size: 18px !important;         /* decrease size (adjust if needed) */
+  line-height: 1.2 !important;
+}
+
+/* 3️⃣ Author: 4px padding around */
+.submit-feature-shell .feature-author{
+  padding: 4px 0 !important;
+  margin: 0 !important;
+}
+
+/* =========================================
+   Make title + author perfectly symmetrical
+========================================= */
+
+/* TITLE */
+.submit-feature-shell .rm-title{
+  margin: 0 !important;
+  padding: 2px 0 !important;     /* 2px top & bottom */
+  line-height: 1 !important;     /* removes hidden vertical space */
+  display: block;
+}
+
+/* AUTHOR ROW */
+.submit-feature-shell .feature-author{
+  margin: 0 !important;
+  padding: 2px 0 !important;     /* 2px top & bottom */
+  line-height: 1 !important;
+}
+
+/* Kill any hidden spacing inside */
+.submit-feature-shell .feature-author-name,
+.submit-feature-shell .meta-username{
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+/* =========================================
+   FIX: remove rm-middle top ceiling spacing
+========================================= */
+
+.submit-feature-shell .rm-middle{
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+/* Remove any inherited top spacing inside */
+.submit-feature-shell .rm-middle > *{
   margin-top: 0 !important;
 }
 
-/* same shine as main page */
-.submit-feature-shell .genre-pill::after{
-  content: "" !important;
-  position: absolute !important;
-  inset: -40% -120% -40% -120% !important;
-  background: linear-gradient(
-    75deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.10) 35%,
-    rgba(255, 255, 255, 0.35) 50%,
-    rgba(255, 255, 255, 0.10) 65%,
-    transparent 100%
-  ) !important;
-  transform: translateX(-60%) rotate(8deg) !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
+/* =========================================
+   FIX: remove vertical centering from rm-shell
+========================================= */
+
+.submit-feature-shell .rm-shell{
+  align-items: stretch !important;   /* or remove the property entirely */
 }
 
-.submit-feature-shell .genre-pill:hover{
-  filter: brightness(1.08) !important;
+/* =========================================
+   SubmitFeaturePanel — remove extra space under title
+========================================= */
+
+.submit-feature-shell .rm-title{
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;   /* this is the big one */
+  padding: 0 !important;
+  line-height: 1.1 !important;
 }
 
-.submit-feature-shell .genre-pill:hover::after{
-  animation: pill-shine 700ms ease-out forwards !important;
-  opacity: 1 !important;
+/* the divider right after the title */
+.submit-feature-shell .rm-title + .meta-hr{
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
 }
 
-/* reuse same keyframes name as main page */
-@keyframes pill-shine{
-  from { transform: translateX(-60%) rotate(8deg); }
-  to   { transform: translateX(60%)  rotate(8deg); }
+/* If rm-shell uses grid/flex gap, shrink it */
+.submit-feature-shell .rm-shell{
+  row-gap: 0 !important;
+  gap: 0 !important;
+}
+
+/* =========================================================
+   SubmitFeaturePanel — kill the leftover "grid 1fr" space
+   (PUT AT VERY BOTTOM)
+========================================================= */
+
+.submit-feature-shell .rm-shell{
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+
+  /* remove any spacing the old layouts were adding */
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+}
+
+/* Keep everything tight under the title */
+.submit-feature-shell .rm-title{
+  margin: 0 !important;
+  padding: 2px 0 !important;
+  line-height: 1 !important;
+}
+
+/* Divider right after title: tiny spacing only */
+.submit-feature-shell .rm-title + .meta-hr{
+  margin: 2px auto !important;
+}
+
+/* Make the metadata wrapper not introduce “ceiling” space */
+.submit-feature-shell .rm-middle{
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+/* Push CTA buttons to the bottom WITHOUT creating space under the title */
+.submit-feature-shell .rm-actions{
+  margin-top: auto !important;
+}
+
+/* =========================================
+   Title: exactly 2px above and below
+========================================= */
+
+.submit-feature-shell .rm-title{
+  margin: 20px 0 !important;   /* 2px top, 2px bottom */
+  padding: 0 !important;
+  line-height: 1 !important;  /* prevents hidden font space */
+}
+
+/* =========================================
+   Make divider spacing symmetrical around author
+========================================= */
+
+/* Force all feature panel dividers to be identical */
+.submit-feature-shell hr.meta-hr{
+  margin: 6px auto !important;   /* same above and below */
+}
+
+/* Remove extra margin from author */
+.submit-feature-shell .feature-author{
+  margin: 0 !important;
+  padding: 0 !important;
 }

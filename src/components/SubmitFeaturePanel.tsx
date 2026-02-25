@@ -47,6 +47,18 @@ function getCoverSrcFromBook(book?: SubmitPanelBook | null): string | null {
   return null;
 }
 
+/* ✅ Same exact helper as in Submit.tsx */
+function colorFromString(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h * 31 + seed.charCodeAt(i)) % 360;
+  }
+  const bg = `hsl(${h} 70% 50% / 0.16)`;
+  const border = `hsl(${h} 70% 50% / 0.38)`;
+  const text = `hsl(${h} 85% 92%)`;
+  return { bg, border, text };
+}
+
 export type SubmitFeatureMetaState = {
   liked: boolean;
   saved: boolean;
@@ -89,8 +101,7 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
   const chapterCount = book.project?.chapters?.length ?? 0;
 
   const submission = book.project?.submission ?? {};
-  const authorLabel =
-    (submission.author?.trim() || book.author?.trim() || "Unknown author");
+  const authorLabel = submission.author?.trim() || book.author?.trim() || "Unknown author";
 
   const tags =
     Array.isArray(book.tags) && book.tags.length > 0
@@ -108,15 +119,12 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
   const hasUserCommentedCenter = false;
   const hasUserReviewedCenter = false;
 
-  const profileAvatarSrc =
-    (profile as any)?.avatarUrl || (profile as any)?.photo || "";
+  const profileAvatarSrc = (profile as any)?.avatarUrl || (profile as any)?.photo || "";
 
   const openHomeAtBook = (mode?: "comments" | "reviews") => {
     const id = String(book.id ?? "");
     if (!id) return;
-    const qs = mode
-      ? `/?book=${encodeURIComponent(id)}&open=${mode}`
-      : `/?book=${encodeURIComponent(id)}`;
+    const qs = mode ? `/?book=${encodeURIComponent(id)}&open=${mode}` : `/?book=${encodeURIComponent(id)}`;
     navigate(qs);
   };
 
@@ -166,21 +174,26 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
   return (
     <div className="submit-feature-shell">
       <div className="rm-shell">
+        {/* COVER FIRST */}
+        <div className="rm-cover-btn" aria-hidden="true">
+          <div className="rm-cover-box">
+            {coverSrc ? (
+              <img src={coverSrc} alt={`${book.title} cover`} />
+            ) : (
+              <span className="rm-cover-plus">+</span>
+            )}
+          </div>
+        </div>
+
+        {/* TITLE BELOW COVER */}
         <h2 className="rm-title">{book.title || "Untitled project"}</h2>
 
-        <div className="rm-middle">
-          <div className="rm-cover-btn" aria-hidden="true">
-            <div className="rm-cover-box">
-              {coverSrc ? (
-                <img src={coverSrc} alt={`${book.title} cover`} />
-              ) : (
-                <span className="rm-cover-plus">+</span>
-              )}
-            </div>
-          </div>
+        {/* DIVIDER BELOW TITLE */}
+        <hr className="meta-hr" />
 
+        {/* EVERYTHING ELSE */}
+        <div className="rm-middle">
           {/* PROFILE ROW */}
-          <hr className="meta-hr" />
           <div className="feature-author">
             <Link
               to="/profile"
@@ -226,10 +239,7 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
               onToggle={onToggleLike}
             />
 
-            <CommentButton
-              active={hasUserCommentedCenter}
-              onOpenComments={() => openHomeAtBook("comments")}
-            />
+            <CommentButton active={hasUserCommentedCenter} onOpenComments={() => openHomeAtBook("comments")} />
 
             <StarButton
               rating={combinedRating}
@@ -245,31 +255,33 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
             />
           </div>
 
-          {/* CHAPTERS */}
+          {/* CHAPTERS + GENRE (same row) */}
           <hr className="meta-hr" />
           <div className="align-left">
-            <p className="meta-chapters">
-              <span>
-                {chapterCount} chapter{chapterCount === 1 ? "" : "s"}
-              </span>
-            </p>
-          </div>
+            <div className="meta-chapters-row">
+              <p className="meta-chapters">
+                <span>
+                  {chapterCount} chapter{chapterCount === 1 ? "" : "s"}
+                </span>
+              </p>
 
-          {/* GENRES */}
-          <hr className="meta-hr" />
-          <div className="align-left">
-            <div className="meta-tags-block">
-              <ul className="meta-tags meta-tags--outline">
-                {tags.map((t) => (
-                  <li key={t}>
-                    <span className="genre-pill" title={t}>
-                      {t}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {tags[0] && (
+                <span
+                  className="genre-pill"
+                  title={tags[0]}
+                  style={{
+                    backgroundColor: colorFromString(tags[0]).bg,
+                    borderColor: colorFromString(tags[0]).border,
+                    color: colorFromString(tags[0]).text,
+                  }}
+                >
+                  {tags[0]}
+                </span>
+              )}
             </div>
           </div>
+
+          <hr className="meta-hr" />
         </div>
 
         {/* CTA buttons */}
