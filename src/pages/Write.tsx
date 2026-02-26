@@ -12,6 +12,8 @@ import SubmissionModal from "@/components/SubmissionModal";
 import "./Write.css";
 import { useNavigate, useLocation } from "react-router-dom";
 
+import { useConfirm } from "@/components/ConfirmPopover";
+
 type Chapter = {
   id: string;
   title: string;
@@ -37,6 +39,8 @@ type ProjectState = {
 };
 
 export default function WritePage() {
+  const confirm = useConfirm();
+
   const [isLeftOpen, setLeftOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
   const location = useLocation() as any;
@@ -44,8 +48,7 @@ export default function WritePage() {
 
   // status coming from Submit / Preview (default inProgress)
   const statusFromLocation: "inProgress" | "published" =
-    (location.state?.status as "inProgress" | "published" | undefined) ===
-    "published"
+    (location.state?.status as "inProgress" | "published" | undefined) === "published"
       ? "published"
       : "inProgress";
 
@@ -106,7 +109,7 @@ export default function WritePage() {
     if (incoming.chapters && incoming.chapters.length > 0) {
       setChapters(incoming.chapters);
       setActiveId(incoming.chapters[0].id);
-      resetSessionRef.current = true; // reset session baseline when a project is loaded
+      resetSessionRef.current = true;
     }
   }, [location.state]);
 
@@ -543,16 +546,12 @@ export default function WritePage() {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {
-      window.removeAllListeners?.("mousemove"); // harmless if not present
-      window.removeAllListeners?.("mouseup");
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
   }, [isDraggingToolbar]);
 
-  const handleToolbarHandleMouseDown = (
-    e: React.MouseEvent<HTMLDivElement>
-  ) => {
+  const handleToolbarHandleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingToolbar(true);
@@ -573,8 +572,6 @@ export default function WritePage() {
     "write-shell" + (isLightMode ? " write-shell--light" : "");
 
   const projectTitle = submission?.title?.trim() || "Project title not set";
-  const mainGenreLabel =
-    submission?.mainGenre?.trim() || "Main genre not selected";
 
   const commitTargetWords = (raw: string) => {
     const n = Number(String(raw).replace(/[^\d]/g, ""));
@@ -583,6 +580,27 @@ export default function WritePage() {
     setTargetDraft(String(safe || ""));
     setIsEditingTarget(false);
   };
+
+  // ✅ confirmation helpers (ALWAYS confirm)
+  const confirmSave = () =>
+    confirm({
+      title: "Save project?",
+      message: "This will save your project to your Submit page.",
+      confirmText: "Save",
+      cancelText: "Cancel",
+      danger: false,
+    });
+
+  const confirmPublishToggle = (nextIsPublished: boolean) =>
+    confirm({
+      title: nextIsPublished ? "Publish project?" : "Unpublish project?",
+      message: nextIsPublished
+        ? "This will publish your project."
+        : "This will unpublish your project.",
+      confirmText: nextIsPublished ? "Publish" : "Unpublish",
+      cancelText: "Cancel",
+      danger: nextIsPublished ? false : true,
+    });
 
   return (
     <div
@@ -723,7 +741,6 @@ export default function WritePage() {
                 </div>
               </button>
 
-              {/* NEW compact meta layout for the CSS you added */}
               <div className="rm-meta">
                 <div className="rm-stats-card" aria-label="Project stats">
                   <div className="rm-stat">
@@ -747,7 +764,9 @@ export default function WritePage() {
 
                   <div className="rm-stat">
                     <span className="rm-stat-label">Read time</span>
-                    <span className="rm-stat-value">~{readingTimeMinutes} min</span>
+                    <span className="rm-stat-value">
+                      ~{readingTimeMinutes} min
+                    </span>
                   </div>
                 </div>
 
@@ -820,16 +839,13 @@ export default function WritePage() {
                 </div>
 
                 <div className="rm-session-words">
-                  Current Session: {sessionWordDelta >= 0 ? "" : ""}
-                  {sessionWordDelta.toLocaleString()} words
+                  Current Session: {sessionWordDelta.toLocaleString()} words
                 </div>
-
-
               </div>
             </div>
 
             <div className="rm-actions">
-              {/* Preview → Preview page, preserving status */}
+              {/* Preview (NO confirm) */}
               <button
                 type="button"
                 className="rm-btn rm-btn-preview"
@@ -866,13 +882,15 @@ export default function WritePage() {
                 Preview
               </button>
 
-              {/* Save → Submit (keep published if already published) */}
+              {/* Save (ALWAYS confirm) */}
               <button
                 type="button"
                 className="rm-btn rm-btn-save"
-                onClick={() => {
-                  const project = buildProject();
+                onClick={async () => {
+                  const ok = await confirmSave();
+                  if (!ok) return;
 
+                  const project = buildProject();
                   const id = crypto.randomUUID();
                   const title = submission?.title?.trim() || "Untitled Project";
 
@@ -890,9 +908,7 @@ export default function WritePage() {
                   };
 
                   const effectiveStatus =
-                    statusFromLocation === "published"
-                      ? "published"
-                      : "inProgress";
+                    statusFromLocation === "published" ? "published" : "inProgress";
 
                   navigate("/submit", {
                     state: {
@@ -906,11 +922,18 @@ export default function WritePage() {
                 Save
               </button>
 
-              {/* Publish → Submit (always published) */}
+              {/* Publish/Unpublish (ALWAYS confirm, both directions) */}
               <button
                 type="button"
                 className="rm-btn rm-btn-publish"
-                onClick={() => {
+                onClick={async () => {
+                  const nextStatus =
+                    statusFromLocation === "published" ? "inProgress" : "published";
+                  const nextIsPublished = nextStatus === "published";
+
+                  const ok = await confirmPublishToggle(nextIsPublished);
+                  if (!ok) return;
+
                   const project = buildProject();
                   const id = crypto.randomUUID();
                   const title = submission?.title?.trim() || "Untitled Project";
@@ -927,11 +950,6 @@ export default function WritePage() {
                     userRating: 0,
                     tags: submission?.mainGenre ? [submission.mainGenre] : [],
                   };
-
-                  const nextStatus =
-                    statusFromLocation === "published"
-                      ? "inProgress"
-                      : "published";
 
                   navigate("/submit", {
                     state: {
@@ -977,10 +995,7 @@ export default function WritePage() {
                   <div className="editor-toolbar-handle-bar" />
                 </div>
 
-                <div
-                  className="editor-toolbar"
-                  aria-label="Text formatting tools"
-                >
+                <div className="editor-toolbar" aria-label="Text formatting tools">
                   <button
                     type="button"
                     className="editor-tool-btn"
@@ -1092,9 +1107,7 @@ export default function WritePage() {
 
                 <button
                   type="button"
-                  className={
-                    "editor-notes-toggle" + (showNotes ? " is-open" : "")
-                  }
+                  className={"editor-notes-toggle" + (showNotes ? " is-open" : "")}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setShowNotes((v) => !v)}
                 >
@@ -1159,20 +1172,11 @@ export default function WritePage() {
           +
         </button>
 
-        <label
-          className="switch"
-          aria-label="Toggle editor light mode"
-          style={{ marginLeft: 10 }}
-        >
-          <input
-            id="input"
-            type="checkbox"
-            checked={!isLightMode}
-            onChange={(e) => setIsLightMode(!e.target.checked)}
-          />
+        <label className="switch" aria-label="Toggle editor light mode" style={{ marginLeft: 10 }}>
+          <input id="input" type="checkbox" checked={!isLightMode} onChange={(e) => setIsLightMode(!e.target.checked)} />
           <span className="slider round">
             <span className="sun-moon">
-              {/* SVGs omitted for brevity, keep your existing ones */}
+              {/* keep your existing SVGs */}
               <svg id="moon-dot-1" className="moon-dot" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
@@ -1182,25 +1186,13 @@ export default function WritePage() {
               <svg id="moon-dot-3" className="moon-dot" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg
-                id="light-ray-1"
-                className="light-ray"
-                viewBox="0 0 100 100"
-              >
+              <svg id="light-ray-1" className="light-ray" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg
-                id="light-ray-2"
-                className="light-ray"
-                viewBox="0 0 100 100"
-              >
+              <svg id="light-ray-2" className="light-ray" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg
-                id="light-ray-3"
-                className="light-ray"
-                viewBox="0 0 100 100"
-              >
+              <svg id="light-ray-3" className="light-ray" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
               <svg id="cloud-1" className="cloud-dark" viewBox="0 0 100 100">
@@ -1212,25 +1204,13 @@ export default function WritePage() {
               <svg id="cloud-3" className="cloud-dark" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg
-                id="cloud-4"
-                className="cloud-light"
-                viewBox="0 0 100 100"
-              >
+              <svg id="cloud-4" className="cloud-light" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg
-                id="cloud-5"
-                className="cloud-light"
-                viewBox="0 0 100 100"
-              >
+              <svg id="cloud-5" className="cloud-light" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
-              <svg
-                id="cloud-6"
-                className="cloud-light"
-                viewBox="0 0 100 100"
-              >
+              <svg id="cloud-6" className="cloud-light" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="50" />
               </svg>
             </span>

@@ -1,10 +1,5 @@
 // src/pages/Preview.tsx
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as THREE from "three";
 
@@ -13,6 +8,8 @@ import AppHeader from "@/components/AppHeader";
 import "./Home.css";
 import "./Home3D.css";
 import "./Preview.css";
+
+import { useConfirm } from "@/components/ConfirmPopover";
 
 // ---------- Types ----------
 type Book = {
@@ -61,6 +58,8 @@ type ProjectState = {
 };
 
 export default function Preview() {
+  const confirm = useConfirm();
+
   const location = useLocation() as any;
   const navigate = useNavigate();
 
@@ -173,9 +172,7 @@ export default function Preview() {
 
   const projectTitle = (center.title ?? "").trim();
   const mainGenreLabel =
-    Array.isArray(center.tags) && center.tags.length > 0
-      ? center.tags[0]
-      : "";
+    Array.isArray(center.tags) && center.tags.length > 0 ? center.tags[0] : "";
 
   const chapterCount = (() => {
     if (Array.isArray(center.chapters) && center.chapters.length > 0) {
@@ -187,7 +184,6 @@ export default function Preview() {
     return 0;
   })();
 
-  // ---- status-aware helper to build payload for Submit
   function makeShelfBook(status: "inProgress" | "published") {
     const project = buildEffectiveProject();
     const submission = project.submission ?? {};
@@ -198,7 +194,7 @@ export default function Preview() {
         title: submission.title?.trim() || center?.title || "Untitled Project",
         author: submission.author?.trim() || center?.author || "",
         year: "",
-        coverUrl: null, // let Submit rebuild from File
+        coverUrl: null,
         likes: 0,
         bookmarks: 0,
         rating: 0,
@@ -214,6 +210,26 @@ export default function Preview() {
     };
   }
 
+  const confirmSave = () =>
+    confirm({
+      title: "Save project?",
+      message: "This will save your project to your Submit page.",
+      confirmText: "Save",
+      cancelText: "Cancel",
+      danger: false,
+    });
+
+  const confirmPublishToggle = (nextIsPublished: boolean) =>
+    confirm({
+      title: nextIsPublished ? "Publish project?" : "Unpublish project?",
+      message: nextIsPublished
+        ? "This will publish your project."
+        : "This will unpublish your project.",
+      confirmText: nextIsPublished ? "Publish" : "Unpublish",
+      cancelText: "Cancel",
+      danger: nextIsPublished ? false : true,
+    });
+
   function handleSaveFromPreview() {
     const effectiveStatus =
       previousStatus === "published" ? "published" : "inProgress";
@@ -221,12 +237,7 @@ export default function Preview() {
     navigate("/submit", { state: payload });
   }
 
-  function handlePublishFromPreview() {
-    const payload = makeShelfBook("published");
-    navigate("/submit", { state: payload });
-  }
-
-  // ---------- 3D + Reader setup (single-book version) ----------
+  // ---------- 3D + Reader setup (your existing logic) ----------
   useEffect(() => {
     const root = threeRootRef.current;
     if (!root || !center) return;
@@ -256,18 +267,14 @@ export default function Preview() {
     const openBookContainer = document.getElementById(
       "open-book-container"
     ) as HTMLDivElement | null;
-    const pageLeft = document.getElementById(
-      "page-left"
-    ) as HTMLDivElement | null;
+    const pageLeft = document.getElementById("page-left") as HTMLDivElement | null;
     const pageRight = document.getElementById(
       "page-right"
     ) as HTMLDivElement | null;
     const navContainer = document.getElementById(
       "nav-container"
     ) as HTMLDivElement | null;
-    const leftArrowBtn = document.getElementById(
-      "left-arrow"
-    ) as HTMLDivElement | null;
+    const leftArrowBtn = document.getElementById("left-arrow") as HTMLDivElement | null;
     const rightArrowBtn = document.getElementById(
       "right-arrow"
     ) as HTMLDivElement | null;
@@ -334,15 +341,13 @@ export default function Preview() {
         pageHeight -
         (parseFloat(computedStyle.paddingTop) +
           parseFloat(computedStyle.paddingBottom));
-      const effectiveHeight = contentAreaHeight;
 
+      const effectiveHeight = contentAreaHeight;
       const originalContent = testPage.innerHTML;
       const pages: string[] = [];
-
       const raw = fullText || "";
 
       let processedText: string;
-
       if (raw.includes("<") && !raw.includes("\n")) {
         processedText = raw;
       } else {
@@ -366,7 +371,6 @@ export default function Preview() {
       testPage.appendChild(measureDiv);
 
       const words = processedText.split(" ");
-
       let currentPageText = "";
       if (titleHtml) currentPageText += titleHtml;
 
@@ -387,9 +391,7 @@ export default function Preview() {
         }
       }
 
-      if (currentPageText.trim() !== "") {
-        pages.push(cleanPage(currentPageText));
-      }
+      if (currentPageText.trim() !== "") pages.push(cleanPage(currentPageText));
 
       testPage.removeChild(measureDiv);
       testPage.innerHTML = originalContent;
@@ -403,22 +405,19 @@ export default function Preview() {
       const authorRaw = (bookData?.author as string | undefined) ?? "";
       const bookAuthor = authorRaw.trim();
 
-      const yearVal =
-        typeof bookData?.year === "number" ? String(bookData.year) : "";
+      const yearVal = typeof bookData?.year === "number" ? String(bookData.year) : "";
       const dedicationText =
-        typeof bookData?.dedication === "string"
-          ? bookData.dedication.trim()
-          : "";
+        typeof bookData?.dedication === "string" ? bookData.dedication.trim() : "";
 
       const chapterTitles: string[] = Array.isArray(bookData?.chapters)
         ? bookData.chapters
             .map((t: string) => String(t ?? ""))
-            .filter((t) => t.trim().length > 0)
+            .filter((t: string) => t.trim().length > 0)
         : [];
       const chapterTexts: string[] = Array.isArray(bookData?.chapterTexts)
         ? bookData.chapterTexts
             .map((t: string) => String(t ?? ""))
-            .filter((t) => t.trim().length > 0)
+            .filter((t: string) => t.trim().length > 0)
         : [];
 
       let tocItems = "";
@@ -468,20 +467,15 @@ export default function Preview() {
             </ul>`
           : "";
 
-        spreads.push({
-          left: leftHtml,
-          right: rightHtml,
-        });
+        spreads.push({ left: leftHtml, right: rightHtml });
       }
 
       let allPages: string[] = [];
-
       if (chapterTexts.length > 0) {
         for (let i = 0; i < chapterTexts.length; i++) {
           const text = chapterTexts[i];
           if (!text) continue;
           const title = chapterTitles[i] ?? `Chapter ${i + 1}`;
-
           const chapterTitleHtml = `
             <div style="text-align:center; margin: 0 0 12px 0;">
               <span style="font-weight:700; font-size:1.4em;">${title}</span>
@@ -550,17 +544,13 @@ export default function Preview() {
 
     function rePaginateBook() {
       bookSpreads = buildBookSpreads();
-      if (currentPageSpread >= bookSpreads.length) {
-        currentPageSpread = bookSpreads.length - 1;
-      }
+      if (currentPageSpread >= bookSpreads.length) currentPageSpread = bookSpreads.length - 1;
       if (currentPageSpread < 0) currentPageSpread = 0;
       updatePageContent(currentPageSpread);
     }
 
     function scheduleRepaginate() {
-      if (paginationTimer !== null) {
-        window.clearTimeout(paginationTimer);
-      }
+      if (paginationTimer !== null) window.clearTimeout(paginationTimer);
       paginationTimer = window.setTimeout(() => {
         if (!isBookOpenLocal) return;
         rePaginateBook();
@@ -725,22 +715,12 @@ export default function Preview() {
       if (!renderer || !camera || !bookMesh) return;
 
       const target = event.target as HTMLElement;
-      if (
-        target.classList.contains("nav-arrow") ||
-        target.id === "nav-container"
-      ) {
-        return;
-      }
-
-      if (openBookContainer.classList.contains("is-open")) {
-        return;
-      }
+      if (target.classList.contains("nav-arrow") || target.id === "nav-container") return;
+      if (openBookContainer.classList.contains("is-open")) return;
 
       const canvasRect = renderer.domElement.getBoundingClientRect();
-      mouse.x =
-        ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
-      mouse.y =
-        -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
+      mouse.x = ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+      mouse.y = -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObject(bookMesh, false);
@@ -795,10 +775,7 @@ export default function Preview() {
           bookMesh.rotation.y = targetRotation;
           bookMesh.userData.isFlipping = false;
 
-          if (
-            pendingOpenAfterFlip &&
-            Math.abs(targetRotation - Math.PI) < 0.01
-          ) {
+          if (pendingOpenAfterFlip && Math.abs(targetRotation - Math.PI) < 0.01) {
             pendingOpenAfterFlip = false;
             openBook();
           }
@@ -811,6 +788,7 @@ export default function Preview() {
     initThree();
     applyTypographyStyles();
     window.addEventListener("resize", onWindowResize);
+
     if (threeRootRef.current && (threeRootRef.current as any).firstChild) {
       const canvas = (threeRootRef.current as HTMLDivElement)
         .firstChild as HTMLCanvasElement;
@@ -821,15 +799,16 @@ export default function Preview() {
 
     return () => {
       window.removeEventListener("resize", onWindowResize);
+
       if (threeRootRef.current && (threeRootRef.current as any).firstChild) {
         const canvas = (threeRootRef.current as HTMLDivElement)
           .firstChild as HTMLCanvasElement;
         canvas.removeEventListener("click", onCanvasClick);
       }
-      if (paginationTimer !== null) {
-        window.clearTimeout(paginationTimer);
-      }
+
+      if (paginationTimer !== null) window.clearTimeout(paginationTimer);
       cancelAnimationFrame(animationId);
+
       if (renderer) {
         renderer.dispose();
         if (renderer.domElement.parentNode === root) {
@@ -909,9 +888,7 @@ export default function Preview() {
                 <div className="rm-meta">
                   <div className="rm-chapters">
                     {chapterCount
-                      ? `${chapterCount} chapter${
-                          chapterCount === 1 ? "" : "s"
-                        }`
+                      ? `${chapterCount} chapter${chapterCount === 1 ? "" : "s"}`
                       : ""}
                   </div>
                   <div className="rm-separator" />
@@ -936,26 +913,37 @@ export default function Preview() {
                   Back to editor
                 </button>
 
+                {/* Save (ALWAYS confirm) */}
                 <button
                   type="button"
                   className="rm-btn rm-btn-save"
-                  onClick={handleSaveFromPreview}
+                  onClick={async () => {
+                    const ok = await confirmSave();
+                    if (!ok) return;
+                    handleSaveFromPreview();
+                  }}
                 >
                   Save
                 </button>
+
+                {/* Publish/Unpublish (ALWAYS confirm, both directions) */}
                 <button
                   type="button"
                   className="rm-btn rm-btn-publish"
-                  onClick={() => {
+                  onClick={async () => {
                     const nextStatus =
                       previousStatus === "published" ? "inProgress" : "published";
+                    const nextIsPublished = nextStatus === "published";
+
+                    const ok = await confirmPublishToggle(nextIsPublished);
+                    if (!ok) return;
+
                     const payload = makeShelfBook(nextStatus);
                     navigate("/submit", { state: payload });
                   }}
                 >
                   {previousStatus === "published" ? "Unpublish" : "Publish"}
                 </button>
-
               </div>
             </div>
           </div>
