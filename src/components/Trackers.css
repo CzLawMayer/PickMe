@@ -1,0 +1,690 @@
+/* src/components/Trackers.css */
+
+/* =========================
+   Tokens
+   ========================= */
+:root {
+  --t-bg: #0a0a0a;
+  --t-panel: #111112;
+  --t-border: #242426;
+  --t-border2: rgba(255, 255, 255, 0.08);
+  --t-text: #ffffff;
+  --t-muted: #9a9a9a;
+  --t-muted2: #6b6b6b;
+
+  --t-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+
+  --t-icon: 40px;        /* header icon box size */
+  --t-icon-radius: 999px;
+  --t-gap: 2px;
+
+  --t-pop-gap: 12px;     /* space between button and panel */
+  --t-pop-radius: 0px;   /* you were using sharp corners */
+}
+
+/* =========================
+   Inline container (in AppHeader)
+   ========================= */
+.trackersInline {
+  display: flex;
+  align-items: center;
+  gap: var(--t-gap);
+}
+
+.trackersItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Make sure these match your header icon buttons visually */
+.trackersIconBtn {
+  width: var(--t-icon);
+  height: var(--t-icon);
+
+  border: 0;
+  background: transparent;
+  color: #b3b3b3;
+
+  border-radius: var(--t-icon-radius);
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  position: relative;
+}
+
+.trackersIconBtn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+}
+
+.trackersIconBtn:focus {
+  outline: none;
+}
+
+.trackersIconBtn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 3px;
+}
+
+/* earned dot */
+.trackersDot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #d4d4d4;
+  border: 1px solid #000;
+}
+
+/* =========================
+   Goal ring (SVG) – fixed circle, no weird square outline
+   ========================= */
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.ringBase {
+  fill: transparent;
+  stroke: #1b1b1c;
+  stroke-width: 2;
+}
+
+.ringProg {
+  fill: transparent;
+  stroke: #ffffff;
+  stroke-width: 2;
+  stroke-linecap: round;
+
+  /* circumference for r=16 is ~100.53 */
+  stroke-dasharray: 100.5;
+  stroke-dashoffset: 100.5;
+
+  transition: stroke-dashoffset 700ms ease;
+}
+
+/* keep the Target icon above the ring */
+.trackersItem .lucide {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================
+   Popover panels (Achievements + Goal)
+   ========================= */
+.trackersPanel {
+  position: absolute;
+  top: calc(100% + var(--t-pop-gap));
+  right: 0;
+
+  background: var(--t-panel);
+  border: 1px solid var(--t-border);
+  border-radius: var(--t-pop-radius);
+  box-shadow: var(--t-shadow);
+
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* sizes */
+.trackersPanel--wide {
+  width: 380px;
+  max-height: 550px;
+  display: flex;
+  flex-direction: column;
+}
+
+.trackersPanel--goal {
+  width: 288px;
+  padding: 20px;
+}
+
+/* =========================
+   Panel header (Achievements)
+   ========================= */
+.trackersPanelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid var(--t-border);
+}
+
+.trackersPanelTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--t-text);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.trackersPanelClose {
+  border: 0;
+  background: transparent;
+  color: #7a7a7a;
+  cursor: pointer;
+
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.trackersPanelClose:hover {
+  color: #ffffff;
+}
+
+/* Achievements body MUST scroll */
+.trackersPanelBody {
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--t-panel);
+}
+
+/* scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 0px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+/* =========================
+   Badge row
+   ========================= */
+.badgeRow {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  margin: 4px;
+  transition: background 180ms ease;
+}
+
+.badgeRow:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.badgeIconBox {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid;
+  border-radius: 12px;
+}
+
+.badgeIconBox--inactive {
+  border-color: #222224;
+  background: rgba(255, 255, 255, 0.02);
+  color: #4a4a4a;
+}
+
+.badgeIconBox--active {
+  background: #1a1a1c;
+  color: currentColor;
+}
+
+/* text */
+.badgeMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.badgeTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.badgeTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.badgeTitle--on {
+  color: #ffffff;
+}
+
+.badgeTitle--off {
+  color: #6a6a6a;
+}
+
+.badgeDesc {
+  margin: 2px 0 0;
+  font-size: 10px;
+  color: #8a8a8a;
+  line-height: 1.2;
+}
+
+.badgeMeta {
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+.badgeTag {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.badgeTag--off {
+  color: #232323;
+}
+
+.badgeCurrent {
+  margin: 2px 0 0;
+  font-size: 9px;
+  font-weight: 700;
+  color: #8a8a8a;
+}
+
+/* progress bars */
+.badgeBars {
+  margin-top: 6px;
+}
+
+.barRow {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+}
+
+.barCell {
+  flex: 1;
+  background: #1c1c1e;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  width: 0%;
+  transition: width 700ms ease;
+}
+
+.thresholdRow {
+  display: flex;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.thresholdCell {
+  flex: 1;
+  font-size: 8px;
+  font-weight: 900;
+  color: #6a6a6a;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================
+   Tier colors (match original palette)
+   ========================= */
+.tierColor--orange {
+  color: #fb923c;
+}
+.tierColor--pink {
+  color: #ec4899;
+}
+.tierColor--purple {
+  color: #a855f7;
+}
+.tierColor--blue {
+  color: #3b82f6;
+}
+.tierColor--yellow {
+  color: #facc15;
+}
+
+.tierFill--orange {
+  background: #fb923c;
+}
+.tierFill--pink {
+  background: #ec4899;
+}
+.tierFill--purple {
+  background: #a855f7;
+}
+.tierFill--blue {
+  background: #3b82f6;
+}
+.tierFill--yellow {
+  background: #facc15;
+}
+
+/* =========================
+   Goal panel UI
+   ========================= */
+.panelKicker {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #7f7f7f;
+}
+
+.panelKicker--tight {
+  margin-bottom: 8px;
+}
+
+.goalNums {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.goalNow {
+  font-size: 38px;
+  font-weight: 900;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.goalTotal {
+  font-size: 12px;
+  color: #8a8a8a;
+}
+
+.goalBar {
+  height: 4px;
+  background: #1c1c1e;
+  margin-bottom: 16px;
+}
+
+.goalBarFill {
+  height: 100%;
+  background: #ffffff;
+  width: 0%;
+  transition: width 700ms ease;
+}
+
+/* pace box */
+.paceBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  margin-bottom: 14px;
+}
+
+.paceIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  flex: 0 0 auto;
+}
+
+.paceLabel {
+  margin: 0 0 2px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+
+.paceValue {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b5b5b5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paceStrong {
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.goalDone {
+  color: #4ade80;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* buttons */
+.btnAdjust {
+  width: 100%;
+  height: 42px;
+
+  border-radius: 14px;
+  border: 1px solid #2a2a2c;
+  background: #1a1a1c;
+
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  cursor: pointer;
+}
+
+.btnAdjust:hover {
+  background: #202022;
+}
+
+/* customize view */
+.customize {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.seg {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid #242426;
+  background: #000;
+}
+
+.segBtn {
+  flex: 1;
+  height: 30px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #7a7a7a;
+
+  cursor: pointer;
+}
+
+.segBtn:hover {
+  color: #bdbdbd;
+}
+
+.segBtn--on {
+  background: #1a1a1c;
+  color: #ffffff;
+}
+
+.catGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.catBtn {
+  height: 36px;
+  padding: 0 12px;
+
+  border-radius: 14px;
+  border: 1px solid #1f1f21;
+  background: #1a1a1c;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #8a8a8a;
+  cursor: pointer;
+  text-align: left;
+}
+
+.catBtn:hover {
+  border-color: #3a3a3c;
+  color: #cfcfcf;
+}
+
+.catBtn--on {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+  font-weight: 900;
+}
+
+.catBtnText {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.numBox {
+  border-radius: 14px;
+  border: 1px solid #242426;
+  background: #000;
+  padding: 12px;
+}
+
+.numInput {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.numInput::placeholder {
+  color: #222;
+}
+
+.btnRow {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.btnBack,
+.btnSet {
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid #242426;
+  cursor: pointer;
+
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.btnBack {
+  flex: 1;
+  background: #1a1a1c;
+  color: #8a8a8a;
+}
+
+.btnBack:hover {
+  color: #cfcfcf;
+}
+
+.btnSet {
+  flex: 2;
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+.btnSet:hover {
+  background: #e8e8e8;
+}
+
+/* === REMOVE THE PERMANENT WHITE SQUARE (not focus) === */
+
+/* Kill any border/outline/box-shadow coming from global styles */
+.trackersIconBtn {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* If a global rule adds a pseudo-element border, kill it */
+.trackersIconBtn::before,
+.trackersIconBtn::after {
+  content: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  outline: 0 !important;
+}
+
+/* Most likely culprit: global svg outline/border showing as a square */
+.trackersIconBtn .ring {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Extra: some CSS frameworks add an outline to all svgs */
+.trackersIconBtn svg {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}

@@ -1,889 +1,277 @@
-/* Shared layout */
+/* src/components/AppHeader.css */
+
+/* =========================
+   Tokens
+   ========================= */
+:root {
+  --app-header-h: 64px;
+  --pad-x: 28px;
+
+  --icon-box: 52px;
+  --icon-size: 28px;
+
+  --menu-gap: 96px; /* space reserved on the right for the +/Menu toggle */
+}
+
+/* =========================
+   App Header Layout
+   ========================= */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 50;
 
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
+  height: var(--app-header-h);
+  padding: 0 var(--pad-x);
+  box-sizing: border-box;
 
-  /* Match Library tokens exactly */
-  height: var(--app-header-h, 64px);
-  padding: 0 var(--pad-x, 28px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
 }
 
 /* Variant: dark on non-Home pages */
-.app-header--dark { background: #000; }
+.app-header--dark {
+  background: #000;
+}
 
 /* Variant: transparent on Home */
-.app-header--transparent { background: transparent; }
-
-/* Logo sizing (same visual weight as Library) */
-.app-header .logo {
-  margin: 0;
-  /* Library’s hero uses big type; keep consistent but responsive */
-  font-size: clamp(28px, 2.6vw, 36px);
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.2px;
+.app-header--transparent {
+  background: transparent;
 }
-.app-header .logo-link { color: #fff; text-decoration: none; }
 
-/* Right-side icon group spacing (match Library) */
-.app-header .header-icons {
+/* =========================
+   Right side icon group
+   (TrackersInline + Search + Submit)
+   ========================= */
+.header-icons {
   display: flex;
   align-items: center;
-  gap: 12px; /* Library uses tight 12px gaps */
-}
+  gap: 2px; /* your tight spacing */
 
-/* Icon boxes and glyph sizes pulled from Library tokens */
-.app-header .icon {
-  width: var(--icon-box, 40px);
-  height: var(--icon-box, 40px);
-  display: grid;
-  place-items: center;
-
-  font-size: var(--icon-size, 22px);
-  line-height: 1;
-
-  /* naked icons as requested */
-  border: none;
-  background: transparent;
-  border-radius: 12px;
-  color: #fff;
-  cursor: pointer;
-  user-select: none;
-}
-
-/* Keep hover/focus clean (no backgrounds/outlines) */
-.app-header .icon:hover,
-.app-header .icon:focus,
-.app-header .icon:focus-visible {
-  background: transparent;
-  outline: none;
-  box-shadow: none;
-}
-
-/* Keep the menu icon consistent */
-.app-header .icon.icon-menu { font-size: var(--icon-size, 22px); }
-
-.app-header {
-  /* add box-sizing & ensure the grid behaves like Library’s */
-  box-sizing: border-box;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto; /* left grows, right hugs edge */
-  align-items: center;
-
-  height: var(--app-header-h, 64px);
-  padding: 0 var(--pad-x, 28px);
-}
-
-.app-header .header-icons {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  /* NEW: push the icon group to the far right edge */
   justify-self: end;
-  /* guard against any global margins */
-  margin: 0;
+
+  /* reserve space for the StaggeredMenu toggle that floats far right */
+  margin-right: var(--menu-gap);
 }
 
-.app-header .icon {
-  /* ensure no stray margins around individual icons */
-  margin: 0;
-  width: var(--icon-box, 40px);
-  height: var(--icon-box, 40px);
-  display: grid;
-  place-items: center;
-  font-size: var(--icon-size, 22px);
-  background: transparent;
-  border: 0;
-  border-radius: 12px;
-  color: #fff;
-}
-
-/* Ensure the right group sits to the far edge */
-.app-header .header-icons {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-self: end;
-}
-
-/* Reuse your icon sizing */
+/* Shared icon button style */
 .header-icon-btn {
-  width: var(--icon-box, 40px);
-  height: var(--icon-box, 40px);
+  width: var(--icon-box);
+  height: var(--icon-box);
+
   display: grid;
   place-items: center;
-  font-size: var(--icon-size, 22px);
+
   background: transparent;
   border: 0;
   border-radius: 12px;
+
   color: #fff;
   cursor: pointer;
-}
-
-/* Inline + icon geometry (matches StaggeredMenu.css) */
-.header-icon-btn .sm-icon { width: 14px; height: 14px; position: relative; }
-.header-icon-btn .sm-icon-line {
-  position: absolute;
-  left: 50%; top: 50%;
-  width: 100%; height: 2px;
-  transform: translate(-50%, -50%);
-  background: currentColor; border-radius: 2px;
-}
-.header-icon-btn .sm-icon-line.sm-icon-line-v { width: 2px; height: 100%; }
-
-/* Turn the inline button black when the menu is open (we set data-sm-open on <html> in StaggeredMenu) */
-:root[data-sm-open="true"] .app-header .sm-inline-toggle {
-  color: #000;
-}
-
-/* Place Search & Write to the LEFT of the StaggeredMenu (+) */
-.app-header .header-icons {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  /* Sit to the LEFT of the toggle hitbox:
-     pad-x + toggle width + a small gap */
-  right: calc(var(--pad-x, 28px) + var(--sm-toggle-hit, 56px) + 12px);
-
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 60; /* above prelayers/panel header */
-}
-
-/* Your existing icon button visuals (reuse your tokens) */
-.header-icon-btn {
-  width: var(--icon-box, 40px);
-  height: var(--icon-box, 40px);
-  display: grid;
-  place-items: center;
-  font-size: var(--icon-size, 22px);
-  background: transparent;
-  border: 0;
-  border-radius: 12px;
-  color: #fff;
-  cursor: pointer;
-}
-
-/* Optional: keep hover/focus clean */
-.header-icon-btn:hover,
-.header-icon-btn:focus,
-.header-icon-btn:focus-visible {
-  background: transparent;
-  outline: none;
-  box-shadow: none;
-}
-
-/* Make AppHeader a positioning context */
-.app-header {
-  position: sticky; /* you already had this */
-  /* add: */
-  position: sticky;
-}
-
-/* Align the StaggeredMenu header bar WITHIN the AppHeader row */
-.app-header .staggered-menu-header {
-  position: absolute;                    /* sit inside the header row */
-  top: 0;
-  right: var(--pad-x, 28px);             /* same right padding as header */
-  height: var(--app-header-h, 64px);     /* same height as header */
-  padding: 0;                            /* remove the 2em padding */
-  display: flex;
-  align-items: center;                   /* vertically center the + */
-  background: transparent;
-  pointer-events: none;                  /* keep wrapper non-interactive */
-  z-index: 60;
-}
-.app-header .staggered-menu-header > * {
-  pointer-events: auto;                  /* keep the button clickable */
-}
-
-/* Normalize the toggle’s box so it aligns visually with header icons */
-.app-header .staggered-menu-header .sm-toggle {
-  --sm-toggle-hit: 56px;                 /* shared width for layout math */
-  min-width: var(--sm-toggle-hit);
-  height: var(--icon-box, 40px);         /* match your icon boxes */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0 !important;            /* cancel any earlier spacing hacks */
-}
-
-/* Keep your Search/Write group immediately to the LEFT of the + */
-.app-header .header-icons {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  right: calc(var(--pad-x, 28px) + var(--sm-toggle-hit, 56px) + 12px);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 60;
-}
-
-/* Button visuals (unchanged) */
-.header-icon-btn {
-  width: var(--icon-box, 40px);
-  height: var(--icon-box, 40px);
-  display: grid;
-  place-items: center;
-  font-size: var(--icon-size, 22px);
-  background: transparent;
-  border: 0;
-  border-radius: 12px;
-  color: #fff;
-  cursor: pointer;
-}
-.header-icon-btn:hover,
-.header-icon-btn:focus,
-.header-icon-btn:focus-visible {
-  background: transparent;
-  outline: none;
-  box-shadow: none;
-}
-
-/* Keep your open-state color behavior for the + */
-:root[data-sm-open="true"] .staggered-menu-header .sm-toggle { color: #000; }
-
-/* --- Give the + menu toggle the same breathing room as the logo --- */
-.app-header .staggered-menu-header .sm-toggle {
-  padding-right: 25px !important;  /* small shift inward */
-}
-
-/* Reserve some space on the far right for the menu (+) hitbox */
-:root {
-  /* 48px button + ~15px padding you liked ≈ 63px — round to 64 */
-  --menu-reserve: 64px;
-}
-
-/* Keep header-icons perfectly aligned with the header and just LEFT of the menu */
-.app-header { position: relative; }
-
-.app-header .header-icons {
-  position: absolute;
-  top: 0;
-  right: calc(var(--pad-x, 28px) + var(--menu-reserve));
-  height: var(--app-header-h, 64px);
-
-  display: flex;
-  align-items: center;
-  gap: 6px;               /* your tighter spacing */
   margin: 0;
-  transform: none;        /* kill any translateY tricks */
-}
+  padding: 0;
 
-/* Bigger Search & Write buttons (not the +) */
-.app-header .header-icons .header-icon-btn {
-  width: 52px;
-  height: 52px;
-  font-size: 28px; /* fallback */
-}
-
-.app-header .header-icons .header-icon-btn .material-symbols-outlined {
-  font-size: 28px; /* icon glyph size */
-  line-height: 1;
-}
-
-/* Enlarge just the word "Menu" in the StaggeredMenu toggle, not the + */
-.app-header .staggered-menu-header .sm-toggle-textWrap {
-  font-size: 20px;     /* bump label size */
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  line-height: 1;
-}
-
-/* Keep the + the same size explicitly */
-.app-header .staggered-menu-header .sm-icon {
-  width: 14px;
-  height: 14px;
-}
-.app-header .staggered-menu-header .sm-icon .sm-icon-line {
-  height: 2px; /* horizontal line */
-}
-.app-header .staggered-menu-header .sm-icon .sm-icon-line.sm-icon-line-v {
-  width: 2px;  /* vertical line */
-  height: 100%;
-}
-
-/* Extra space between the + menu and the Search/Write group */
-:root {
-  /* previously ~64px reserved for the +; this adds extra gutter */
-  --menu-reserve: 64px;
-  --menu-gutter: 18px; /* ⬅️ increase/decrease to taste */
-}
-
-.app-header .header-icons {
-  right: calc(var(--pad-x, 28px) + var(--menu-reserve) + var(--menu-gutter));
-}
-
-/* Kill the text-caret & selection inside the header controls */
-.app-header .logo-link,
-.app-header .header-icon-btn,
-.app-header .header-icon-btn .material-symbols-outlined,
-.app-header .staggered-menu-header .sm-toggle,
-.app-header .staggered-menu-header .sm-toggle * {
   user-select: none;
   -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  caret-color: transparent;   /* hide the blinking caret */
-  cursor: pointer;            /* avoid I-beam cursor */
+  caret-color: transparent;
 }
 
-/* Don't show a text selection highlight if someone drags over the header */
-.app-header ::selection {
+.header-icon-btn:hover,
+.header-icon-btn:focus,
+.header-icon-btn:focus-visible {
   background: transparent;
-  color: inherit;
+  outline: none;
+  box-shadow: none;
 }
 
-/* Keep keyboard focus visible (accessibility) but make it clean */
-.app-header .header-icon-btn:focus { outline: none; }
-.app-header .header-icon-btn:focus-visible {
+.header-icon-btn:focus-visible {
   outline: 2px solid #ffffffaa;
   outline-offset: 3px;
   border-radius: 10px;
 }
 
-.app-header .staggered-menu-header .sm-toggle:focus { outline: none; }
-.app-header .staggered-menu-header .sm-toggle:focus-visible {
-  outline: 2px solid #ffffffaa;
-  outline-offset: 3px;
-  border-radius: 8px;
-}
-
-/* Ensure the “Menu” text itself never invites a caret */
-.app-header .staggered-menu-header .sm-toggle-textWrap,
-.app-header .staggered-menu-header .sm-toggle-textInner,
-.app-header .staggered-menu-header .sm-toggle-line {
-  user-select: none;
-  caret-color: transparent;
-  pointer-events: none; /* text spans ignore events; button handles clicks */
-}
-
-/* Icons shouldn't eat events or show text-cursor behaviors */
-.app-header .material-symbols-outlined {
+/* material icon sizing */
+.header-icon-btn .material-symbols-outlined {
+  font-size: var(--icon-size);
+  line-height: 1;
   pointer-events: none;
 }
 
-/* Keep the StaggeredMenu header as an overlay that doesn't affect layout */
-.app-header .staggered-menu-wrapper.fixed-wrapper {
-  position: fixed;         /* full-screen overlay lives above the app */
-  inset: 0;
-  pointer-events: none;    /* inert by default; panel/toggle re-enable */
-  z-index: 60;
-}
-
-/* Anchor the toggle over the header's right padding area without shifting layout */
-.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-header {
-  position: fixed !important;         /* ← was absolute; fixed won't push siblings */
-  top: 0 !important;
-  right: var(--pad-x, 28px) !important;
-  left: auto !important;
-  width: auto !important;
-  height: var(--app-header-h, 64px) !important;
-  padding: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  background: transparent !important;
-  pointer-events: none !important;    /* let clicks pass through except toggle */
-}
-
-/* Only the +/Menu toggle is interactive */
-.app-header .staggered-menu-header .sm-toggle {
-  pointer-events: auto !important;
-}
-
-/* Remove the (now invisible) logo hitbox so it can't block the site logo */
-.app-header .staggered-menu-header .sm-logo {
-  display: none !important;
-}
-
-/* Keep header icons in normal flow; just reserve a bit of room on the right */
-.app-header .header-icons {
-  position: relative;
-  right: auto;
-  margin-right: 72px; /* space for the +/Menu toggle; tweak if needed */
-}
-
-/* Make sure the overlayed menu toggle sits exactly at the header's right pad */
-.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-header {
-  right: var(--pad-x, 28px) !important;
-  padding: 0 !important;     /* no extra padding that could shift it */
-}
-
-/* Ensure the toggle itself has no stray spacing */
-.app-header .staggered-menu-header .sm-toggle {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* More gap between the +/Menu and the Search/Write group */
-:root { --menu-gap: 96px; } /* try 96–120px to taste */
-
-.app-header .header-icons {
-  margin-right: var(--menu-gap); /* was ~72px */
-}
-
-/* Re-enable interactivity when the menu is open */
-.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] {
-  pointer-events: auto !important;     /* wrapper clickable again */
-  z-index: 100 !important;             /* on top of header/page */
-}
-
-/* The interactive bits inside the overlay must also take events */
-.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .staggered-menu-panel,
-.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .staggered-menu-header,
-.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .sm-panel-inner,
-.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .sm-panel-item,
-.app-header .staggered-menu-wrapper.fixed-wrapper[data-open] .sm-socials {
-  pointer-events: auto !important;
-}
-
-/* Make sure the panel is above the prelayers and header icons */
-.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-panel {
-  z-index: 101 !important;
-}
-
-/* Keep the prelayers decorative (no hover/click) */
-.app-header .staggered-menu-wrapper.fixed-wrapper .sm-prelayers {
-  pointer-events: none !important;
-}
-
-/* When closed, the panel should not be focusable/hoverable */
-.staggered-menu-panel[aria-hidden="true"] {
-  visibility: hidden;
-}
-
-/* (Optional) ensure hover effects work once events are enabled */
-.staggered-menu-panel .sm-panel-item:hover .sm-panel-itemLabel {
-  color: var(--sm-accent, #5227ff);
-}
-
-/* Float ONLY the +/Menu toggle above everything */
-.app-header .staggered-menu-header .sm-toggle {
-  position: fixed;                         /* escape parent stacking */
-  top: 0;
-  right: var(--pad-x, 28px);               /* same inset as header */
-  height: var(--app-header-h, 64px);
-  display: flex;
-  align-items: center;
-  z-index: 9999;                           /* above panel/prelayers */
-  pointer-events: auto !important;         /* stay clickable */
-}
-
-/* keep the rest of the menu header inert so it doesn't steal clicks */
-.app-header .staggered-menu-wrapper.fixed-wrapper .staggered-menu-header {
-  pointer-events: none !important;
-}
-
-/* 0) Undo any earlier "inert" header override */
-.app-header .staggered-menu-header {
-  pointer-events: auto !important; /* allow the header/toggle to receive clicks */
-}
-
-/* 1) Put ONLY the +/Menu toggle above everything, without moving other layers */
-.app-header .staggered-menu-header .sm-toggle {
-  position: fixed;                      /* escape any parent stacking traps */
-  top: 0;
-  right: var(--pad-x, 28px);            /* same inset as your header */
-  height: var(--app-header-h, 64px);
-  display: flex;
-  align-items: center;
-  z-index: 2147483647 !important;       /* truly on top */
-}
-
-/* 2) Keep the overlay interactive when open, but never let backgrounds steal clicks */
-.staggered-menu-wrapper.fixed-wrapper[data-open] { pointer-events: auto !important; }
-.staggered-menu-wrapper.fixed-wrapper .sm-prelayers { pointer-events: none !important; }
-
-/* 3) The panel stays interactive (hover/click) but below the toggle */
-.staggered-menu-wrapper.fixed-wrapper .staggered-menu-panel {
-  z-index: 1000;                        /* under the toggle's huge z-index */
-}
-
-/* 4) (Optional) ensure hover color still works */
-.staggered-menu-panel .sm-panel-item:hover .sm-panel-itemLabel {
-  color: var(--sm-accent, #5227ff);
-}
-
-/* The portal-mounted header: sits over the header area, never affects layout */
-.sm-portal-toggle {
-  position: fixed;
-  top: 0;
-  right: var(--pad-x, 28px);
-  height: var(--app-header-h, 64px);
-  display: flex;
-  align-items: center;
+/* prevent selection highlight in header */
+.app-header ::selection {
   background: transparent;
-  z-index: 2147483647;     /* above everything */
-  pointer-events: none;    /* wrapper inert */
+  color: inherit;
 }
 
-/* Only the toggle receives clicks */
-.sm-portal-toggle .sm-toggle {
-  pointer-events: auto;
+/* =========================
+   Logo
+   ========================= */
+.logo {
   margin: 0;
-  padding: 0;
+  height: var(--app-header-h);
+  display: flex;
+  align-items: center;
 }
-
-/* Hide the logo box entirely so it never blocks clicks */
-.sm-portal-toggle .sm-logo { display: none; }
-
-/* Keep the + lines using currentColor (already true in your CSS) */
-.sm-portal-toggle .sm-icon .sm-icon-line { background: currentColor; }
-
-/* === FINAL HARSH OVERRIDES — place at the very end === */
-:root {
-  --app-header-h: 64px;
-  --pad-x: 28px;
-  --sm-toggle-hit: 56px;  /* clickable width for the +/Menu */
-  --menu-gutter: 12px;     /* gap between icons and the +/Menu */
-}
-
-/* Pin the portal header to the far right and neutralize earlier .staggered-menu-header rules */
-.staggered-menu-header.sm-portal-toggle {
-  position: fixed !important;
-  top: 0 !important;
-  left: auto !important;                /* cancel earlier left:0 */
-  right: var(--pad-x, 28px) !important; /* anchor to header padding */
-  width: auto !important;               /* cancel width:100% */
-  height: var(--app-header-h, 64px) !important;
-  padding: 0 !important;                /* cancel 2em padding */
-  margin: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-end !important; /* no space-between */
-  background: transparent !important;
-  z-index: 2147483647 !important;       /* above everything */
-  pointer-events: none !important;      /* only the button clickable */
-}
-
-/* Only the toggle receives clicks + keep its size tidy */
-.staggered-menu-header.sm-portal-toggle .sm-toggle {
-  pointer-events: auto !important;
-  min-width: var(--sm-toggle-hit);
-  height: var(--app-header-h, 64px);
-  margin: 0 !important;
-  padding: 0 8px !important;
-}
-
-/* Hide the (empty) logo box so it never pushes the toggle left */
-.staggered-menu-header.sm-portal-toggle .sm-logo {
-  display: none !important;
-}
-
-/* Keep + geometry small; let label scale */
-.staggered-menu-header.sm-portal-toggle .sm-toggle-textWrap {
-  font-size: 20px; font-weight: 600; letter-spacing: .3px; line-height: 1;
-}
-.staggered-menu-header.sm-portal-toggle .sm-icon { width: 14px; height: 14px; position: relative; }
-.staggered-menu-header.sm-portal-toggle .sm-icon-line {
-  position: absolute; left: 50%; top: 50%;
-  width: 100%; height: 2px; transform: translate(-50%, -50%);
-  background: currentColor; border-radius: 2px;
-}
-.staggered-menu-header.sm-portal-toggle .sm-icon-line.sm-icon-line-v { width: 2px; height: 100%; }
-
-/* Color: closed=white, open=black (driven by data-sm-open on <html>) */
-.staggered-menu-header.sm-portal-toggle .sm-toggle { color: #fff; }
-:root[data-sm-open="true"] .staggered-menu-header.sm-portal-toggle .sm-toggle { color: #000; }
-
-/* Place Search/Write just LEFT of the +/Menu toggle */
-.app-header .header-icons {
-  position: absolute !important;
-  top: 0 !important;
-  right: calc(var(--pad-x, 28px) + var(--sm-toggle-hit) + var(--menu-gutter)) !important;
-  height: var(--app-header-h, 64px) !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  margin: 0 !important;
-  z-index: 60 !important;
-}
-
-/* Push Search/Write further left from the +/Menu */
-:root { --menu-gutter: 30px; }  /* try 24–36px to taste */
-
-
-
-/* Tighten spacing between Search and Write */
-.app-header .header-icons {
-  gap: 2px !important; /* was 12px */
-}
-
-/* Full-viewport click-catcher that closes the menu when you click outside */
-.sm-scrim {
-  position: fixed;
-  inset: 0;
-  background: transparent;       /* or try rgba(0,0,0,.14) if you want a dim */
-  z-index: 8;                    /* below the panel (10), above prelayers (5) */
-  pointer-events: auto;          /* must catch clicks */
-}
-
-/* Ensure the panel stays above the scrim */
-.staggered-menu-panel { z-index: 10; }
-/* You already have .sm-prelayers at z-index: 5 */
-
-.app-header .logo {
-  margin: 0;
-
-  font-family: "DM Serif Display", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
-  font-variation-settings:
-    "BLED" 0,
-    "SCAN" -9,
-    "SOFT" 0, 
-    "WONK" 1;
-  font-size: clamp(32px, 2.8vw, 40px);
-  line-height: 1;
-  letter-spacing: 0.5px;
-}
-
-/* ===== LOGO TEXT ===== */
 
 .logo-link {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;                 /* spacing between title and bar */
   text-decoration: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  caret-color: transparent;
 }
 
-.logo-word {
-  font-family: "DM Serif Display", serif;
-  font-weight: 400;
-
-  font-size: clamp(24px, 2.2vw, 34px);  /* smaller + elegant */
-  line-height: 0.95;
-  letter-spacing: 0.01em;
-
-  color: #ffffff !important;
-  display: inline-block;
-}
-
-
-/* Italic pieces */
-.logo-ital {
-  font-style: italic;
-  color: #ffffff;
-}
-
-/* Normal pieces */
-.logo-roman {
-  font-style: normal;
-  color: #ffffff;
-}
-
-/* ===== 4-COLOR BAR ===== */
-
-.logo-bar {
-  width: 100%;            /* EXACT width of the word */
-  height: 4px;            /* slightly slimmer = more elegant */
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;                 /* no space between segments */
-}
-
-/* color segments */
-.logo-bar .seg-1 { background: #fc5f2e; }
-.logo-bar .seg-2 { background: #d81b60; }
-.logo-bar .seg-3 { background: #6a1b9a; }
-.logo-bar .seg-4 { background: #1e88e5; }
-.logo-word {
-  font-family: "DM Serif Display", serif;
-  font-weight: 400;
-
-  font-size: clamp(24px, 2.2vw, 34px);  /* smaller + elegant */
-  line-height: 0.95;
-  letter-spacing: 0.015em;
-
-  color: #ffffff !important;
-  display: inline-block;
-}
 .logo-link,
 .logo-link:visited,
 .logo-link:hover,
 .logo-link:active {
   color: #ffffff !important;
 }
-/* ===== FINAL LOGO OVERRIDES (put at END of file) ===== */
 
-.app-header .logo-link,
-.app-header .logo-link:visited,
-.app-header .logo-link:hover,
-.app-header .logo-link:active {
-  color: #ffffff !important;
-}
-
-.app-header .logo-word,
-.app-header .logo-word *,
-.app-header .logo-ital,
-.app-header .logo-roman {
-  color: #ffffff !important;
-  opacity: 1 !important;
-  filter: none !important;
-  text-shadow: none !important;
-}
-
-/* This is the key: makes white look "truly white" (anti-alias compensation) */
-.app-header .logo-word {
-  /* keep your sizing */
-  font-size: clamp(28px, 2.6vw, 38px);
-  line-height: 0.95 !important;
-
-  /* optically brighten without looking like a shadow */
-  text-shadow: 0 0 0 #ffffff, 0 0 0 #ffffff !important;
-
-  /* optional: tiny stroke to kill gray edges (safe + subtle) */
-  -webkit-text-stroke: 0.25px rgba(255, 255, 255, 0.55) !important;
-
-  /* smoothing tweaks */
-  -webkit-font-smoothing: auto !important;
-  -moz-osx-font-smoothing: auto !important;
-  text-rendering: geometricPrecision !important;
-}
-
-/* Make the underline exactly as long as the title */
-.app-header .logo-link {
-  display: inline-flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  width: fit-content !important;  /* <— important */
-  gap: 4px !important;
-}
-
-.app-header .logo-bar {
-  width: 100% !important;         /* matches the word */
-  height: 3px !important;         /* slightly thicker reads cleaner */
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  gap: 0 !important;
-}
-/* === Center the logo block perfectly in the AppHeader === */
-.app-header .logo {
-  margin: 0 !important;
-  height: var(--app-header-h, 64px) !important;
-  display: flex !important;
-  align-items: center !important;
-}
-
-/* The stacked logo (word + bar) */
-.app-header .logo-link {
-  justify-content: center !important;
-  gap: 4px !important;
-}
-
-/* Optional micro-nudge if it still feels 1px low */
-.app-header .logo-link {
-  transform: translateY(-1px) !important;
-}
-
-.logo-ital {
-  font-style: italic;
-  color: #ffffff;
-}
-
-.logo-roman {
-  font-style: normal;
-  color: #ffffff;
-}
-
-
-
-
-
-
-
-
-
-
-/* Keep link pure white always */
-.logo-link,
-.logo-link:visited,
-.logo-link:hover,
-.logo-link:active {
-  color: #ffffff !important;
-  text-decoration: none;
-}
-
-/* Wrapper */
-.logo-split {
-  display: inline-flex;
-  align-items: baseline; /* aligns “OddCha” + “pter” nicely */
-}
-
-/* Left chunk (OddCha + underline) */
+/* “OddCha” (stacked with underline bar) */
 .logo-left {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-/* The actual word row */
-.logo-left-text {
-  display: inline-block;
-  color: #ffffff !important;
-}
-
-/* Right chunk (pter) */
-.logo-right {
-  display: inline-block;
-  color: #ffffff !important;
-}
-
-/* Font + sizing (inherits your DM Serif Display setup) */
+/* Word row */
 .logo-left-text,
 .logo-right {
   font-family: "DM Serif Display", serif;
   font-weight: 400;
   font-size: clamp(28px, 2.4vw, 38px);
   line-height: 1;
-  letter-spacing: 0.04em; /* your “tiny bit” */
+  letter-spacing: 0.04em;
+
+  color: #fff !important;
+  text-rendering: geometricPrecision;
 }
 
 /* Odd italic only */
-.logo-ital { font-style: italic; color: #fff !important; }
-.logo-roman { font-style: normal; color: #fff !important; }
+.logo-ital {
+  font-style: italic;
+  color: #fff !important;
+}
 
-/* The 4-color bar is EXACTLY the width of “OddCha” */
+.logo-roman {
+  font-style: normal;
+  color: #fff !important;
+}
+
+/* 4-color bar exactly under OddCha */
 .logo-bar {
-  width: calc(100% - 4px) !important;
-  height: 3px;
-  margin-top: -1px;
+  width: calc(100% - 4px);
+  margin-left: 2px;
+  margin-right: 2px;
+
+  height: 4px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
 }
 
-.logo-bar .seg-1 { background: #fc5f2e; }
-.logo-bar .seg-2 { background: #d81b60; }
-.logo-bar .seg-3 { background: #6a1b9a; }
-.logo-bar .seg-4 { background: #1e88e5; }
-
-
-.logo-bar {
-  height: 4px !important;
-  min-height: 4px !important;
-  max-height: 4px !important;
+.logo-bar .seg-1 {
+  background: #fc5f2e;
+}
+.logo-bar .seg-2 {
+  background: #d81b60;
+}
+.logo-bar .seg-3 {
+  background: #6a1b9a;
+}
+.logo-bar .seg-4 {
+  background: #1e88e5;
 }
 
-.logo-bar > span {
-  height: 100% !important;
-  display: block !important;
+/* Screenreader helper */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* FINAL OVERRIDE — logo bar width tweak */
-.app-header .logo-link .logo-bar{
-  width: calc(100% - 4px) !important;  /* 2px each side */
-  margin-left: 2px !important;
-  margin-right: 2px !important;
-  box-sizing: border-box !important;
+/* =========================
+   StaggeredMenu toggle (portal header)
+   Keep it pinned top-right and clickable.
+   ========================= */
+
+/* This targets the portal header you already have: .staggered-menu-header.sm-portal-toggle */
+.staggered-menu-header.sm-portal-toggle {
+  position: fixed;
+  top: 0;
+  right: var(--pad-x);
+  height: var(--app-header-h);
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  background: transparent;
+  z-index: 2147483647;
+
+  pointer-events: none; /* wrapper inert */
+}
+
+/* Only the toggle is clickable */
+.staggered-menu-header.sm-portal-toggle .sm-toggle {
+  pointer-events: auto;
+  margin: 0;
+  padding: 0 8px;
+  height: var(--app-header-h);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Hide the logo block if it exists */
+.staggered-menu-header.sm-portal-toggle .sm-logo {
+  display: none !important;
+}
+
+/* Toggle text sizing */
+.staggered-menu-header.sm-portal-toggle .sm-toggle-textWrap {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+/* Keep + geometry */
+.staggered-menu-header.sm-portal-toggle .sm-icon {
+  width: 14px;
+  height: 14px;
+  position: relative;
+}
+
+.staggered-menu-header.sm-portal-toggle .sm-icon-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.staggered-menu-header.sm-portal-toggle .sm-icon-line.sm-icon-line-v {
+  width: 2px;
+  height: 100%;
+}
+
+/* closed = white, open = black */
+.staggered-menu-header.sm-portal-toggle .sm-toggle {
+  color: #fff;
+}
+:root[data-sm-open="true"] .staggered-menu-header.sm-portal-toggle .sm-toggle {
+  color: #000;
 }

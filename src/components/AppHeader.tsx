@@ -1,23 +1,24 @@
-// src/components/AppHeader.tsx (or src/AppHeader.tsx — wherever yours lives)
-import React from "react";
+// src/components/AppHeader.tsx
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import StaggeredMenu from "@/components/StaggeredMenu";
 import { menuItems, socialItems } from "@/constants/nav";
+import TrackersInline from "@/components/Trackers";
 import "./AppHeader.css";
 
 type Props = {
-  onClickWrite?: () => void; // kept for compatibility, but unused now
+  onClickWrite?: () => void;
 };
 
 export default function AppHeader({ onClickWrite }: Props) {
   const { pathname } = useLocation();
   const isHome = pathname === "/";
 
+  const [trackersOpen, setTrackersOpen] = useState(false);
+
   return (
     <header
-      className={
-        "app-header " + (isHome ? "app-header--transparent" : "app-header--dark")
-      }
+      className={"app-header " + (isHome ? "app-header--transparent" : "app-header--dark")}
       role="banner"
     >
       <h1 className="logo">
@@ -42,12 +43,13 @@ export default function AppHeader({ onClickWrite }: Props) {
             </span>
           </span>
 
-          {/* screenreader label */}
           <span className="sr-only">OddChapter</span>
         </Link>
       </h1>
 
       <div className="header-icons">
+        <TrackersInline />
+
         {/* Search */}
         <Link to="/search" className="header-icon-btn" aria-label="Search">
           <span className="material-symbols-outlined" aria-hidden="true">
@@ -56,7 +58,7 @@ export default function AppHeader({ onClickWrite }: Props) {
           <span className="sr-only">Search</span>
         </Link>
 
-        {/* Write -> Submit page */}
+        {/* Submit */}
         <Link to="/submit" className="header-icon-btn" aria-label="Submit a story">
           <span className="material-symbols-outlined" aria-hidden="true">
             edit
@@ -78,6 +80,8 @@ export default function AppHeader({ onClickWrite }: Props) {
         openMenuButtonColor="#000"
         changeMenuColorOnOpen
       />
+
+      {trackersOpen && <Trackers onClose={() => setTrackersOpen(false)} />}
     </header>
   );
 }
