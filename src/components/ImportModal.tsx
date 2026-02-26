@@ -1,10 +1,12 @@
 // src/components/ImportModal.tsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 
 import { extractTextFromFile } from "@/importer/extractTextFromFile";
 import { reflowPdfText } from "@/importer/reflowPdfText";
 import { splitIntoChapters, type ChapterDraft } from "@/importer/splitChapters";
+
+import { useConfirm } from "@/components/ConfirmPopover";
 import "./ImportModal.css";
 
 export type ImportedProjectPayload = {
@@ -36,6 +38,8 @@ export default function ImportModal({
   onClose: () => void;
   onConfirm: (payload: ImportedProjectPayload) => void;
 }) {
+  const confirmPopover = useConfirm();
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -49,7 +53,10 @@ export default function ImportModal({
   const [bookTitle, setBookTitle] = useState("");
   const [author, setAuthor] = useState("");
 
-  // --- Undo history (one-level stack, can be many undos) ---
+  // dirty flag for discard confirm
+  const [dirty, setDirty] = useState(false);
+
+  // Undo history
   const [history, setHistory] = useState<HistorySnap[]>([]);
 
   const selected = useMemo(
@@ -62,38 +69,43 @@ export default function ImportModal({
     return chapters.findIndex((c) => c.id === selectedId);
   }, [chapters, selectedId]);
 
-  const pushHistory = () => {
-    setHistory((prev) => [
-      ...prev,
-      { chapters: deepCloneChapters(chapters), selectedId },
-    ]);
-  };
+  const pushHistory = useCallback(() => {
+    setHistory((prev) => [...prev, { chapters: deepCloneChapters(chapters), selectedId }]);
+  }, [chapters, selectedId]);
 
-  const undo = () => {
+  const undo = useCallback(() => {
     setHistory((prev) => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];
       setChapters(deepCloneChapters(last.chapters));
       setSelectedId(last.selectedId);
+      setDirty(true);
       return prev.slice(0, -1);
     });
-  };
+  }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      // Ctrl/Cmd + Z undo (nice UX)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
-        e.preventDefault();
-        undo();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, onClose, history, chapters, selectedId]);
+  // centralized close request (confirm if dirty)
+  const requestClose = useCallback(async () => {
+    if (!dirty) {
+      onClose();
+      return;
+    }
 
+    const ok = await confirmPopover({
+      title: "Discard changes?",
+      message: "If you close this now, your import edits will be lost.",
+      confirmText: "Discard",
+      cancelText: "Keep editing",
+      danger: true,
+    });
+
+    if (ok) {
+      setDirty(false);
+      onClose();
+    }
+  }, [dirty, onClose, confirmPopover]);
+
+  // reset whenever opened
   useEffect(() => {
     if (!open) return;
     setStep("pick");
@@ -104,9 +116,28 @@ export default function ImportModal({
     setBookTitle("");
     setAuthor("");
     setHistory([]);
+    setDirty(false);
   }, [open]);
 
-  const startImport = async () => {
+  // esc + undo hotkey
+  useEffect(() => {
+    if (!open) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") requestClose();
+
+      // Ctrl/Cmd + Z undo
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        undo();
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, requestClose, undo]);
+
+  const startImport = useCallback(async () => {
     if (!file) return;
 
     setStep("parsing");
@@ -114,8 +145,7 @@ export default function ImportModal({
 
     try {
       const extracted = await extractTextFromFile(file);
-      const processed =
-        file.type === "application/pdf" ? reflowPdfText(extracted) : extracted;
+      const processed = file.type === "application/pdf" ? reflowPdfText(extracted) : extracted;
 
       const baseName = file.name.replace(/\.[^/.]+$/, "");
       const draft = splitIntoChapters(processed, {
@@ -132,18 +162,21 @@ export default function ImportModal({
       setChapters(draft);
       setSelectedId(draft[0]?.id ?? "");
       setHistory([]);
-
       setBookTitle((prev) => (prev.trim() ? prev : baseName || "Untitled import"));
       setStep("preview");
+      setDirty(true);
     } catch (err: any) {
       setError(err?.message || "Import failed.");
       setStep("pick");
     }
-  };
+  }, [file, bookTitle, author]);
 
-  const confirm = () => {
+  const confirmSend = useCallback(() => {
     if (!file) return;
     if (!chapters.length) return;
+
+    // This is an intentional action; no discard prompt.
+    setDirty(false);
 
     onConfirm({
       sourceFileName: file.name,
@@ -153,27 +186,22 @@ export default function ImportModal({
       },
       chapters: deepCloneChapters(chapters),
     });
-  };
+  }, [file, chapters, bookTitle, author, onConfirm]);
 
-  // -----------------------
   // Chapter tools (with undo)
-  // -----------------------
-
-  const mergeWithPrevious = () => {
+  const mergeWithPrevious = useCallback(() => {
     if (!selected) return;
     const idx = selectedIndex;
     if (idx <= 0) return;
 
     pushHistory();
+    setDirty(true);
 
     setChapters((prev) => {
       const before = prev[idx - 1];
       const current = prev[idx];
 
-      const mergedContent = [before.content?.trim(), current.content?.trim()]
-        .filter(Boolean)
-        .join("\n\n");
-
+      const mergedContent = [before.content?.trim(), current.content?.trim()].filter(Boolean).join("\n\n");
       const mergedTitle = before.title?.trim() || `Chapter ${idx}`;
 
       const next = prev.slice();
@@ -184,9 +212,9 @@ export default function ImportModal({
 
     const prevId = chapters[idx - 1]?.id;
     if (prevId) setSelectedId(prevId);
-  };
+  }, [selected, selectedIndex, pushHistory, chapters]);
 
-  const splitAtCursor = () => {
+  const splitAtCursor = useCallback(() => {
     if (!selected) return;
     const idx = selectedIndex;
     if (idx < 0) return;
@@ -203,6 +231,7 @@ export default function ImportModal({
     if (!left || !right) return;
 
     pushHistory();
+    setDirty(true);
 
     const newChapter: ChapterDraft = {
       id: crypto.randomUUID(),
@@ -225,9 +254,9 @@ export default function ImportModal({
       el.focus();
       el.setSelectionRange(0, 0);
     });
-  };
+  }, [selected, selectedIndex, pushHistory]);
 
-  const removeChapter = () => {
+  const removeChapter = useCallback(() => {
     if (!selected) return;
     if (chapters.length <= 1) return;
 
@@ -235,6 +264,7 @@ export default function ImportModal({
     if (idx < 0) return;
 
     pushHistory();
+    setDirty(true);
 
     const nextId = chapters[idx + 1]?.id ?? chapters[idx - 1]?.id ?? "";
 
@@ -245,11 +275,10 @@ export default function ImportModal({
     });
 
     setSelectedId(nextId);
-  };
+  }, [selected, chapters.length, selectedIndex, pushHistory, chapters]);
 
   const canMergePrev = step === "preview" && selectedIndex > 0;
-  const canSplit =
-    step === "preview" && !!selected && (selected.content?.trim().length ?? 0) > 20;
+  const canSplit = step === "preview" && !!selected && (selected.content?.trim().length ?? 0) > 20;
   const canRemove = step === "preview" && chapters.length > 1;
   const canUndo = step === "preview" && history.length > 0;
 
@@ -258,18 +287,18 @@ export default function ImportModal({
   return createPortal(
     <div
       className="import-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) requestClose();
+      }}
     >
       <div className="import-modal" onMouseDown={(e) => e.stopPropagation()}>
-        <button className="import-close" onClick={onClose}>
+        <button className="import-close" onClick={requestClose}>
           ×
         </button>
 
         <div className="import-header">
           <div className="import-title">Import</div>
-          <div className="import-supported">
-            Supported: DOCX, PDF (text-based), TXT, MD
-          </div>
+          <div className="import-supported">Supported: DOCX, PDF (text-based), TXT, MD</div>
         </div>
 
         {error && (
@@ -293,6 +322,7 @@ export default function ImportModal({
                   const base = f.name.replace(/\.[^/.]+$/, "");
                   setBookTitle(base || "");
                   setAuthor("");
+                  setDirty(true);
                 }
               }}
             />
@@ -312,6 +342,7 @@ export default function ImportModal({
                   const base = f.name.replace(/\.[^/.]+$/, "");
                   setBookTitle(base || "");
                   setAuthor("");
+                  setDirty(true);
                 }
               }}
             >
@@ -321,9 +352,7 @@ export default function ImportModal({
                 </div>
 
                 <div className="import-dropzone-title">Upload your file here</div>
-                <div className="import-dropzone-sub">
-                  Files supported: DOCX, PDF (text-based), TXT, MD
-                </div>
+                <div className="import-dropzone-sub">Files supported: DOCX, PDF (text-based), TXT, MD</div>
 
                 <div className="import-dropzone-or">
                   <span />
@@ -331,11 +360,7 @@ export default function ImportModal({
                   <span />
                 </div>
 
-                <button
-                  className="import-browse"
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <button className="import-browse" type="button" onClick={() => fileInputRef.current?.click()}>
                   Browse
                 </button>
 
@@ -351,9 +376,7 @@ export default function ImportModal({
                   </span>
                   <div className="import-file-meta">
                     <div className="import-file-name">{file.name}</div>
-                    <div className="import-file-size">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </div>
+                    <div className="import-file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
                   </div>
                 </div>
 
@@ -361,7 +384,10 @@ export default function ImportModal({
                   type="button"
                   className="import-file-remove"
                   aria-label="Remove file"
-                  onClick={() => setFile(null)}
+                  onClick={() => {
+                    setFile(null);
+                    setDirty(true);
+                  }}
                 >
                   <span className="material-symbols-outlined" aria-hidden="true">
                     delete
@@ -371,7 +397,7 @@ export default function ImportModal({
             )}
 
             <div className="import-actions">
-              <button className="btn secondary" onClick={onClose}>
+              <button className="btn secondary" onClick={requestClose}>
                 Cancel
               </button>
               <button className="btn primary" disabled={!file} onClick={startImport}>
@@ -390,12 +416,21 @@ export default function ImportModal({
                   Title
                   <input
                     value={bookTitle}
-                    onChange={(e) => setBookTitle(e.target.value)}
+                    onChange={(e) => {
+                      setBookTitle(e.target.value);
+                      setDirty(true);
+                    }}
                   />
                 </label>
                 <label>
                   Author
-                  <input value={author} onChange={(e) => setAuthor(e.target.value)} />
+                  <input
+                    value={author}
+                    onChange={(e) => {
+                      setAuthor(e.target.value);
+                      setDirty(true);
+                    }}
+                  />
                 </label>
               </div>
 
@@ -419,25 +454,25 @@ export default function ImportModal({
                   <input
                     className="chapter-title-input"
                     value={selected.title}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDirty(true);
                       setChapters((prev) =>
-                        prev.map((c) =>
-                          c.id === selected.id ? { ...c, title: e.target.value } : c
-                        )
-                      )
-                    }
+                        prev.map((c) => (c.id === selected.id ? { ...c, title: v } : c))
+                      );
+                    }}
                   />
 
                   <textarea
                     ref={textRef}
                     value={selected.content}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDirty(true);
                       setChapters((prev) =>
-                        prev.map((c) =>
-                          c.id === selected.id ? { ...c, content: e.target.value } : c
-                        )
-                      )
-                    }
+                        prev.map((c) => (c.id === selected.id ? { ...c, content: v } : c))
+                      );
+                    }}
                   />
 
                   <div className="chapter-tools">
@@ -481,10 +516,10 @@ export default function ImportModal({
               )}
 
               <div className="import-footer">
-                <button className="btn secondary" onClick={onClose}>
+                <button className="btn secondary" onClick={requestClose}>
                   Cancel
                 </button>
-                <button className="btn primary" onClick={confirm}>
+                <button className="btn primary" onClick={confirmSend}>
                   Send to Write
                 </button>
               </div>

@@ -1,5 +1,5 @@
 // src/pages/Submit.tsx
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import AppHeader from "@/components/AppHeader";
@@ -16,7 +16,6 @@ import SubmitFeaturePanel from "@/components/SubmitFeaturePanel";
 import "./Library.css";
 import "./Submit.css";
 
-/* --- basic book shape matching what Library cards expect --- */
 type LibBook = {
   id: string | number;
   title: string;
@@ -61,8 +60,7 @@ function toLibBook(b: any): LibBook {
         : typeof b.saves === "number"
         ? b.saves
         : 0,
-    rating:
-      typeof b.rating === "string" || typeof b.rating === "number" ? b.rating : 0,
+    rating: typeof b.rating === "string" || typeof b.rating === "number" ? b.rating : 0,
     userRating: typeof b.userRating === "number" ? b.userRating : 0,
     tags: Array.isArray(b.tags) ? b.tags : Array.isArray(b.subGenres) ? b.subGenres : [],
   };
@@ -70,20 +68,13 @@ function toLibBook(b: any): LibBook {
 
 function colorFromString(seed: string) {
   let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h * 31 + seed.charCodeAt(i)) % 360;
-  }
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
   const bg = `hsl(${h} 70% 50% / 0.16)`;
   const border = `hsl(${h} 70% 50% / 0.38)`;
   const text = `hsl(${h} 85% 92%)`;
   return { bg, border, text };
 }
 
-/**
- * Build a usable cover URL for both static and user-created books.
- * For static books, we use b.coverUrl as-is.
- * For user-created books, we generate an object URL from project.submission.coverFile.
- */
 function getCoverSrcForBook(b: BookWithStatus): string | null {
   if (b.coverUrl) return b.coverUrl;
 
@@ -105,36 +96,39 @@ type BookState = {
   saveCount: number;
 };
 
-
-
 export default function SubmitPage() {
   const navigate = useNavigate();
   const location = useLocation() as any;
 
-  // User-created books saved from Write / Preview
   const [userBooks, setUserBooks] = useState<BookWithStatus[]>([]);
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, Status>>({});
 
-  // merge both lists but tag them with status so we can filter by tab
   const allBooks = useMemo<BookWithStatus[]>(() => {
     const staticBooks: BookWithStatus[] = [
-      ...inProgressBooks.map((b: any) => ({
-        ...toLibBook(b),
-        status: "inProgress" as const,
-      })),
-      ...publishedBooks.map((b: any) => ({
-        ...toLibBook(b),
-        status: "published" as const,
-      })),
+      ...inProgressBooks.map((b: any) => {
+        const base = { ...toLibBook(b), status: "inProgress" as const } as BookWithStatus;
+        const over = statusOverrides[String(base.id)];
+        return over ? { ...base, status: over } : base;
+      }),
+      ...publishedBooks.map((b: any) => {
+        const base = { ...toLibBook(b), status: "published" as const } as BookWithStatus;
+        const over = statusOverrides[String(base.id)];
+        return over ? { ...base, status: over } : base;
+      }),
     ];
 
-    return [...userBooks, ...staticBooks];
-  }, [userBooks]);
+    const users = userBooks.map((b) => {
+      const over = statusOverrides[String(b.id)];
+      return over ? { ...b, status: over } : b;
+    });
+
+    return [...users, ...staticBooks];
+  }, [userBooks, statusOverrides]);
 
   const [activeTab, setActiveTab] = useState<Status>("inProgress");
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [activeBook, setActiveBook] = useState<BookWithStatus | null>(null);
 
-  // pick up saved/published project from Write or Preview
   useEffect(() => {
     const incoming = location.state as any;
     if (!incoming || !incoming.shelfBook) return;
@@ -144,20 +138,17 @@ export default function SubmitPage() {
     const raw = incoming.shelfBook as LibBook;
     const project = incoming.project;
 
-    // For user-created books, ignore raw.coverUrl (it may be a revoked object URL)
     const base: BookWithStatus = {
       ...toLibBook(raw),
       status,
       project,
-      coverUrl: null, // let getCoverSrcForBook rebuild from File
+      coverUrl: null,
     };
 
     setUserBooks((prev) => {
       const idStr = String(base.id);
       const exists = prev.some((p) => String(p.id) === idStr);
-      if (exists) {
-        return prev.map((p) => (String(p.id) === idStr ? base : p));
-      }
+      if (exists) return prev.map((p) => (String(p.id) === idStr ? base : p));
       return [base, ...prev];
     });
 
@@ -204,6 +195,25 @@ export default function SubmitPage() {
 
   const [bookStates, setBookStates] = useState<Record<string, BookState>>(initialStates);
 
+  // keep state map aligned if new books appear
+  useEffect(() => {
+    setBookStates((prev) => {
+      const next = { ...prev };
+      for (const b of allBooks) {
+        const id = String(b.id);
+        if (!next[id]) {
+          next[id] = {
+            liked: false,
+            saved: false,
+            likeCount: typeof b.likes === "number" ? b.likes : 0,
+            saveCount: typeof b.bookmarks === "number" ? b.bookmarks : 0,
+          };
+        }
+      }
+      return next;
+    });
+  }, [allBooks]);
+
   const toggleLike = (bookId: string | number) => {
     setBookStates((prev) => {
       const id = String(bookId);
@@ -211,10 +221,7 @@ export default function SubmitPage() {
       if (!st) return prev;
       const nextLiked = !st.liked;
       const nextLikeCount = nextLiked ? st.likeCount + 1 : Math.max(0, st.likeCount - 1);
-      return {
-        ...prev,
-        [id]: { ...st, liked: nextLiked, likeCount: nextLikeCount },
-      };
+      return { ...prev, [id]: { ...st, liked: nextLiked, likeCount: nextLikeCount } };
     });
   };
 
@@ -225,26 +232,37 @@ export default function SubmitPage() {
       if (!st) return prev;
       const nextSaved = !st.saved;
       const nextSaveCount = nextSaved ? st.saveCount + 1 : Math.max(0, st.saveCount - 1);
-      return {
-        ...prev,
-        [id]: { ...st, saved: nextSaved, saveCount: nextSaveCount },
-      };
+      return { ...prev, [id]: { ...st, saved: nextSaved, saveCount: nextSaveCount } };
     });
   };
 
-  const activeState = activeBook ? bookStates[String(activeBook.id)] : undefined;
+  const togglePublishStatus = useCallback(
+    (bookId: string | number) => {
+      const id = String(bookId);
+      const current = allBooks.find((b) => String(b.id) === id);
+      if (!current) return;
 
-  // submission modal
+      const nextStatus: Status = current.status === "published" ? "inProgress" : "published";
+
+      setStatusOverrides((prev) => ({ ...prev, [id]: nextStatus }));
+      setActiveTab(nextStatus);
+
+      setActiveBook((prev) => {
+        if (!prev || String(prev.id) !== id) return prev;
+        return { ...prev, status: nextStatus };
+      });
+    },
+    [allBooks]
+  );
+
   const [showModal, setShowModal] = useState(false);
   const openSubmission = () => setShowModal(true);
   const closeSubmission = () => setShowModal(false);
 
-  // import modal
   const [showImport, setShowImport] = useState(false);
   const openImport = () => setShowImport(true);
   const closeImport = () => setShowImport(false);
 
-  // ✅ pending imported draft (so "Send to Write" opens SubmissionModal first)
   const [pendingImport, setPendingImport] = useState<null | {
     sourceFileName: string;
     initialTitle: string;
@@ -276,10 +294,7 @@ export default function SubmitPage() {
     closeSubmission();
 
     navigate("/write", {
-      state: {
-        project,
-        status: "inProgress" as const,
-      },
+      state: { project, status: "inProgress" as const },
     });
   };
 
@@ -305,7 +320,6 @@ export default function SubmitPage() {
       <AppHeader onClickWrite={() => {}} onClickSearch={() => {}} />
 
       <main className="library-layout">
-        {/* LEFT: hero + scroll */}
         <div className="library-left">
           <section className="lib-hero" aria-label="Submit header">
             <div className="identity-cell" style={{ minWidth: 0 }}>
@@ -330,13 +344,7 @@ export default function SubmitPage() {
             </nav>
 
             <div className="lib-hero-cta" style={{ display: "flex", gap: 10 }}>
-              {/* ✅ Import button (left of Add book) */}
-              <button
-                className="add-book-btn"
-                type="button"
-                onClick={openImport}
-                aria-label="Import a book file"
-              >
+              <button className="add-book-btn" type="button" onClick={openImport}>
                 Import
               </button>
 
@@ -346,11 +354,7 @@ export default function SubmitPage() {
             </div>
           </section>
 
-          <section
-            className="lib-scroll"
-            aria-label={activeTab === "inProgress" ? "In progress books" : "Published books"}
-            onMouseLeave={clearHover}
-          >
+          <section className="lib-scroll" onMouseLeave={clearHover}>
             <div className="lib-row">
               {visibleBooks.map((book) => {
                 const st = bookStates[String(book.id)];
@@ -370,17 +374,11 @@ export default function SubmitPage() {
                   <div key={book.id} className="lib-col">
                     <div
                       className="lib-card"
-                      aria-label={`Book card for ${book.title}`}
                       onMouseEnter={() => previewBook(book)}
                       onFocus={() => previewBook(book)}
                       onClick={() => selectBook(book)}
                     >
-                      {/* COVER */}
-                      <div
-                        className={`lib-cover${coverIsSelected}`}
-                        aria-label={`${book.title} cover`}
-                        onMouseEnter={() => previewBook(book)}
-                      >
+                      <div className={`lib-cover${coverIsSelected}`}>
                         {coverSrc ? (
                           <img
                             src={coverSrc}
@@ -396,11 +394,8 @@ export default function SubmitPage() {
                         ) : null}
                       </div>
 
-                      {/* DETAILS */}
                       <div
                         className="lib-details"
-                        aria-label="Book details"
-                        onMouseEnter={() => previewBook(book)}
                         style={{
                           overflow: "visible",
                           height: "auto",
@@ -424,10 +419,7 @@ export default function SubmitPage() {
                           {book.title || "—"}
                         </div>
 
-                        <div
-                          className="lib-line lib-year-line"
-                          style={{ marginTop: "6px", fontSize: "12px", lineHeight: 1.2 }}
-                        >
+                        <div className="lib-line lib-year-line" style={{ marginTop: "6px", fontSize: "12px", lineHeight: 1.2 }}>
                           {book.year ? book.year : "—"}
                         </div>
 
@@ -448,8 +440,6 @@ export default function SubmitPage() {
 
                         <div
                           className="lib-row lib-row-actions is-inline"
-                          role="group"
-                          aria-label="Likes, rating, saves"
                           style={{
                             width: "100%",
                             minWidth: 0,
@@ -466,7 +456,6 @@ export default function SubmitPage() {
                             active={likeActive}
                             count={likeCount}
                             onToggle={() => toggleLike(book.id)}
-                            aria-label={likeActive ? "Unlike" : "Like"}
                           />
                           <button
                             type="button"
@@ -486,7 +475,6 @@ export default function SubmitPage() {
                             active={saveActive}
                             count={saveCount}
                             onToggle={() => toggleSave(book.id)}
-                            aria-label={saveActive ? "Unsave" : "Save"}
                           />
                         </div>
 
@@ -499,11 +487,7 @@ export default function SubmitPage() {
                                   <span
                                     className="genre-pill"
                                     title={tag}
-                                    style={{
-                                      backgroundColor: c.bg,
-                                      borderColor: c.border,
-                                      color: c.text,
-                                    }}
+                                    style={{ backgroundColor: c.bg, borderColor: c.border, color: c.text }}
                                   >
                                     {tag}
                                   </span>
@@ -517,7 +501,6 @@ export default function SubmitPage() {
                 );
               })}
 
-              {/* plus card to create a new project – only in In progress tab */}
               {activeTab === "inProgress" && (
                 <div className="lib-col">
                   <button
@@ -545,6 +528,7 @@ export default function SubmitPage() {
             metaState={activeBook ? bookStates[String(activeBook.id)] : undefined}
             onToggleLike={activeBook ? () => toggleLike(activeBook.id) : undefined}
             onToggleSave={activeBook ? () => toggleSave(activeBook.id) : undefined}
+            onTogglePublish={activeBook ? () => togglePublishStatus(activeBook.id) : undefined}
           />
         </aside>
       </main>
@@ -556,14 +540,9 @@ export default function SubmitPage() {
           setPendingImport(null);
         }}
         onSave={handleSave}
-        initial={
-          pendingImport
-            ? { title: pendingImport.initialTitle, author: pendingImport.initialAuthor }
-            : undefined
-        }
+        initial={pendingImport ? { title: pendingImport.initialTitle, author: pendingImport.initialAuthor } : undefined}
       />
 
-      {/* Import modal */}
       <ImportModal open={showImport} onClose={closeImport} onConfirm={handleImportConfirm} />
     </div>
   );

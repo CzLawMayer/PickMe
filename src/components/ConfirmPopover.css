@@ -55,3 +55,14 @@
 .confirm-btn.ok.is-danger{
   border-color: rgba(239, 86, 35, 0.65);
 }
+
+.confirm-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 3000000; /* higher than any modal */
+}
+
+.confirm-card{
+  position: relative;
+  z-index: 3000001;
+}

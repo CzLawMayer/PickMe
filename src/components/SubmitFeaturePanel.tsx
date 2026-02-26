@@ -9,6 +9,9 @@ import SaveButton from "@/components/SaveButton";
 
 import { profile } from "@/profileData";
 
+// ✅ add this import (adjust path if needed)
+import { useConfirm } from "@/components/ConfirmPopover";
+
 type Status = "inProgress" | "published";
 
 type SubmitPanelBook = {
@@ -47,12 +50,9 @@ function getCoverSrcFromBook(book?: SubmitPanelBook | null): string | null {
   return null;
 }
 
-/* ✅ Same exact helper as in Submit.tsx */
 function colorFromString(seed: string) {
   let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h * 31 + seed.charCodeAt(i)) % 360;
-  }
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
   const bg = `hsl(${h} 70% 50% / 0.16)`;
   const border = `hsl(${h} 70% 50% / 0.38)`;
   const text = `hsl(${h} 85% 92%)`;
@@ -71,6 +71,9 @@ interface SubmitFeaturePanelProps {
   metaState?: SubmitFeatureMetaState;
   onToggleLike?: () => void;
   onToggleSave?: () => void;
+
+  // ✅ new prop
+  onTogglePublish?: () => void;
 }
 
 const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
@@ -78,20 +81,20 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
   metaState,
   onToggleLike,
   onToggleSave,
+  onTogglePublish,
 }) => {
   const navigate = useNavigate();
+  const confirm = useConfirm(); // ✅
+
   const coverSrc = useMemo(() => getCoverSrcFromBook(book), [book]);
 
-  // Empty state
   if (!book) {
     return (
       <div className="submit-feature-shell is-empty">
         <div className="rm-shell">
           <h3 className="brand-mark">
-            <span className="brand-p">P</span>ic
-            <span className="brand-k">k</span>
-            <span className="brand-m">M</span>e
-            <span className="brand-bang">!</span>
+            <span className="brand-p">P</span>ic<span className="brand-k">k</span>
+            <span className="brand-m">M</span>e<span className="brand-bang">!</span>
           </h3>
         </div>
       </div>
@@ -99,7 +102,6 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
   }
 
   const chapterCount = book.project?.chapters?.length ?? 0;
-
   const submission = book.project?.submission ?? {};
   const authorLabel = submission.author?.trim() || book.author?.trim() || "Unknown author";
 
@@ -124,7 +126,9 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
   const openHomeAtBook = (mode?: "comments" | "reviews") => {
     const id = String(book.id ?? "");
     if (!id) return;
-    const qs = mode ? `/?book=${encodeURIComponent(id)}&open=${mode}` : `/?book=${encodeURIComponent(id)}`;
+    const qs = mode
+      ? `/?book=${encodeURIComponent(id)}&open=${mode}`
+      : `/?book=${encodeURIComponent(id)}`;
     navigate(qs);
   };
 
@@ -148,7 +152,6 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
     if (!book.project) return;
 
     const chapters = book.project.chapters ?? [];
-
     navigate("/preview", {
       state: {
         book: {
@@ -171,36 +174,38 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
 
   const isPublished = book.status === "published";
 
+  // ✅ confirmation wrapper for publish/unpublish
+  const handlePublishClick = async () => {
+    if (!onTogglePublish) return;
+
+    const ok = await confirm({
+      title: isPublished ? "Unpublish this book?" : "Publish this book?",
+      message: isPublished
+        ? "This will move it back to In progress."
+        : "This will move it to Published.",
+      confirmText: isPublished ? "Unpublish" : "Publish",
+      cancelText: "Cancel",
+      danger: isPublished, // only treat unpublish as “danger” if you want
+    });
+
+    if (ok) onTogglePublish();
+  };
+
   return (
     <div className="submit-feature-shell">
       <div className="rm-shell">
-        {/* COVER FIRST */}
         <div className="rm-cover-btn" aria-hidden="true">
           <div className="rm-cover-box">
-            {coverSrc ? (
-              <img src={coverSrc} alt={`${book.title} cover`} />
-            ) : (
-              <span className="rm-cover-plus">+</span>
-            )}
+            {coverSrc ? <img src={coverSrc} alt={`${book.title} cover`} /> : <span className="rm-cover-plus">+</span>}
           </div>
         </div>
 
-        {/* TITLE BELOW COVER */}
         <h2 className="rm-title">{book.title || "Untitled project"}</h2>
-
-        {/* DIVIDER BELOW TITLE */}
         <hr className="meta-hr" />
 
-        {/* EVERYTHING ELSE */}
         <div className="rm-middle">
-          {/* PROFILE ROW */}
           <div className="feature-author">
-            <Link
-              to="/profile"
-              className="meta-avatar-link"
-              aria-label="Open profile"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <Link to="/profile" className="meta-avatar-link" aria-label="Open profile" onClick={(e) => e.stopPropagation()}>
               <span className="meta-avatar--sm" aria-hidden={true}>
                 {profileAvatarSrc ? (
                   <img src={profileAvatarSrc} alt="" />
@@ -208,54 +213,25 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden={true}>
                     <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
                     <circle cx="12" cy="9" r="3" stroke="white" strokeWidth="2" />
-                    <path
-                      d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
+                    <path d="M6 19c1.6-3 4-4 6-4s4.4 1 6 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 )}
               </span>
             </Link>
 
-            <Link
-              to="/profile"
-              className="meta-username"
-              title={authorLabel}
-              onClick={(e) => e.stopPropagation()}
-            >
+            <Link to="/profile" className="meta-username" title={authorLabel} onClick={(e) => e.stopPropagation()}>
               <span className="feature-author-name">{authorLabel}</span>
             </Link>
           </div>
 
-          {/* BUTTONS */}
           <hr className="meta-hr" />
           <div className="meta-actions">
-            <LikeButton
-              className="meta-icon-btn like"
-              count={displayLikes}
-              active={liked}
-              onToggle={onToggleLike}
-            />
-
+            <LikeButton className="meta-icon-btn like" count={displayLikes} active={liked} onToggle={onToggleLike} />
             <CommentButton active={hasUserCommentedCenter} onOpenComments={() => openHomeAtBook("comments")} />
-
-            <StarButton
-              rating={combinedRating}
-              hasUserReviewed={hasUserReviewedCenter}
-              onOpenReviews={() => openHomeAtBook("reviews")}
-            />
-
-            <SaveButton
-              className="meta-icon-btn save"
-              count={displaySaves}
-              active={saved}
-              onToggle={onToggleSave}
-            />
+            <StarButton rating={combinedRating} hasUserReviewed={hasUserReviewedCenter} onOpenReviews={() => openHomeAtBook("reviews")} />
+            <SaveButton className="meta-icon-btn save" count={displaySaves} active={saved} onToggle={onToggleSave} />
           </div>
 
-          {/* CHAPTERS + GENRE (same row) */}
           <hr className="meta-hr" />
           <div className="align-left">
             <div className="meta-chapters-row">
@@ -284,7 +260,6 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
           <hr className="meta-hr" />
         </div>
 
-        {/* CTA buttons */}
         <div className="rm-actions">
           <button type="button" className="rm-btn rm-btn-preview" onClick={handleEdit}>
             Edit
@@ -292,7 +267,9 @@ const SubmitFeaturePanel: React.FC<SubmitFeaturePanelProps> = ({
           <button type="button" className="rm-btn rm-btn-save" onClick={handlePreview}>
             Preview
           </button>
-          <button type="button" className="rm-btn rm-btn-publish" onClick={() => {}}>
+
+          {/* ✅ now uses confirm popover */}
+          <button type="button" className="rm-btn rm-btn-publish" onClick={handlePublishClick}>
             {isPublished ? "Unpublish" : "Publish"}
           </button>
         </div>

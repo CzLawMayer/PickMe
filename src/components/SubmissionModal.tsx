@@ -1,5 +1,5 @@
-
-import React, { useEffect, useMemo, useRef, useState } from "react";
+// src/components/SubmissionModal.tsx
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import "./SubmissionModal.css";
 import { useConfirm } from "@/components/ConfirmPopover";
@@ -15,103 +15,21 @@ const GENRE_OPTIONS = [
 ];
 
 const LANG_OPTIONS = [
-  "Afrikaans",
-  "Albanian",
-  "Amharic",
-  "Arabic",
-  "Armenian",
-  "Azerbaijani",
-  "Basque",
-  "Bengali",
-  "Bhojpuri",
-  "Bosnian",
-  "Bulgarian",
-  "Burmese",
-  "Cantonese",
-  "Catalan",
-  "Cebuano",
-  "Croatian",
-  "Czech",
-  "Danish",
-  "Dutch",
-  "English",
-  "Estonian",
-  "Finnish",
-  "French",
-  "Galician",
-  "Georgian",
-  "German",
-  "Greek",
-  "Gujarati",
-  "Hausa",
-  "Hebrew",
-  "Hindi",
-  "Hungarian",
-  "Icelandic",
-  "Indonesian",
-  "Irish",
-  "Italian",
-  "Japanese",
-  "Kannada",
-  "Kazakh",
-  "Kinyarwanda",
-  "Khmer",
-  "Korean",
-  "Kurdish",
-  "Lao",
-  "Latvian",
-  "Lithuanian",
-  "Maithili",
-  "Malay (MS)",
-  "Malayalam",
-  "Mandarin Chinese",
-  "Marathi",
-  "Mongolian",
-  "Nepali",
-  "Norwegian",
-  "Odia (Oriya)",
-  "Pashto",
-  "Persian (Farsi)",
-  "Polish",
-  "Portuguese",
-  "Punjabi",
-  "Romanian",
-  "Russian",
-  "Scottish Gaelic",
-  "Serbian",
-  "Sinhala",
-  "Slovak",
-  "Somali",
-  "Spanish",
-  "Sundanese",
-  "Swahili",
-  "Swedish",
-  "Tagalog (Filipino)",
-  "Tajik",
-  "Tamil",
-  "Telugu",
-  "Thai",
-  "Turkish",
-  "Turkmen",
-  "Ukrainian",
-  "Urdu",
-  "Uzbek",
-  "Vietnamese",
-  "Welsh",
-  "Xhosa",
-  "Yoruba",
-  "Zulu",
+  "Afrikaans","Albanian","Amharic","Arabic","Armenian","Azerbaijani","Basque","Bengali","Bhojpuri","Bosnian","Bulgarian","Burmese",
+  "Cantonese","Catalan","Cebuano","Croatian","Czech","Danish","Dutch","English","Estonian","Finnish","French","Galician","Georgian",
+  "German","Greek","Gujarati","Hausa","Hebrew","Hindi","Hungarian","Icelandic","Indonesian","Irish","Italian","Japanese","Kannada",
+  "Kazakh","Kinyarwanda","Khmer","Korean","Kurdish","Lao","Latvian","Lithuanian","Maithili","Malay (MS)","Malayalam","Mandarin Chinese",
+  "Marathi","Mongolian","Nepali","Norwegian","Odia (Oriya)","Pashto","Persian (Farsi)","Polish","Portuguese","Punjabi","Romanian","Russian",
+  "Scottish Gaelic","Serbian","Sinhala","Slovak","Somali","Spanish","Sundanese","Swahili","Swedish","Tagalog (Filipino)","Tajik","Tamil",
+  "Telugu","Thai","Turkish","Turkmen","Ukrainian","Urdu","Uzbek","Vietnamese","Welsh","Xhosa","Yoruba","Zulu",
 ];
-
-
-
 
 export type SubmitFormData = {
   title: string;
   author: string;
   date: string;
-  mainGenre: string;   // single
-  subGenres: string;   // comma-separated list, up to 4
+  mainGenre: string;
+  subGenres: string;
   language: string;
   isbn: string;
   copyright: string;
@@ -133,7 +51,9 @@ export default function SubmissionModal({
   onSave: (data: SubmitFormData) => void;
   initial?: Partial<SubmitFormData>;
 }) {
-  // 1) useState
+  const confirm = useConfirm();
+  const [dirty, setDirty] = useState(false);
+
   const [form, setForm] = useState<SubmitFormData>({
     title: "",
     author: "",
@@ -150,19 +70,37 @@ export default function SubmissionModal({
     backCoverFile: null,
     ...initial,
   });
-  // ✅ When modal opens (or initial changes), prefill title/author from initial
+
+  const requestClose = useCallback(async () => {
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    const ok = await confirm({
+      title: "Discard changes?",
+      message: "If you close now, your changes will be lost.",
+      confirmText: "Discard",
+      cancelText: "Keep editing",
+      danger: true,
+    });
+    if (ok) {
+      setDirty(false);
+      onClose();
+    }
+  }, [dirty, onClose, confirm]);
+
   useEffect(() => {
     if (!open) return;
 
+    setDirty(false);
     setForm((prev) => ({
       ...prev,
       ...(initial ?? {}),
-      // explicitly prioritize initial title/author when provided
       title: typeof initial?.title === "string" ? initial.title : prev.title,
       author: typeof initial?.author === "string" ? initial.author : prev.author,
     }));
   }, [open, initial?.title, initial?.author]);
-  // 2) useMemo
+
   const coverUrl = useMemo(
     () => (form.coverFile instanceof File ? URL.createObjectURL(form.coverFile) : ""),
     [form.coverFile]
@@ -172,7 +110,6 @@ export default function SubmissionModal({
     [form.backCoverFile]
   );
 
-  // 3) revoke blobs
   useEffect(() => {
     return () => {
       try { if (coverUrl) URL.revokeObjectURL(coverUrl); } catch {}
@@ -180,15 +117,15 @@ export default function SubmissionModal({
     };
   }, [coverUrl, backUrl]);
 
-  // 4) esc to close
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") requestClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, requestClose]);
 
-  // 5) keep subGenres from containing main
   useEffect(() => {
     if (!form.mainGenre) return;
     const cleaned = (form.subGenres || "")
@@ -202,8 +139,10 @@ export default function SubmissionModal({
     }
   }, [form.mainGenre, form.subGenres]);
 
-  const setField = (k: keyof SubmitFormData, v: any) =>
+  const setField = (k: keyof SubmitFormData, v: any) => {
+    setDirty(true);
     setForm((f) => ({ ...f, [k]: v }));
+  };
 
   const handleFile = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -217,12 +156,20 @@ export default function SubmissionModal({
   if (!open) return null;
 
   return (
-    <div className="submodal-overlay" role="dialog" aria-modal="true">
-      <div className="submodal">
-        <button className="submodal-close" aria-label="Close" onClick={onClose}>×</button>
+    <div
+      className="submodal-overlay"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) requestClose();
+      }}
+    >
+      <div className="submodal" onMouseDown={(e) => e.stopPropagation()}>
+        <button className="submodal-close" aria-label="Close" onClick={requestClose}>
+          ×
+        </button>
 
         <div className="submodal-grid">
-          {/* LEFT */}
           <div className="sub-left">
             <div className="chip-title">New Project</div>
 
@@ -254,7 +201,6 @@ export default function SubmissionModal({
             </div>
           </div>
 
-          {/* RIGHT */}
           <div className="sub-right">
             <div className="sub-right-rows">
               <Field label="Title:" color="--c-orange" value={form.title} onChange={(v) => setField("title", v)} required />
@@ -266,18 +212,7 @@ export default function SubmissionModal({
                 color="--c-purple"
                 mode="single"
                 value={form.mainGenre}
-                onChange={(v) => {
-                  setField("mainGenre", v);
-                  if (form.subGenres) {
-                    const cleaned = form.subGenres
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                      .filter((g) => g !== v)
-                      .join(", ");
-                    if (cleaned !== form.subGenres) setField("subGenres", cleaned);
-                  }
-                }}
+                onChange={(v) => setField("mainGenre", v)}
                 placeholder="required"
               />
 
@@ -329,8 +264,16 @@ export default function SubmissionModal({
             </div>
 
             <div className="actions">
-              <button className="btn cancel" onClick={onClose}>Cancel</button>
-              <button className="btn save" onClick={() => onSave(form)}>Save</button>
+              <button className="btn cancel" onClick={requestClose}>Cancel</button>
+              <button
+                className="btn save"
+                onClick={() => {
+                  setDirty(false);
+                  onSave(form);
+                }}
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -365,12 +308,13 @@ function Field({
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Info tooltip state + anchors
   const [showInfo, setShowInfo] = useState(false);
   const infoBtnRef = useRef<HTMLButtonElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
-  const [infoPos, setInfoPos] = useState<{top: number; left: number; width: number}>({
-    top: 0, left: 0, width: 260
+  const [infoPos, setInfoPos] = useState<{ top: number; left: number; width: number }>({
+    top: 0,
+    left: 0,
+    width: 260,
   });
 
   useEffect(() => {
@@ -385,19 +329,19 @@ function Field({
       setInfoPos({
         top: r.bottom + gap,
         left: Math.max(8, r.right - width),
-        width
+        width,
       });
     };
+
     const onOutside = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (
-        !infoBtnRef.current?.contains(t) &&
-        !tooltipRef.current?.contains(t)
-      ) {
+      if (!infoBtnRef.current?.contains(t) && !tooltipRef.current?.contains(t)) {
         setShowInfo(false);
       }
     };
-    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setShowInfo(false); };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowInfo(false);
+    };
 
     calc();
     window.addEventListener("scroll", calc, true);
@@ -420,14 +364,13 @@ function Field({
         style={{
           background: `var(${color})`,
           position: "relative",
-          paddingRight: info ? 30 : 12,  // make room for the right-side "i"
+          paddingRight: info ? 30 : 12,
         }}
       >
         <span className="field-label-text">{label}</span>
 
         {info && (
           <>
-            {/* Right-aligned circular "i" inside the colored label */}
             <button
               ref={infoBtnRef}
               type="button"
@@ -456,33 +399,32 @@ function Field({
               i
             </button>
 
-            {showInfo && createPortal(
-              <div
-                ref={tooltipRef}
-                role="tooltip"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  position: "fixed",
-                  top: infoPos.top,
-                  left: infoPos.left,
-                  width: infoPos.width,
-                  zIndex: 1000000,
-                  background: "#1d1d1d",
-                  color: "#fff",
-                  border: "1px solid rgba(255,255,255,.15)",
-                  boxShadow: "0 10px 28px rgba(0,0,0,.45)",
-                  borderRadius: 0,
-                  padding: 10
-                }}
-              >
-                {info.title && (
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>{info.title}</div>
-                )}
-                <div style={{ opacity: 0.95, lineHeight: 1.35 }}>{info.body}</div>
-              </div>,
-              document.body
-            )}
+            {showInfo &&
+              createPortal(
+                <div
+                  ref={tooltipRef}
+                  role="tooltip"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    position: "fixed",
+                    top: infoPos.top,
+                    left: infoPos.left,
+                    width: infoPos.width,
+                    zIndex: 1500000,
+                    background: "#1d1d1d",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,.15)",
+                    boxShadow: "0 10px 28px rgba(0,0,0,.45)",
+                    borderRadius: 0,
+                    padding: 10,
+                  }}
+                >
+                  {info.title && <div style={{ fontWeight: 900, marginBottom: 6 }}>{info.title}</div>}
+                  <div style={{ opacity: 0.95, lineHeight: 1.35 }}>{info.body}</div>
+                </div>,
+                document.body
+              )}
           </>
         )}
       </div>
@@ -540,7 +482,7 @@ function Check({
   );
 }
 
-/* ===== GenreSelect (portal popover; equal height as inputs) ===== */
+/* ===== GenreSelect (portal popover) ===== */
 
 function GenreSelect({
   label,
@@ -564,7 +506,9 @@ function GenreSelect({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number; width: number }>({
-    top: 0, left: 0, width: 280
+    top: 0,
+    left: 0,
+    width: 280,
   });
 
   const selected = useMemo(() => {
@@ -581,8 +525,7 @@ function GenreSelect({
   }, [exclude]);
 
   const display =
-    selected.length > 0 ? selected.join(", ")
-    : (placeholder ?? (mode === "single" ? "required" : "optional"));
+    selected.length > 0 ? selected.join(", ") : (placeholder ?? (mode === "single" ? "required" : "optional"));
 
   useEffect(() => {
     if (!open) return;
@@ -596,7 +539,7 @@ function GenreSelect({
       setPos({
         top: r.bottom + gap,
         left: Math.max(8, r.right - width),
-        width
+        width,
       });
     };
 
@@ -604,7 +547,9 @@ function GenreSelect({
       const t = e.target as Node;
       if (triggerRef.current && !triggerRef.current.contains(t)) setOpen(false);
     };
-    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
 
     calc();
     window.addEventListener("scroll", calc, true);
@@ -659,63 +604,61 @@ function GenreSelect({
             width: "100%",
           }}
         >
-          <span
-            className={selected.length === 0 ? "fi-placeholder" : ""}
-            style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-          >
+          <span className={selected.length === 0 ? "fi-placeholder" : ""} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {display}
           </span>
           <span className="fi-caret" aria-hidden>▾</span>
         </button>
 
-        {open && createPortal(
-          <div
-            role="listbox"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "fixed",
-              top: pos.top,
-              left: pos.left,
-              width: pos.width,
-              maxHeight: 260,
-              overflow: "auto",
-              zIndex: 1000000,
-              background: "#1d1d1d",
-              color: "#fff",
-              border: "1px solid rgba(255,255,255,.15)",
-              boxShadow: "0 10px 28px rgba(0,0,0,.45)",
-              borderRadius: 0,
-            }}
-          >
-            {visibleOptions.map((name) => {
-              const sel = selected.includes(name);
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => toggleOption(name)}
-                  aria-selected={sel}
-                  className={sel ? "genre-opt is-selected" : "genre-opt"}
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    padding: "10px 12px",
-                    textAlign: "left",
-                    border: "none",
-                    background: sel ? "#1e88e5" : "transparent",
-                    color: "#fff",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  {name}
-                </button>
-              );
-            })}
-          </div>,
-          document.body
-        )}
+        {open &&
+          createPortal(
+            <div
+              role="listbox"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: "fixed",
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                maxHeight: 260,
+                overflow: "auto",
+                zIndex: 1500000,
+                background: "#1d1d1d",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,.15)",
+                boxShadow: "0 10px 28px rgba(0,0,0,.45)",
+                borderRadius: 0,
+              }}
+            >
+              {visibleOptions.map((name) => {
+                const sel = selected.includes(name);
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => toggleOption(name)}
+                    aria-selected={sel}
+                    className={sel ? "genre-opt is-selected" : "genre-opt"}
+                    style={{
+                      width: "100%",
+                      display: "block",
+                      padding: "10px 12px",
+                      textAlign: "left",
+                      border: "none",
+                      background: sel ? "#1e88e5" : "transparent",
+                      color: "#fff",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body
+          )}
       </div>
     </div>
   );
@@ -774,6 +717,7 @@ function LanguageSelect({
     window.addEventListener("resize", calc);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
+
     return () => {
       window.removeEventListener("scroll", calc, true);
       window.removeEventListener("resize", calc);
@@ -783,7 +727,7 @@ function LanguageSelect({
   }, [open]);
 
   const choose = (name: string) => {
-    onChange(name);  // single select
+    onChange(name);
     setOpen(false);
   };
 
@@ -815,10 +759,7 @@ function LanguageSelect({
             width: "100%",
           }}
         >
-          <span
-            className={selected.length === 0 ? "fi-placeholder" : ""}
-            style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-          >
+          <span className={selected.length === 0 ? "fi-placeholder" : ""} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {display}
           </span>
           <span className="fi-caret" aria-hidden>▾</span>
@@ -837,7 +778,7 @@ function LanguageSelect({
                 width: pos.width,
                 maxHeight: 260,
                 overflow: "auto",
-                zIndex: 1000000,
+                zIndex: 1500000,
                 background: "#1d1d1d",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,.15)",
