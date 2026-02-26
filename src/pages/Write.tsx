@@ -251,14 +251,26 @@ export default function WritePage() {
   const removeChapter = (id: string) =>
     setChapters((list) => {
       const next = list.filter((c) => c.id !== id);
-      if (activeId === id && next.length) setActiveId(next[0].id);
+
+      // If we deleted the last remaining chapter, keep the editor usable by creating a fresh one
+      if (next.length === 0) {
+        const fresh: Chapter = {
+          id: crypto.randomUUID(),
+          title: "Chapter 1",
+          content: "",
+        };
+        setActiveId(fresh.id);
+        return [fresh];
+      }
+
+      // If active chapter was deleted, switch to first remaining
+      if (activeId === id) setActiveId(next[0].id);
+
+      // Renumber default “Chapter N” titles only
       return next.map((c, i) =>
-        /^Chapter \d+$/.test(c.title)
-          ? { ...c, title: `Chapter ${i + 1}` }
-          : c
+        /^Chapter \d+$/.test(c.title) ? { ...c, title: `Chapter ${i + 1}` } : c
       );
     });
-
   const editorRef = useRef<HTMLDivElement | null>(null);
 
   const applyCommand = (command: string, value?: string) => {
@@ -627,6 +639,17 @@ export default function WritePage() {
       danger: nextIsPublished ? false : true,
     });
 
+
+
+  const confirmDeleteChapter = (chapterTitle: string) =>
+    confirm({
+      title: "Delete chapter?",
+      message: `This will permanently delete "${chapterTitle || "Untitled"}" and its content.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      danger: true,
+    });
+
   return (
     <div
       className={shellClass}
@@ -702,8 +725,10 @@ export default function WritePage() {
                         type="button"
                         className="icon-btn"
                         title="Delete"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
+                          const ok = await confirmDeleteChapter(ch.title);
+                          if (!ok) return;
                           removeChapter(ch.id);
                         }}
                         aria-label="Delete chapter"
