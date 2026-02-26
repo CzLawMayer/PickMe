@@ -2007,3 +2007,123 @@
   .rm-stat-value{ font-size: 12px; }
   .rm-btn{ font-size: 15px; padding: 7px 10px; }
 }
+
+/* Center BOTH side tabs in the space BELOW the header (responsive, no px guessing) */
+.slide-tab.tab-left,
+.slide-tab.tab-right{
+  top: calc(50vh + (var(--app-header-h) / 2)) !important;
+  transform: translateY(-50%) !important;
+}
+
+.lm-settings{
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* pushes icon to far right */
+  width: 100%;
+}
+
+.lm-settings-icon{
+  font-size: 30px;
+  line-height: 2;
+}
+
+.lm-settings{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  padding: 0 16px;        /* keeps icon inside panel padding */
+  box-sizing: border-box; /* prevents overflow */
+}
+
+/* ✅ HARD FIX: center BOTH tabs in the space below the fixed header
+   (no vh math, no px guessing, consistent on all screens) */
+.slide-panel > .slide-tab.tab-left,
+.slide-panel > .slide-tab.tab-right{
+  top: var(--app-header-h, 64px) !important;
+  bottom: 0 !important;
+  margin: auto 0 !important;     /* vertical centering between top & bottom */
+  transform: none !important;    /* stop translateY centering */
+}
+
+/* ✅ Visual-centering fix (right tab looked slightly higher) */
+.slide-panel > .slide-tab{
+  line-height: 1 !important;
+  padding: 0 !important;
+}
+
+.slide-panel > .slide-tab > *{
+  line-height: 1 !important;
+}
+
+/* Force perfect visual centering for vertical text tabs */
+.slide-panel > .slide-tab{
+  display: grid !important;
+  place-items: center !important;
+  line-height: 1 !important;
+}
+
+.lm-add {
+    background: #000000;
+    text-align: center;
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+/* ===== Chapters list: prevent overflow + add ellipsis + smaller type ===== */
+
+/* Make the grid cell actually allowed to shrink (critical for ellipsis) */
+.lm-chapter {
+  min-width: 0;
+}
+
+/* Title text: single line + ellipsis */
+.lm-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* Keep actions from being squeezed */
+.lm-actions {
+  flex: 0 0 auto;
+}
+
+/* Decrease font size for chapter rows (but keep bold look) */
+.lm-item {
+  font-size: clamp(18px, 1.6vw, 22px);
+  line-height: 1.15;
+}
+
+
+/* =========================
+   REMOVE SIDE SHADOWS (panels + tabs) + TOOLBAR SHADOW
+   Paste at VERY BOTTOM of Write.css
+   ========================= */
+
+/* No shadow “behind” the side panels when open */
+.slide-left.is-open,
+.slide-right.is-open{
+  box-shadow: none !important;
+}
+
+/* No shadow around the blue open/close tabs */
+.slide-tab{
+  box-shadow: none !important;
+}
+
+/* No shadow / glow around the editor toolbar */
+.editor-toolbar{
+  box-shadow: none !important;
+}
+
+/* Optional: if you also want to remove the subtle outline/border glow */
+.editor-toolbar{
+  border-color: rgba(255,255,255,0.12) !important; /* keep border */
+  /* or fully remove border:
+  border: none !important;
+  */
+}

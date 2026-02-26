@@ -14,6 +14,31 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import { useConfirm } from "@/components/ConfirmPopover";
 
+// ✅ Google Material Symbols (same approach as your other pages)
+// If your project already uses this, keep it consistent.
+// Otherwise: ensure you include the Material Symbols font in index.html:
+// <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+const GIcon = ({
+  name,
+  className,
+  title,
+  size = 17,
+}: {
+  name: string;
+  className?: string;
+  title?: string;
+  size?: number;
+}) => (
+  <span
+    className={"material-symbols-rounded " + (className ?? "")}
+    aria-hidden="true"
+    title={title}
+    style={{ fontSize: size, lineHeight: 1 }}
+  >
+    {name}
+  </span>
+);
+
 type Chapter = {
   id: string;
   title: string;
@@ -48,7 +73,8 @@ export default function WritePage() {
 
   // status coming from Submit / Preview (default inProgress)
   const statusFromLocation: "inProgress" | "published" =
-    (location.state?.status as "inProgress" | "published" | undefined) === "published"
+    (location.state?.status as "inProgress" | "published" | undefined) ===
+    "published"
       ? "published"
       : "inProgress";
 
@@ -568,8 +594,7 @@ export default function WritePage() {
   const increaseFont = () =>
     setFontScale((s) => Math.min(1.6, Math.round((s + 0.1) * 10) / 10));
 
-  const shellClass =
-    "write-shell" + (isLightMode ? " write-shell--light" : "");
+  const shellClass = "write-shell" + (isLightMode ? " write-shell--light" : "");
 
   const projectTitle = submission?.title?.trim() || "Project title not set";
 
@@ -611,9 +636,7 @@ export default function WritePage() {
 
       {/* LEFT PANEL */}
       <aside
-        className={`slide-panel slide-left ${
-          isLeftOpen ? "is-open" : "is-closed"
-        }`}
+        className={`slide-panel slide-left ${isLeftOpen ? "is-open" : "is-closed"}`}
         aria-hidden={!isLeftOpen}
       >
         <div className="slide-inner">
@@ -621,7 +644,10 @@ export default function WritePage() {
             className="lm-settings"
             onClick={() => setShowSubmission(true)}
           >
-            Settings
+            <span className="lm-settings-text">Settings</span>
+            <span className="material-symbols-rounded lm-settings-icon">
+              settings
+            </span>
           </button>
 
           <ul className="lm-list" role="list">
@@ -641,17 +667,12 @@ export default function WritePage() {
                         defaultValue={ch.title}
                         autoFocus
                         onFocus={(e) => e.target.select()}
-                        onBlur={(e) =>
-                          commitRename(ch.id, e.currentTarget.value)
-                        }
+                        onBlur={(e) => commitRename(ch.id, e.currentTarget.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
                             e.stopPropagation();
-                            commitRename(
-                              ch.id,
-                              (e.target as HTMLInputElement).value
-                            );
+                            commitRename(ch.id, (e.target as HTMLInputElement).value);
                           }
                           if (e.key === "Escape") {
                             e.preventDefault();
@@ -661,7 +682,7 @@ export default function WritePage() {
                         }}
                       />
                     ) : (
-                      <span className="lm-text">{ch.title}</span>
+                      <span className="lm-text">{`${i + 1}. ${ch.title}`}</span>
                     )}
 
                     <span className="lm-actions">
@@ -673,8 +694,9 @@ export default function WritePage() {
                           e.stopPropagation();
                           beginRename(ch.id);
                         }}
+                        aria-label="Rename chapter"
                       >
-                        ✏️
+                        <GIcon name="edit" title="Rename" />
                       </button>
                       <button
                         type="button"
@@ -684,8 +706,9 @@ export default function WritePage() {
                           e.stopPropagation();
                           removeChapter(ch.id);
                         }}
+                        aria-label="Delete chapter"
                       >
-                        🗑️
+                        <GIcon name="delete" title="Delete" />
                       </button>
                     </span>
                   </div>
@@ -693,31 +716,27 @@ export default function WritePage() {
               );
             })}
             <li>
-              <button
-                type="button"
-                className="lm-item lm-add"
-                onClick={addChapter}
-              >
+              <button type="button" className="lm-item lm-add" onClick={addChapter}>
                 + Add chapter
               </button>
             </li>
           </ul>
         </div>
 
+        {/* ✅ chapters menu tabs: icon buttons (open/close) */}
         <button
           className="slide-tab tab-left"
           onClick={() => setLeftOpen((v) => !v)}
           aria-expanded={isLeftOpen}
+          title={isLeftOpen ? "Close chapters" : "Open chapters"}
         >
-          Menu
+          <GIcon name={isLeftOpen ? "chevron_left" : "menu"} />
         </button>
       </aside>
 
       {/* RIGHT PANEL */}
       <aside
-        className={`slide-panel slide-right ${
-          isRightOpen ? "is-open" : "is-closed"
-        }`}
+        className={`slide-panel slide-right ${isRightOpen ? "is-open" : "is-closed"}`}
         aria-hidden={!isRightOpen}
       >
         <div className="slide-inner">
@@ -764,9 +783,7 @@ export default function WritePage() {
 
                   <div className="rm-stat">
                     <span className="rm-stat-label">Read time</span>
-                    <span className="rm-stat-value">
-                      ~{readingTimeMinutes} min
-                    </span>
+                    <span className="rm-stat-value">~{readingTimeMinutes} min</span>
                   </div>
                 </div>
 
@@ -832,9 +849,7 @@ export default function WritePage() {
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
-                    <div className="rm-progress-label">
-                      {progressPercent}% complete
-                    </div>
+                    <div className="rm-progress-label">{progressPercent}% complete</div>
                   </div>
                 </div>
 
@@ -970,8 +985,9 @@ export default function WritePage() {
           className="slide-tab tab-right"
           onClick={() => setRightOpen((v) => !v)}
           aria-expanded={isRightOpen}
+          title={isRightOpen ? "Close notes" : "Open notes"}
         >
-          Notes
+          <GIcon name={isRightOpen ? "chevron_right" : "sticky_note_2"} />
         </button>
       </aside>
 
@@ -987,10 +1003,10 @@ export default function WritePage() {
               >
                 <div
                   className={
-                    "editor-toolbar-handle" +
-                    (isDraggingToolbar ? " is-dragging" : "")
+                    "editor-toolbar-handle" + (isDraggingToolbar ? " is-dragging" : "")
                   }
                   onMouseDown={handleToolbarHandleMouseDown}
+                  title="Drag toolbar"
                 >
                   <div className="editor-toolbar-handle-bar" />
                 </div>
@@ -1002,17 +1018,20 @@ export default function WritePage() {
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => applyCommand("undo")}
                     title="Undo"
+                    aria-label="Undo"
                   >
-                    ↺
+                    <GIcon name="undo" />
                   </button>
+
                   <button
                     type="button"
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => applyCommand("redo")}
                     title="Redo"
+                    aria-label="Redo"
                   >
-                    ↻
+                    <GIcon name="redo" />
                   </button>
 
                   <button
@@ -1020,16 +1039,21 @@ export default function WritePage() {
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => applyCommand("bold")}
+                    title="Bold"
+                    aria-label="Bold"
                   >
-                    B
+                    <GIcon name="format_bold" />
                   </button>
+
                   <button
                     type="button"
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => applyCommand("italic")}
+                    title="Italic"
+                    aria-label="Italic"
                   >
-                    I
+                    <GIcon name="format_italic" />
                   </button>
 
                   <button
@@ -1037,34 +1061,21 @@ export default function WritePage() {
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => applyCommand("underline")}
+                    title="Underline"
+                    aria-label="Underline"
                   >
-                    U
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-tool-btn"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={cycleCase}
-                    title="Cycle case (Aa / AA / aa)"
-                  >
-                    Aa
+                    <GIcon name="format_underlined" />
                   </button>
 
                   <button
                     type="button"
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => applyCommand("justifyCenter")}
+                    onClick={cycleCase}
+                    title="Cycle case (Aa / AA / aa)"
+                    aria-label="Cycle case"
                   >
-                    C
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-tool-btn"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => applyCommand("justifyFull")}
-                  >
-                    J
+                    <GIcon name="text_fields" />
                   </button>
 
                   <button
@@ -1072,16 +1083,43 @@ export default function WritePage() {
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => applyCommand("justifyLeft")}
+                    title="Align left"
+                    aria-label="Align left"
                   >
-                    L
+                    <GIcon name="format_align_left" />
                   </button>
+
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => applyCommand("justifyCenter")}
+                    title="Align center"
+                    aria-label="Align center"
+                  >
+                    <GIcon name="format_align_center" />
+                  </button>
+
                   <button
                     type="button"
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => applyCommand("justifyRight")}
+                    title="Align right"
+                    aria-label="Align right"
                   >
-                    R
+                    <GIcon name="format_align_right" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="editor-tool-btn"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => applyCommand("justifyFull")}
+                    title="Justify"
+                    aria-label="Justify"
+                  >
+                    <GIcon name="format_align_justify" />
                   </button>
 
                   <button
@@ -1089,19 +1127,23 @@ export default function WritePage() {
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={cycleListMode}
-                    title="Toggle list (1. / • / none)"
+                    title="Toggle list (ordered / unordered / none)"
+                    aria-label="Toggle list"
                   >
-                    {listMode === "none" && "1."}
-                    {listMode === "ordered" && "•"}
-                    {listMode === "unordered" && "–"}
+                    {listMode === "none" && <GIcon name="format_list_numbered" />}
+                    {listMode === "ordered" && <GIcon name="format_list_bulleted" />}
+                    {listMode === "unordered" && <GIcon name="format_list_bulleted" />}
                   </button>
+
                   <button
                     type="button"
                     className="editor-tool-btn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={insertSectionDivider}
+                    title="Insert section divider"
+                    aria-label="Insert section divider"
                   >
-                    ○
+                    <GIcon name="more_horiz" />
                   </button>
                 </div>
 
@@ -1110,8 +1152,10 @@ export default function WritePage() {
                   className={"editor-notes-toggle" + (showNotes ? " is-open" : "")}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setShowNotes((v) => !v)}
+                  title="Notes"
+                  aria-label="Notes"
                 >
-                  Notes
+                  <GIcon name="sticky_note_2" />
                 </button>
 
                 {showNotes && (
@@ -1128,9 +1172,7 @@ export default function WritePage() {
 
               <div className="editor-scroll">
                 <header className="editor-header">
-                  <h1 className="editor-title">
-                    {active?.title || "Untitled Chapter"}
-                  </h1>
+                  <h1 className="editor-title">{active?.title || "Untitled Chapter"}</h1>
                 </header>
 
                 <div
@@ -1159,6 +1201,7 @@ export default function WritePage() {
           className="font-size-btn"
           onClick={decreaseFont}
           aria-label="Decrease editor font size"
+          title="Decrease font size"
         >
           –
         </button>
@@ -1168,12 +1211,18 @@ export default function WritePage() {
           className="font-size-btn"
           onClick={increaseFont}
           aria-label="Increase editor font size"
+          title="Increase font size"
         >
           +
         </button>
 
         <label className="switch" aria-label="Toggle editor light mode" style={{ marginLeft: 10 }}>
-          <input id="input" type="checkbox" checked={!isLightMode} onChange={(e) => setIsLightMode(!e.target.checked)} />
+          <input
+            id="input"
+            type="checkbox"
+            checked={!isLightMode}
+            onChange={(e) => setIsLightMode(!e.target.checked)}
+          />
           <span className="slider round">
             <span className="sun-moon">
               {/* keep your existing SVGs */}
