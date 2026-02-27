@@ -1,5 +1,5 @@
 // src/components/AppHeader.tsx
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import StaggeredMenu from "@/components/StaggeredMenu";
 import { menuItems, socialItems } from "@/constants/nav";
@@ -14,11 +14,12 @@ export default function AppHeader({ onClickWrite }: Props) {
   const { pathname } = useLocation();
   const isHome = pathname === "/";
 
-  const [trackersOpen, setTrackersOpen] = useState(false);
-
   return (
     <header
-      className={"app-header " + (isHome ? "app-header--transparent" : "app-header--dark")}
+      className={
+        "app-header " +
+        (isHome ? "app-header--transparent" : "app-header--dark")
+      }
       role="banner"
     >
       <h1 className="logo">
@@ -47,24 +48,32 @@ export default function AppHeader({ onClickWrite }: Props) {
         </Link>
       </h1>
 
-      <div className="header-icons">
-        <TrackersInline />
+      {/* === EVENLY SPACED ICON GROUP === */}
+      <div className="header-icons header-icons--even">
+        {/* Achievements + Goal (2 buttons inside) */}
+        <div className="header-slot header-slot--trackers">
+          <TrackersInline />
+        </div>
 
         {/* Search */}
-        <Link to="/search" className="header-icon-btn" aria-label="Search">
-          <span className="material-symbols-outlined" aria-hidden="true">
-            search
-          </span>
-          <span className="sr-only">Search</span>
-        </Link>
+        <div className="header-slot">
+          <Link to="/search" className="header-icon-btn" aria-label="Search">
+            <span className="material-symbols-outlined" aria-hidden="true">
+              search
+            </span>
+            <span className="sr-only">Search</span>
+          </Link>
+        </div>
 
         {/* Submit */}
-        <Link to="/submit" className="header-icon-btn" aria-label="Submit a story">
-          <span className="material-symbols-outlined" aria-hidden="true">
-            edit
-          </span>
-          <span className="sr-only">Submit</span>
-        </Link>
+        <div className="header-slot">
+          <Link to="/submit" className="header-icon-btn" aria-label="Submit a story">
+            <span className="material-symbols-outlined" aria-hidden="true">
+              edit
+            </span>
+            <span className="sr-only">Submit</span>
+          </Link>
+        </div>
       </div>
 
       <StaggeredMenu
@@ -80,8 +89,6 @@ export default function AppHeader({ onClickWrite }: Props) {
         openMenuButtonColor="#000"
         changeMenuColorOnOpen
       />
-
-      {trackersOpen && <Trackers onClose={() => setTrackersOpen(false)} />}
     </header>
   );
 }
