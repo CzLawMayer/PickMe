@@ -467,7 +467,11 @@ export function TrackersInline() {
             type="button"
             className="header-icon-btn trackersIconBtn"
             aria-label="Achievements"
-            onClick={() => setIsBadgesOpen((v) => !v)}
+            onClick={() => {
+              const next = !isBadgesOpen;
+              if (next) setIsPopoverOpen(false); // close Goal when opening Achievements
+              setIsBadgesOpen(next);
+            }}
           >
             <Award size={18} />
             {earnedCount > 0 && <span className="trackersDot" />}
@@ -481,12 +485,10 @@ export function TrackersInline() {
             className="header-icon-btn trackersIconBtn"
             aria-label="Goal tracker"
             onClick={() => {
-                setIsPopoverOpen((v) => {
-                    const next = !v;
-                    if (next) setIsBadgesOpen(false); // close Achievements
-                    return next;
-                });
-                setView("progress");
+              const next = !isPopoverOpen;
+              if (next) setIsBadgesOpen(false); // close Achievements when opening Goal
+              setIsPopoverOpen(next);
+              setView("progress");
             }}
           >
             <svg className="ring" viewBox="0 0 40 40" aria-hidden="true">
