@@ -473,7 +473,7 @@ export function TrackersInline() {
               setIsBadgesOpen(next);
             }}
           >
-            <Award size={18} />
+            <Award size={26} strokeWidth={2.2} />
             {earnedCount > 0 && <span className="trackersDot" />}
           </button>
         </div>
@@ -501,7 +501,7 @@ export function TrackersInline() {
                 style={{ strokeDashoffset: 100.5 - (goalPercent / 100) * 100.5 }}
               />
             </svg>
-            <Target size={14} />
+            <Target size={24} />
           </button>
         </div>
       </div>

@@ -47,7 +47,7 @@
 .header-icons {
   display: flex;
   align-items: center;
-  gap: 2px; /* your tight spacing */
+  gap: 0px; /* your tight spacing */
 
   justify-self: end;
 
@@ -275,3 +275,16 @@
 :root[data-sm-open="true"] .staggered-menu-header.sm-portal-toggle .sm-toggle {
   color: #000;
 }
+
+.header-icons--even {
+  gap: 0px; /* your desired even spacing */
+}
+
+.app-header .header-icons {
+  gap: 0 !important;
+}
+
+.header-icon-btn:hover {
+  transform: scale(1.10);
+}
+
