@@ -12,373 +12,34 @@ import {
   Send,
   Plus,
   ArrowLeft,
-  Hash,
-  MessageCircle,
-  MessageSquare,
-  Search,
   Filter,
   Star,
   SmilePlus,
   CheckSquare,
   X,
   Heart,
-  PenSquare,
   Clock,
   TrendingUp,
   MessageSquarePlus,
   Image as ImageIcon,
+  MessageCircle,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import "./Forum.css";
 
-// --- Mock Data ---
+/* -------------------------------------------------------
+   Mock Data
+------------------------------------------------------- */
 const MOCK_USER_ID = "localUser123";
-
-// Start with an EMPTY messages map
-const MOCK_MESSAGES: Record<string, any[]> = {};
 
 // Start with an EMPTY topics list
 const MOCK_TOPICS: any[] = [];
 
-// --- NEW MOCK DATA for Writing Corner ---
-const MOCK_POEMS: any[] = [];
-const MOCK_PHILOSOPHY: any[] = [];
-const MOCK_STORIES: any[] = [];
-
-// --- Reaction Helpers ---
+/* -------------------------------------------------------
+   Reaction Helpers
+------------------------------------------------------- */
 const reactionEmojis = ["👍", "❤️", "😂", "📖"];
 
-// --- Avatar Component ---
-type AvatarProps = {
-  userId: string;
-  onViewProfile?: (userId: string) => void;
-};
-
-function Avatar({ userId, onViewProfile }: AvatarProps) {
-  const colors = [
-    "#ef6c00", // Orange
-    "#d81b60", // Pink
-    "#6a1b9a", // Purple
-    "#1e88e5", // Blue
-    "#00897b", // Teal
-    "#fbc02d", // Yellow
-  ];
-
-  const charCodeSum = (userId || "default")
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const color = colors[charCodeSum % colors.length];
-  const initial = userId ? userId[0].toUpperCase() : "?";
-
-  const avatarCore = (
-    <div
-      style={{
-        backgroundColor: color,
-        width: 40,
-        height: 40,
-        borderRadius: "999px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#ffffff",
-        fontWeight: 700,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.45)",
-        flexShrink: 0,
-      }}
-    >
-      <span>{initial}</span>
-    </div>
-  );
-
-  if (!onViewProfile) return avatarCore;
-
-  return (
-    <button
-      className="forum-avatar-button"
-      type="button"
-      onClick={() => onViewProfile(userId)}
-    >
-      {avatarCore}
-    </button>
-  );
-}
-
-// --- Main App Component ---
-export default function ForumPage() {
-  const [userId] = useState(MOCK_USER_ID);
-
-  // --- Lifted State ---
-  const [topics, setTopics] = useState(MOCK_TOPICS);
-  const [poems, setPoems] = useState(MOCK_POEMS);
-  const [philosophy, setPhilosophy] = useState(MOCK_PHILOSOPHY);
-  const [stories, setStories] = useState(MOCK_STORIES);
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
-  const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
-
-  // --- State for Sidebar Navigation ---
-  const [currentView, setCurrentView] = useState<
-    "Forum" | "BookClub" | "WritingCorner" | "Chat"
-  >("Forum");
-  const [currentChannel, setCurrentChannel] = useState("Fantasy");
-
-  // List of available channels/categories
-  const channels = [
-    "Adventure",
-    "Anthology",
-    "Balls",
-    "Big Juicy Balls",
-    "Biography",
-    "Bruh",
-    "Coming of Age",
-    "Contemporary",
-    "Crime",
-    "Cyberpunk",
-    "Detective",
-    "Drama",
-    "Dystopian",
-    "Fantasy",
-    "Family Saga",
-    "Historical Fiction",
-    "Horror",
-    "Humor",
-    "Literary",
-    "Magical Realism",
-    "Memoir",
-    "Music",
-    "Mystery",
-    "New Adult",
-    "Non-Fiction",
-    "Paranormal",
-    "Philosophy",
-    "Poetry",
-    "Post-Apocalyptic",
-    "Psychological Thriller",
-    "Romance",
-    "Science Fiction",
-    "Self-Help",
-    "Short Stories",
-    "Space Opera",
-    "Steampunk",
-    "Thriller",
-    "Time Travel",
-    "Urban Fantasy",
-    "Young Adult",
-  ];
-
-  const handleViewProfile = (id: string) => {
-    setViewingProfileId(id);
-  };
-
-  const handleSelectTopic = (topicId: string | null) => {
-    setSelectedTopicId(topicId);
-    setCurrentView("Forum");
-    setViewingProfileId(null);
-  };
-
-  // Find the full topic object from the ID
-  const selectedTopic = useMemo(
-    () => topics.find((t: any) => t.id === selectedTopicId),
-    [selectedTopicId, topics]
-  );
-
-  return (
-    <div className="forum-page">
-      {/* Global header */}
-      <AppHeader />
-
-      <div className="forum-root">
-        {/* Sidebar */}
-        <Sidebar
-          userId={userId}
-          channels={channels}
-          currentChannel={currentChannel}
-          setCurrentChannel={setCurrentChannel}
-          currentView={currentView}
-          setCurrentView={setCurrentView}
-          onViewProfile={handleViewProfile}
-        />
-
-        {/* Content Area */}
-        <main className="forum-main">
-          {currentView === "Forum" && (
-            <Forum
-              userId={userId}
-              categories={channels}
-              topics={topics}
-              setTopics={setTopics}
-              selectedTopic={selectedTopic}
-              onSelectTopic={handleSelectTopic}
-              onViewProfile={handleViewProfile}
-            />
-          )}
-          {currentView === "BookClub" && (
-            <BookClub userId={userId} onViewProfile={handleViewProfile} />
-          )}
-          {currentView === "WritingCorner" && (
-            <WritingCorner
-              userId={userId}
-              poems={poems}
-              setPoems={setPoems}
-              philosophy={philosophy}
-              setPhilosophy={setPhilosophy}
-              stories={stories}
-              setStories={setStories}
-              onViewProfile={handleViewProfile}
-            />
-          )}
-          {currentView === "Chat" && (
-            <Chatroom
-              userId={userId}
-              currentChannel={currentChannel}
-              onViewProfile={handleViewProfile}
-            />
-          )}
-        </main>
-
-        {/* --- User Profile Modal --- */}
-        {viewingProfileId && (
-          <UserProfileModal
-            userId={viewingProfileId}
-            allTopics={topics}
-            allPoems={poems}
-            allPhilosophy={philosophy}
-            allStories={stories}
-            onClose={() => setViewingProfileId(null)}
-            onSelectTopic={handleSelectTopic}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// --- Sidebar Component ---
-type SidebarProps = {
-  userId: string;
-  channels: string[];
-  currentChannel: string;
-  setCurrentChannel: (ch: string) => void;
-  currentView: "Forum" | "BookClub" | "WritingCorner" | "Chat";
-  setCurrentView: (v: "Forum" | "BookClub" | "WritingCorner" | "Chat") => void;
-  onViewProfile: (id: string) => void;
-};
-
-function Sidebar({
-  userId,
-  channels,
-  currentChannel,
-  setCurrentChannel,
-  currentView,
-  setCurrentView,
-  onViewProfile,
-}: SidebarProps) {
-  return (
-    <nav className="forum-sidebar">
-      {/* User Info */}
-      <div className="forum-sidebar-userblock">
-        <div className="forum-sidebar-userrow">
-          <div>
-            <Avatar userId={userId} onViewProfile={onViewProfile} />
-          </div>
-          <div className="forum-sidebar-username">
-            <h2>Book Lover</h2>
-            <p>@{userId}</p>
-          </div>
-        </div>
-        <div className="forum-sidebar-underline">
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-      </div>
-
-      <div className="forum-sidebar-divider" />
-
-      {/* View Toggles */}
-      <div>
-        <div className="forum-sidebar-view-label">View</div>
-
-        <button
-          type="button"
-          onClick={() => setCurrentView("Forum")}
-          className={[
-            "forum-sidebar-view-btn",
-            "forum-sidebar-view-btn-forum",
-            currentView === "Forum" ? "is-active-view" : "",
-          ].join(" ")}
-        >
-          <BookOpen size={20} />
-          <span>Forum</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setCurrentView("BookClub")}
-          className={[
-            "forum-sidebar-view-btn",
-            "forum-sidebar-view-btn-bookclub",
-            currentView === "BookClub" ? "is-active-view" : "",
-          ].join(" ")}
-        >
-          <Star size={20} />
-          <span>Book Club</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setCurrentView("WritingCorner")}
-          className={[
-            "forum-sidebar-view-btn",
-            "forum-sidebar-view-btn-writing",
-            currentView === "WritingCorner" ? "is-active-view" : "",
-          ].join(" ")}
-        >
-          <PenSquare size={20} />
-          <span>Writing Corner</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setCurrentView("Chat")}
-          className={[
-            "forum-sidebar-view-btn",
-            "forum-sidebar-view-btn-chat",
-            currentView === "Chat" ? "is-active-view" : "",
-          ].join(" ")}
-        >
-          <MessageSquare size={20} />
-          <span>Chat</span>
-        </button>
-      </div>
-
-      {/* Channels (for Chat) */}
-      {currentView === "Chat" && (
-        <div className="forum-sidebar-channels custom-scrollbar">
-          <div className="forum-sidebar-channels-title">Chat Channels</div>
-          {channels.map((channel) => (
-            <button
-              key={channel}
-              type="button"
-              onClick={() => setCurrentChannel(channel)}
-              className={[
-                "forum-sidebar-channel-btn",
-                currentChannel === channel
-                  ? "forum-sidebar-channel-btn-active"
-                  : "",
-              ].join(" ")}
-            >
-              <Hash size={16} />
-              <span>{channel}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </nav>
-  );
-}
-
-// --- Local Reaction Logic ---
 function toggleReaction(
   reactions: Record<string, string[]>,
   emoji: string,
@@ -404,7 +65,53 @@ function toggleReaction(
   return newReactions;
 }
 
-// --- ReactionBar Component ---
+/* -------------------------------------------------------
+   Avatar Component (profile click removed)
+------------------------------------------------------- */
+type AvatarProps = {
+  userId: string;
+};
+
+function Avatar({ userId }: AvatarProps) {
+  const colors = [
+    "#ef6c00",
+    "#d81b60",
+    "#6a1b9a",
+    "#1e88e5",
+    "#00897b",
+    "#fbc02d",
+  ];
+
+  const charCodeSum = (userId || "default")
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const color = colors[charCodeSum % colors.length];
+  const initial = userId ? userId[0].toUpperCase() : "?";
+
+  return (
+    <div
+      style={{
+        backgroundColor: color,
+        width: 40,
+        height: 40,
+        borderRadius: "999px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#ffffff",
+        fontWeight: 700,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.45)",
+        flexShrink: 0,
+      }}
+    >
+      <span>{initial}</span>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------
+   ReactionBar Component
+------------------------------------------------------- */
 type ReactionBarProps = {
   reactions: Record<string, string[]>;
   userId: string;
@@ -464,608 +171,173 @@ function ReactionBar({ reactions, userId, onReact }: ReactionBarProps) {
   );
 }
 
-// --- Chatroom Component ---
-type ChatroomProps = {
-  userId: string;
-  currentChannel: string;
-  onViewProfile: (id: string) => void;
-};
+/* -------------------------------------------------------
+   Main Page Component (only Forum + BookClub)
+------------------------------------------------------- */
+export default function ForumPage() {
+  const [userId] = useState(MOCK_USER_ID);
 
-function Chatroom({ userId, currentChannel, onViewProfile }: ChatroomProps) {
-  const [messages, setMessages] =
-    useState<Record<string, any[]>>(MOCK_MESSAGES);
-  const [newMessage, setNewMessage] = useState("");
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // Lifted State
+  const [topics, setTopics] = useState(MOCK_TOPICS);
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
 
-  const currentMessages = messages[currentChannel] || [];
+  // Sidebar view state (ONLY Forum + BookClub now)
+  const [currentView, setCurrentView] = useState<"Forum" | "BookClub">("Forum");
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages]);
-
-  const handleSendMessage = (e: FormEvent) => {
-    e.preventDefault();
-    if (!userId || (!newMessage.trim() && !attachedImage)) return;
-
-    const newMessageObj = {
-      id: Date.now(),
-      text: newMessage.trim(),
-      userId,
-      timestamp: new Date(),
-      channel: currentChannel,
-      reactions: {} as Record<string, string[]>,
-      imageUrl: attachedImage || null,
-    };
-
-    setMessages((prev) => ({
-      ...prev,
-      [currentChannel]: [...(prev[currentChannel] || []), newMessageObj],
-    }));
-    setNewMessage("");
-    setAttachedImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const handleSelectTopic = (topicId: string | null) => {
+    setSelectedTopicId(topicId);
+    setCurrentView("Forum");
   };
 
-  const handleReact = (messageId: number, emoji: string) => {
-    setMessages((prev) => {
-      const channelMessages = prev[currentChannel] || [];
-      const newChannelMessages = channelMessages.map((msg) => {
-        if (msg.id === messageId) {
-          const newReactions = toggleReaction(
-            msg.reactions || {},
-            emoji,
-            userId
-          );
-          return { ...msg, reactions: newReactions };
-        }
-        return msg;
-      });
-      return {
-        ...prev,
-        [currentChannel]: newChannelMessages,
-      };
-    });
-  };
+  const selectedTopic = useMemo(
+    () => topics.find((t: any) => t.id === selectedTopicId),
+    [selectedTopicId, topics]
+  );
 
-  const handleImagePick = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setAttachedImage(url);
-  };
-
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
-  const canSend = !!newMessage.trim() || !!attachedImage;
+  // Categories used by Forum filter dropdown (kept as before)
+  const categories = [
+    "Adventure",
+    "Anthology",
+    "Biography",
+    "Coming of Age",
+    "Contemporary",
+    "Crime",
+    "Cyberpunk",
+    "Detective",
+    "Drama",
+    "Dystopian",
+    "Fantasy",
+    "Family Saga",
+    "Historical Fiction",
+    "Horror",
+    "Humor",
+    "Literary",
+    "Magical Realism",
+    "Memoir",
+    "Mystery",
+    "New Adult",
+    "Non-Fiction",
+    "Paranormal",
+    "Poetry",
+    "Post-Apocalyptic",
+    "Psychological Thriller",
+    "Romance",
+    "Science Fiction",
+    "Self-Help",
+    "Short Stories",
+    "Space Opera",
+    "Steampunk",
+    "Thriller",
+    "Time Travel",
+    "Urban Fantasy",
+    "Young Adult",
+  ];
 
   return (
-    <div className="chatroom-root">
-      <header className="forum-header">
-        <div className="forum-header-title">
-          <Hash size={24} color="#1e88e5" />
-          <span>{currentChannel} - Chat</span>
-        </div>
-      </header>
+    <div className="forum-page">
+      <AppHeader />
 
-      <div className="forum-body-scroll custom-scrollbar">
-        <div className="chat-message-list">
-          {currentMessages.map((msg) => (
-            <div key={msg.id} className="chat-message-card">
-              <Avatar userId={msg.userId} onViewProfile={onViewProfile} />
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div className="chat-message-meta">
-                  <span className="chat-message-username">{msg.userId}</span>
-                  <span className="chat-message-timestamp">
-                    {msg.timestamp.toLocaleTimeString()}
-                  </span>
-                </div>
-                {msg.text && (
-                  <p className="chat-message-text">{msg.text}</p>
-                )}
-                {msg.imageUrl && (
-                  <img
-                    src={msg.imageUrl}
-                    alt="Attachment"
-                    className="forum-image-attachment"
-                  />
-                )}
-                <ReactionBar
-                  reactions={msg.reactions || {}}
-                  userId={userId}
-                  onReact={(emoji) => handleReact(msg.id, emoji)}
-                />
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+      <div className="forum-root">
+        <Sidebar
+          userId={userId}
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+        />
 
-      <form className="chat-input-bar" onSubmit={handleSendMessage}>
-        <div className="chat-input-inner">
-          <Avatar userId={userId} onViewProfile={onViewProfile} />
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={`Message #${currentChannel}...`}
-            className="forum-input"
-          />
-
-          {/* Image picker button */}
-          <button
-            type="button"
-            className="forum-btn forum-attach-btn"
-            onClick={openFilePicker}
-          >
-            <ImageIcon size={18} />
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={handleImagePick}
-          />
-
-          <button
-            type="submit"
-            className="forum-btn forum-btn-blue"
-            disabled={!canSend}
-          >
-            <Send size={20} />
-          </button>
-        </div>
-
-        {attachedImage && (
-          <div className="forum-image-preview-row">
-            <span className="forum-image-preview-label">Attached image</span>
-            <div className="forum-image-preview-wrapper">
-              <img
-                src={attachedImage}
-                alt="Preview"
-                className="forum-image-attachment-small"
-              />
-            </div>
-          </div>
-        )}
-      </form>
-    </div>
-  );
-}
-
-// --- BookClub Component ---
-type BookClubProps = {
-  userId: string;
-  onViewProfile: (id: string) => void;
-};
-
-function BookClub({ userId, onViewProfile }: BookClubProps) {
-  const book = {
-    title: "Dune",
-    author: "Frank Herbert",
-    description:
-      'The Book of the Month is "Dune"! Grab your copy and join the discussion!',
-    imageUrl:
-      "https://placehold.co/300x450/111/FFF?text=Book+Cover+Here&font=sans",
-  };
-
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSendMessage = (e: FormEvent) => {
-    e.preventDefault();
-    if (!userId || (!newMessage.trim() && !attachedImage)) return;
-
-    const newMessageObj = {
-      id: Date.now(),
-      text: newMessage.trim(),
-      userId,
-      timestamp: new Date(),
-      reactions: {} as Record<string, string[]>,
-      imageUrl: attachedImage || null,
-    };
-    setMessages((prev) => [...prev, newMessageObj]);
-    setNewMessage("");
-    setAttachedImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleReact = (messageId: number, emoji: string) => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg) => {
-        if (msg.id === messageId) {
-          const newReactions = toggleReaction(
-            msg.reactions || {},
-            emoji,
-            userId
-          );
-          return { ...msg, reactions: newReactions };
-        }
-        return msg;
-      })
-    );
-  };
-
-  const handleImagePick = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setAttachedImage(url);
-  };
-
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
-  const canSend = !!newMessage.trim() || !!attachedImage;
-
-  return (
-    <div className="bookclub-root">
-      <header className="forum-header">
-        <div className="forum-header-title">
-          <Star size={24} color="#d81b60" />
-          <span>Book of the Month Club</span>
-        </div>
-      </header>
-
-      <div className="bookclub-layout">
-        {/* Left - book info */}
-        <div className="bookclub-info-panel">
-          <h3 className="bookclub-title">{book.title}</h3>
-          <p className="bookclub-author">by {book.author}</p>
-          <img
-            src={book.imageUrl}
-            alt="Book cover"
-            className="bookclub-cover"
-          />
-          <p className="bookclub-desc">{book.description}</p>
-        </div>
-
-        {/* Right - discussion */}
-        <div className="bookclub-discussion">
-          <h4 className="bookclub-discussion-title">Discussion</h4>
-          <div className="forum-body-scroll custom-scrollbar">
-            <div className="chat-message-list">
-              {messages.map((msg) => (
-                <div key={msg.id} className="chat-message-card">
-                  <Avatar userId={msg.userId} onViewProfile={onViewProfile} />
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div className="chat-message-meta">
-                      <span className="chat-message-username">
-                        {msg.userId}
-                      </span>
-                      <span className="chat-message-timestamp">
-                        {msg.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                    {msg.text && (
-                      <p className="chat-message-text">{msg.text}</p>
-                    )}
-                    {msg.imageUrl && (
-                      <img
-                        src={msg.imageUrl}
-                        alt="Attachment"
-                        className="forum-image-attachment"
-                      />
-                    )}
-                    <ReactionBar
-                      reactions={msg.reactions || {}}
-                      userId={userId}
-                      onReact={(emoji) => handleReact(msg.id, emoji)}
-                    />
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-
-          <form className="chat-input-bar" onSubmit={handleSendMessage}>
-            <div className="chat-input-inner">
-              <Avatar userId={userId} onViewProfile={onViewProfile} />
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Discuss the book..."
-                className="forum-input"
-              />
-
-              {/* Image picker */}
-              <button
-                type="button"
-                className="forum-btn forum-attach-btn"
-                onClick={openFilePicker}
-              >
-                <ImageIcon size={18} />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleImagePick}
-              />
-
-              <button
-                type="submit"
-                className="forum-btn forum-btn-pink"
-                disabled={!canSend}
-              >
-                <Send size={20} />
-              </button>
-            </div>
-
-            {attachedImage && (
-              <div className="forum-image-preview-row">
-                <span className="forum-image-preview-label">
-                  Attached image
-                </span>
-                <div className="forum-image-preview-wrapper">
-                  <img
-                    src={attachedImage}
-                    alt="Preview"
-                    className="forum-image-attachment-small"
-                  />
-                </div>
-              </div>
-            )}
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- WritingCorner Component (no image upload) ---
-type WritingCornerProps = {
-  userId: string;
-  poems: any[];
-  setPoems: React.Dispatch<React.SetStateAction<any[]>>;
-  philosophy: any[];
-  setPhilosophy: React.Dispatch<React.SetStateAction<any[]>>;
-  stories: any[];
-  setStories: React.Dispatch<React.SetStateAction<any[]>>;
-  onViewProfile: (id: string) => void;
-};
-
-function WritingCorner({
-  userId,
-  poems,
-  setPoems,
-  philosophy,
-  setPhilosophy,
-  stories,
-  setStories,
-  onViewProfile,
-}: WritingCornerProps) {
-  const [subView, setSubView] = useState<"Poems" | "Philosophy" | "Short Stories">(
-    "Poems"
-  );
-  const [newPost, setNewPost] = useState("");
-  const postsEndRef = useRef<HTMLDivElement | null>(null);
-
-  const PROMPTS: Record<string, string> = {
-    Poems: "This month's prompt: Write a poem about a forgotten bookmark.",
-    Philosophy: "This month's question: What makes a character 'good' or 'evil'?",
-    "Short Stories":
-      "This month's prompt: Start a story with the line: 'The book was heavier than it looked.'",
-  };
-
-  const PLACEHOLDERS: Record<string, string> = {
-    Poems: "Write your poem...",
-    Philosophy: "Share your thoughts...",
-    "Short Stories": "Write your short story...",
-  };
-
-  const charLimit = subView === "Short Stories" ? 1000 : 200;
-  const charsRemaining = charLimit - newPost.length;
-
-  const { currentPosts, setPosts } = useMemo(() => {
-    if (subView === "Poems") {
-      return { currentPosts: poems, setPosts: setPoems };
-    }
-    if (subView === "Philosophy") {
-      return { currentPosts: philosophy, setPosts: setPhilosophy };
-    }
-    if (subView === "Short Stories") {
-      return { currentPosts: stories, setPosts: setStories };
-    }
-    return { currentPosts: poems, setPosts: setPoems };
-  }, [subView, poems, setPoems, philosophy, setPhilosophy, stories, setStories]);
-
-  const handlePost = (e: FormEvent) => {
-    e.preventDefault();
-    if (!userId || !newPost.trim()) return;
-
-    const newPostObj = {
-      id: Date.now(),
-      text: newPost.trim(),
-      userId,
-      timestamp: new Date(),
-      reactions: {} as Record<string, string[]>,
-    };
-    setPosts((prev: any[]) => [...prev, newPostObj]);
-    setNewPost("");
-  };
-
-  const handleReact = (postId: number, emoji: string) => {
-    setPosts((prevPosts: any[]) =>
-      prevPosts.map((post) => {
-        if (post.id === postId) {
-          const newReactions = toggleReaction(
-            post.reactions || {},
-            emoji,
-            userId
-          );
-          return { ...post, reactions: newReactions };
-        }
-        return post;
-      })
-    );
-  };
-
-  return (
-    <div className="writing-root">
-      <header className="forum-header">
-        <div className="writing-header-row">
-          <div className="forum-header-title">
-            <PenSquare size={24} color="#6a1b9a" />
-            <span>Writing Corner</span>
-          </div>
-          <div className="writing-mode-toggle-group">
-            <button
-              type="button"
-              className={
-                "writing-mode-btn" +
-                (subView === "Poems" ? " writing-mode-btn-active" : "")
-              }
-              onClick={() => setSubView("Poems")}
-            >
-              Poems
-            </button>
-            <button
-              type="button"
-              className={
-                "writing-mode-btn" +
-                (subView === "Philosophy" ? " writing-mode-btn-active" : "")
-              }
-              onClick={() => setSubView("Philosophy")}
-            >
-              Philosophy
-            </button>
-            <button
-              type="button"
-              className={
-                "writing-mode-btn" +
-                (subView === "Short Stories"
-                  ? " writing-mode-btn-active"
-                  : "")
-              }
-              onClick={() => setSubView("Short Stories")}
-            >
-              Short Stories
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="forum-body-scroll custom-scrollbar">
-        <div className="writing-prompt-block">
-          <div className="writing-prompt-title">
-            {subView === "Philosophy"
-              ? "This Month's Question"
-              : "This Month's Prompt"}
-          </div>
-          <p className="writing-prompt-text">{PROMPTS[subView]}</p>
-        </div>
-
-        <div className="stack-vertical-4">
-          {currentPosts.map((post: any) => (
-            <div
-              key={post.id}
-              className={
-                "writing-post-card" +
-                (subView === "Short Stories" ? " writing-post-card-wide" : "")
-              }
-            >
-              <div
-                style={{
-                  display: "flex",
-                  columnGap: "1rem",
-                  alignItems: "flex-start",
-                }}
-              >
-                <Avatar userId={post.userId} onViewProfile={onViewProfile} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div className="chat-message-meta">
-                    <span className="chat-message-username">
-                      {post.userId}
-                    </span>
-                    <span className="chat-message-timestamp">
-                      {post.timestamp.toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <p
-                    style={{
-                      marginTop: "0.5rem",
-                      wordBreak: "break-word",
-                      whiteSpace: "pre-wrap",
-                      fontStyle: "italic",
-                      fontSize: "0.875rem",
-                      color: "#e5e7eb",
-                    }}
-                  >
-                    {post.text}
-                  </p>
-                  <ReactionBar
-                    reactions={post.reactions || {}}
-                    userId={userId}
-                    onReact={(emoji) => handleReact(post.id, emoji)}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-          <div ref={postsEndRef} />
-        </div>
-      </div>
-
-      <form className="chat-input-bar" onSubmit={handlePost}>
-        <div className="chat-input-inner" style={{ alignItems: "flex-start" }}>
-          <Avatar userId={userId} onViewProfile={onViewProfile} />
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder={PLACEHOLDERS[subView]}
-              className="forum-textarea"
-              rows={4}
-              maxLength={charLimit}
+        <main className="forum-main">
+          {currentView === "Forum" && (
+            <Forum
+              userId={userId}
+              categories={categories}
+              topics={topics}
+              setTopics={setTopics}
+              selectedTopic={selectedTopic}
+              onSelectTopic={handleSelectTopic}
             />
-            <div className="writing-input-footer">
-              <span
-                className="writing-chars-remaining"
-                style={{
-                  color:
-                    charsRemaining < charLimit * 0.1 ? "#ef4444" : "#6b7280",
-                }}
-              >
-                {charsRemaining} characters remaining
-              </span>
-              <button
-                type="submit"
-                className="forum-btn forum-btn-purple"
-                disabled={!newPost.trim()}
-              >
-                Post
-              </button>
-            </div>
-          </div>
-        </div>
-      </form>
+          )}
+
+          {currentView === "BookClub" && <BookClub userId={userId} />}
+        </main>
+      </div>
     </div>
   );
 }
 
-// --- Poll Creation Component ---
+/* -------------------------------------------------------
+   Sidebar Component (ONLY Forum + BookClub)
+------------------------------------------------------- */
+type SidebarProps = {
+  userId: string;
+  currentView: "Forum" | "BookClub";
+  setCurrentView: (v: "Forum" | "BookClub") => void;
+};
+
+function Sidebar({ userId, currentView, setCurrentView }: SidebarProps) {
+  return (
+    <nav className="forum-sidebar">
+      <div className="forum-sidebar-userblock">
+        <div className="forum-sidebar-userrow">
+          <div>
+            <Avatar userId={userId} />
+          </div>
+          <div className="forum-sidebar-username">
+            <h2>Book Lover</h2>
+            <p>@{userId}</p>
+          </div>
+        </div>
+        <div className="forum-sidebar-underline">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
+
+      <div className="forum-sidebar-divider" />
+
+      <div>
+        <div className="forum-sidebar-view-label">View</div>
+
+        <button
+          type="button"
+          onClick={() => setCurrentView("Forum")}
+          className={[
+            "forum-sidebar-view-btn",
+            "forum-sidebar-view-btn-forum",
+            currentView === "Forum" ? "is-active-view" : "",
+          ].join(" ")}
+        >
+          <BookOpen size={20} />
+          <span>Forum</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentView("BookClub")}
+          className={[
+            "forum-sidebar-view-btn",
+            "forum-sidebar-view-btn-bookclub",
+            currentView === "BookClub" ? "is-active-view" : "",
+          ].join(" ")}
+        >
+          <Star size={20} />
+          <span>Book Club</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+/* -------------------------------------------------------
+   Poll Creator
+------------------------------------------------------- */
 type PollCreatorProps = {
   pollQuestion: string;
   setPollQuestion: (q: string) => void;
   pollOptions: string[];
   setPollOptions: (opts: string[]) => void;
+  pollError: string;
+  setPollError: (v: string) => void;
 };
 
 function PollCreator({
@@ -1073,11 +345,11 @@ function PollCreator({
   setPollQuestion,
   pollOptions,
   setPollOptions,
+  pollError,
+  setPollError,
 }: PollCreatorProps) {
   const addOption = () => {
-    if (pollOptions.length < 5) {
-      setPollOptions([...pollOptions, ""]);
-    }
+    if (pollOptions.length < 5) setPollOptions([...pollOptions, ""]);
   };
 
   const removeOption = (index: number) => {
@@ -1090,6 +362,7 @@ function PollCreator({
     const newOptions = [...pollOptions];
     newOptions[index] = value;
     setPollOptions(newOptions);
+    if (pollError) setPollError("");
   };
 
   return (
@@ -1097,10 +370,14 @@ function PollCreator({
       <input
         type="text"
         value={pollQuestion}
-        onChange={(e) => setPollQuestion(e.target.value)}
+        onChange={(e) => {
+          setPollQuestion(e.target.value);
+          if (pollError) setPollError("");
+        }}
         placeholder="Poll Question"
         className="forum-input"
       />
+
       <div style={{ marginTop: "0.5rem" }}>
         {pollOptions.map((option, index) => (
           <div key={index} className="poll-option-row">
@@ -1122,12 +399,14 @@ function PollCreator({
                 background: "transparent",
                 color: "#9ca3af",
               }}
+              title="Remove option"
             >
               <X size={16} />
             </button>
           </div>
         ))}
       </div>
+
       <button
         type="button"
         onClick={addOption}
@@ -1144,11 +423,51 @@ function PollCreator({
       >
         Add Option
       </button>
+
+      {/* ✅ nicer UX error block (no alert) */}
+      {pollError && (
+        <div
+          style={{
+            marginTop: "0.6rem",
+            border: "1px solid rgba(239,68,68,0.35)",
+            background: "rgba(239,68,68,0.10)",
+            color: "#fecaca",
+            borderRadius: "0.6rem",
+            padding: "0.55rem 0.7rem",
+            fontSize: "0.8rem",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+          }}
+          role="alert"
+        >
+          <span style={{ lineHeight: 1.35 }}>{pollError}</span>
+          <button
+            type="button"
+            onClick={() => setPollError("")}
+            className="forum-btn"
+            style={{
+              padding: "0.15rem",
+              borderRadius: "0.45rem",
+              background: "transparent",
+              color: "#fecaca",
+              flexShrink: 0,
+            }}
+            aria-label="Dismiss poll error"
+            title="Dismiss"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-// --- Poll Display Component ---
+/* -------------------------------------------------------
+   Poll Display
+------------------------------------------------------- */
 type PollDisplayProps = {
   poll: {
     question: string;
@@ -1185,6 +504,7 @@ function PollDisplay({ poll, userId, onVote }: PollDisplayProps) {
       >
         {poll.question}
       </h4>
+
       <div className="stack-vertical-4">
         {Object.entries(poll.options || {}).map(([option, users]) => {
           const voteCount = users.length;
@@ -1231,7 +551,211 @@ function PollDisplay({ poll, userId, onVote }: PollDisplayProps) {
   );
 }
 
-// --- Forum Component ---
+/* -------------------------------------------------------
+   BookClub Component (unchanged behavior, no profile modal)
+------------------------------------------------------- */
+type BookClubProps = {
+  userId: string;
+};
+
+function BookClub({ userId }: BookClubProps) {
+  const book = {
+    title: "Dune",
+    author: "Frank Herbert",
+    description:
+      'The Book of the Month is "Dune"! Grab your copy and join the discussion!',
+    imageUrl:
+      "https://placehold.co/300x450/111/FFF?text=Book+Cover+Here&font=sans",
+  };
+
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMessage = (e: FormEvent) => {
+    e.preventDefault();
+    if (!userId || (!newMessage.trim() && !attachedImage)) return;
+
+    const newMessageObj = {
+      id: Date.now(),
+      text: newMessage.trim(),
+      userId,
+      timestamp: new Date(),
+      reactions: {} as Record<string, string[]>,
+      imageUrl: attachedImage || null,
+    };
+
+    setMessages((prev) => [...prev, newMessageObj]);
+    setNewMessage("");
+    setAttachedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleReact = (messageId: number, emoji: string) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) => {
+        if (msg.id === messageId) {
+          const newReactions = toggleReaction(
+            msg.reactions || {},
+            emoji,
+            userId
+          );
+          return { ...msg, reactions: newReactions };
+        }
+        return msg;
+      })
+    );
+  };
+
+  const handleImagePick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setAttachedImage(url);
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const canSend = !!newMessage.trim() || !!attachedImage;
+
+  return (
+    <div className="bookclub-root">
+      <header className="forum-header">
+        <div className="forum-header-title">
+          <Star size={24} color="#d81b60" />
+          <span>Book of the Month Club</span>
+        </div>
+      </header>
+
+      <div className="bookclub-layout">
+        <div className="bookclub-info-panel">
+          <h3 className="bookclub-title">{book.title}</h3>
+          <p className="bookclub-author">by {book.author}</p>
+          <img
+            src={book.imageUrl}
+            alt="Book cover"
+            className="bookclub-cover"
+          />
+          <p className="bookclub-desc">{book.description}</p>
+        </div>
+
+        <div className="bookclub-discussion">
+          <h4 className="bookclub-discussion-title">Discussion</h4>
+
+          <div className="forum-body-scroll custom-scrollbar">
+            <div className="chat-message-list">
+              {messages.map((msg) => (
+                <div key={msg.id} className="chat-message-card">
+                  <Avatar userId={msg.userId} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="chat-message-meta">
+                      <span className="chat-message-username">{msg.userId}</span>
+                      <span className="chat-message-timestamp">
+                        {msg.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+
+                    {msg.text && <p className="chat-message-text">{msg.text}</p>}
+
+                    {msg.imageUrl && (
+                      <img
+                        src={msg.imageUrl}
+                        alt="Attachment"
+                        className="forum-image-attachment"
+                      />
+                    )}
+
+                    <ReactionBar
+                      reactions={msg.reactions || {}}
+                      userId={userId}
+                      onReact={(emoji) => handleReact(msg.id, emoji)}
+                    />
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          <form className="chat-input-bar" onSubmit={handleSendMessage}>
+            <div className="chat-input-inner">
+              <Avatar userId={userId} />
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Discuss the book..."
+                className="forum-input"
+              />
+
+              <button
+                type="button"
+                className="forum-btn forum-attach-btn"
+                onClick={openFilePicker}
+              >
+                <ImageIcon size={18} />
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleImagePick}
+              />
+
+              <button
+                type="submit"
+                className="forum-btn forum-btn-pink"
+                disabled={!canSend}
+              >
+                <Send size={20} />
+              </button>
+            </div>
+
+            {attachedImage && (
+              <div className="forum-attach-preview forum-attach-preview-compact">
+                <div className="forum-attach-thumb">
+                  <img src={attachedImage} alt="Preview" />
+                </div>
+
+                <div className="forum-attach-meta">
+                  <div className="forum-attach-title">Image attached</div>
+                  <div className="forum-attach-subtitle">Will send with your message</div>
+                </div>
+
+                <button
+                  type="button"
+                  className="forum-attach-remove"
+                  onClick={() => {
+                    setAttachedImage(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  aria-label="Remove attached image"
+                  title="Remove"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------
+   Forum Component (poll UX improved + buttons pinned at bottom)
+------------------------------------------------------- */
 type ForumProps = {
   userId: string;
   categories: string[];
@@ -1239,7 +763,6 @@ type ForumProps = {
   setTopics: React.Dispatch<React.SetStateAction<any[]>>;
   selectedTopic: any | undefined;
   onSelectTopic: (id: string | null) => void;
-  onViewProfile: (id: string) => void;
 };
 
 function Forum({
@@ -1249,7 +772,6 @@ function Forum({
   setTopics,
   selectedTopic,
   onSelectTopic,
-  onViewProfile,
 }: ForumProps) {
   const [newTopicTitle, setNewTopicTitle] = useState("");
   const [newTopicContent, setNewTopicContent] = useState("");
@@ -1258,28 +780,25 @@ function Forum({
   const [showPollCreator, setShowPollCreator] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [pollError, setPollError] = useState("");
 
   const [currentCategory, setCurrentCategory] = useState<string>("All");
-  const [newTopicCategory, setNewTopicCategory] = useState<string>(
-    categories[0]
-  );
+  const [newTopicCategory, setNewTopicCategory] = useState<string>(categories[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
-  const [sortBy, setSortBy] = useState<"Newest" | "Most Comments" | "Most Reactions">(
-    "Newest"
-  );
+  const [sortBy, setSortBy] = useState<
+    "Newest" | "Most Comments" | "Most Reactions"
+  >("Newest");
 
-  // image for new topic
   const [newTopicImage, setNewTopicImage] = useState<string | null>(null);
   const newTopicImageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     function handleClickOutside(e: ReactMouseEvent | globalThis.MouseEvent) {
-      if (
-        filterMenuRef.current &&
-        !(filterMenuRef.current as any).contains(e.target)
-      ) {
+      const target = e.target;
+      if (!filterMenuRef.current) return;
+      if (target instanceof Node && !filterMenuRef.current.contains(target)) {
         setShowFilterMenu(false);
       }
     }
@@ -1334,9 +853,40 @@ function Forum({
     setNewTopicImage(url);
   };
 
+  const validatePoll = () => {
+    if (!showPollCreator) return { ok: true };
+
+    const q = pollQuestion.trim();
+    const opts = pollOptions.map((o) => o.trim()).filter(Boolean);
+
+    if (!q) return { ok: false, msg: "Please enter a poll question." };
+    if (opts.length < 2)
+      return { ok: false, msg: "Please add at least two poll options." };
+
+    // IMPORTANT: options are object keys; duplicates overwrite
+    const normalized = opts.map((o) => o.toLowerCase());
+    const uniq = new Set(normalized);
+    if (uniq.size !== opts.length) {
+      return {
+        ok: false,
+        msg: "Poll options must be unique. Please rename any duplicates.",
+      };
+    }
+
+    return { ok: true, q, opts };
+  };
+
   const handleCreateTopic = (e: FormEvent) => {
     e.preventDefault();
     if (!userId || !newTopicTitle.trim() || !newTopicContent.trim()) return;
+
+    setPollError("");
+
+    const pollCheck = validatePoll();
+    if (!pollCheck.ok) {
+      setPollError((pollCheck as any).msg || "Invalid poll.");
+      return;
+    }
 
     const newTopic: any = {
       id: `t${Date.now()}`,
@@ -1351,24 +901,23 @@ function Forum({
       imageUrl: newTopicImage || null,
     };
 
-    if (
-      showPollCreator &&
-      pollQuestion.trim() &&
-      pollOptions.filter((opt) => opt.trim() !== "").length >= 2
-    ) {
-      const poll = {
-        question: pollQuestion.trim(),
-        options: pollOptions
-          .filter((opt) => opt.trim() !== "")
-          .reduce((acc: Record<string, string[]>, opt) => {
-            acc[opt.trim()] = [];
+    if (showPollCreator) {
+      const { q, opts } = pollCheck as any;
+      newTopic.poll = {
+        question: q,
+        options: (opts as string[]).reduce(
+          (acc: Record<string, string[]>, opt: string) => {
+            acc[opt] = [];
             return acc;
-          }, {}),
+          },
+          {}
+        ),
       };
-      newTopic.poll = poll;
     }
 
     setTopics((prev) => [newTopic, ...prev]);
+
+    // reset
     setNewTopicTitle("");
     setNewTopicContent("");
     setShowCreateForm(false);
@@ -1376,6 +925,7 @@ function Forum({
     setShowPollCreator(false);
     setPollQuestion("");
     setPollOptions(["", ""]);
+    setPollError("");
     setNewTopicImage(null);
     if (newTopicImageInputRef.current) newTopicImageInputRef.current.value = "";
   };
@@ -1404,6 +954,7 @@ function Forum({
 
   const handlePollVote = (optionKey: string) => {
     if (!selectedTopic || !selectedTopic.poll) return;
+
     const userVote = Object.keys(selectedTopic.poll.options).find((option) =>
       selectedTopic.poll.options[option].includes(userId)
     );
@@ -1470,7 +1021,6 @@ function Forum({
         onReact={handleTopicReaction}
         onComment={handleAddComment}
         onCommentReact={handleCommentReaction}
-        onViewProfile={onViewProfile}
       />
     );
   }
@@ -1510,6 +1060,7 @@ function Forum({
                   {currentCategory !== "All" ? currentCategory : "Filter"}
                 </span>
               </button>
+
               {showFilterMenu && (
                 <div className="forum-filter-menu custom-scrollbar">
                   {categories.map((category) => (
@@ -1541,6 +1092,7 @@ function Forum({
                 <Clock size={14} />
                 <span>Newest</span>
               </button>
+
               <button
                 type="button"
                 className={[
@@ -1553,6 +1105,7 @@ function Forum({
                 <TrendingUp size={14} />
                 <span>Reactions</span>
               </button>
+
               <button
                 type="button"
                 className={[
@@ -1578,7 +1131,21 @@ function Forum({
             }}
           >
             <div className="forum-search-wrapper">
-              <Search size={18} />
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M21 21l-4.3-4.3m1.3-5.2a7 7 0 11-14 0 7 7 0 0114 0z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+
               <input
                 type="text"
                 placeholder="Search topics..."
@@ -1618,6 +1185,7 @@ function Forum({
             >
               Create New Topic
             </h3>
+
             <div className="stack-vertical-4">
               <input
                 type="text"
@@ -1640,6 +1208,7 @@ function Forum({
                 >
                   Category
                 </label>
+
                 <select
                   id="category-select"
                   value={newTopicCategory}
@@ -1662,7 +1231,6 @@ function Forum({
                 className="forum-textarea"
               />
 
-              {/* Image attach for topic */}
               <div className="forum-image-attach-row">
                 <button
                   type="button"
@@ -1672,6 +1240,7 @@ function Forum({
                   <ImageIcon size={18} />
                   <span>Attach image</span>
                 </button>
+
                 <input
                   ref={newTopicImageInputRef}
                   type="file"
@@ -1680,20 +1249,58 @@ function Forum({
                   onChange={handleTopicImagePick}
                 />
                 {newTopicImage && (
-                  <div className="forum-image-preview-wrapper">
-                    <img
-                      src={newTopicImage}
-                      alt="Preview"
-                      className="forum-image-attachment-small"
-                    />
+                  <div className="forum-attach-preview">
+                    <div className="forum-attach-thumb">
+                      <img src={newTopicImage} alt="Preview" />
+                    </div>
+
+                    <div className="forum-attach-meta">
+                      <div className="forum-attach-title">Image attached</div>
+                      <div className="forum-attach-subtitle">Ready to post</div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="forum-attach-remove"
+                      onClick={() => {
+                        setNewTopicImage(null);
+                        if (newTopicImageInputRef.current) newTopicImageInputRef.current.value = "";
+                      }}
+                      aria-label="Remove attached image"
+                      title="Remove"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
                 )}
               </div>
 
+              {/* ✅ Poll is rendered ABOVE the buttons so buttons stay pinned to the bottom */}
+              {showPollCreator && (
+                <PollCreator
+                  pollQuestion={pollQuestion}
+                  setPollQuestion={setPollQuestion}
+                  pollOptions={pollOptions}
+                  setPollOptions={setPollOptions}
+                  pollError={pollError}
+                  setPollError={setPollError}
+                />
+              )}
+
               <div className="forum-newtopic-buttons">
                 <button
                   type="button"
-                  onClick={() => setShowPollCreator((prev) => !prev)}
+                  onClick={() => {
+                    setShowPollCreator((prev) => {
+                      const next = !prev;
+                      if (!next) {
+                        setPollQuestion("");
+                        setPollOptions(["", ""]);
+                        setPollError("");
+                      }
+                      return next;
+                    });
+                  }}
                   className="forum-btn"
                   style={{
                     display: "inline-flex",
@@ -1717,8 +1324,37 @@ function Forum({
                 >
                   Post Topic
                 </button>
-              </div>
 
+                {/* ✅ NEW Cancel button */}
+                <button
+                  type="button"
+                  className="forum-btn"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#e5e7eb",
+                    padding: "0.5rem 0.75rem",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.875rem",
+                  }}
+                  onClick={() => {
+                    // close + reset everything (matches the top-right cancel behavior)
+                    setShowCreateForm(false);
+                    setNewTopicTitle("");
+                    setNewTopicContent("");
+                    setNewTopicCategory(categories[0]);
+
+                    setShowPollCreator(false);
+                    setPollQuestion("");
+                    setPollOptions(["", ""]);
+                    setPollError("");
+
+                    setNewTopicImage(null);
+                    if (newTopicImageInputRef.current) newTopicImageInputRef.current.value = "";
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -1730,10 +1366,12 @@ function Forum({
               className="forum-topic-card"
               onClick={() => onSelectTopic(topic.id)}
             >
-              <Avatar userId={topic.userId} onViewProfile={onViewProfile} />
+              <Avatar userId={topic.userId} />
+
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h3 className="forum-topic-title">{topic.title}</h3>
                 <p className="forum-topic-excerpt">{topic.content}</p>
+
                 {topic.imageUrl && (
                   <img
                     src={topic.imageUrl}
@@ -1741,6 +1379,7 @@ function Forum({
                     className="forum-image-attachment-small"
                   />
                 )}
+
                 <span className="forum-topic-meta-small">
                   Posted by{" "}
                   <span
@@ -1756,6 +1395,7 @@ function Forum({
                     ` on ${topic.timestamp.toLocaleDateString()}`}
                 </span>
               </div>
+
               <div className="forum-topic-meta-right">
                 <div className="forum-topic-meta-right-group">
                   <MessageCircle size={18} />
@@ -1788,7 +1428,9 @@ function Forum({
   );
 }
 
-// --- SingleTopicView Component ---
+/* -------------------------------------------------------
+   SingleTopicView
+------------------------------------------------------- */
 type SingleTopicViewProps = {
   userId: string;
   topic: any;
@@ -1797,7 +1439,6 @@ type SingleTopicViewProps = {
   onReact: (emoji: string) => void;
   onComment: (text: string) => void;
   onCommentReact: (commentId: string, emoji: string) => void;
-  onViewProfile: (id: string) => void;
 };
 
 function SingleTopicView({
@@ -1808,7 +1449,6 @@ function SingleTopicView({
   onReact,
   onComment,
   onCommentReact,
-  onViewProfile,
 }: SingleTopicViewProps) {
   const [newComment, setNewComment] = useState("");
   const commentsEndRef = useRef<HTMLDivElement | null>(null);
@@ -1836,13 +1476,10 @@ function SingleTopicView({
     <div className="topic-view-root">
       <header className="forum-header">
         <div className="topic-header-title-row">
-          <button
-            type="button"
-            className="topic-back-btn"
-            onClick={onClose}
-          >
+          <button type="button" className="topic-back-btn" onClick={onClose}>
             <ArrowLeft size={20} />
           </button>
+
           <h2
             style={{
               fontSize: "1.25rem",
@@ -1867,11 +1504,8 @@ function SingleTopicView({
               alignItems: "flex-start",
             }}
           >
+            <Avatar userId={selectedTopic.userId} />
 
-            <Avatar
-              userId={selectedTopic.userId}
-              onViewProfile={onViewProfile}
-            />
             <div style={{ minWidth: 0, flex: 1 }}>
               <h3 className="forum-topic-title">{selectedTopic.title}</h3>
               <p
@@ -1885,6 +1519,7 @@ function SingleTopicView({
               >
                 {selectedTopic.content}
               </p>
+
               {selectedTopic.imageUrl && (
                 <img
                   src={selectedTopic.imageUrl}
@@ -1892,6 +1527,7 @@ function SingleTopicView({
                   className="forum-image-attachment"
                 />
               )}
+
               <span className="forum-topic-meta-small">
                 Posted by{" "}
                 <span
@@ -1910,11 +1546,7 @@ function SingleTopicView({
           </div>
 
           {selectedTopic.poll && (
-            <PollDisplay
-              poll={selectedTopic.poll}
-              userId={userId}
-              onVote={onVote}
-            />
+            <PollDisplay poll={selectedTopic.poll} userId={userId} onVote={onVote} />
           )}
 
           <ReactionBar
@@ -1927,24 +1559,22 @@ function SingleTopicView({
         <h4 className="topic-comments-title">
           Comments ({selectedTopic.comments.length})
         </h4>
+
         <div className="chat-message-list">
           {selectedTopic.comments.map((comment: any) => (
             <div key={comment.id} className="chat-message-card">
-              <Avatar
-                userId={comment.userId}
-                onViewProfile={onViewProfile}
-              />
+              <Avatar userId={comment.userId} />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div className="chat-message-meta">
-                  <span className="chat-message-username">
-                    {comment.userId}
-                  </span>
+                  <span className="chat-message-username">{comment.userId}</span>
                   <span className="chat-message-timestamp">
                     {comment.timestamp?.toLocaleTimeString &&
                       comment.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
+
                 <p className="chat-message-text">{comment.text}</p>
+
                 <ReactionBar
                   reactions={comment.reactions || {}}
                   userId={userId}
@@ -1959,7 +1589,7 @@ function SingleTopicView({
 
       <form className="chat-input-bar" onSubmit={handleAddComment}>
         <div className="chat-input-inner">
-          <Avatar userId={userId} onViewProfile={onViewProfile} />
+          <Avatar userId={userId} />
           <input
             type="text"
             value={newComment}
@@ -1976,130 +1606,6 @@ function SingleTopicView({
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-// --- UserProfileModal Component ---
-type UserProfileModalProps = {
-  userId: string;
-  allTopics: any[];
-  allPoems: any[];
-  allPhilosophy: any[];
-  allStories: any[];
-  onClose: () => void;
-  onSelectTopic: (id: string | null) => void;
-};
-
-function UserProfileModal({
-  userId,
-  allTopics,
-  allPoems,
-  allPhilosophy,
-  allStories,
-  onClose,
-  onSelectTopic,
-}: UserProfileModalProps) {
-  const userTopics = allTopics.filter((t) => t.userId === userId);
-  const userPoems = allPoems.filter((p) => p.userId === userId);
-  const userPhilosophy = allPhilosophy.filter((p) => p.userId === userId);
-  const userStories = allStories.filter((s) => s.userId === userId);
-
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  return (
-    <div className="profile-modal-backdrop" onClick={handleBackdropClick}>
-      <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          className="profile-modal-close"
-          onClick={onClose}
-        >
-          <X size={18} />
-        </button>
-
-        <div className="profile-modal-header">
-          <Avatar userId={userId} />
-          <div>
-            <span className="profile-modal-subtitle">Profile</span>
-            <h2 className="profile-modal-username">{userId}</h2>
-          </div>
-        </div>
-
-        <div className="profile-modal-body custom-scrollbar">
-          {/* Topics */}
-          <div>
-            <h3 className="profile-section-title">Topics</h3>
-            {userTopics.length > 0 ? (
-              <div>
-                {userTopics.map((topic) => (
-                  <button
-                    key={topic.id}
-                    type="button"
-                    className="profile-topic-btn"
-                    onClick={() => onSelectTopic(topic.id)}
-                  >
-                    <span className="profile-topic-title">{topic.title}</span>
-                    <p className="profile-topic-excerpt">{topic.content}</p>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="forum-empty-text">No topics posted yet.</p>
-            )}
-          </div>
-
-          {/* Poems */}
-          <div className="profile-section">
-            <h3 className="profile-section-title">Poems</h3>
-            {userPoems.length > 0 ? (
-              <div>
-                {userPoems.map((poem) => (
-                  <div key={poem.id} className="profile-prose-card">
-                    <p className="profile-prose-text">{poem.text}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="forum-empty-text">No poems posted yet.</p>
-            )}
-          </div>
-
-          {/* Philosophy */}
-          <div className="profile-section">
-            <h3 className="profile-section-title">Philosophy</h3>
-            {userPhilosophy.length > 0 ? (
-              <div>
-                {userPhilosophy.map((entry) => (
-                  <div key={entry.id} className="profile-prose-card">
-                    <p className="profile-prose-text">{entry.text}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="forum-empty-text">No philosophy posted yet.</p>
-            )}
-          </div>
-
-          {/* Short Stories */}
-          <div className="profile-section">
-            <h3 className="profile-section-title">Short Stories</h3>
-            {userStories.length > 0 ? (
-              <div>
-                {userStories.map((story) => (
-                  <div key={story.id} className="profile-prose-card">
-                    <p className="profile-prose-text">{story.text}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="forum-empty-text">No stories posted yet.</p>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

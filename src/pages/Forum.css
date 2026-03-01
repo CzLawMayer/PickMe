@@ -1543,3 +1543,216 @@
   column-gap: 4px;        /* ← your 4px space */
   align-items: center;    
 }
+
+
+/* =======================================================
+   Attachment preview card (professional look)
+======================================================= */
+
+.forum-attach-preview{
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.35);
+  box-shadow: 0 14px 35px rgba(0,0,0,0.55);
+}
+
+.forum-attach-preview-compact{
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.forum-attach-thumb{
+  width: 64px;
+  height: 44px;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forum-attach-preview-compact .forum-attach-thumb{
+  width: 56px;
+  height: 40px;
+}
+
+.forum-attach-thumb img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.forum-attach-meta{
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.forum-attach-title{
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.forum-attach-subtitle{
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.15;
+}
+
+.forum-attach-remove{
+  width: 30px;
+  height: 30px;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+}
+
+.forum-attach-remove:hover{
+  background: rgba(255,255,255,0.10);
+  transform: translateY(-1px);
+}
+
+/* Optional: slightly “tighter” attach button to match new preview card */
+.forum-image-attach-row{
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+
+/* =======================================================
+   NO SHADOWS – global override for the Forum page
+   (paste at the very bottom of Forum.css)
+======================================================= */
+
+.forum-page *,
+.forum-page *::before,
+.forum-page *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* If you want to keep borders crisp while removing shadow depth */
+.forum-header,
+.forum-sidebar,
+.forum-panel,
+.forum-topic-card,
+.chat-message-card,
+.profile-modal,
+.poll-display,
+.poll-choice-btn,
+.chat-input-inner,
+.forum-image-attachment,
+.forum-image-attachment-small,
+.forum-attach-preview,
+.forum-attach-thumb {
+  box-shadow: none !important;
+}
+
+/* Make native form controls use dark UI where supported */
+.forum-page {
+  color-scheme: dark;
+}
+
+/* Keep your select/input styling */
+.forum-select,
+.forum-input,
+.forum-textarea {
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+
+.forum-select option {
+  background: #0b0b0c;
+  color: #ffffff;
+}
+
+/* =======================================================
+   Subtle focus (no double outline)
+======================================================= */
+
+/* Remove any outline from previous attempts */
+.forum-input:focus,
+.forum-select:focus,
+.forum-textarea:focus,
+.forum-input:focus-visible,
+.forum-select:focus-visible,
+.forum-textarea:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Subtle focus = slightly brighter border + tiny color hint */
+.forum-input:focus,
+.forum-select:focus,
+.forum-textarea:focus {
+  border-color: rgba(56, 189, 248, 0.35) !important; /* soft ice-blue */
+}
+
+/* Optional: make the border a touch stronger only for keyboard focus */
+.forum-input:focus-visible,
+.forum-select:focus-visible,
+.forum-textarea:focus-visible {
+  border-color: rgba(56, 189, 248, 0.55) !important;
+}
+
+
+
+
+/* =======================================================
+   Search input padding (fix "stuck to the left")
+======================================================= */
+
+.forum-search-wrapper {
+  padding: 0 0.9rem !important; /* wrapper padding */
+}
+
+.forum-search-wrapper > svg {
+  margin-right: 0.6rem !important; /* space between icon and text */
+}
+
+/* Add padding inside the input so text isn't flush */
+.forum-input-search {
+  padding: 0 0.25rem !important;  /* subtle inner padding */
+  height: 100% !important;
+  line-height: 1 !important;
+}
+
+/* Optional: make placeholder feel less cramped */
+.forum-input-search::placeholder {
+  letter-spacing: 0.01em;
+}
+
+.forum-input-search { padding: 0 0.45rem !important; }
+
+
+
+.forum-newtopic-buttons{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
