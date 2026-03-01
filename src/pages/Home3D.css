@@ -1509,3 +1509,315 @@
 .profile-avatarLarge img {
   border-radius: 0;
 }
+
+
+/* Author block: name stacked above Follow */
+.home3d-main #metadata-panel .meta-author-block{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0; /* allows ellipsis */
+}
+
+/* Follow button */
+.home3d-main #metadata-panel .meta-follow-btn{
+  height: 28px;
+  width: fit-content;
+  padding: 0 10px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+
+  cursor: pointer;
+  user-select: none;
+}
+
+.home3d-main #metadata-panel .meta-follow-btn:hover{
+  filter: brightness(1.1);
+}
+
+.home3d-main #metadata-panel .meta-follow-btn:active{
+  transform: translateY(1px);
+}
+
+/* ============================
+   HOME3D — smaller author row
+   ============================ */
+
+.home3d-main #metadata-panel .meta-header{
+  gap: 10px !important;
+}
+
+
+
+.home3d-main #metadata-panel .meta-avatar img{
+  width: 100%;
+  height: 100%;
+}
+
+/* Name smaller */
+.home3d-main #metadata-panel .meta-author-block{
+  gap: 4px !important;
+}
+
+.home3d-main #metadata-panel .meta-username{
+  font-size: 0.95rem !important;
+  line-height: 1.05 !important;
+}
+
+/* Follow button: shorter vertical padding / height */
+.home3d-main #metadata-panel .meta-follow-btn{
+  height: 22px !important;
+  padding: 0 9px !important;      /* ✅ no vertical padding, only horizontal */
+  border-radius: 9px !important;
+
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.15px !important;
+}
+
+
+/* ============================================================
+   HOME3D — Shine sweep for Follow + Summary buttons
+   (same effect as genre pills)
+   ============================================================ */
+
+/* Make buttons eligible for the shine pseudo-element */
+.home3d-main #metadata-panel .meta-follow-btn,
+.home3d-main #metadata-panel .meta-summary-btn{
+  position: relative;
+  overflow: hidden;              /* required so shine doesn't spill */
+  transition: filter 200ms ease;
+}
+
+/* Shine sweep */
+.home3d-main #metadata-panel .meta-follow-btn::after,
+.home3d-main #metadata-panel .meta-summary-btn::after{
+  content: "";
+  position: absolute;
+  inset: -40% -120% -40% -120%;
+  background: linear-gradient(
+    75deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.10) 35%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0.10) 65%,
+    transparent 100%
+  );
+  transform: translateX(-60%) rotate(8deg);
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Hover triggers shine */
+.home3d-main #metadata-panel .meta-follow-btn:hover,
+.home3d-main #metadata-panel .meta-summary-btn:hover{
+  filter: brightness(1.08);
+}
+
+.home3d-main #metadata-panel .meta-follow-btn:hover::after,
+.home3d-main #metadata-panel .meta-summary-btn:hover::after{
+  animation: meta-btn-shine 700ms ease-out forwards;
+  opacity: 1;
+}
+
+/* Same keyframes as your pills (different name so no conflicts) */
+@keyframes meta-btn-shine {
+  from { transform: translateX(-60%) rotate(8deg); }
+  to   { transform: translateX(60%) rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home3d-main #metadata-panel .meta-follow-btn:hover::after,
+  .home3d-main #metadata-panel .meta-summary-btn:hover::after{
+    animation: none;
+    opacity: 0.15;
+  }
+}
+
+
+/* ============================================================
+   HOME3D — Rating row (between author + meta-actions)
+   ============================================================ */
+
+.home3d-main #metadata-panel .meta-rating-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 !important;   /* matches your other rows */
+  margin: 0 !important;
+}
+
+.home3d-main #metadata-panel .meta-rating-label{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+}
+
+.home3d-main #metadata-panel .meta-rating-stars{
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Star glyph with partial fill using background-clip */
+.home3d-main #metadata-panel .meta-star{
+  position: relative;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-block;
+
+  /* base star (empty) */
+  color: rgba(255,255,255,0.22);
+}
+
+/* filled portion */
+.home3d-main #metadata-panel .meta-star::before{
+  content: "★";
+  position: absolute;
+  inset: 0;
+
+  /* gradient fill based on --fill percentage */
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.95) var(--fill),
+    rgba(255,255,255,0) var(--fill)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+}
+
+.home3d-main #metadata-panel .meta-rating-value{
+  margin-left: auto; /* pushes value to the right edge of the panel row */
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.70);
+}
+
+/* Rating row button */
+.home3d-main #metadata-panel .meta-rating-rowbtn{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 0;
+  margin: 0;
+
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+}
+
+.home3d-main #metadata-panel .meta-rating-rowbtn:hover{
+  filter: brightness(1.06);
+}
+
+.home3d-main #metadata-panel .meta-rating-label{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.78);
+}
+
+.home3d-main #metadata-panel .meta-rating-stars{
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Yellow stars with partial fill */
+.home3d-main #metadata-panel .meta-rating-star{
+  position: relative;
+  display: inline-block;
+  font-size: 14px;
+  line-height: 1;
+  color: rgba(255,255,255,0.20); /* empty */
+}
+
+.home3d-main #metadata-panel .meta-rating-star::before{
+  content: "★";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    90deg,
+    #f5c542 var(--fill),     /* ✅ yellow fill */
+    rgba(0,0,0,0) var(--fill)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+}
+
+.home3d-main #metadata-panel .meta-rating-number{
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.86);
+}
+
+.home3d-main #metadata-panel .meta-rating-count{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.55);
+}
+
+/* =========================================
+   HOME3D — Rating row: big stars, small text
+   ========================================= */
+
+.home3d-main #metadata-panel .meta-rating-stars{
+  gap: 4px !important;
+}
+
+/* BIG stars */
+.home3d-main #metadata-panel .meta-rating-star{
+  font-size: 22px !important;  /* try 20–26 */
+}
+
+/* Make the label + numbers smaller */
+.home3d-main #metadata-panel .meta-rating-label{
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  opacity: 0.75;
+}
+
+.home3d-main #metadata-panel .meta-rating-number,
+.home3d-main #metadata-panel .meta-rating-count{
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  opacity: 0.7;
+}
+
+
+.home3d-main .metadata .meta-actions .meta-icon-btn.share .meta-icon-glyph{
+  font-size: calc(var(--icon-size) * 1.05) !important;
+}
+
+/* HARD override: rotate the share glyph left */
+.home3d-main .metadata .meta-actions .meta-icon-btn.share .meta-share-rotate{
+  transform: rotate(-90deg) !important;
+  transform-origin: center !important;
+
+  /* you use the new 'translate' property elsewhere; reset it */
+  translate: 0 0 !important;
+}
+
+/* keep sizing consistent */
+.home3d-main .metadata .meta-actions .meta-icon-btn.share .meta-icon-glyph{
+  font-size: var(--icon-size) !important;
+  line-height: 1 !important;
+  display: block !important;
+}

@@ -19,6 +19,10 @@ import CommentButton from "@/components/CommentButton";
 import CommentSidebar, { ReviewModal } from "@/components/CommentSidebar";
 import "@/components/CommentSidebar.css";
 
+import RatingRow from "@/components/RatingRow";
+import ShareButton from "@/components/ShareButton";
+
+
 type BookSpread = { left: string; right: string };
 type ReaderTheme = "cream" | "dark" | "white";
 type PageSize = "sm" | "md" | "lg";
@@ -319,6 +323,27 @@ export default function Home() {
     });
   };
 
+  const ratingValue = Number((centerBook as any)?.rating ?? 4.5); // change default as you like
+
+  function clamp(n: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function renderStars(rating: number) {
+    const r = clamp(rating, 0, 5);
+
+    return Array.from({ length: 5 }).map((_, i) => {
+      const starIndex = i + 1;
+      const fill =
+        r >= starIndex ? 100 : r <= starIndex - 1 ? 0 : Math.round((r - (starIndex - 1)) * 100);
+
+      return (
+        <span key={i} className="meta-star" style={{ ["--fill" as any]: `${fill}%` }}>
+          ★
+        </span>
+      );
+    });
+  }
 
   const handleAddReply = (parentId: number, text: string) => {
     if (!activeBookId) return;
@@ -1750,30 +1775,58 @@ export default function Home() {
                 </div>
               </Link>
 
-              <Link
-                to="/profile"
-                className="meta-username"
-                title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(centerBook as any)?.author ?? (centerBook as any)?.user ?? "Unknown Author"}
-              </Link>
+              {/* ✅ name above + follow below */}
+              <div className="meta-author-block">
+                <Link
+                  to="/profile"
+                  className="meta-username"
+                  title={(centerBook as any)?.author ?? (centerBook as any)?.user ?? ""}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {(centerBook as any)?.author ?? (centerBook as any)?.user ?? "Unknown Author"}
+                </Link>
+
+                <button
+                  type="button"
+                  className="meta-follow-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // not functional yet
+                  }}
+                >
+                  Follow
+                </button>
+              </div>
             </div>
 
             <hr className="meta-hr" />
           </div>
 
 
+          <RatingRow
+            rating={combinedRating}
+            ratingCount={(centerBook as any)?.ratingCount}
+            onOpenReviews={openBookAndGoToReviews}
+          />
+
+          <hr className="meta-hr" />
 
 
           <div className="meta-actions">
             <LikeButton count={displayLikes} active={liked} onToggle={toggleLike} />
             <CommentButton active={hasUserCommentedCenter} onOpenComments={openBookAndGoToComments} />
-            <StarButton
-              rating={combinedRating}
-              hasUserReviewed={hasUserReviewedCenter}
-              onOpenReviews={openBookAndGoToReviews}
-            />
+
+            <button
+              type="button"
+              className="meta-icon-btn share"
+              aria-label="Share"
+              onClick={(e) => e.stopPropagation()}
+            >
+            <span className="material-symbols-outlined meta-icon-glyph meta-share-rotate">
+              open_in_new_down
+            </span>
+              <span className="meta-icon-count">0</span>
+            </button>
             <SaveButton count={displaySaves} active={saved} onToggle={toggleSave} />
           </div>
 
