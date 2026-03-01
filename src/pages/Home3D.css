@@ -1803,7 +1803,7 @@
 
 
 .home3d-main .metadata .meta-actions .meta-icon-btn.share .meta-icon-glyph{
-  font-size: calc(var(--icon-size) * 1.05) !important;
+  font-size: calc(var(--icon-size) * 1.10) !important;
 }
 
 /* HARD override: rotate the share glyph left */
@@ -1820,4 +1820,45 @@
   font-size: var(--icon-size) !important;
   line-height: 1 !important;
   display: block !important;
+}
+
+
+/* Share icon: slightly bigger than the other meta icons */
+.home3d-main .metadata .meta-actions .meta-icon-btn.share .meta-icon-glyph{
+  font-size: calc(var(--icon-size) * 1.07) !important;
+  line-height: 1 !important;
+  display: block !important;
+
+  /* keep it centered like the others even without .meta-icon-slot */
+  margin: 0 auto !important;
+}
+
+/* If you still want rotation, keep it separate and hard override */
+.home3d-main .metadata .meta-actions .meta-icon-btn.share .meta-share-rotate{
+  transform: rotate(-90deg) !important;
+  transform-origin: center !important;
+  translate: 0 0 !important;
+}
+
+
+/* ============================================================
+   HOME3D — Share button micro-interactions (match others)
+   ============================================================ */
+
+/* Ensure share glyph uses the same "translate" animation */
+.home3d-main .metadata .meta-actions .meta-icon-btn.share .meta-icon-glyph{
+  transition: translate 140ms ease, color 160ms ease !important;
+  translate: 0 0 !important;
+}
+
+/* Hover: lift icon */
+@media (hover: hover) {
+  .home3d-main .metadata .meta-actions .meta-icon-btn.share:hover .meta-icon-glyph{
+    translate: 0 -3px !important;
+  }
+}
+
+/* Press: push icon down */
+.home3d-main .metadata .meta-actions .meta-icon-btn.share:active .meta-icon-glyph{
+  translate: 0 1px !important;
 }

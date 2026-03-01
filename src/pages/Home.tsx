@@ -1822,9 +1822,11 @@ export default function Home() {
               aria-label="Share"
               onClick={(e) => e.stopPropagation()}
             >
-            <span className="material-symbols-outlined meta-icon-glyph meta-share-rotate">
-              open_in_new_down
-            </span>
+              <span className="meta-icon-slot" aria-hidden="true">
+                <span className="material-symbols-outlined meta-icon-glyph meta-share-rotate">
+                  open_in_new_down
+                </span>
+              </span>
               <span className="meta-icon-count">0</span>
             </button>
             <SaveButton count={displaySaves} active={saved} onToggle={toggleSave} />
