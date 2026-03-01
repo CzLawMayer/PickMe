@@ -55,12 +55,11 @@ type Badge = {
 };
 
 type Timeframe = { id: "daily" | "weekly" | "monthly" | "yearly"; label: string; days: number };
-
 type FixedPos = { top: number; right: number };
 
 export function TrackersInline() {
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [isBadgesOpen, setIsBadgesOpen] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false); // Goal
+  const [isBadgesOpen, setIsBadgesOpen] = useState(false); // Achievements
   const [view, setView] = useState<"progress" | "customize">("progress");
 
   const tiers: Tier[] = useMemo(
@@ -145,57 +144,64 @@ export function TrackersInline() {
   const currentVal = progress[activeCategory] ?? 0;
   const goalPercent = goalValue > 0 ? Math.min(Math.round((currentVal / goalValue) * 100), 100) : 0;
 
-  const badgeRef = useRef<HTMLDivElement | null>(null);
-  const goalRef = useRef<HTMLDivElement | null>(null);
+  // Trigger refs
+  const badgeTriggerRef = useRef<HTMLDivElement | null>(null);
+  const goalTriggerRef = useRef<HTMLDivElement | null>(null);
+
+  // Panel refs (IMPORTANT because panels are portaled)
+  const badgePanelRef = useRef<HTMLDivElement | null>(null);
+  const goalPanelRef = useRef<HTMLDivElement | null>(null);
 
   // Fixed positions for portal panels
   const [badgePos, setBadgePos] = useState<FixedPos | null>(null);
   const [goalPos, setGoalPos] = useState<FixedPos | null>(null);
 
   const measure = () => {
-    const badgeBtn = badgeRef.current?.querySelector("button.trackersIconBtn") as HTMLButtonElement | null;
-    const goalBtn = goalRef.current?.querySelector("button.trackersIconBtn") as HTMLButtonElement | null;
+    const badgeBtn = badgeTriggerRef.current?.querySelector("button.trackersIconBtn") as HTMLButtonElement | null;
+    const goalBtn = goalTriggerRef.current?.querySelector("button.trackersIconBtn") as HTMLButtonElement | null;
 
     if (badgeBtn) {
       const r = badgeBtn.getBoundingClientRect();
-      setBadgePos({
-        top: r.bottom + 12,
-        right: window.innerWidth - r.right,
-      });
+      setBadgePos({ top: r.bottom + 12, right: window.innerWidth - r.right });
     }
     if (goalBtn) {
       const r = goalBtn.getBoundingClientRect();
-      setGoalPos({
-        top: r.bottom + 12,
-        right: window.innerWidth - r.right,
-      });
+      setGoalPos({ top: r.bottom + 12, right: window.innerWidth - r.right });
     }
   };
 
   useEffect(() => {
-    // Click outside closes
-    const handleClickOutside = (event: MouseEvent) => {
+    const handlePointerDown = (event: PointerEvent) => {
       const t = event.target as Node;
 
-      // If click is inside either trigger wrapper, do nothing
-      if (badgeRef.current && badgeRef.current.contains(t)) return;
-      if (goalRef.current && goalRef.current.contains(t)) return;
+      // Inside triggers?
+      if (badgeTriggerRef.current?.contains(t)) return;
+      if (goalTriggerRef.current?.contains(t)) return;
+
+      // Inside portaled panels?
+      if (badgePanelRef.current?.contains(t)) return;
+      if (goalPanelRef.current?.contains(t)) return;
 
       setIsBadgesOpen(false);
       setIsPopoverOpen(false);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handlePointerDown);
 
     // Keep portal aligned on scroll/resize
-    const onMove = () => {
+    const onMove = (e?: Event) => {
+      // If the scroll happened INSIDE the popover, do not reposition it
+      const target = e?.target as HTMLElement | null;
+      if (target?.closest?.(".trackersPanel--portal")) return;
+
       if (isBadgesOpen || isPopoverOpen) measure();
     };
+
     window.addEventListener("resize", onMove);
     window.addEventListener("scroll", onMove, true);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("resize", onMove);
       window.removeEventListener("scroll", onMove, true);
     };
@@ -228,30 +234,23 @@ export function TrackersInline() {
     );
   };
 
-  // Portal panels
+  // Panels (portaled)
   const AchievementsPanel =
     isBadgesOpen && badgePos
       ? createPortal(
           <div
+            ref={badgePanelRef}
             className="trackersPanel trackersPanel--wide trackersPanel--portal"
             style={{ top: badgePos.top, right: badgePos.right }}
             role="dialog"
             aria-label="Achievements panel"
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="trackersPanelHead">
               <h2 className="trackersPanelTitle">Achievements</h2>
               <button
                 type="button"
-                onClick={() => {
-                    setIsBadgesOpen((v) => {
-                        const next = !v;
-                        if (next) {
-                        setIsPopoverOpen(false);     // close Goal
-                        setView("progress");         // optional: reset goal view if you want
-                        }
-                        return next;
-                    });
-                }}
+                onClick={() => setIsBadgesOpen(false)}
                 className="trackersPanelClose"
                 aria-label="Close"
               >
@@ -262,7 +261,6 @@ export function TrackersInline() {
             <div className="trackersPanelBody custom-scrollbar">
               {badges.map((badge) => {
                 const level = getBadgeLevel(badge);
-                const isMax = level === 5;
                 const IconComp = badge.icon;
 
                 const badgeActive = level > 0;
@@ -292,7 +290,7 @@ export function TrackersInline() {
 
                         <div className="badgeMeta">
                           <p className={`badgeTag ${badgeActive ? tier.colorClass : "badgeTag--off"}`}>
-                            {badge.isOneOff ? (level > 0 ? "UNLOCKED" : "EPIC") : isMax ? "MAX" : `LVL ${level}`}
+                            {badge.isOneOff ? (level > 0 ? "UNLOCKED" : "EPIC") : level === 5 ? "MAX" : `LVL ${level}`}
                           </p>
                           <p className="badgeCurrent">{badge.val.toLocaleString()} current</p>
                         </div>
@@ -302,10 +300,7 @@ export function TrackersInline() {
                         <div className="barRow">
                           {badge.isOneOff ? (
                             <div className="barCell">
-                              <div
-                                className={`barFill ${tiers[4].fillClass}`}
-                                style={{ width: `${level > 0 ? 100 : 0}%` }}
-                              />
+                              <div className={`barFill ${tiers[4].fillClass}`} style={{ width: `${level > 0 ? 100 : 0}%` }} />
                             </div>
                           ) : (
                             [0, 1, 2, 3, 4].map((idx) => {
@@ -351,10 +346,12 @@ export function TrackersInline() {
     isPopoverOpen && goalPos
       ? createPortal(
           <div
+            ref={goalPanelRef}
             className="trackersPanel trackersPanel--goal trackersPanel--portal"
             style={{ top: goalPos.top, right: goalPos.right }}
             role="dialog"
             aria-label="Goal panel"
+            onMouseDown={(e) => e.stopPropagation()}
           >
             {view === "progress" && (
               <>
@@ -389,7 +386,11 @@ export function TrackersInline() {
                   </div>
                 </div>
 
-                <button type="button" onClick={() => setView("customize")} className="btnAdjust">
+                <button
+                  type="button"
+                  onClick={() => setView("customize")}
+                  className="btnAdjust"
+                >
                   <Settings2 size={14} />
                   Adjust Target
                 </button>
@@ -462,14 +463,14 @@ export function TrackersInline() {
     <>
       <div className="trackersInline">
         {/* Achievements trigger */}
-        <div className="trackersItem" ref={badgeRef}>
+        <div className="trackersItem" ref={badgeTriggerRef}>
           <button
             type="button"
             className="header-icon-btn trackersIconBtn"
             aria-label="Achievements"
             onClick={() => {
               const next = !isBadgesOpen;
-              if (next) setIsPopoverOpen(false); // close Goal when opening Achievements
+              if (next) setIsPopoverOpen(false); // close Goal if opening Achievements
               setIsBadgesOpen(next);
             }}
           >
@@ -479,14 +480,14 @@ export function TrackersInline() {
         </div>
 
         {/* Goal trigger */}
-        <div className="trackersItem" ref={goalRef}>
+        <div className="trackersItem" ref={goalTriggerRef}>
           <button
             type="button"
             className="header-icon-btn trackersIconBtn"
             aria-label="Goal tracker"
             onClick={() => {
               const next = !isPopoverOpen;
-              if (next) setIsBadgesOpen(false); // close Achievements when opening Goal
+              if (next) setIsBadgesOpen(false); // close Achievements if opening Goal
               setIsPopoverOpen(next);
               setView("progress");
             }}
@@ -506,7 +507,6 @@ export function TrackersInline() {
         </div>
       </div>
 
-      {/* Portaled overlays */}
       {AchievementsPanel}
       {GoalPanel}
     </>
