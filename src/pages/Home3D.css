@@ -1862,3 +1862,282 @@
 .home3d-main .metadata .meta-actions .meta-icon-btn.share:active .meta-icon-glyph{
   translate: 0 1px !important;
 }
+
+
+/* ===== Reader popover: cleaner layout ===== */
+
+.reader-popover {
+  padding: 14px 14px 12px;
+  width: 320px; /* tweak if you want */
+  display: grid;
+  gap: 12px;
+}
+
+/* section block */
+.rm-section {
+  display: grid;
+  gap: 10px;
+}
+
+/* header row: title left, value right */
+.rm-section-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.rm-section-title {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.rm-value {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* font size buttons row */
+.font-size-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.font-size-option {
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+
+/* sliders: unify sizing */
+.lh-range {
+  width: 100%;
+  margin: 0;
+}
+
+/* segmented control for page size */
+.rm-segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.rm-seg-btn {
+  height: 34px;
+  border-radius: 10px;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  display: grid;
+  place-items: center;
+  opacity: 0.9;
+}
+
+.rm-seg-btn.is-active {
+  opacity: 1;
+}
+
+/* Make the line-spacing slider span the full popover width */
+.rm-section .lh-range{
+  grid-column: 1 / -1;
+  width: 100%;
+  display: block;
+  margin: 0;
+}
+
+/* Base popover width (keep this for the FONT popover if you like it) */
+.reader-popover{
+  width: 320px;
+}
+
+/* Make these popovers wider */
+.reader-dict-popover{
+  width: 420px;
+  max-width: min(420px, calc(100vw - 24px));
+}
+
+.reader-note-popover{
+  width: 460px;
+  max-width: min(460px, calc(100vw - 24px));
+}
+
+.reader-tts-popover{
+  width: 420px;
+  max-width: min(420px, calc(100vw - 24px));
+}
+
+
+
+
+
+/* ============================================================
+   ReaderMenu — DARK buttons + bottom accent line (popover-safe)
+   No pseudo-elements, no hover, no positioning changes
+   ============================================================ */
+
+/* Accent per grid slot */
+.reader-menu-grid > :nth-child(1){ --rm-accent: var(--c1); }
+.reader-menu-grid > :nth-child(2){ --rm-accent: var(--c2); }
+.reader-menu-grid > :nth-child(3){ --rm-accent: var(--c3); }
+.reader-menu-grid > :nth-child(4){ --rm-accent: transparent; } /* close */
+.reader-menu-grid > :nth-child(5){ --rm-accent: var(--c3); }
+.reader-menu-grid > :nth-child(6){ --rm-accent: var(--c2); }
+.reader-menu-grid > :nth-child(7){ --rm-accent: var(--c1); }
+
+/* Only target the 7 ReaderMenu buttons (direct + wrapped) */
+.reader-menu-grid > button.reader-menu-item,
+.reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item{
+  /* DON'T set position/transform/overflow here (keeps popovers exactly as-is) */
+
+  /* Force dark body */
+  background-color: #151518 !important;
+
+  /* Keep your existing shape, but remove any colored fills */
+  background-image:
+    linear-gradient(#151518, #151518),
+    linear-gradient(var(--rm-accent), var(--rm-accent));
+  background-repeat: no-repeat, no-repeat;
+
+  /* layer 1 = full dark fill, layer 2 = underline */
+  background-size: 100% 100%, calc(100% - 20px) 3px;
+  background-position: 0 0, 10px calc(100% - 7px);
+}
+
+/* Close button: no underline */
+.reader-menu-grid > button.reader-menu-item:nth-child(4){
+  background-size: 100% 100%, 0 0;
+}
+
+/* ============================================================
+   ReaderMenu — short bottom lines (popover-safe)
+   ============================================================ */
+
+/* Accent per slot */
+.reader-menu-grid > :nth-child(1){ --rm-accent: var(--c1); }
+.reader-menu-grid > :nth-child(2){ --rm-accent: var(--c2); }
+.reader-menu-grid > :nth-child(3){ --rm-accent: var(--c3); }
+.reader-menu-grid > :nth-child(4){ --rm-accent: transparent; } /* close */
+.reader-menu-grid > :nth-child(5){ --rm-accent: var(--c3); }
+.reader-menu-grid > :nth-child(6){ --rm-accent: var(--c2); }
+.reader-menu-grid > :nth-child(7){ --rm-accent: var(--c1); }
+
+/* Apply ONLY to the actual menu buttons (direct + wrapped) */
+.reader-menu-grid > button.reader-menu-item,
+.reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item{
+  background-color: #151518 !important; /* keep them dark */
+}
+
+/* Short line */
+.reader-menu-grid > button.reader-menu-item::after,
+.reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item::after{
+  content: "";
+  pointer-events: none;
+
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 7px;
+  height: 2px;
+
+  border-radius: 999px;
+  background: var(--rm-accent);
+  opacity: 1;
+}
+
+/* Close button: no line */
+.reader-menu-grid > button.reader-menu-item:nth-child(4)::after{
+  display: none;
+}
+
+/* ============================================================
+   ReaderMenu — make buttons more legible (SAFE for popovers)
+   No hover transforms, no overflow changes
+   ============================================================ */
+
+.reader-menu-grid > button.reader-menu-item,
+.reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item{
+  /* keep your dark base */
+  background-color: #151518 !important;
+
+  /* subtle outline */
+  border: 1px solid rgba(255,255,255,0.12) !important;
+
+  /* soft depth */
+  box-shadow:
+    0 10px 24px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+
+  /* tiny top highlight so it doesn't blend into background */
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.00)) !important;
+  background-blend-mode: overlay;
+}
+
+/* Slightly stronger on hover (no movement, just clarity) */
+@media (hover:hover){
+  .reader-menu-grid > button.reader-menu-item:hover,
+  .reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item:hover{
+    border-color: rgba(255,255,255,0.18) !important;
+    box-shadow:
+      0 12px 28px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,255,255,0.10) !important;
+    filter: brightness(1.05);
+  }
+}
+
+/* Keyboard focus: clean ring (optional but pro) */
+.reader-menu-grid > button.reader-menu-item:focus-visible,
+.reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item:focus-visible{
+  outline: 2px solid rgba(255,255,255,0.20) !important;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   ReaderMenu — subtle premium sheen (SAFE for popovers)
+   ============================================================ */
+
+.reader-menu-grid > button.reader-menu-item,
+.reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item{
+  /* keep everything you already have, just add a gentle multi-layer gradient */
+  background-image:
+    radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 55%),
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.00) 38%) !important;
+
+  /* so the gradients blend nicely over the dark base */
+  background-blend-mode: screen;
+}
+
+/* Slightly increase sheen on hover (no movement) */
+@media (hover:hover){
+  .reader-menu-grid > button.reader-menu-item:hover,
+  .reader-menu-grid > .reader-menu-item-wrap > button.reader-menu-item:hover{
+    background-image:
+      radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.00) 55%),
+      linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.00) 38%) !important;
+  }
+}
+
+/* Center the "LINE SPACING" label, keep the value on the right */
+.rm-section:nth-of-type(2) .rm-section-head{
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+}
+
+.rm-section:nth-of-type(2) .rm-value{
+  position: absolute;
+  right: 0;
+}
+
+
+.rm-pop-title{
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin: 2px 0 0px;
+  text-align: center;
+}

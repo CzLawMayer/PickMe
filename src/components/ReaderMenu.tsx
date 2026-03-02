@@ -37,13 +37,43 @@ type ReaderMenuProps = {
 const FONT_SIZES = [13, 14, 15, 16, 18] as const;
 
 const FONT_STYLES = [
-  { name: "Serif (Georgia)", css: "Georgia, 'Times New Roman', serif" },
-  { name: "Sans-serif (Arial)", css: "Arial, Helvetica, sans-serif" },
-  { name: "Sans-serif (Roboto)", css: "'Roboto', sans-serif" },
-  { name: "Serif (Merriweather)", css: "'Merriweather', serif" },
-  { name: "Sans-serif (Open Sans)", css: "'Open Sans', sans-serif" },
-  { name: "Monospace (Courier)", css: "'Courier New', Courier, monospace" },
+  { name: "Default (Times New Roman)", css: "'Times New Roman', Times, serif" },
+  { name: "Sans-serif (Inter)", css: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  { name: "Sans-serif (Roboto)", css: "'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  { name: "Sans-serif (Open Sans)", css: "'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  { name: "Sans-serif (Lato)", css: "'Lato', system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  { name: "Serif (Merriweather)", css: "'Merriweather', Georgia, 'Times New Roman', serif" },
 ] as const;
+
+/** Google Material Symbols (Rounded) */
+function GIcon({
+  name,
+  className,
+  title,
+  size = 20,
+}: {
+  name: string;
+  className?: string;
+  title?: string;
+  size?: number;
+}) {
+  return (
+    <span
+      className={"material-symbols-rounded" + (className ? ` ${className}` : "")}
+      aria-hidden="true"
+      title={title}
+      style={{
+        fontSize: `${size}px`,
+        lineHeight: 1,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {name}
+    </span>
+  );
+}
 
 export default function ReaderMenu({
   visible,
@@ -58,10 +88,10 @@ export default function ReaderMenu({
   const [lineHeight, setLineHeight] = useState(1.7);
   const [fontStyleIndex, setFontStyleIndex] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
 
-  // theme: 0 = cream, 1 = dark, 2 = white (DEFAULT should match Home.tsx: "white")
+  // theme: 0 = cream, 1 = dark, 2 = white
   const [themeIndex, setThemeIndex] = useState<0 | 1 | 2>(2);
 
-  // NEW: page size state (matches your Home.tsx PageSize support)
+  // page size
   const [pageSize, setPageSize] = useState<PageSize>("md");
 
   const currentTheme: ReaderTheme =
@@ -73,13 +103,7 @@ export default function ReaderMenu({
     return "Switch to cream page";
   })();
 
-  const themeIcon = (() => {
-    if (themeIndex === 0) return "☀︎"; // cream/light
-    if (themeIndex === 1) return "🌙"; // dark
-    return "⬜"; // white
-  })();
-
-  // popovers
+  // Popovers
   const [fontPanelOpen, setFontPanelOpen] = useState(false);
   const [fontStylePanelOpen, setFontStylePanelOpen] = useState(false);
   const [dictOpen, setDictOpen] = useState(false);
@@ -165,9 +189,7 @@ export default function ReaderMenu({
 
   // Focus dictionary input when open
   useEffect(() => {
-    if (dictOpen) {
-      setTimeout(() => dictInputRef.current?.focus(), 0);
-    }
+    if (dictOpen) setTimeout(() => dictInputRef.current?.focus(), 0);
   }, [dictOpen]);
 
   // Focus notepad textarea when open
@@ -319,6 +341,10 @@ export default function ReaderMenu({
 
   if (!visible) return null;
 
+  // Theme icon mapping (Google icons)
+  const themeIconName =
+    currentTheme === "cream" ? "icecream" : currentTheme === "dark" ? "dark_mode" : "light_mode";
+
   return (
     <div className={"reader-menu" + (isOpen ? " is-open" : "")} onClick={(e) => e.stopPropagation()}>
       <button
@@ -332,7 +358,7 @@ export default function ReaderMenu({
         }}
       >
         <span className="reader-menu-chevron" aria-hidden="true">
-          ⌃
+          <GIcon name="expand_less" />
         </span>
       </button>
 
@@ -358,7 +384,7 @@ export default function ReaderMenu({
             }}
             style={{ position: "relative" }}
           >
-            A
+            <GIcon name="format_size" />
             {fontPanelOpen && (
               <div
                 ref={fontPanelRef}
@@ -367,35 +393,44 @@ export default function ReaderMenu({
                 aria-label="Reading appearance"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="font-size-row" role="radiogroup" aria-label="Font size">
-                  {FONT_SIZES.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      className={"font-size-option" + (fontSizeIndex === idx ? " is-active" : "")}
-                      role="radio"
-                      aria-checked={fontSizeIndex === idx}
-                      onClick={() => {
-                        const newIndex = idx as 0 | 1 | 2 | 3 | 4;
-                        setFontSizeIndex(newIndex);
+                {/* Font size */}
+                <div className="rm-section">
+                  <div className="rm-section-head">
+                    <span className="rm-section-title">Font size</span>
+                  </div>
 
-                        const fontSize = FONT_SIZES[newIndex];
-                        const fontFamily = FONT_STYLES[fontStyleIndex].css;
+                  <div className="font-size-row" role="radiogroup" aria-label="Font size">
+                    {FONT_SIZES.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        className={"font-size-option" + (fontSizeIndex === idx ? " is-active" : "")}
+                        role="radio"
+                        aria-checked={fontSizeIndex === idx}
+                        onClick={() => {
+                          const newIndex = idx as 0 | 1 | 2 | 3 | 4;
+                          setFontSizeIndex(newIndex);
 
-                        // IMPORTANT: do NOT send theme here (prevents color from changing)
-                        onApplyTypography({ fontSize, lineHeight, fontFamily });
-                      }}
-                      title={idx < 2 ? "Smaller" : idx === 2 ? "Default" : "Larger"}
-                    >
-                      <span style={{ fontSize: `${(14 * (0.85 + 0.1 * idx)).toFixed(2)}px` }}>A</span>
-                    </button>
-                  ))}
+                          const fontSize = FONT_SIZES[newIndex];
+                          const fontFamily = FONT_STYLES[fontStyleIndex].css;
+
+                          onApplyTypography({ fontSize, lineHeight, fontFamily });
+                        }}
+                        title={idx < 2 ? "Smaller" : idx === 2 ? "Default" : "Larger"}
+                      >
+                        <span style={{ fontSize: `${(14 * (0.85 + 0.1 * idx)).toFixed(2)}px` }}>A</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="line-height-wrap">
-                  <label className="lh-label" htmlFor="lh-range">
-                    Line spacing
-                  </label>
+                {/* Line spacing */}
+                <div className="rm-section">
+                  <div className="rm-section-head">
+                    <span className="rm-section-title">Line spacing</span>
+                    <span className="rm-value">{lineHeight.toFixed(2)}×</span>
+                  </div>
+
                   <input
                     id="lh-range"
                     className="lh-range"
@@ -411,43 +446,37 @@ export default function ReaderMenu({
                       const fontSize = FONT_SIZES[fontSizeIndex];
                       const fontFamily = FONT_STYLES[fontStyleIndex].css;
 
-                      // IMPORTANT: do NOT send theme here
                       onApplyTypography({ fontSize, lineHeight: val, fontFamily });
                     }}
                     aria-valuemin={1.2}
                     aria-valuemax={2.0}
                     aria-valuenow={lineHeight}
                   />
-
-                  <div className="lh-value">{lineHeight.toFixed(2)}×</div>
                 </div>
 
-                {/* NEW: Page size (controls your Home.tsx pageSize + re-pagination) */}
-                <div className="page-size-wrap">
-                  <label className="ps-label" htmlFor="ps-range">
-                    Page size
-                  </label>
-                  <input
-                    id="ps-range"
-                    className="ps-range"
-                    type="range"
-                    min={0}
-                    max={2}
-                    step={1}
-                    value={pageSize === "sm" ? 0 : pageSize === "md" ? 1 : 2}
-                    onChange={(e) => {
-                      const n = parseInt(e.target.value, 10);
-                      const next: PageSize = n === 0 ? "sm" : n === 1 ? "md" : "lg";
-                      setPageSize(next);
+                {/* Page size (segmented control) */}
+                <div className="rm-section">
+                  <div className="rm-section-head">
+                    <span className="rm-section-title">Page size</span>
+                  </div>
 
-                      // IMPORTANT: only send pageSize (never touch theme)
-                      onApplyTypography({ pageSize: next });
-                    }}
-                    aria-valuemin={0}
-                    aria-valuemax={2}
-                    aria-valuenow={pageSize === "sm" ? 0 : pageSize === "md" ? 1 : 2}
-                  />
-                  <div className="ps-value">{pageSize === "sm" ? "Small" : pageSize === "md" ? "Medium" : "Large"}</div>
+                  <div className="rm-segment" role="radiogroup" aria-label="Page size">
+                    {(["sm", "md", "lg"] as const).map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className={"rm-seg-btn" + (pageSize === k ? " is-active" : "")}
+                        role="radio"
+                        aria-checked={pageSize === k}
+                        onClick={() => {
+                          setPageSize(k);
+                          onApplyTypography({ pageSize: k });
+                        }}
+                      >
+                        {k === "sm" ? "Small" : k === "md" ? "Medium" : "Large"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -468,7 +497,7 @@ export default function ReaderMenu({
             }}
             style={{ position: "relative" }}
           >
-            F
+            <GIcon name="font_download" />
             {fontStylePanelOpen && (
               <div
                 ref={fontStylePanelRef}
@@ -477,6 +506,8 @@ export default function ReaderMenu({
                 aria-label="Font style"
                 onClick={(e) => e.stopPropagation()}
               >
+                <div className="rm-pop-title">Font style</div>
+
                 <div className="font-style-grid">
                   {FONT_STYLES.map((f, idx) => (
                     <button
@@ -490,7 +521,6 @@ export default function ReaderMenu({
                         const fontSize = FONT_SIZES[fontSizeIndex];
                         const fontFamily = FONT_STYLES[newIndex].css;
 
-                        // IMPORTANT: do NOT send theme here
                         onApplyTypography({ fontSize, lineHeight, fontFamily });
                       }}
                       title={f.name}
@@ -504,7 +534,7 @@ export default function ReaderMenu({
             )}
           </button>
 
-          {/* Theme: cream -> dark -> white (ONLY place we change theme) */}
+          {/* Theme */}
           <button
             type="button"
             className="reader-menu-item"
@@ -519,15 +549,14 @@ export default function ReaderMenu({
               const nextTheme: ReaderTheme =
                 nextIndex === 0 ? "cream" : nextIndex === 1 ? "dark" : "white";
 
-              // Send ONLY the theme so typography changes never override it
               onApplyTypography({ theme: nextTheme });
             }}
             title={themeLabel}
           >
-            {themeIcon}
+            <GIcon name={themeIconName} />
           </button>
 
-          {/* Collapse menu button */}
+          {/* Collapse menu */}
           <button
             type="button"
             className="reader-menu-item"
@@ -539,7 +568,7 @@ export default function ReaderMenu({
               setIsOpen(false);
             }}
           >
-            📖
+            <GIcon name="keyboard_arrow_down" />
           </button>
 
           {/* Dictionary */}
@@ -558,7 +587,7 @@ export default function ReaderMenu({
               }}
               title="Dictionary"
             >
-              ✍︎
+              <GIcon name="dictionary" />
             </button>
 
             {dictOpen && (
@@ -623,8 +652,9 @@ export default function ReaderMenu({
                 e.stopPropagation();
                 setNotePanelOpen((o) => !o);
               }}
+              title="Notepad"
             >
-              📝
+              <GIcon name="edit_note" />
             </button>
 
             {notePanelOpen && (
@@ -664,7 +694,7 @@ export default function ReaderMenu({
               }}
               title="Read Aloud"
             >
-              🔊
+              <GIcon name="volume_up" />
             </button>
 
             {ttsOpen && (
