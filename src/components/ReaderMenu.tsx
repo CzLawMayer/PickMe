@@ -347,20 +347,22 @@ export default function ReaderMenu({
 
   return (
     <div className={"reader-menu" + (isOpen ? " is-open" : "")} onClick={(e) => e.stopPropagation()}>
-      <button
-        type="button"
-        className="reader-menu-toggle"
-        aria-label={isOpen ? "Hide reader menu" : "Show reader menu"}
-        aria-expanded={isOpen}
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen((o) => !o);
-        }}
-      >
-        <span className="reader-menu-chevron" aria-hidden="true">
-          <GIcon name="expand_less" />
-        </span>
-      </button>
+      {!isOpen && (
+        <button
+          type="button"
+          className="reader-menu-toggle"
+          aria-label="Show reader menu"
+          aria-expanded={false}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(true);
+          }}
+        >
+          <span className="reader-menu-chevron" aria-hidden="true">
+            <GIcon name="keyboard_arrow_up" />
+          </span>
+        </button>
+      )}
 
       <div
         className="reader-menu-panel"
@@ -559,7 +561,7 @@ export default function ReaderMenu({
           {/* Collapse menu */}
           <button
             type="button"
-            className="reader-menu-item"
+            className="reader-menu-item reader-menu-item--collapse"
             role="menuitem"
             aria-label="Close reader menu"
             title="Close"

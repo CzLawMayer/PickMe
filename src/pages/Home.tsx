@@ -1946,14 +1946,22 @@ export default function Home() {
           </div>
 
           <div className="nav-container" id="nav-container">
-            <div className="nav-arrow" id="right-arrow" title="Next Page">
-              &rsaquo;
+            <div className="nav-arrow" id="right-arrow" title="Next Page" aria-label="Next page" role="button">
+              <span className="material-symbols-outlined nav-icon" aria-hidden="true">
+                chevron_right
+              </span>
             </div>
-            <div className="nav-arrow" id="close-book-btn" title="Close Book">
-              &times;
+
+            <div className="nav-arrow" id="close-book-btn" title="Close Book" aria-label="Close book" role="button">
+              <span className="material-symbols-outlined nav-icon" aria-hidden="true">
+                close
+              </span>
             </div>
-            <div className="nav-arrow" id="left-arrow" title="Previous Page">
-              &lsaquo;
+
+            <div className="nav-arrow" id="left-arrow" title="Previous Page" aria-label="Previous page" role="button">
+              <span className="material-symbols-outlined nav-icon" aria-hidden="true">
+                chevron_left
+              </span>
             </div>
           </div>
 

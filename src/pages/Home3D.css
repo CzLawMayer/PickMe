@@ -2141,3 +2141,116 @@
   margin: 2px 0 0px;
   text-align: center;
 }
+
+
+/* === Nav arrows: no bubble until hover === */
+
+/* keep the hit area (so it’s still easy to click) */
+.nav-arrow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  width: 44px;           /* keep your current size if different */
+  height: 44px;
+  border-radius: 999px;
+
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+
+  transition: background-color .18s ease, border-color .18s ease, transform .12s ease;
+}
+
+/* show bubble only on hover/focus */
+.nav-arrow:hover,
+.nav-arrow:focus-visible{
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+}
+
+/* pressed feedback */
+.nav-arrow:active{
+  transform: translateY(1px);
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.18);
+}
+
+/* optional: keep icons centered nicely */
+.nav-arrow .material-symbols-outlined,
+.nav-arrow .material-symbols-rounded{
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Reader menu toggle: no bubble unless hovered */
+.reader-menu-toggle{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;          /* keep your existing size if different */
+  height: 44px;
+  border-radius: 999px;
+
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+
+  transition: background-color .18s ease, border-color .18s ease, transform .12s ease;
+}
+
+/* bubble appears on hover / keyboard focus */
+.reader-menu-toggle:hover,
+.reader-menu-toggle:focus-visible{
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+}
+
+/* pressed */
+.reader-menu-toggle:active{
+  transform: translateY(1px);
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.18);
+}
+
+/* optional: when menu is open, keep bubble visible so it reads as "active" */
+.reader-menu.is-open .reader-menu-toggle{
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+}
+
+/* keep icon centered */
+.reader-menu-toggle .material-symbols-rounded{
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Make the middle collapse button a perfect circle */
+.reader-menu-item--collapse{
+  width: 44px;          /* match your other buttons */
+  height: 44px;
+  border-radius: 999px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reader-menu-item--collapse{
+  width: 52px;
+  height: 52px;
+}
+
+/* Accent per slot */
+.reader-menu-grid > :nth-child(1){ --rm-accent: var(--c1); }      /* keep */
+.reader-menu-grid > :nth-child(2){ --rm-accent: var(--c2); }      /* keep */
+.reader-menu-grid > :nth-child(3){ --rm-accent: var(--c3); }      /* keep */
+.reader-menu-grid > :nth-child(4){ --rm-accent: transparent; }    /* close */
+.reader-menu-grid > :nth-child(5){ --rm-accent: #1e88e5; }        /* ✅ requested */
+.reader-menu-grid > :nth-child(6){ --rm-accent: #26a69a; }        /* teal */
+.reader-menu-grid > :nth-child(7){ --rm-accent: #f6bf26; }        /* amber */
