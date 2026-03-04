@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { allGenres, getGenreDescription, genreCatalog } from "@/searchData";
-import "./GenresCarousel.css";
+import { allGenres, getGenreDescription, getGenreIcon, genreCatalog } from "@/searchData";import "./GenresCarousel.css";
 
 type GenresCarouselProps = { onPick?: (genre: string) => void };
 
@@ -65,8 +64,6 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
   const [vw, setVw] = useState(0);
   const [stripeW, setStripeW] = useState(FALLBACK_W);
   const [gapW, setGapW] = useState(0);
-
-
 
   const STRIPE_PALETTE: Array<[string, string]> = [
     // Start ORANGE (brand c1 zone)
@@ -270,6 +267,8 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
   const activeName = base[((idx % N) + N) % N];
   const activeDesc = getGenreDescription(activeName) || "";
 
+  const activeIcon = getGenreIcon(activeName) || "search";
+
   // Find active genre's fontKey and map it to the CSS var
   const activeFontKey = (genreCatalog as any[]).find((g) => g.name === activeName)
     ?.fontKey as GenreFontKey | undefined;
@@ -288,6 +287,9 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
       {/* Centered title + description */}
       <div className="genres-caption" aria-live="polite" aria-atomic="true">
         <div>
+          <span className="genres-icon material-symbols-outlined" aria-hidden="true">
+            {activeIcon}
+          </span>
           <div className="genres-title-overlay">{activeName}</div>
           {activeDesc && <div className="genres-desc-overlay">{activeDesc}</div>}
         </div>

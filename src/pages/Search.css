@@ -1286,3 +1286,18 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs .lib-tab .tab-underline spa
   --gfont-tek: "Teko", system-ui, sans-serif;
   --gfont-uni: "UnifrakturCook", system-ui, serif;
 }
+
+.genres-icon{
+  display: grid;
+  place-items: center;
+  margin: 0 0 14px 0;
+  font-size: clamp(34px, 4.4vw, 72px);
+  line-height: 1;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 8px 22px rgba(0,0,0,0.35);
+}
+
+/* Push the icon up */
+.genres-icon{
+  transform: translateY(-30px) !important;
+}
