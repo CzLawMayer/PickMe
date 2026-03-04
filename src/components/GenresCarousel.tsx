@@ -1,21 +1,58 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { allGenres, getGenreDescription } from "@/searchData";
+import { allGenres, getGenreDescription, genreCatalog } from "@/searchData";
 import "./GenresCarousel.css";
 
 type GenresCarouselProps = { onPick?: (genre: string) => void };
 
-const FALLBACK_W = 325;        // keep in sync with CSS --stripe-w
-const DURATION_MS = 380;       // slide animation
+const FALLBACK_W = 325; // keep in sync with CSS --stripe-w
+const DURATION_MS = 380; // slide animation
+
+type GenreFontKey =
+  | "ABRIL"
+  | "BEBAS"
+  | "BLACKOPS"
+  | "CINZEL"
+  | "DMSERIF"
+  | "RUBIKMONO"
+  | "TEKO"
+  | "UNIFRAKTUR";
+
+function fontKeyToCssVar(key?: string): string {
+  switch ((key || "").toUpperCase()) {
+    case "ABRIL":
+      return "--gfont-abr";
+    case "BEBAS":
+      return "--gfont-beb";
+    case "BLACKOPS":
+      return "--gfont-blk";
+    case "CINZEL":
+      return "--gfont-cin";
+    case "DMSERIF":
+      return "--gfont-dms";
+    case "RUBIKMONO":
+      return "--gfont-rmx";
+    case "TEKO":
+      return "--gfont-tek";
+    case "UNIFRAKTUR":
+      return "--gfont-uni";
+    default:
+      return "--gfont-beb";
+  }
+}
 
 export default function GenresCarousel({ onPick }: GenresCarouselProps) {
-  // base list
-  const base = useMemo(() => allGenres, []);
+  // Base list (names). Prefer the catalog order so it matches your database.
+  // Fallback to allGenres if needed.
+  const base = useMemo(() => {
+    const fromCatalog = (genreCatalog || []).map((g: any) => g?.name).filter(Boolean);
+    return fromCatalog.length ? fromCatalog : allGenres;
+  }, []);
   const N = base.length;
 
   // triple list for seamless wrap
   const looped = useMemo(() => (N ? [...base, ...base, ...base] : []), [N, base]);
   const firstReal = N;
-  const lastReal  = 2 * N - 1;
+  const lastReal = 2 * N - 1;
 
   // active index lives in middle copy initially
   const [idx, setIdx] = useState(firstReal);
@@ -28,6 +65,44 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
   const [vw, setVw] = useState(0);
   const [stripeW, setStripeW] = useState(FALLBACK_W);
   const [gapW, setGapW] = useState(0);
+
+
+
+  const STRIPE_PALETTE: Array<[string, string]> = [
+    // Start ORANGE (brand c1 zone)
+    ["#ef5623", "#7a1f0d"], // brand orange → ember
+    ["#ff6a3a", "#3a0b16"], // hot orange → wine shadow
+    ["#c43a1f", "#1b050b"], // burnt orange → oxblood shadow
+
+    // RED / WINE (your favorites)
+    ["#8b0f2a", "#3a0716"], // blood red
+    ["#6b0f1a", "#2a0610"], // crimson velvet
+    ["#6a1632", "#2a0a16"], // wine
+    ["#4c0b17", "#1b050b"], // oxblood
+
+    // PINK (brand c2 zone)
+    ["#e41f6c", "#5a0a26"], // brand pink → deep rose
+    ["#ff2f86", "#2a0811"], // neon rose → noir base
+    ["#b31552", "#170712"], // magenta wine → plum shadow
+
+    // PURPLE → BLUE (smoothed, no alternating)
+    ["#3b0f2a", "#170712"], // plum noir
+    ["#6a1b9a", "#240a3a"], // brand purple → deep violet
+    ["#7a2bc2", "#120c1a"], // brighter violet peak
+    ["#2a1240", "#0f071c"], // violet noir
+    ["#1a1b4b", "#0a0b22"], // indigo
+    ["#122a5a", "#07102b"], // deep royal blue
+    ["#0f1a4a", "#070b1f"], // midnight blue
+    ["#1b2c48", "#0b121f"], // steel blue
+    ["#1e88e5", "#0b1f3a"], // brand blue
+
+    // WARM BRIDGE BACK (this is the key fix)
+    ["#3a0f2a", "#160b12"], // warm plum bridge (kills blue→orange harsh jump)
+    ["#6b0f1a", "#2a0610"], // crimson bridge
+    ["#ef5623", "#2a0610"], // orange re-entry (wrap becomes orange-adjacent)
+  ];
+
+
 
   // measure viewport width
   useEffect(() => {
@@ -91,11 +166,17 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
     movingRef.current = true;
     const step = Math.sign(pendingRef.current);
     pendingRef.current -= step;
-    setIdx(p => p + step);
+    setIdx((p) => p + step);
   };
 
-  const next = () => { pendingRef.current = Math.min(pendingRef.current + 1, 100); kick(); };
-  const prev = () => { pendingRef.current = Math.max(pendingRef.current - 1, -100); kick(); };
+  const next = () => {
+    pendingRef.current = Math.min(pendingRef.current + 1, 100);
+    kick();
+  };
+  const prev = () => {
+    pendingRef.current = Math.max(pendingRef.current - 1, -100);
+    kick();
+  };
 
   // center on a clicked base index (nearest copy of that genre)
   const centerOnBaseIndex = (baseIndex: number) => {
@@ -106,10 +187,13 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
     let best = Math.abs(target - idx);
     for (const c of candidates) {
       const d = Math.abs(c - idx);
-      if (d < best) { best = d; target = c; }
+      if (d < best) {
+        best = d;
+        target = c;
+      }
     }
 
-    pendingRef.current = 0;   // cancel queued steps
+    pendingRef.current = 0; // cancel queued steps
     setAnim(true);
     movingRef.current = true;
     setIdx(target);
@@ -132,7 +216,7 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
       // jump invisibly back into middle copy if we slid into edges
       if (idx < firstReal || idx > lastReal) {
         setAnim(false);
-        setIdx(p => normalize(p));
+        setIdx((p) => normalize(p));
         requestAnimationFrame(() => setAnim(true));
       }
 
@@ -140,7 +224,7 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
         requestAnimationFrame(() => {
           const step = Math.sign(pendingRef.current);
           pendingRef.current -= step;
-          setIdx(p => p + step);
+          setIdx((p) => p + step);
         });
       } else {
         movingRef.current = false;
@@ -169,10 +253,11 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") next();
-      if (e.key === "ArrowLeft")  prev();
+      if (e.key === "ArrowLeft") prev();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!looped.length) return null;
@@ -185,8 +270,21 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
   const activeName = base[((idx % N) + N) % N];
   const activeDesc = getGenreDescription(activeName) || "";
 
+  // Find active genre's fontKey and map it to the CSS var
+  const activeFontKey = (genreCatalog as any[]).find((g) => g.name === activeName)
+    ?.fontKey as GenreFontKey | undefined;
+  const fontVar = fontKeyToCssVar(activeFontKey);
+
   return (
-    <div className="genres-overlay" role="region" aria-label="Genres carousel">
+    <div
+      className="genres-overlay"
+      role="region"
+      aria-label="Genres carousel"
+      style={{
+        // this feeds your CSS rule: font-family: var(--genre-font)
+        ["--genre-font" as any]: `var(${fontVar})`,
+      }}
+    >
       {/* Centered title + description */}
       <div className="genres-caption" aria-live="polite" aria-atomic="true">
         <div>
@@ -195,7 +293,9 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
         </div>
       </div>
 
-      <button className="genres-nav genres-nav--left" aria-label="Previous" onClick={prev}>‹</button>
+      <button className="genres-nav genres-nav--left" aria-label="Previous" onClick={prev}>
+        ‹
+      </button>
 
       <div ref={viewportRef} className="genres-viewport" aria-hidden="true">
         <div
@@ -209,6 +309,8 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
           {looped.map((g, i) => {
             const baseIndex = ((i % N) + N) % N;
             const isActive = i === idx;
+
+            const p = STRIPE_PALETTE[baseIndex % STRIPE_PALETTE.length];
             return (
               <button
                 key={`${g}-${i}`}
@@ -225,14 +327,19 @@ export default function GenresCarousel({ onPick }: GenresCarouselProps) {
                     onPick?.(g);
                   }
                 }}
-                style={{ ["--stripe-hue" as any]: (i * 37) % 360 }}
+                style={{
+                  ["--stripe-a" as any]: p[0],
+                  ["--stripe-b" as any]: p[1],
+                }}
               />
             );
           })}
         </div>
       </div>
 
-      <button className="genres-nav genres-nav--right" aria-label="Next" onClick={next}>›</button>
+      <button className="genres-nav genres-nav--right" aria-label="Next" onClick={next}>
+        ›
+      </button>
     </div>
   );
 }

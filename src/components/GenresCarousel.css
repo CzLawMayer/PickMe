@@ -7,6 +7,7 @@
   inset: 0;                     /* cover all of .lib-scroll */
   z-index: 30;
   pointer-events: auto;         /* receive clicks */
+  align-items: stretch;         /* stretch so viewport can fill */
 }
 
 /* viewport: defines height & clipping; track is absolutely positioned in it */
@@ -15,70 +16,167 @@
   overflow: hidden;
   width: 100%;
   height: 100%;                 /* fill the results area */
-  min-height: 360px;            /* safety */
+  min-height: 0;                /* avoid clamps */
+  display: grid;
 }
 
 /* track: only as wide as its content so translate works */
 .genres-track {
   position: absolute;
-  top: 0; bottom: 0; left: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
 
-  display: flex;
-  align-items: center;
-  gap: var(--stripe-gap, 16px);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--stripe-w, 325px);
+  gap: 0;                       /* stripes touch */
+  align-items: stretch;         /* children fill height */
+  justify-content: center;
+
   width: max-content;
-
   will-change: transform;
   transform: translate3d(0,0,0);
+  overflow: visible;            /* allow skew bleed */
 }
 
-/* stripes: slim/tall rectangles */
-.genre-stripe {
-  --stripe-w: 260px;
+/* ========= Stripe geometry ========= */
 
-  flex: 0 0 auto;
-  width: var(--stripe-w);
-  height: 100%;
-  min-height: 320px;
+:root{
+  /* visual tilt & overscan to avoid hairline gaps */
+  --stripe-tilt-deg: -18deg;
+  --stripe-bleed: 14px;
+}
+
+/* base stripe button (invisible box; paint is on ::before) */
+.genre-stripe{
+  --stripe-w: 325px;
 
   position: relative;
+  width: var(--stripe-w);
+  height: 100%;                 /* fill the full viewport height */
+  min-height: 0;
+
   border: 0;
+  padding: 0;
+  margin: 0;
   cursor: pointer;
   user-select: none;
-  overflow: hidden;
 
-  background:
-    linear-gradient(-12deg,
-      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
-      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
-  box-shadow: 0 12px 36px rgba(0,0,0,0.38),
-              inset 0 0 0 1px rgba(255,255,255,0.06);
+  background: transparent;
+  outline: 0;
+  box-shadow: none;
+
+  overflow: visible;            /* allow skewed paint to spill a bit */
+  transform: none;              /* keep base steady, only ::before animates */
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* draw each slanted band as a skewed paint layer */
+.genre-stripe::before{
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--stripe-bleed));
+  right: calc(-1 * var(--stripe-bleed));
+  pointer-events: none;
+  z-index: 0;
+
+  /* NEW: noir palette colors come from TSX via --stripe-a/--stripe-b */
+  background: linear-gradient(-12deg,
+    var(--stripe-a, #2c2f35) 0%,
+    var(--stripe-b, #121317) 100%
+  );
+
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.38),
+    inset 0 0 0 1px rgba(255,255,255,0.06);
+
+  transform: skewX(var(--stripe-tilt-deg));
+  transform-origin: center;
+  will-change: transform, filter, box-shadow;
   transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
 }
 
-.genre-stripe:hover { filter: brightness(1.06); }
-
-
-
-.genre-name {
-  position: absolute;
-  left: 0; right: 0; bottom: 16px;
-  text-align: center;
-  color: #fff;
-  font-weight: 900;
-  font-size: clamp(18px, 4.2vw, 48px);
-  line-height: 1.06;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.45);
-  padding: 0 8px;
-  pointer-events: none;
+/* hover is subtle and clean */
+.genre-stripe:hover::before{
+  filter: brightness(1.06) contrast(1.03);
 }
 
-/* arrows float on top of stripes; no layout impact */
-.genres-nav {
+/* active stripe pops above neighbors */
+.genre-stripe[data-active="true"]{
+  z-index: 5;
+}
+.genre-stripe[data-active="true"]::before{
+  transform: skewX(var(--stripe-tilt-deg)) scale(1.06);
+  filter: brightness(1.12) contrast(1.05);
+  box-shadow:
+    0 16px 44px rgba(0,0,0,0.46),
+    inset 0 0 0 1px rgba(255,255,255,0.10);
+}
+
+/* ====== Centered title + description overlay ====== */
+
+.genres-caption{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 60;
+  text-align: center;
+}
+
+.genres-caption > div{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-inline: 24px;
+}
+
+/* Big title (font set via --genre-font from TSX) */
+.genres-title-overlay{
+  position: relative;
+  inset: auto;
+  transform: none;
+  margin: 0 0 clamp(18px, 2.6vw, 34px) 0;
+  letter-spacing: -0.02em;
+
+  font-family: var(--genre-font, system-ui) !important;
+  font-weight: 900;
+  font-size: clamp(40px, 8.8vw, 120px);
+  line-height: 1.02;
+  color: #fff;
+
+  text-shadow:
+    0 2px 8px rgba(0,0,0,0.45),
+    0 8px 28px rgba(0,0,0,0.35);
+}
+
+.genres-desc-overlay{
+  margin: 0;
+  font-size: clamp(18px, 2.2vw, 23px);
+  line-height: 1.45;
+  max-width: min(900px, 92vw);
+  font-weight: 600;
+  color: #fff;
+  opacity: 0.98;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
+/* Hide any old small per-stripe names if they exist */
+.genre-name{ display: none !important; }
+
+/* ====== Arrows ====== */
+
+.genres-nav{
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 2;
+  z-index: 70;
 
   width: 56px;
   height: 56px;
@@ -93,9 +191,12 @@
   cursor: pointer;
   user-select: none;
   transition: transform 120ms ease, filter 120ms ease;
+  pointer-events: auto;
 }
+
 .genres-nav--left  { left: 12px; }
 .genres-nav--right { right: 12px; }
+
 .genres-nav:hover  { filter: brightness(1.1); }
 .genres-nav:active { transform: translateY(-50%) scale(0.98); }
 
@@ -106,384 +207,38 @@
   .genres-nav { width: 44px; height: 44px; font-size: 28px; }
 }
 
-/* GenresCarousel.css */
+/* ===== Lighter stripes override (paste at bottom) ===== */
+.genres-viewport .genres-track .genre-stripe::before {
+  /* lift the palette without changing your TSX colors */
+  filter: brightness(1.38) saturate(1.08) !important;
 
-/* Viewport/track stay the same, just tighten gap to 0 */
-.genres-track {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: var(--stripe-w, 325px); /* was 260px */
-  gap: var(--stripe-gap, 0px);               /* was 16px */
-  align-items: center;
-  justify-content: center;
-  will-change: transform;
-}
-
-/* Slim, tall rectangles */
-.genre-stripe {
-  --stripe-w: 325px; /* was 260px (25% wider) */
-
-  position: relative;
-  width: var(--stripe-w);
-  height: clamp(260px, 60vh, 520px);
-
-  border: 0;
-  cursor: pointer;
-  user-select: none;
-  overflow: hidden;
-
-  background:
-    linear-gradient(-12deg,
-      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
-      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
-  box-shadow: 0 12px 36px rgba(0,0,0,0.38),
-              inset 0 0 0 1px rgba(255,255,255,0.06);
-  transform: translateZ(0);
-  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
-}
-
-/* Make the overlay column stretch so the viewport fills all available height */
-.genres-overlay {
-  /* keep your existing rules */
-  align-items: stretch !important; /* was center */
-}
-
-/* The viewport must fill the overlay column */
-.genres-viewport {
-  height: 100% !important;    /* fill from top to bottom */
-  min-height: 0 !important;   /* avoid unexpected clamps */
-  display: grid !important;
-}
-
-/* Let the track stretch its children vertically */
-.genres-track {
-  align-items: stretch !important; /* was center */
-  grid-auto-columns: var(--stripe-w, 325px) !important;
-  gap: var(--stripe-gap, 0px) !important;
-}
-
-/* Each rectangle should fill the full height of the viewport */
-.genre-stripe {
-  --stripe-w: 325px;           /* your 25% wider width */
-  width: var(--stripe-w) !important;
-
-  height: 100% !important;     /* <-- key: take full height of lib-scroll overlay */
-  min-height: 0 !important;    /* prevent clamping */
-  /* keep the rest of your styles (gradient, shadows, transitions, etc.) */
-}
-
-/* If your arrow buttons are absolutely positioned on top, keep them out of layout */
-.genres-nav {
-  position: absolute !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  left: auto; right: auto;     /* each side sets its own */
-  pointer-events: auto !important;
-}
-
-.genres-nav--left  { left: 12px !important; }
-.genres-nav--right { right: 12px !important; }
-
-/* allow overlapping stripes inside the viewport */
-.genres-viewport {
-  overflow: hidden !important;
-}
-.genres-track {
-  overflow: visible !important;              /* neighbors can overlap */
-}
-
-/* base: make each stripe a stacking context */
-.genre-stripe {
-  position: relative !important;
-  z-index: 1 !important;
-  transform-origin: center !important;       /* scale from center */
-  will-change: transform, filter !important;
-}
-
-
-
-/* just in case any neighbor had a z-index set somewhere */
-.genre-stripe:not([data-active="true"]) {
-  z-index: 2 !important;
-}
-
-
-
-
-/* Big centered title for the active stripe only (we render one overlay) */
-.genres-title-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;                /* never block clicks on stripes/arrows */
-  z-index: 50;                         /* above stripes and arrows */
-  padding-inline: 24px;
-  text-align: center;
-
-  /* Typography */
-  color: #fff;
-  font-weight: 900;
-  line-height: 1.02;
-  text-shadow:
-    0 2px 8px rgba(0,0,0,0.45),
-    0 8px 28px rgba(0,0,0,0.35);
-
-  /* Big responsive size */
-  font-size: clamp(40px, 10vw, 140px);
-}
-
-/* Hide any small per-stripe names (we replaced with overlay) */
-.genre-name { display: none !important; }
-
-
-/* Center the title+description block in the viewport */
-.genres-caption{
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  pointer-events:none; z-index:60; text-align:center;
-}
-
-/* Keep your existing title sizing — just remove extra margins */
-.genres-title-overlay{ margin:0; }
-
-/* Put the text directly under the title and keep it centered */
-.genres-desc-overlay{
-  margin-top:12px;
-  font-size:clamp(14px,1.6vw,20px);
-  line-height:1.35;
-  max-width:min(800px,90vw);
-  margin-inline:auto;
-  color:#fff;
-}
-
-/* Center the whole caption block */
-.genres-caption{
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 60;
-  text-align: center;
-}
-
-/* Stack title above description */
-.genres-caption > div{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Kill any old absolute/transform on the title so it sits in flow */
-.genres-title-overlay{
-  position: relative !important;
-  inset: auto !important;
-  transform: none !important;
-  margin: 0 0 10px 0 !important; /* space under the title */
-  line-height: 1.02;
-}
-
-/* Description directly below title */
-.genres-desc-overlay{
-  margin: 0;
-  font-size: clamp(14px, 1.6vw, 20px);
-  line-height: 1.35;
-  max-width: min(820px, 90vw);
-  color: #fff;
-}
-
-/* Title: a touch smaller + more space below */
-.genres-title-overlay{
-  font-size: clamp(40px, 8.8vw, 120px) !important;  /* was larger */
-  margin-bottom: clamp(18px, 2.6vw, 34px) !important; /* bigger gap */
-  letter-spacing: -0.02em;
-}
-
-/* Description: bigger and comfy to read */
-.genres-desc-overlay{
-  font-size: clamp(18px, 2.2vw, 23px) !important;   /* bigger text */
-  line-height: 1.45 !important;
-  max-width: min(900px, 92vw) !important;
-  font-weight: 600;
-  opacity: 0.98;
-}
-
-
-.genre-stripe{
-  background: none !important;   /* we’ll paint with ::before */
-  overflow: visible !important;  /* allow the skewed paint to spill a bit */
-}
-
-:root{
-  /* visual tilt & tiny overscan to avoid hairline gaps */
-  --stripe-tilt-deg: -18deg;   /* ~20° to the right visually */
-  --stripe-bleed: 14px;        /* widen paint so seams never show */
-}
-
-/* draw each colored band as a skewed paint layer */
-.genre-stripe::before{
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0;
-  left: calc(-1 * var(--stripe-bleed));
-  right: calc(-1 * var(--stripe-bleed));
-  z-index: 0;
-  pointer-events: none;
-
-  /* your original gradient hues */
-  background:
-    linear-gradient(-12deg,
-      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
-      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
-
-  /* fast GPU transform for the slant */
-  transform: skewX(var(--stripe-tilt-deg));
-  transform-origin: center;
-  will-change: transform;
-}
-
-/* keep stripes tight together so the skewed paint touches */
-.genres-track{
-  gap: 0 !important;
-}
-
-/* make the active one pop above neighbors (your existing effect) */
-.genre-stripe[data-active="true"]{ z-index: 2; }
-
-/* 1) Nuke visuals on the rectangular box */
-.genre-stripe{
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  outline: 0 !important;
-}
-
-/* 2) Draw the slanted band on ::before */
-:root{
-  --stripe-tilt-deg: -18deg;  /* tilt to the right */
-  --stripe-bleed: 14px;       /* overpaint to hide seams */
-}
-
-.genre-stripe::before{
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0;
-  left: calc(-1 * var(--stripe-bleed));
-  right: calc(-1 * var(--stripe-bleed));
-  z-index: 0;
-  pointer-events: none;
-
-  /* your gradient */
-  background:
-    linear-gradient(-12deg,
-      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
-      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
-
-  /* move effects here so only the slanted layer shows */
+  /* slightly lighter highlights */
   box-shadow:
-    0 12px 36px rgba(0,0,0,0.38),
-    inset 0 0 0 1px rgba(255,255,255,0.06);
-
-  transform: skewX(var(--stripe-tilt-deg));
-  transform-origin: center;
-  will-change: transform;
-  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+    0 12px 34px rgba(0,0,0,0.28),
+    inset 0 0 0 1px rgba(255,255,255,0.10) !important;
 }
 
-/* 3) Hover/active states target ::before (not the base box) */
-.genre-stripe:hover::before{
-  filter: brightness(1.06);
+/* keep hover/active tasteful, not too dark */
+.genres-viewport .genres-track .genre-stripe:hover::before {
+  filter: brightness(1.34) saturate(1.10) contrast(1.02) !important;
 }
 
-.genre-stripe[data-active="true"]::before{
+.genres-viewport .genres-track .genre-stripe[data-active="true"]::before {
+  filter: brightness(1.42) saturate(1.12) contrast(1.03) !important;
   box-shadow:
-    0 16px 44px rgba(0,0,0,0.46),
-    inset 0 0 0 1px rgba(255,255,255,0.08);
-  transform: skewX(var(--stripe-tilt-deg)) scale(1.06);
+    0 16px 46px rgba(0,0,0,0.34),
+    inset 0 0 0 1px rgba(255,255,255,0.14) !important;
 }
 
-/* 4) Keep stripes flush so skewed paint touches perfectly */
-.genres-track{ gap: 0 !important; }
-
-
-/* --- HARD KILL of the straight rectangle (base box) --- */
-.genres-viewport .genres-track .genre-stripe,
-.genres-viewport .genres-track .genre-stripe[data-active="true"]{
-  background: transparent !important;
-  background-image: none !important;   /* in case background shorthand re-applies */
-  border: 0 !important;
-  box-shadow: none !important;
-  outline: 0 !important;
-  transform: none !important;          /* neutralize the active scale */
+/* ===== More color separation (less muted) ===== */
+.genres-viewport .genres-track .genre-stripe::before {
+  filter: brightness(1.22) saturate(1.38) contrast(1.08) !important;
 }
 
-/* also suppress any after-layer someone added earlier */
-.genres-viewport .genres-track .genre-stripe::after{
-  content: none !important;
-  display: none !important;
+.genres-viewport .genres-track .genre-stripe:hover::before {
+  filter: brightness(1.28) saturate(1.50) contrast(1.10) !important;
 }
 
-/* keep only the slanted paint on ::before */
-:root{
-  --stripe-tilt-deg: -18deg;
-  --stripe-bleed: 14px;
-}
-.genres-viewport .genres-track .genre-stripe::before{
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0;
-  left: calc(-1 * var(--stripe-bleed));
-  right: calc(-1 * var(--stripe-bleed));
-  pointer-events: none;
-  z-index: 0;
-
-  background:
-    linear-gradient(-12deg,
-      hsl(var(--stripe-hue, 0) 72% 56%) 0%,
-      hsl(calc(var(--stripe-hue, 0) + 28) 72% 56%) 100%);
-
-  box-shadow:
-    0 12px 36px rgba(0,0,0,0.38),
-    inset 0 0 0 1px rgba(255,255,255,0.06);
-
-  transform: skewX(var(--stripe-tilt-deg));
-  transform-origin: center;
-  will-change: transform;
-  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
-}
-
-/* hover/active now target only the slanted layer */
-.genres-viewport .genres-track .genre-stripe:hover::before{
-  filter: brightness(1.06);
-}
-.genres-viewport .genres-track .genre-stripe[data-active="true"]::before{
-  transform: skewX(var(--stripe-tilt-deg)) scale(1.06);
-  box-shadow:
-    0 16px 44px rgba(0,0,0,0.46),
-    inset 0 0 0 1px rgba(255,255,255,0.08);
-}
-
-/* stripes remain flush so skewed paint touches perfectly */
-.genres-viewport .genres-track{ gap: 0 !important; }
-
-/* Make the active (center) stripe render above neighbors */
-.genres-viewport .genres-track .genre-stripe{
-  position: relative !important;  /* create stacking context */
-  z-index: 1 !important;          /* default layer for non-active */
-}
-
-.genres-viewport .genres-track .genre-stripe::before{
-  z-index: 0 !important;          /* paint layer sits inside element */
-}
-
-.genres-viewport .genres-track .genre-stripe[data-active="true"]{
-  z-index: 5 !important;          /* lift the active one above sides */
-  /* keep base transform NONE so only ::before scales/tilts */
-  transform: none !important;
-}
-
-.genres-viewport .genres-track .genre-stripe[data-active="true"]::before{
-  transform: skewX(var(--stripe-tilt-deg)) scale(1.06) !important;
+.genres-viewport .genres-track .genre-stripe[data-active="true"]::before {
+  filter: brightness(1.36) saturate(1.60) contrast(1.12) !important;
 }

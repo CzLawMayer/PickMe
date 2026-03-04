@@ -1225,3 +1225,64 @@ body .search-page .lib-hero .lib-hero-grid .lib-tabs:focus-within {
   margin-left: 28px;  /* push right */
   margin-top: 10px;   /* push down a bit */
 }
+
+
+/* ===== FINAL OVERRIDE: tab underline = thin rectangles ===== */
+body .search-page .lib-hero .lib-hero-grid .lib-tabs .lib-tab .tab-underline {
+  height: 6px !important;          /* thinner */
+  border-radius: 0 !important;     /* no rounding */
+  overflow: hidden !important;     /* prevents any rounded child bleed */
+  gap: 0 !important;               /* segments touch */
+}
+
+body .search-page .lib-hero .lib-hero-grid .lib-tabs .lib-tab .tab-underline .seg,
+body .search-page .lib-hero .lib-hero-grid .lib-tabs .lib-tab .tab-underline span {
+  height: 100% !important;
+  border-radius: 0 !important;
+}
+
+
+/* ===== Genres Carousel font palette ===== */
+:root,
+.search-page .library-app {
+  --gfont-abr: "Abril Fatface", system-ui, serif;
+  --gfont-beb: "Bebas Neue", system-ui, sans-serif;
+  --gfont-blk: "Black Ops One", system-ui, sans-serif;
+  --gfont-cin: "Cinzel Decorative", system-ui, serif;
+  --gfont-dms: "DM Serif Display", system-ui, serif;
+  --gfont-rmx: "Rubik Mono One", system-ui, sans-serif;
+  --gfont-tek: "Teko", system-ui, sans-serif;
+  --gfont-uni: "UnifrakturCook", system-ui, serif;
+}
+
+/* Your carousel title hook (adjust selector to your actual title element) */
+.genres-overlay .genre-title,
+.genres-overlay h1.genre-title {
+  font-family: var(--genre-font, var(--gfont-beb));
+  letter-spacing: 0.5px;
+}
+
+/* Optional: description stays readable and consistent */
+.genres-overlay .genre-desc,
+.genres-overlay p.genre-desc {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+
+:root,
+.search-page .library-app {
+  --gfont-abr: "Abril Fatface", system-ui, serif;
+  --gfont-beb: "Bebas Neue", system-ui, sans-serif;
+
+  /* was Black Ops One */
+  --gfont-blk: "Staatliches", system-ui, sans-serif; /* was Black Ops One */
+
+  --gfont-cin: "Cinzel Decorative", system-ui, serif;
+  --gfont-dms: "DM Serif Display", system-ui, serif;
+
+  /* was Rubik Mono One */
+  --gfont-rmx: "Oxanium", system-ui, sans-serif;     /* was Rubik Mono One */
+
+  --gfont-tek: "Teko", system-ui, sans-serif;
+  --gfont-uni: "UnifrakturCook", system-ui, serif;
+}
