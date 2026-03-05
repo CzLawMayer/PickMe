@@ -668,14 +668,22 @@ export default function Home() {
       frontTexture.colorSpace = THREE.SRGBColorSpace;
       backTexture.colorSpace = THREE.SRGBColorSpace;
 
-      backTexture.wrapS = THREE.RepeatWrapping;
-      backTexture.repeat.x = -1;
+      // Do NOT mirror the back cover
+      backTexture.wrapS = THREE.ClampToEdgeWrapping;
+      backTexture.repeat.x = 1;
+      backTexture.offset.x = 0;
       backTexture.center.set(0.5, 0.5);
+      backTexture.rotation = 0;
 
       const spineCanvasWidth = bookDepth * 100;
       const spineCanvasHeight = bookHeight * 100;
       const spineColor = spineColors[index % spineColors.length];
-      const spineTexture = createSpineTexture(coverMeta.title, spineCanvasWidth, spineCanvasHeight, spineColor);
+      const spineTexture = createSpineTexture(
+        coverMeta.title,
+        spineCanvasWidth,
+        spineCanvasHeight,
+        spineColor
+      );
       spineTexture.colorSpace = THREE.SRGBColorSpace;
 
       const frontCoverMaterial = new THREE.MeshBasicMaterial({ map: frontTexture });

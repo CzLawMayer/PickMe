@@ -7,7 +7,7 @@ export const sampleBooks = [
     author: "Diego Ballesteros",
     user: "Names Brooklyn",
     coverUrl: "/covers/balls.png",
-    backCoverUrl: "/covers/balls.png",
+    backCoverUrl: "/covers/eeeeeee.png",
     tags: ["Sci-Fi", "Young Adult", "Drama", "Balls", "Big Juicy Balls"],
     rating: "4.5",
     ratingCount: 1284,
